@@ -1,0 +1,3 @@
+<center>
+	<span>WeChat 공개 계정 팔로우를 환영합니다</span><img src="http://hustoj.com/wx.jpg" width="96px" />onlinejudge
+</center>
