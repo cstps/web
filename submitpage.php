@@ -143,7 +143,6 @@ if (isset($_GET['sid'])) {
 				$view_src = str_replace($rear_code,"", $view_src);
 				//빈줄 제거
 				$view_src= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $view_src);
-				var_dump($view_src);
 			}
 			
 		}

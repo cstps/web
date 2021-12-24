@@ -100,7 +100,7 @@
         </p>
         <p align=left> 
           <?php echo "<h4>".$MSG_BAN_CODE."(/로 구분해서 입력 ex: for/if )</h4>"?>
-          <textarea class="kindeditor" rows=13 name=ban_code cols=80></textarea><br><br>
+          <input name=ban_code style="width:100%;" ></input><br><br>
         </p>
         <p align=left> 
           <?php echo "<h4>".$MSG_PRO_POINT."(정수로 입력)</h4>"?>

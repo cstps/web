@@ -110,7 +110,7 @@ include_once("kindeditor.php") ;
         </p>
         <p align=left> 
           <?php echo "<h4>".$MSG_BAN_CODE."(/로 구분해서 입력 ex: for/if )</h4>"?>
-          <textarea name=ban_code style="width:100%;" rows=1><?php echo htmlentities($row['ban_code'],ENT_QUOTES,"UTF-8")?></textarea>
+          <input name=ban_code style="width:100%;" ><?php echo htmlentities($row['ban_code'],ENT_QUOTES,"UTF-8")?></input>
         </p>
         <p align=left> 
           <?php echo "<h4>".$MSG_PRO_POINT."(정수로 입력)</h4>"?>
