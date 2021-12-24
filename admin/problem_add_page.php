@@ -22,7 +22,7 @@
 
 <body leftmargin="30" >
   <div class="container">
-    <form method=POST action=problem_add.php>
+    <form method=POST id=problemAdd action=problem_add.php onsubmit='do_submit()'>
       <input type=hidden name=problem_id value="New Problem">
         <p align=left>
           <?php echo "<h3>".$MSG_TITLE."</h3>"?>
@@ -80,18 +80,23 @@
         </p>
         
         <p align=left>  
-          <?php echo "<h4>".$MSG_FRONT_CODE."</h4>"?>
-        <?php if($OJ_ACE_EDITOR){ ?>
-          <pre style="width:80%;height:200" cols=180 rows=5 id="front_code"></pre><br>
-          <input type=hidden id="hide_source" name="front_code" value=""/>
+        <?php echo "<h4>".$MSG_FRONT_CODE."</h4>"?>
+          <?php if($OJ_ACE_EDITOR){ ?>
+          <pre style="width:80%;height:200" cols=180 rows=5 id="front_code" ></pre><br>
+          <input type=hidden id="front_code_source" name=front_code value=""/>
         <?php }else{ ?>
-          <textarea style="width:80%;height:200" cols=180 rows=5 id="source" name="front_code"></textarea><br>
+          <textarea style="width:80%;height:200" cols=180 rows=5 id="front_code" name=front_code></textarea><br>
         <?php }?>
         </p>
         
         <p align=left> 
           <?php echo "<h4> ".$MSG_REAR_CODE."</h4>"?>
-          <textarea class="kindeditor" rows=13 name=rear_code cols=80></textarea><br><br>
+          <?php if($OJ_ACE_EDITOR){ ?>
+          <pre style="width:80%;height:200" cols=180 rows=5 id="rear_code" ></pre><br>
+          <input type=hidden id="rear_code_source" name=rear_code value=""/>
+          <?php }else{ ?>
+            <textarea style="width:80%;height:200" cols=180 rows=5 id="rear_code" name=rear_code></textarea><br>
+          <?php }?>
         </p>
         <p align=left> 
           <?php echo "<h4>".$MSG_BAN_CODE."(/로 구분해서 입력 ex: for/if )</h4>"?>
@@ -126,15 +131,36 @@
       </input>
     </form>
   </div>
+  <script>
+    
+  function do_submit(){
+    if(typeof(editorFrontCode) != "undefined"){ 
+      $("#front_code_source").val(editorFrontCode.getValue());
+    }
+    if(typeof(editorRearCode) != "undefined"){ 
+      $("#rear_code_source").val(editorRearCode.getValue());
+    }
+    document.getElementById("problemAdd").target="_self";
+    document.getElementById("problemAdd").submit();
+  }
+  </script>
   <?php if($OJ_ACE_EDITOR){ ?>
   <script src="../ace/ace.js"></script>
   <script src="../ace/ext-language_tools.js"></script>
   <script>
       ace.require("../ace/ext/language_tools");
-      var editor = ace.edit("front_code");
-      editor.setTheme("ace/theme/chrome");
-      editor.session.setMode("ace/mode/c_cpp");
-      editor.setOptions({
+      var editorFrontCode = ace.edit("front_code");
+      editorFrontCode.setTheme("ace/theme/chrome");
+      editorFrontCode.session.setMode("ace/mode/c_cpp");
+      editorFrontCode.setOptions({
+        enableBasicAutocompletion: true,
+        enableSnippets: true,
+        enableLiveAutocompletion: true
+      });
+      var editorRearCode = ace.edit("rear_code");
+      editorRearCode.setTheme("ace/theme/chrome");
+      editorRearCode.session.setMode("ace/mode/c_cpp");
+      editorRearCode.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
         enableLiveAutocompletion: true

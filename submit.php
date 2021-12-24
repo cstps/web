@@ -192,17 +192,36 @@ $input_text = "";
 if (isset($_POST['input_text'])) {
   $input_text = $_POST['input_text'];
 }
+
+// 금지어 처리
+if($ban_code){
+  $ban_words = explode('/',$ban_code);
+  $ban_cnt = count($ban_words);
+  for($i=0;$i<$ban_cnt;$i++){
+    if(strpos($source,$ban_words[$i])!==false){
+      $view_errors= $MSG_CODE_USE_BANCODE;
+      require "template/" . $OJ_TEMPLATE . "/error.php";
+      exit(0);
+    }
+  }
+}
+
+
 // 제출 소스에 앞뒤에 front, rear 코드 추가
 if($front_code || $rear_code){
   $source = $front_code."\n".$source."\n".$rear_code;
 }
 
 
+
+
+/* php7.4 제거
 if (get_magic_quotes_gpc()) {
   $source = stripslashes($source);
   $input_text = stripslashes($input_text);
 }
 
+*/
 if (isset($_POST['encoded_submit'])) {
   $source = base64_decode($source);
 }

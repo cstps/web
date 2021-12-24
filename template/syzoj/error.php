@@ -9,7 +9,7 @@
       <!-- <p><%= err.details %></p> -->
     <p>
         <!-- <a href="<%= err.nextUrls[text] %>" style="margin-right: 5px; "><%= text %></a> -->
-      <a href="/">마지막페이지로 돌아가기</a>
+      <button onClick="history.back()">이전 페이지로 돌아가기</button>
     </p>
   </div>
 </div>

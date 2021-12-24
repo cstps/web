@@ -94,6 +94,8 @@
 	$MSG_TOO_SHORT="코드가 너무 짧습니다!";
 	$MSG_TOO_LONG="코드가 너무 깁니다!";
 	$MSG_BREAK_TIME="1초 이내에 다시 제출 할 수 없습니다. 잠시 기다려주세요.";
+	$MSG_CODE_USE_BANCODE="금지어가 포함되어 있습니다.";
+
 
 	//ranklist.php
 	$MSG_Number="순위";
@@ -157,7 +159,7 @@
 	$MSG_IMPORT="데이터 업로드";
 	$MSG_EXPORT="데이터 다운로드";
 	$MSG_UPDATE_DATABASE="데이터베이스 업데이트";
-        $MSG_BACKUP_DATABASE="Backup Database";
+	$MSG_BACKUP_DATABASE="데이터베이스 백업";
 	$MSG_ONLINE="Online";
 	$MSG_SET_LOGIN_IP="IP 변경";
 	$MSG_PRIVILEGE_TYPE="권한 종류";
@@ -169,12 +171,12 @@
 	$MSG_TIME_WARNING="대회 시작전입니다.";
 	$MSG_WATCH_RANK="대회순위 보기";
 	$MSG_NOIP_WARNING=$OJ_NOIP_KEYWORD." 대회는 종료 전까지 결과를 보여주지 않습니다.";
-        $MSG_NOIP_NOHINT=$OJ_NOIP_KEYWORD." Contest does not show hint.";
+	$MSG_NOIP_NOHINT=$OJ_NOIP_KEYWORD." Contest does not show hint.";
 	$MSG_SERVER_TIME="현재 시간";
 	$MSG_START_TIME="시작 시간";
 	$MSG_END_TIME="종료 시간";
 	$MSG_CONTEST_ID="대회ID";
-	$MSG_VIEW_ALL_CONTESTS="Show All Contests";
+	$MSG_VIEW_ALL_CONTESTS="모든 대회 보기";
 	$MSG_CONTEST_NAME="대회 이름";
 	$MSG_CONTEST_STATUS="대회 상태";
 	$MSG_CONTEST_OPEN="대회 구분";
@@ -360,9 +362,9 @@
 	$MSG_EXPECTED_IDENTIFIER="변수를 사용하기 전에 미리 선언하지 않았거나 변수를 선언할 때 소괄호 기호 () 를 누락했을 수 있습니다.";
 	$MSG_VARIABLY_MODIFIED="배열 크기를 변수로 지정할 수 없습니다. C 에서는 전역 배열의 크기를 선언할 때, 변수를 사용할 수 없습니다. const 형 변수도 사용할 수 없습니다.";
 
-	$MSG_FUNCTION_GETS_REMOVIED="The function std::gets is removed from C++14, use fgets to replace it. Or add #define gets(S) fgets(S,sizeof(S),stdin)";
+	$MSG_FUNCTION_GETS_REMOVIED="gets()함수는 C++14에서 제거되었다, fgets()를 사용하세요. 또는  #define gets(S) fgets(S,sizeof(S),stdin)로 사용하세요";
 
-	$MSG_PROBLEM_USED_IN="This problem is used in private contest";
+	$MSG_PROBLEM_USED_IN="이 문제는 현재 비공개 대회에서 사용되고 있다.";
 	
 	$REFRESH_PRIVILEGE="새로 고침 권한";
 	

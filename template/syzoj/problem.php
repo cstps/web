@@ -47,7 +47,7 @@ div[class*=ace_br] {
           }else{
             $id=$row['problem_id'];
             //echo "<title>$MSG_PROBLEM ".$PID[$pid].": ".$row['title']." </title>";
-            echo "问题 ".$PID[$pid].": ".$row['title'];
+            echo "문제 ".$PID[$pid].": ".$row['title'];
           }
           if($row['defunct']=="Y")
           echo "<span class=\"ui tiny red label\">목록없음</span>";

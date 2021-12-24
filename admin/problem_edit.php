@@ -88,18 +88,25 @@ include_once("kindeditor.php") ;
         <textarea name=source style="width:100%;" rows=1><?php echo htmlentities($row['source'],ENT_QUOTES,"UTF-8")?></textarea>
       </p>
 
+
+      <!-- ace editor front_code , rear_code accept -->
       <p align=left>  
           <?php echo "<h4>".$MSG_FRONT_CODE."</h4>"?>
           <?php if($OJ_ACE_EDITOR){ ?>
           <pre style="width:80%;height:200" cols=180 rows=5 id="front_code" ><?php echo htmlentities($row['front_code'],ENT_QUOTES,"UTF-8")?></pre><br>
-          <input type=hidden id="hide_source" name=front_code value=""/>
+          <input type=hidden id="front_code_source" name=front_code value=""/>
         <?php }else{ ?>
           <textarea style="width:80%;height:200" cols=180 rows=5 id="front_code" name=front_code></textarea><br>
         <?php }?>
       </p>
         <p align=left> 
           <?php echo "<h4> ".$MSG_REAR_CODE."</h4>"?>
-          <textarea class="kindeditor" rows=13 name=rear_code cols=80><?php echo htmlentities($row['rear_code'],ENT_QUOTES,"UTF-8")?></textarea>
+          <?php if($OJ_ACE_EDITOR){ ?>
+          <pre style="width:80%;height:200" cols=180 rows=5 id="rear_code" ><?php echo htmlentities($row['rear_code'],ENT_QUOTES,"UTF-8")?></pre><br>
+          <input type=hidden id="rear_code_source" name=rear_code value=""/>
+        <?php }else{ ?>
+          <textarea style="width:80%;height:200" cols=180 rows=5 id="rear_code" name=rear_code></textarea><br>
+        <?php }?>
         </p>
         <p align=left> 
           <?php echo "<h4>".$MSG_BAN_CODE."(/로 구분해서 입력 ex: for/if )</h4>"?>
@@ -168,6 +175,10 @@ include_once("kindeditor.php") ;
       $ban_code = $_POST['ban_code'];
       $pro_point = $_POST['pro_point'];
 
+      /* php 7.4 버전부터  get_magic_quotes_gpc() 삭제되어 false가 되어 더 이상 실행되지 않는다. 
+      // DB작업을 하기 위해 쿼리를 작성할 때 따옴표가 문자열에 있으면 오류가 발생한다. 
+      // 이럴때 addslashes()- 쿼리안의 따옴표를 예외문자로 \'로 처리, stripslashes() - 쿼리안에 예외문자 백슬래시 제거
+      // 이럴 한번에 하는 함수가 magic_quotes_gpc() 이고 get_magic_quotes_gpc()은 설정값을 확인
       if (get_magic_quotes_gpc()) {
         $title = stripslashes($title);
         $time_limit = stripslashes($time_limit);
@@ -187,7 +198,7 @@ include_once("kindeditor.php") ;
         $ban_code = stripslashes($ban_code);
         $pro_point = stripslashes($pro_point);  
       }
-
+      */
       $title = ($title);
       $description = RemoveXSS($description);
       $input = RemoveXSS($input);
@@ -229,28 +240,40 @@ include_once("kindeditor.php") ;
   <script>
     
   function do_submit(){
-    if(typeof(editor) != "undefined"){ 
-      $("#hide_source").val(editor.getValue());
+    if(typeof(editorFrontCode) != "undefined"){ 
+      $("#front_code_source").val(editorFrontCode.getValue());
     }
-    console.log(editor);
+    if(typeof(editorRearCode) != "undefined"){ 
+      $("#rear_code_source").val(editorRearCode.getValue());
+    }
     document.getElementById("problemEdit").target="_self";
     document.getElementById("problemEdit").submit();
   }
   </script>
   
-  <?php if($OJ_ACE_EDITOR){ // ACE 에디터를 적용하여 코드 형태가 잘 보이도록 21.12.23 ?>
+  <?php if($OJ_ACE_EDITOR){ // ACE 에디터를 적용하여 front , rear 코드 형태가 잘 보이도록 21.12.23 ?>
   <script src="../ace/ace.js"></script>
   <script src="../ace/ext-language_tools.js"></script>
   <script>
       ace.require("../ace/ext/language_tools");
-      var editor = ace.edit("front_code");
-      editor.setTheme("ace/theme/chrome");
-      editor.session.setMode("ace/mode/c_cpp");
-      editor.setOptions({
+      var editorFrontCode = ace.edit("front_code");
+      editorFrontCode.setTheme("ace/theme/chrome");
+      editorFrontCode.session.setMode("ace/mode/c_cpp");
+      editorFrontCode.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
         enableLiveAutocompletion: true
       });
+      var editorRearCode = ace.edit("rear_code");
+      editorRearCode.setTheme("ace/theme/chrome");
+      editorRearCode.session.setMode("ace/mode/c_cpp");
+      editorRearCode.setOptions({
+        enableBasicAutocompletion: true,
+        enableSnippets: true,
+        enableLiveAutocompletion: true
+      });
+
+
   </script>
   <?php }?>
 </body>

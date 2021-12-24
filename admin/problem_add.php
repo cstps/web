@@ -57,33 +57,38 @@ $rear_code = $_POST['rear_code'];
 $ban_code = $_POST['ban_code'];
 $pro_point = $_POST['pro_point'];
 
-
-if (get_magic_quotes_gpc()) {
-  $title = stripslashes($title);
-  $time_limit = stripslashes($time_limit);
-  $memory_limit = stripslashes($memory_limit);
-  $description = stripslashes($description);
-  $input = stripslashes($input);
-  $output = stripslashes($output);
-  $sample_input = stripslashes($sample_input);
-  $sample_output = stripslashes($sample_output);
-  $test_input = stripslashes($test_input);
-  $test_output = stripslashes($test_output);
-  $hint = stripslashes($hint);
-  $source = stripslashes($source);
-  $spj = stripslashes($spj);
-  $source = stripslashes($source);
-  $front_code = stripslashes($front_code);
-  $rear_code = stripslashes($rear_code);
-  $ban_code = stripslashes($ban_code);
-  $pro_point = stripslashes($pro_point);  
-}
+//php7.4에서 해당 기능 삭제됨
+// if (get_magic_quotes_gpc()) {
+//   $title = stripslashes($title);
+//   $time_limit = stripslashes($time_limit);
+//   $memory_limit = stripslashes($memory_limit);
+//   $description = stripslashes($description);
+//   $input = stripslashes($input);
+//   $output = stripslashes($output);
+//   $sample_input = stripslashes($sample_input);
+//   $sample_output = stripslashes($sample_output);
+//   $test_input = stripslashes($test_input);
+//   $test_output = stripslashes($test_output);
+//   $hint = stripslashes($hint);
+//   $source = stripslashes($source);
+//   $spj = stripslashes($spj);
+//   $source = stripslashes($source);
+//   $front_code = stripslashes($front_code);
+//   $rear_code = stripslashes($rear_code);
+//   $ban_code = stripslashes($ban_code);
+//   $pro_point = stripslashes($pro_point);  
+// }
 
 $title = RemoveXSS($title);
 $description = RemoveXSS($description);
 $input = RemoveXSS($input);
 $output = RemoveXSS($output);
 $hint = RemoveXSS($hint);
+
+$front_code = RemoveXSS($front_code);
+$rear_code = RemoveXSS($rear_code);
+$ban_code = RemoveXSS($ban_code);
+
 //echo "->".$OJ_DATA."<-"; 
 $pid = addproblem($title, $time_limit, $memory_limit, $description, $input, $output, $sample_input, $sample_output, $hint, $source, $spj, $OJ_DATA, $front_code, $rear_code, $ban_code, $pro_point);
 $basedir = "$OJ_DATA/$pid";
