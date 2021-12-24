@@ -129,9 +129,24 @@ if (isset($_GET['sid'])) {
 
 		$row = $result[0];
 
-		if ($row)
+		if ($row){
 			$view_src = $row['source'];
-
+			// front_code와 rear_code는 삭제해서 보여주기
+			$sqltmp = "SELECT * from `problem` where `problem_id`='$id'";
+			$resulttmp = pdo_query($sqltmp,$id);
+			$front_code = $resulttmp[0]['front_code'];
+			$rear_code = $resulttmp[0]['rear_code'];
+			if($front_code || $rear_code){
+				
+				// 미리작성된 코드는 제거 
+				$view_src = str_replace($front_code,"", $view_src);
+				$view_src = str_replace($rear_code,"", $view_src);
+				//빈줄 제거
+				$view_src= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $view_src);
+				var_dump($view_src);
+			}
+			
+		}
 		$sql = "SELECT langmask FROM contest WHERE contest_id=?";
 
 		$result = pdo_query($sql,$cid);
