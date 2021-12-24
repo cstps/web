@@ -32,6 +32,10 @@ div[class*=ace_br] {
     cursor: pointer;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.05);
 }
+.code{
+  display:inline-block;
+  vertical-align: top;
+}
 </style>
 <script src="https://pagecdn.io/lib/ace/1.4.13/ace.min.js" crossorigin="anonymous" integrity="sha256-GjtAsBCI/KPlEYQf0I8yNimcThRoWMnk7Vpi+dUt+GY=" ></script>
 <script src="<?php echo $OJ_CDN_URL.$path_fix."template/$OJ_TEMPLATE/"?>clipboard.min.js"></script>
@@ -55,11 +59,11 @@ div[class*=ace_br] {
       </h1>
     </div>
       <div class="row" style="margin-top: -15px">
-          <span class="ui label">메모리：<?php echo $row['memory_limit']; ?> MB</span>
-          <span class="ui label">시간：<?php echo $row['time_limit']; ?> S</span>
-          <!-- <span class="ui label">题目类型：交互</span> -->
-          <!-- <span class="ui label">输入文件: <%= problem.file_io_input_name %></span>
-          <span class="ui label">输出文件: <%= problem.file_io_output_name %></span> -->
+          <span class="ui label yellow">메모리：<?php echo $row['memory_limit']; ?> MB</span>
+          <span class="ui label purple">시간：<?php echo $row['time_limit']; ?> S</span>
+          <!-- <span class="ui label">문제 타입：interaction</span> -->
+          <!-- <span class="ui label">input file: <%= problem.file_io_input_name %></span>
+          <span class="ui label">output file: <%= problem.file_io_output_name %></span> -->
           <!-- echo "<br><span class=green>$MSG_SUBMIT: </span>".$row['submit']."&nbsp;&nbsp;";
           echo "<span class=green>$MSG_SOVLED: </span>".$row['accepted']."<br>"; -->
           <span class="ui label">표준 입력 및 출력</span>
@@ -84,7 +88,7 @@ div[class*=ace_br] {
               echo "<a class=\"small ui primary button\" href=\"submitpage.php?id=$id\">제출</a>";
               echo "<a class=\"small ui positive button\" href=\"status.php?problem_id=$id\">채점기록</a>";
               echo "<a class=\"small ui orange button\" href=\"problemstatus.php?id=$id\">통계</a>";
-			  echo "<a class=\"small ui red button\" href=\"discuss.php?pid=$id\">$MSG_BBS</a>";
+			        echo "<a class=\"small ui pink button\" href=\"discuss.php?pid=$id\">$MSG_BBS</a>";
             }else{
               echo "<a href=\"contest.php?cid=$cid\" class=\"ui orange button\">대회로 돌아가기</a>";
               echo "<a class=\"small ui primary button\" href=\"submitpage.php?cid=$cid&pid=$pid&langmask=$langmask\">제출</a>";
@@ -107,13 +111,42 @@ div[class*=ace_br] {
       <?php }?>
     </div>
   </div>
-
+  <div class="row">
+    <div class="column">
+      <div class="ui bottom attached segment font-content">
+        <?php
+          // front_code, rear_code 정보 제공
+          if($row['front_code'] || $row['rear_code']){
+            //htmlentities를 통해 특수문자를 <>& 등을 html에 보이도록 설정
+            $front_code = htmlentities($row['front_code'] );
+            $rear_code = htmlentities($row['rear_code'] );
+            echo "<div class='code'><h3>"."[미리 작성된 코드]"."</h3>";
+            echo "<code class='lang-c'><pre>".$front_code."</pre>";
+            echo "<pre class='ui label brown'> 여기에 들어갈 코드를 작성하세요.</pre>";
+            echo "<pre>".$rear_code."</pre></code></div>";
+          } 
+        ?>
+          <?php
+          // ban_code 정보 제공
+           if($row['ban_code']){
+            $ban_code = explode("/", $row['ban_code']);
+            echo "<div class='code'><h3>[".$MSG_BAN_CODE."]</h3>";
+            foreach($ban_code as $ban_word)
+              echo "<code class='ui red label'>".$ban_word."</code>";
+            echo "</div>";
+          }
+          ?>
+      </div>
+    </div>
+  </div>
   <div class="row">
     <div class="column">
       <h4 class="ui top attached block header">문제설명</h4>
-      <div class="ui bottom attached segment font-content"><?php echo $row['description']; ?></div>
+      <div class="ui bottom attached segment font-content"><?php echo $row['description'];?>
+      </div>      
     </div>
   </div>
+  
   <?php if($row['input']){ ?>
     <div class="row">
       <div class="column">
