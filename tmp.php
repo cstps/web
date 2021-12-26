@@ -1,3 +1,4 @@
 <?php
-        var_dump(get_magic_quotes_gpc());
-?>
+    if ( function_exists ('mysqli_connect') ) echo "Yes\n";
+    else echo "No\n";
+    ?>

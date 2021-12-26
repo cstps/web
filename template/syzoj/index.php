@@ -9,7 +9,7 @@
                     <thead>
                         <tr>
                             <th><?php echo $MSG_TITLE;?></th>
-                            <th><?php echo $MSG_TIME;?></th>
+                            <th><?php echo $MSG_SUBMIT_TIME;?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -34,7 +34,7 @@
                     <thead>
                         <tr>
                             <th width="60%"><?php echo $MSG_TITLE;?></th>
-                            <th width="40%"><?php echo $MSG_TIME;?></th>
+                            <th width="40%"><?php echo $MSG_SUBMIT_TIME;?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -101,9 +101,9 @@
                 <table class="ui very basic center aligned table" style="table-layout: fixed; ">
                     <thead>
                         <tr>
-                            <th style="width: 50px; ">순위</th>
-                            <th style="width: 170px; "><?php echo $MSG_USER_ID;?></th>
-                            <th><?php echo $MSG_SOVLED ;?></th>
+                            <th style="width: 30%; ">순위</th>
+                            <th style="width: 40%; "><?php echo $MSG_USER_ID;?></th>
+                            <th style="width: 30%; "><?php echo $MSG_SOVLED ;?></th>
                         </tr>
                     </thead>
                     <tbody>

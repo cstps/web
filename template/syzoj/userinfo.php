@@ -97,7 +97,7 @@
                                           <h4 class="ui top attached block header">통계</h4>
                                           <div class="ui bottom attached segment">
                                             <div id="pie_chart_legend"></div>
-                                            <div style="width: 130px; height: 130px; margin-left: 33.5px; "><canvas style="width: 130px; height: 130px; " id="pie_chart"></canvas></div>
+                                            <div style="width: 100%; height: 260px;  "><canvas style="width: 100%; height: 100%; " id="pie_chart"></canvas></div>
                                           </div>
                                       </div>
                                   </div>
