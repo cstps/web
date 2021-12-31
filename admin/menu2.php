@@ -73,7 +73,15 @@
       <a class="dropdown-item btn-sm" href="problem_add_page.php" target="main" title="<?php echo html_entity_decode($MSG_HELP_ADD_PROBLEM)?>"><b><?php echo $MSG_PROBLEM."-".$MSG_ADD?></b></a>
       <a class="dropdown-item btn-sm" href="problem_import.php" target="main" title="<?php echo $MSG_HELP_IMPORT_PROBLEM?>"><b><?php echo $MSG_PROBLEM."-".$MSG_IMPORT?></b></a>
       <a class="dropdown-item btn-sm" href="problem_export.php" target="main" title="<?php echo $MSG_HELP_EXPORT_PROBLEM?>"><b><?php echo $MSG_PROBLEM."-".$MSG_EXPORT?></b></a>
+      
+    
 <?php }?>
+        <?php
+        if(isset($_SESSION[$OJ_NAME.'_'.'administrator'])){ ?> 
+          <!-- 자리 이동 -->
+          <a class="dropdown-item btn-sm" href="problem_copy.php" target="main" title="<?php echo $MSG_HELP_EXTERN_PROBLEM?>"><b><?php echo $MSG_PROBLEM."-".$MSG_EXTERN_PROBLEM?></b></a>
+          <a class="dropdown-item btn-sm" href="problem_changeid.php" target="main" title="<?php echo $MSG_HELP_CHANGENUM_PROBLEM?>"><b><?php echo $MSG_PROBLEM."-".$MSG_CHANGENUM_PROBLEM?></b></a>
+        <?php } ?>
     </div>
   </div>
 
@@ -83,13 +91,13 @@
       <?php echo $MSG_CONTEST."-".$MSG_ADMIN ?> <span class="caret"></span>
     </button>
     <div class="dropdown-menu">
-<?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])||isset($_SESSION[$OJ_NAME.'_'.'contest_creator'])){?>
+    <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])||isset($_SESSION[$OJ_NAME.'_'.'contest_creator'])){?>
       <a class="dropdown-item btn-sm" href="contest_list.php" target="main"  title="<?php echo $MSG_HELP_CONTEST_LIST?>"><b><?php echo $MSG_CONTEST."-".$MSG_LIST?></b></a>
       <a class="dropdown-item btn-sm" href="contest_add.php" target="main"  title="<?php echo $MSG_HELP_ADD_CONTEST?>"><b><?php echo $MSG_CONTEST."-".$MSG_ADD?></b></a>
       <a class="dropdown-item btn-sm" href="user_set_ip.php" target="main" title="<?php echo $MSG_SET_LOGIN_IP?>"><b><?php echo $MSG_CONTEST."-".$MSG_SET_LOGIN_IP?></b></a>
       <a class="dropdown-item btn-sm" href="team_generate.php" target="main" title="<?php echo $MSG_HELP_TEAMGENERATOR?>"><b><?php echo $MSG_CONTEST."-".$MSG_TEAMGENERATOR?></b></a>
       <a class="dropdown-item btn-sm" href="team_generate2.php" target="main" title="<?php echo $MSG_HELP_TEAMGENERATOR?>"><b><?php echo $MSG_CONTEST."-".$MSG_TEAMGENERATOR?></b></a>
-<?php }?>
+    <?php }?>
     </div>
   </div>
 
@@ -120,10 +128,11 @@
   <br><a class='btn btn-block btn-sm' href="http://shang.qq.com/wpa/qunwpa?idkey=d52c3b12ddaffb43420d308d39118fafe5313e271769277a5ac49a6fae63cf7a" target="_blank">手机QQ加官方<br>群23361372</a>
   -->
 <?php }?>
-
+<!-- 이동
 <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])&&!$OJ_SAE){?>
   <a href="problem_copy.php" target="main" title="Create your own data"><font color="eeeeee">CopyProblem</font></a> <br>
   <a href="problem_changeid.php" target="main" title="Danger,Use it on your own risk"><font color="eeeeee">ReOrderProblem</font></a>
 <?php }?>
+-->
 </body>
 </html>

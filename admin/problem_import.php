@@ -47,7 +47,7 @@
         you can't use import function at this time.<br>"; 
 
         if($OJ_LANG == "cn")
-          echo "权限异常，请先去执行sudo chmod 775 -R $OJ_DATA <br> 和 sudo chgrp -R www-data $OJ_DATA <br>";
+          echo "sudo chmod 775 -R $OJ_DATA <br> 和 sudo chgrp -R www-data $OJ_DATA <br>";
 
         $show_form = false;
       }

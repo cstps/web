@@ -79,6 +79,14 @@
       <td><center><a class='btn btn-success btn-sm' href="problem_export.php" target="main"><b><?php echo $MSG_PROBLEM."-".$MSG_EXPORT?></b></a></center></td>
       <td><p><?php echo $MSG_HELP_EXPORT_PROBLEM?></p></td>
     </tr>
+    <tr>
+      <td><center><a a class='btn btn-success btn-sm' href="problem_copy.php" target="main" ><b><?php echo $MSG_PROBLEM."-".$MSG_EXTERN_PROBLEM?></b></a></center></td>
+      <td><p><?php echo $MSG_HELP_EXTERN_PROBLEM?></p></td>
+    </tr>
+    <tr>
+      <td><center><a a class='btn btn-success btn-sm' href="problem_changeid.php" target="main" ><b><?php echo $MSG_PROBLEM."-".$MSG_CHANGENUM_PROBLEM?></b></a></center></td>
+      <td><p><?php echo $MSG_HELP_CHANGENUM_PROBLEM?></p></td>
+    </tr>
   <?php }?>
   <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])||isset($_SESSION[$OJ_NAME.'_'.'contest_creator'])){?>
     <tr>
@@ -132,6 +140,7 @@
       <td><a class='btn btn-block btn-sm' href="https://github.com/zhblue/freeproblemset/" target="_blank"><b>FreeProblemSet</b></a></td>
       <td><p>FreeProblemSet</p></td>
     </tr>
+
     <!-- 제거
     <tr>
       <td><a class='btn btn-block btn-sm' href="http://tk.hustoj.com" target="_blank"><b>문제은행</b></a></td>
@@ -145,12 +154,11 @@
   <?php }?>
   </tbody>
 </table>
-
+<!-- 위치 이동
 <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])&&!$OJ_SAE){?>
-  <a href="problem_copy.php" target="main" title="Create your own data"><font color="eeeeee">CopyProblem</font></a> <br>
-  <a href="problem_changeid.php" target="main" title="Danger,Use it on your own risk"><font color="eeeeee">ReOrderProblem</font></a>
-  
+  <a a class='btn btn-block btn-sm' href="problem_copy.php" target="main" title="Create your own data">CopyProblem</a> <br>
+  <a a class='btn btn-block btn-sm' href="problem_changeid.php" target="main" title="Danger,Use it on your own risk">ReOrderProblem</a>
 <?php }?>
-
+-->
 </body>
 </html>

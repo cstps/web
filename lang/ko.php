@@ -158,6 +158,8 @@
 	$MSG_GIVESOURCE="채점코드 소유자 변경";
 	$MSG_IMPORT="데이터 업로드";
 	$MSG_EXPORT="데이터 다운로드";
+	$MSG_EXTERN_PROBLEM="외부 문제가져오기";
+	$MSG_CHANGENUM_PROBLEM="문제번호 변경";
 	$MSG_UPDATE_DATABASE="데이터베이스 업데이트";
 	$MSG_BACKUP_DATABASE="데이터베이스 백업";
 	$MSG_ONLINE="Online";
@@ -254,6 +256,8 @@
 	$MSG_HELP_GIVESOURCE="특정 사용자 채점코드 밀어주기. 부진학생 도움용";
 	$MSG_HELP_EXPORT_PROBLEM="fps.xml 파일로 문제 다운로드";
 	$MSG_HELP_IMPORT_PROBLEM="fps.xml 파일로 문제 업로드";
+	$MSG_HELP_EXTERN_PROBLEM="외부 사이트에서 문제 가져오기";
+	$MSG_HELP_CHANGENUM_PROBLEM="문제번호 변경하기. 사용시 주의 하세요";
 	$MSG_HELP_UPDATE_DATABASE="hustoj 업데이트(sudo update-hustoj) 후, 데이터베이스를 업데이트 합니다. 업데이트 후 한 번만 실행해주세요!";
 	$MSG_HELP_ONLINE="현재 접속자";
 	$MSG_HELP_AC="모두 정답을 출력했습니다.";
@@ -274,9 +278,9 @@
 	$MSG_WARNING_LOGIN_FROM_DIFF_IP="다른 컴퓨터/IP로 로그인했습니다.";
 	$MSG_WARNING_DURING_EXAM_NOT_ALLOWED="시험중에는 허용되지 않습니다.";
 	$MSG_WARNING_ACCESS_DENIED="볼 수 없습니다! 권한이 없거나 제한되어 있습니다.";
-  $MSG_WARNING_USER_ID_SHORT="사용자ID는 3문자 이상 입력해야 합니다!";
-  $MSG_WARNING_PASSWORD_SHORT="비밀번호는 6문자 이상 입력해야 합니다!";
-  $MSG_WARNING_REPEAT_PASSWORD_DIFF="비밀번호가 다릅니다!";
+	$MSG_WARNING_USER_ID_SHORT="사용자ID는 3문자 이상 입력해야 합니다!";
+	$MSG_WARNING_PASSWORD_SHORT="비밀번호는 6문자 이상 입력해야 합니다!";
+	$MSG_WARNING_REPEAT_PASSWORD_DIFF="비밀번호가 다릅니다!";
 
 	$MSG_LOSTPASSWORD_MAILBOX=" Email로 전송된 코드를 입력하세요.";
 	$MSG_LOSTPASSWORD_WILLBENEW=" 입력된 코드가 정확하면 입력된 코드가 새로운 비밀번호로 저장됩니다.";
