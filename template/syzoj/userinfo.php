@@ -75,13 +75,22 @@
                                             <h4 class="ui top attached block header">통과한 문제</h4>
                                             <div class="ui bottom attached segment">
                                                 <script language='javascript'>
-                                                  function p(id,c){
-                                                    document.write("<a href=problem.php?id="+id+">"+id+" </a>");
+                                                  function p(id,c,point){
+                                                    document.write("<a href=problem.php?id="+id+">"+id+"</a>("+point+"점)");
                                                   }
                                                   <?php $sql="SELECT `problem_id`,count(1) from solution where `user_id`=? and result=4 group by `problem_id` ORDER BY `problem_id` ASC";
+                                                        
                                                   if ($result=pdo_query($sql,$user)){ 
-                                                      foreach($result as $row)
-                                                      echo "p($row[0],$row[1]);";
+                                                      foreach($result as $row){
+                                                        // 문제에서 점수 부분을 구한다. 
+                                                        $sql_pro_point = "SELECT `pro_point` from problem where `problem_id`=? ";
+                                                        $result_pro_point = pdo_query($sql_pro_point,$row[0]);                                                        
+                                                        // pdo_query 에서 쿼리의  ?에 해당하는 값을 pdo_query()의 두번째 매개변수로 전달하여 쿼리를 실행하면 결과는
+                                                        // 연관배열 형태로 돌려주기 때문에  key와 value로 값을 참조하고 기본 array로 반환하기 때문에 [0][키값] 형태로
+                                                        // 작성되어야 한다. 
+                                                        $point = $result_pro_point[0]['pro_point'];
+                                                        echo "p($row[0],$row[1],$point);";                                                        
+                                                      }
                                                   }
                                                   ?>
                                                 </script>
