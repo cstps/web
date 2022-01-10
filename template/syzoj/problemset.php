@@ -189,7 +189,7 @@
              echo $row['title'];
              echo "</a>";
              if($row['defunct']=='Y')
-              echo "<span class=\"ui tiny red label\">未公开</span>";
+              echo "<span class=\"ui tiny red label\">비공개</span>";
 
               echo "<div class=\"show_tag_controled\" style=\"float: right; \">";
               echo "<span class=\"ui header\">";
