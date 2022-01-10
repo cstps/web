@@ -125,8 +125,8 @@ function getPartByMark($html,$mark1,$mark2){
 <p align=left>Output:<br><!--<textarea rows=13 name=output cols=80></textarea>-->
 <textarea class="kindeditor" rows=13 name=output cols=80><?php echo $outputHTML;?></textarea>
 </p>
-<p align=left>Sample Input:<br><textarea rows=13 name=sample_input cols=80><?php echo $sample_inputHTML?></textarea></p>
-<p align=left>Sample Output:<br><textarea rows=13 name=sample_output cols=80><?php echo $sample_outputHTML?></textarea></p>
+<p align=left>Sample Input:<br><textarea rows=13 name=sample_input cols=80><?php echo str_replace("  ","\n",$sample_inputHTML)?></textarea></p>
+<p align=left>Sample Output:<br><textarea rows=13 name=sample_output cols=80><?php echo str_replace("  ","\n",$sample_outputHTML)?></textarea></p>
 <p align=left>Test Input:<br><textarea rows=13 name=test_input cols=80><?php echo $test_inputHTML?></textarea></p>
 <p align=left>Test Output:<br><textarea rows=13 name=test_output cols=80><?php echo $test_outputHTML?></textarea></p>
 <p align=left>Hint:<br>
@@ -134,7 +134,34 @@ function getPartByMark($html,$mark1,$mark2){
 </p>
 <p>SpecialJudge: N<input type=radio name=spj value='0' checked>Y<input type=radio name=spj value='1'></p>
 <p align=left>Source:<br><textarea name=source rows=1 cols=70><?php echo $sourceHTML?></textarea></p>
+<p align=left>  
+  
+<?php echo "<h4>".$MSG_FRONT_CODE."</h4>"?>
+  <?php if($OJ_ACE_EDITOR){ ?>
+  <pre style="width:80%;height:200" cols=180 rows=5 id="front_code" ></pre><br>
+  <input type=hidden id="front_code_source" name=front_code value=""/>
+<?php }else{ ?>
+  <textarea style="width:80%;height:200" cols=180 rows=5 id="front_code" name=front_code></textarea><br>
+<?php }?>
+</p>
 
+<p align=left> 
+  <?php echo "<h4> ".$MSG_REAR_CODE."</h4>"?>
+  <?php if($OJ_ACE_EDITOR){ ?>
+  <pre style="width:80%;height:200" cols=180 rows=5 id="rear_code" ></pre><br>
+  <input type=hidden id="rear_code_source" name=rear_code value=""/>
+  <?php }else{ ?>
+    <textarea style="width:80%;height:200" cols=180 rows=5 id="rear_code" name=rear_code></textarea><br>
+  <?php }?>
+</p>
+<p align=left> 
+  <?php echo "<h4>".$MSG_BAN_CODE."(/로 구분해서 입력 ex: for/if )</h4>"?>
+  <input name=ban_code style="width:100%;" ></input><br><br>
+</p>
+<p align=left> 
+  <?php echo "<h4>".$MSG_PRO_POINT."(정수로 입력)</h4>"?>
+  <input class="input input-mini" type=number min="1" max="300" step="1" name=pro_point size=20 value=1>점<br><br>
+</p>
 <p align=left>contest:
 	<select  name=contest_id>
 <?php $sql="SELECT `contest_id`,`title` FROM `contest` WHERE `start_time`>NOW() order by `contest_id`";
@@ -153,6 +180,29 @@ if (count($result)==0){
 <input type=submit value=Submit name=submit>
 </div></form>
 <p>
-
-</body></html>
+<?php if($OJ_ACE_EDITOR){ ?>
+  <script src="../ace/ace.js"></script>
+  <script src="../ace/ext-language_tools.js"></script>
+  <script>
+      ace.require("../ace/ext/language_tools");
+      var editorFrontCode = ace.edit("front_code");
+      editorFrontCode.setTheme("ace/theme/chrome");
+      editorFrontCode.session.setMode("ace/mode/c_cpp");
+      editorFrontCode.setOptions({
+        enableBasicAutocompletion: true,
+        enableSnippets: true,
+        enableLiveAutocompletion: true
+      });
+      var editorRearCode = ace.edit("rear_code");
+      editorRearCode.setTheme("ace/theme/chrome");
+      editorRearCode.session.setMode("ace/mode/c_cpp");
+      editorRearCode.setOptions({
+        enableBasicAutocompletion: true,
+        enableSnippets: true,
+        enableLiveAutocompletion: true
+      });
+  </script>
+  <?php }?>
+</body>
+</html>
 

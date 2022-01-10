@@ -26,6 +26,7 @@
 <head>
     <meta charset="utf-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta name="naver-site-verification" content="866e66a9030a529a02cccfa25e8268f6de840213" />
     <meta name="viewport" content="width=device-width, initial-scale=0.65">
     <meta name="description" content="online coding judge site for student">
     <title><?php echo $show_title ?></title>
