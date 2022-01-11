@@ -3631,7 +3631,7 @@ function upload_form(){
         <tr><td> <td><input type=checkbox name=fechar value=\"1\" checked> <a href=\"JavaScript:troca();\">".et('AutoClose')."</a>
         <tr><td colspan=2>zip file can be decompressed on the server later. 
 			  just don't add dirs,please<br>
-			  可以上传zip文件，之后点击decompress解压缩，但是请不要在zip文件中包含子目录。
+			  zip파일로 파일만 압축해서 올려 압축해제할 수 있습니다. 디렉토리를 압축하면 안되요。
 	</td></tr>
         </form>
         </table>
