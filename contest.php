@@ -115,7 +115,7 @@ if (isset($_GET['cid'])) {
 
 
 	if ($rows_cnt==0) {
-		$view_title = "比赛已经关闭!";
+		$view_title = "대회가 종료되었습니다.!";
 	}
 	else{
 		

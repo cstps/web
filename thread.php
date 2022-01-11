@@ -18,12 +18,13 @@
 	}
 	$isadmin = isset($_SESSION[$OJ_NAME.'_'.'administrator']);
 ?>
+<script src="../tinymce/tinymce.min.js"></script>
 
 <center>
 <div style="width:90%; margin:0 auto; text-align:left;"> 
 <div style="text-align:left;font-size:80%;float:left;">[ <a href="newpost.php<?php if ($cid) echo "?cid=$cid&pid=".$row['pid']; ?>">새글</a> ]</div>
 <?php if ($isadmin){
-	?><div style="font-size:80%; float:right"> Change sticky level to<?php $adminurl = "threadadmin.php?target=thread&tid={$tid}&action=";
+	?><div style="font-size:80%; float:right"> 게시물에 대한 등급 변경하기 : <?php $adminurl = "threadadmin.php?target=thread&tid={$tid}&action=";
 	if ($row['top_level'] == 0) echo "[ <a href=\"{$adminurl}sticky&level=3\">Level Top</a> ] [ <a href=\"{$adminurl}sticky&level=2\">Level Mid</a> ] [ <a href=\"{$adminurl}sticky&level=1\">Level Low</a> ]"; else echo "[ <a href=\"{$adminurl}sticky&level=0\">Standard</a> ]";
 	?> | <?php if ($row['status'] != 1) echo (" [ <a  href=\"{$adminurl}lock\">Lock</a> ]"); else echo(" [ <a href=\"{$adminurl}resume\">Resume</a> ]");
 	?> | <?php echo (" [ <a href=\"{$adminurl}delete\">Delete</a> ]");
@@ -32,7 +33,7 @@
 <table style="width:100%; clear:both">
 <tr align=center class='ui top'>
 	<td style="text-align:left">
-	<a href="discuss.php<?php if ($row['pid']!=0 && $row['cid']!=null) echo "?pid=".$row['pid']."&cid=".$row['cid'];
+	<a href="discuss.php<?php if ($row['pid']!=0 && $row['cid']!=0 ) echo "?pid=".$row['pid']."&cid=".$row['cid'];
 	else if ($row['pid']!=0) echo"?pid=".$row['pid']; else if ($row['cid']!=null) echo"?cid=".$row['cid'];?>">
 	<?php if ($row['pid']!=0) echo "Problem $pid"; else echo "MainBoard";?></a> >> <?php echo nl2br(htmlentities($row['title'],ENT_QUOTES,"UTF-8"));?></td>
 </tr>
@@ -58,22 +59,22 @@ $i=0;
 				<?php if ($row['status']==0) echo $url."disable\">Disable";
 				else echo $url."resume\">Resume";
 				?> </a> ]</span>
-			<span>[ <a onclick="reply(<?php echo $row['rid'];?>);">Reply</a> ]</span> 
+			<span>[ <a onclick="reply(<?php echo $row['rid'];?>);">답글</a> ]</span> 
 			<?php } ?>
-			<span>[ <a href="#">Quote</a> ]</span>
-			<span>[ <a href="#">Edit</a> ]</span>
+			<span>[ <a href="#">추천[not yet]</a> ]</span>
+			<span>[ <a href="#">수정[not yet]</a> ]</span>
 			<span>[ <a 
 			<?php if ($isuser || $isadmin) echo "href=".$url."delete";
 			?>
-			>Delete</a> ]</span>
+			>삭제</a> ]</span>
 			<span style="width:5em;text-align:right;display:inline-block;font-weight:bold;margin:0 10px">
 			<?php echo $i+1;?>#</span>
 		</div>
 		<div id="post<?php echo $row['rid'];?>" class=content style="text-align:left; clear:both; margin:10px 30px">
-			<?php	if ($row['status'] == 0) echo nl2br(htmlentities($row['content'],ENT_QUOTES,"UTF-8"));
+			<?php	if ($row['status'] == 0) echo strip_tags(htmlspecialchars_decode(nl2br(htmlentities($row['content'],ENT_QUOTES,"UTF-8"))));
 					else {
 						if (!$isuser || $isadmin)echo "<div style=\"border-left:10px solid gray\"><font color=red><i>Notice : <br>This reply is blocked by administrator.</i></font></div>";
-						if ($isuser || $isadmin) echo nl2br(htmlentities($row['content'],ENT_QUOTES,"UTF-8"));
+						if ($isuser || $isadmin) echo strip_tags(htmlspecialchars_decode(nl2br(htmlentities($row['content'],ENT_QUOTES,"UTF-8"))));
 					}
 			?>
 		</div>
@@ -85,9 +86,9 @@ $i++;
 	}
 ?>
 </table>
-<div style="font-size:90%; width:100%; text-align:center">[<a href="#">Top</a>]  [<a href="#">Previous Page</a>]  [<a href="#">Next Page</a>] </div>
+<div style="font-size:90%; width:100%; text-align:center">[<a href="#">첫 페이지</a>]  [<a href="#">이전 페이지</a>]  [<a href="#">다음 페이지</a>] </div>
 <?php if (isset($_SESSION[$OJ_NAME.'_'.'user_id'])){?>
-<div style="font-size:80%;"><div style="margin:0 10px">New Reply:</div></div>
+<div style="font-size:80%;"><div style="margin:0 10px">답글:</div></div>
 <form action="post.php?action=reply" method="post">
 <input type="hidden" name="tid" value="<?php echo $tid;?>" >
 <div><textarea id="replyContent" name=content style="border:1px dashed #8080FF; width:700px; height:200px; font-size:75%;margin:0 10px; padding:10px"></textarea></div>
@@ -107,5 +108,15 @@ function reply(rid){
    $("#replyContent").focus();
 }
 </script>
+
+<script>
+    tinymce.init({
+        selector: '#replyContent',
+        height: 200,
+		mode: "textareas",
+
+    });
+
+  </script>
 
 <?php require_once("template/$OJ_TEMPLATE/discuss.php")?>

@@ -41,9 +41,9 @@
                 if ($_REQUEST['action']=='lock') $stat = 1;
                 if ($_REQUEST['action']=='delete') $stat = 2;
                 if (!isset($_SESSION[$OJ_NAME.'_'.'administrator']))
-                        errmsg("<a href=./loginpage.php>Please Login First</a>");
+                        err_msg("<a href=./loginpage.php>Please Login First</a>");
                 if ($toplevel == -1 && $stat == -1)
-                        errmsg("Wrong action.");
+                         err_msg("Wrong action.");
                 $tid =intval($tid);
                 if ($stat == -1) 
                         $sql = "UPDATE topic SET top_level = $toplevel WHERE `tid` = '$tid'";
@@ -54,7 +54,7 @@
                         else header('Location: discuss.php'."?cid=$cid");
                 }
                 else {
-                        errmsg( "The thread does not exist.");
+                        err_msg( "The thread does not exist.");
                         exit(0);
                 }
         }

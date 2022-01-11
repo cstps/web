@@ -14,7 +14,7 @@
 	}
 	$parm.="&cid=".$cid;
     	$prob_exist = problem_exist($pid, $cid);
-	echo "<title>HUST Online Judge WebBoard</title>";
+	echo "<title>1024 Online Judge WebBoard</title>";
 ?>
 <center>
 <div style="width:90%">
@@ -28,10 +28,10 @@ if ($prob_exist){?>
 			echo "?pid=".$pid;
 		else if ($cid!=0) 
 			echo "?cid=".$cid;?>
-		">New Thread</a> ]</div>
+		">새글</a> ]</div>
 		<div style="float:left;text-align:left;font-size:80%">
-		Location :
-		<?php if ($cid!=null) echo "<a href=\"discuss.php?cid=".$cid."\">Contest ".$cid."</a>"; else echo "<a href=\"discuss.php\">MainBoard</a>";
+		위치 :
+		<?php if ($cid!=null) echo "<a href=\"discuss.php?cid=".$cid."\">Contest ".$cid."</a>"; else echo "<a href=\"discuss.php\">전체게시판</a>";
 		if ($pid!=null && $pid!=0){
 				$query="?pid=$pid";
 				if($cid!=0) {
@@ -46,7 +46,7 @@ if ($prob_exist){?>
 		</div>
 		<div style="float:right;font-size:80%;color:red;font-weight:bold">
 		<?php if ($pid!=null && $pid!=0 && ($cid=='' || $cid==null)){?>
-		<a href="../problem.php?id=<?php echo $pid?>">See the problem</a>
+		<a href="../problem.php?id=<?php echo $pid?>">문제 보기</a>
 		<?php }?>
 		</div>
 		<?php 
@@ -87,12 +87,12 @@ $isadmin = isset($_SESSION[$OJ_NAME.'_'.'administrator']);
 <tr align=center class='ui top'>
         <td width="2%"><?php if ($isadmin) echo "<input type=checkbox>"; ?></td>
         <td width="3%"></td>
-        <td width="4%">Prob</td>
-        <td width="12%">Author</td>
-        <td width="46%">Title</td>
-        <td width="8%">Post Date</td>
-        <td width="16%">Last Reply</td>
-        <td width="3%">Re</td>
+        <td width="8%">문제번호</td>
+        <td width="12%">작성자</td>
+        <td width="30%">제목</td>
+        <td width="8%">게시일</td>
+        <td width="16%">마지막 답글</td>
+        <td width="8%">답글 수</td>
 </tr>
 <?php if ($rows_cnt==0) echo("<tr class=\"evenrow\"><td colspan=4></td><td style=\"text-align:center\">No thread here.</td></tr>");
 $i=0;
