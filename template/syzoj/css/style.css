@@ -242,8 +242,8 @@ body > .ui.page.dimmer {
   font-size: 0.9em;
   font-weight: bold;
   padding: 1px 6px;
-  vertical-align: baseline;
-  color: #444;
+  vertical-align: top; /* 정렬 baseline에서 top     */
+  /* color: #444; */
   margin-top: 2px;
 }
 

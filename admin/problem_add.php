@@ -51,9 +51,12 @@ $source = $_POST['source'];
 $spj = $_POST['spj'];
 
 // 앞뒤, 금지어, 포인트 추가
- 
-$front_code = htmlentities($_POST['front_code'],ENT_QUOTES,"UTF-8");
-$rear_code = $_POST['rear_code'];
+//빈줄 제거
+$front_code= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $_POST['front_code']);
+$rear_code= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $_POST['rear_code']);
+
+$front_code = htmlentities($front_code,ENT_QUOTES,"UTF-8");
+$rear_code = htmlentities($rear_code,ENT_QUOTES,"UTF-8");
 $ban_code = $_POST['ban_code'];
 $pro_point = $_POST['pro_point'];
 

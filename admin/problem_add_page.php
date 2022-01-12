@@ -11,6 +11,7 @@
 
 <?php 
   require_once("../include/db_info.inc.php");
+  require_once("../include/const.inc.php");
   require_once("admin-header.php");
   if (!(isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor']))) {
     echo "<a href='../loginpage.php'>Please Login First!</a>";
@@ -80,7 +81,14 @@
         </p>
         
         <p align=left>  
-        <?php echo "<h4>".$MSG_FRONT_CODE."</h4>"?>
+        <?php echo "<h4>".$MSG_FRONT_CODE."(언어별 분리 //C// 코드 //Python// 코드 )</h4>"?>
+          <?php 
+            echo "<h6>";
+            for($i=0;$i<count($language_name);$i++){
+              echo $language_name[$i]."//";
+            }
+            echo "</h6>";
+          ?>
           <?php if($OJ_ACE_EDITOR){ ?>
           <pre style="width:80%;height:200" cols=180 rows=5 id="front_code" ></pre><br>
           <input type=hidden id="front_code_source" name=front_code value=""/>
@@ -155,7 +163,7 @@
       editorFrontCode.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
-        enableLiveAutocompletion: true
+        enableLiveAutocompletion: false,
       });
       var editorRearCode = ace.edit("rear_code");
       editorRearCode.setTheme("ace/theme/chrome");
@@ -163,7 +171,7 @@
       editorRearCode.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
-        enableLiveAutocompletion: true
+        enableLiveAutocompletion: false,
       });
   </script>
   <?php }?>

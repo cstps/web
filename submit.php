@@ -208,8 +208,24 @@ if($ban_code){
 
 
 // 제출 소스에 앞뒤에 front, rear 코드 추가
+// 언어별로 별도 추가 작업
+
 if($front_code || $rear_code){
-  $source = $front_code."\n".$source."\n".$rear_code;
+  $find_str = "//".$language_name[$language]."//";
+  $lang_name_print=$language_name[$language];
+  $front_code_print ="";
+  $rear_code_print ="";
+  //front code 내용 확인하여 언어별 분리
+  if(strpos($front_code,$find_str)!==false){
+    $split_str = explode($find_str,$front_code);
+    $front_code_print = explode("//",$split_str[1])[0];
+  }
+  //rear code 내용 확인하여 언어별 분리
+  if(strpos($rear_code,$find_str)!==false){
+    $split_str = explode($find_str,$rear_code);
+    $rear_code_print = explode("//",$split_str[1])[0];
+  }
+  $source = $front_code_print."\n".$source."\n".$rear_code_print;
 }
 
 

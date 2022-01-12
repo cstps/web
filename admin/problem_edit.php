@@ -7,6 +7,7 @@
 
 <?php
 require_once("../include/db_info.inc.php");
+require_once("../include/const.inc.php");
 require_once("admin-header.php");
 require_once("../include/my_func.inc.php");
 
@@ -34,11 +35,11 @@ include_once("kindeditor.php") ;
 
       <input type=hidden name=problem_id value='<?php echo $row['problem_id']?>'>
       <p align=left>
-        <center>
+  
           <h3>
-          <?php echo $row['problem_id']?>: <input class="input input-xxlarge" style='width:90%' type=text name=title value='<?php echo htmlentities($row['title'],ENT_QUOTES,"UTF-8")?>'>
+          <?php echo $row['problem_id']?>: <input class="input input-xxlarge" style='width:75%' type=text name=title value='<?php echo htmlentities($row['title'],ENT_QUOTES,"UTF-8")?>'>
           </h3>
-        </center>
+        
       </p>
         <p align=left>
           <?php echo $MSG_Time_Limit?><br>
@@ -48,32 +49,32 @@ include_once("kindeditor.php") ;
         </p>
       <p align=left>
         <?php echo "<h4>".$MSG_Description."</h4>"?>
-        <textarea class="kindeditor" rows=13 name=description cols=80><?php echo htmlentities($row['description'],ENT_QUOTES,"UTF-8")?></textarea><br>
+        <textarea class="kindeditor" rows=13 name=description cols=60><?php echo htmlentities($row['description'],ENT_QUOTES,"UTF-8")?></textarea><br>
       </p>
 
       <p align=left>
         <?php echo "<h4>".$MSG_Input."</h4>"?>
-        <textarea class="kindeditor" rows=13 name=input cols=80><?php echo htmlentities($row['input'],ENT_QUOTES,"UTF-8")?></textarea><br>
+        <textarea class="kindeditor" rows=13 name=input cols=60><?php echo htmlentities($row['input'],ENT_QUOTES,"UTF-8")?></textarea><br>
       </p>
 
       <p align=left>
         <?php echo "<h4>".$MSG_Output."</h4>"?>
-        <textarea  class="kindeditor" rows=13 name=output cols=80><?php echo htmlentities($row['output'],ENT_QUOTES,"UTF-8")?></textarea><br>
+        <textarea  class="kindeditor" rows=13 name=output cols=60><?php echo htmlentities($row['output'],ENT_QUOTES,"UTF-8")?></textarea><br>
       </p>
 
       <p align=left>
         <?php echo "<h4>".$MSG_Sample_Input."</h4>"?>
-        <textarea  class="input input-large" style="width:100%;" rows=13 name=sample_input><?php echo htmlentities($row['sample_input'],ENT_QUOTES,"UTF-8")?></textarea><br><br>
+        <textarea  class="input input-large" style="width:80%;" rows=13 name=sample_input><?php echo htmlentities($row['sample_input'],ENT_QUOTES,"UTF-8")?></textarea><br><br>
       </p>
 
       <p align=left>
         <?php echo "<h4>".$MSG_Sample_Output."</h4>"?>
-        <textarea  class="input input-large" style="width:100%;" rows=13 name=sample_output><?php echo htmlentities($row['sample_output'],ENT_QUOTES,"UTF-8")?></textarea><br><br>
+        <textarea  class="input input-large" style="width:80%;" rows=13 name=sample_output><?php echo htmlentities($row['sample_output'],ENT_QUOTES,"UTF-8")?></textarea><br><br>
       </p>
 
       <p align=left>
         <?php echo "<h4>".$MSG_HINT."</h4>"?>
-        <textarea class="kindeditor" rows=13 name=hint cols=80><?php echo htmlentities($row['hint'],ENT_QUOTES,"UTF-8")?></textarea><br>
+        <textarea class="kindeditor" rows=13 name=hint cols=30><?php echo htmlentities($row['hint'],ENT_QUOTES,"UTF-8")?></textarea><br>
       </p>
 
       <p>
@@ -85,32 +86,39 @@ include_once("kindeditor.php") ;
 
       <p align=left>
         <?php echo "<h4>".$MSG_SOURCE."</h4>"?>
-        <textarea name=source style="width:100%;" rows=1><?php echo htmlentities($row['source'],ENT_QUOTES,"UTF-8")?></textarea>
+        <textarea name=source style="width:80%;" rows=1><?php echo htmlentities($row['source'],ENT_QUOTES,"UTF-8")?></textarea>
       </p>
 
 
       <!-- ace editor front_code , rear_code accept -->
       <p align=left>  
-          <?php echo "<h4>".$MSG_FRONT_CODE."</h4>"?>
+          <?php echo "<h4>".$MSG_FRONT_CODE."(언어별 분리 //C// 코드 //Python// 코드 )</h4>"?>
+          <?php 
+            echo "<h6>";
+            for($i=0;$i<count($language_name);$i++){
+              echo $language_name[$i]."//";
+            }
+            echo "</h6>";
+          ?>
           <?php if($OJ_ACE_EDITOR){ ?>
-          <pre style="width:80%;height:200" cols=180 rows=5 id="front_code" ><?php echo htmlentities($row['front_code'],ENT_QUOTES,"UTF-8")?></pre><br>
+          <pre style="width:80%;height:20%" cols=180 rows=3 id="front_code" ><?php echo htmlentities($row['front_code'],ENT_QUOTES,"UTF-8")?></pre><br>
           <input type=hidden id="front_code_source" name=front_code value=""/>
         <?php }else{ ?>
-          <textarea style="width:80%;height:200" cols=180 rows=5 id="front_code" name=front_code></textarea><br>
+          <textarea style="width:80%;height:20%" cols=180 rows=4 id="front_code" name=front_code></textarea><br>
         <?php }?>
       </p>
         <p align=left> 
           <?php echo "<h4> ".$MSG_REAR_CODE."</h4>"?>
           <?php if($OJ_ACE_EDITOR){ ?>
-          <pre style="width:80%;height:200" cols=180 rows=5 id="rear_code" ><?php echo htmlentities($row['rear_code'],ENT_QUOTES,"UTF-8")?></pre><br>
+          <pre style="width:80%;height:20%" cols=180 rows=5 id="rear_code"><?php echo htmlentities($row['rear_code'],ENT_QUOTES,"UTF-8")?></pre><br>
           <input type=hidden id="rear_code_source" name=rear_code value=""/>
         <?php }else{ ?>
-          <textarea style="width:80%;height:200" cols=180 rows=5 id="rear_code" name=rear_code></textarea><br>
+          <textarea style="width:80%;height:20%" cols=180 rows=4 id="rear_code" name=rear_code></textarea><br>
         <?php }?>
         </p>
         <p align=left> 
           <?php echo "<h4>".$MSG_BAN_CODE."(/로 구분해서 입력 ex: for/if )</h4>"?>
-          <input name=ban_code style="width:100%;" value =<?php echo htmlentities($row['ban_code'],ENT_QUOTES,"UTF-8")?> ></input>
+          <input name=ban_code style="width:80%;" value =<?php echo htmlentities($row['ban_code'],ENT_QUOTES,"UTF-8")?> ></input>
         </p>
         <p align=left> 
           <?php echo "<h4>".$MSG_PRO_POINT."(정수로 입력)</h4>"?>
@@ -169,9 +177,10 @@ include_once("kindeditor.php") ;
       $spj = $_POST['spj'];
 
       // 앞뒤, 금지어, 포인트 추가
-
-      $front_code = $_POST['front_code'];
-      $rear_code = $_POST['rear_code'];
+      // 빈줄 제거
+      $front_code= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $_POST['front_code']);
+      $rear_code= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $_POST['rear_code']);
+      
       $ban_code = $_POST['ban_code'];
       $pro_point = $_POST['pro_point'];
 
@@ -262,7 +271,7 @@ include_once("kindeditor.php") ;
       editorFrontCode.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
-        enableLiveAutocompletion: true
+        enableLiveAutocompletion: false,
       });
       var editorRearCode = ace.edit("rear_code");
       editorRearCode.setTheme("ace/theme/chrome");
@@ -270,7 +279,7 @@ include_once("kindeditor.php") ;
       editorRearCode.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
-        enableLiveAutocompletion: true
+        enableLiveAutocompletion: false,
       });
 
 

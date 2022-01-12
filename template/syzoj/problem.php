@@ -111,34 +111,71 @@ div[class*=ace_br] {
       <?php }?>
     </div>
   </div>
-  <div class="row">
-    <div class="column">
-      <div class="ui bottom attached segment font-content">
-        <?php
-          // front_code, rear_code 정보 제공
-          if($row['front_code'] || $row['rear_code']){
-            //htmlentities를 통해 특수문자를 <>& 등을 html에 보이도록 설정
-            $front_code = htmlentities($row['front_code'] );
-            $rear_code = htmlentities($row['rear_code'] );
-            echo "<div class='code'><h3>"."[미리 작성된 코드]"."</h3>";
-            echo "<code class='lang-c'><pre>".$front_code."</pre>";
-            echo "<pre class='ui label brown'> 여기에 들어갈 코드를 작성하세요.</pre>";
-            echo "<pre>".$rear_code."</pre></code></div>";
-          } 
-        ?>
-          <?php
-          // ban_code 정보 제공
-           if($row['ban_code']){
-            $ban_code = explode("/", $row['ban_code']);
-            echo "<div class='code'><h3>[".$MSG_BAN_CODE."]</h3>";
-            foreach($ban_code as $ban_word)
-              echo "<code class='ui red label'>".$ban_word."</code>";
-            echo "</div>";
-          }
-          ?>
+  <?php
+    if($row['front_code'] || $row['rear_code'] || $row['ban_code']){ ?>
+      <div class="row">
+        <div class="column">
+          <div class="ui bottom attached segment font-content">
+            <?php 
+              function preCodePrint($ln,$fc,$rc){
+                echo "<span><code class='lang-c'><center>".$ln."</center>";
+                if($fc!=""){
+                  echo "<pre>".$fc."</pre>";
+                }
+                echo "<pre class='ui label brown'> 여기에 들어갈 코드를 작성하세요.</pre>";
+                if($rc!=""){
+                  echo "<pre>".$rc."</pre>";
+                }
+                echo "</code></span>";
+              }
+              // front_code, rear_code 정보 제공 c언어와  python으로 분리
+              if($row['front_code'] || $row['rear_code']){
+                echo "<div class='code'><center><h3>"."[미리 작성된 코드]"."</h3></center>";
+                echo "";
+                //htmlentities를 통해 특수문자를 <>& 등을 html에 보이도록 설정
+                $front_code = htmlentities($row['front_code'] );
+                $rear_code = htmlentities($row['rear_code'] );
+                // 분리하기 위해 해당 언어별로 주석표시가 있는지 본다. //Python//
+                $cnt_language = count($language_name);
+                for($i=0;$i<$cnt_language;$i++){
+                  $find_str = "//".$language_name[$i]."//";
+                  $lang_name_print="";
+                  $front_code_print ="";
+                  $rear_code_print ="";
+                  //front code 내용 확인하여 언어별 분리
+                  if(strpos($front_code,$find_str)!==false){
+                    $split_str = explode($find_str,$front_code);
+                    $lang_name_print = $language_name[$i];
+                    $front_code_print = explode("//",$split_str[1])[0];
+                  }
+                  //rear code 내용 확인하여 언어별 분리
+                  if(strpos($rear_code,$find_str)!==false){
+                    $split_str = explode($find_str,$rear_code);
+                    $lang_name_print = $language_name[$i];
+                    $rear_code_print = explode("//",$split_str[1])[0];
+                  }
+                  if($lang_name_print!==""){
+                    preCodePrint($lang_name_print, $front_code_print, $rear_code_print);
+                    //구분선 
+                    echo "<span> </span>";
+                  }
+
+                }
+                echo "</div>";
+              } 
+              // ban_code 정보 제공
+              if($row['ban_code']){
+                $ban_code = explode("/", $row['ban_code']);
+                echo "<span> </span><span><div class='code'><center><h3>[".$MSG_BAN_CODE."]</h3></center>";
+                foreach($ban_code as $ban_word)
+                  echo "<code class='ui red label'>".$ban_word."</code>";
+                echo "</div></span>";
+              }
+            ?>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
+  <?php } ?>
   <div class="row">
     <div class="column">
       <h4 class="ui top attached block header">문제설명</h4>

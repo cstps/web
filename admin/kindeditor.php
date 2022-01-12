@@ -12,6 +12,8 @@
 				uploadJson : '../kindeditor/php/upload_json.php',
 				fileManagerJson : '../kindeditor/php/file_manager_json.php',
 				allowFileManager : false,
+				height: 200,
+				width: '80%',
 				afterCreate : function() {
 					var self = this;
 					K.ctrl(document, 13, function() {

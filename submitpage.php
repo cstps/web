@@ -49,6 +49,7 @@ if (isset($_GET['sid'])) {
 	$row = $result[0];
 	$cid = intval($row['contest_id']);
 	$sproblem_id= intval($row['problem_id']);
+	$language_num = intval($row['language']);
 	$contest_id=$cid;
 	if ($row && $row['user_id']==$_SESSION[$OJ_NAME.'_'.'user_id'])
 		$ok = true;
@@ -104,10 +105,6 @@ if (isset($_GET['sid'])) {
 		$ok = true;
 	}
 	else {
-
-
-
-
 		if (isset($OJ_EXAM_CONTEST_ID)) {
 			if ($cid < $OJ_EXAM_CONTEST_ID && !isset($_SESSION[$OJ_NAME.'_'.'source_browser'])) {
 
@@ -131,16 +128,35 @@ if (isset($_GET['sid'])) {
 
 		if ($row){
 			$view_src = $row['source'];
-			// front_code와 rear_code는 삭제해서 보여주기
+			// front_code와 rear_code는 삭제해서 보여주기	
+			// 언어별로 추가된 코드 제거하기
 			$sqltmp = "SELECT * from `problem` where `problem_id`='$id'";
 			$resulttmp = pdo_query($sqltmp,$id);
+		
 			$front_code = $resulttmp[0]['front_code'];
 			$rear_code = $resulttmp[0]['rear_code'];
+			
 			if($front_code || $rear_code){
-				
 				// 미리작성된 코드는 제거 
-				$view_src = str_replace($front_code,"", $view_src);
-				$view_src = str_replace($rear_code,"", $view_src);
+				// 언어별로 추가된 모드 코드 제거하기
+				$cnt_language = count($language_name);
+                for($i=0;$i<$cnt_language;$i++){
+                  $find_str = "//".$language_name[$i]."//";
+                  $front_code_print ="";
+                  $rear_code_print ="";
+                  //front code 내용 확인하여 언어별 분리
+                  if(strpos($front_code,$find_str)!==false){
+                    $split_str = explode($find_str,$front_code);
+                    $front_code_print = explode("//",$split_str[1])[0];
+					$view_src = str_replace($front_code_print,"", $view_src);
+                  }
+                  //rear code 내용 확인하여 언어별 분리
+                  if(strpos($rear_code,$find_str)!==false){
+                    $split_str = explode($find_str,$rear_code);
+                    $rear_code_print = explode("//",$split_str[1])[0];
+					$view_src = str_replace($rear_code_print,"", $view_src);
+                  }
+				}
 				//빈줄 제거
 				$view_src= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $view_src);
 			}
