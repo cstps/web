@@ -122,7 +122,7 @@ div[class*=ace_br] {
                 if($fc!=""){
                   echo "<pre>".$fc."</pre>";
                 }
-                echo "<pre class='ui label brown'> 여기에 들어갈 코드를 작성하세요.</pre>";
+                echo "<pre class='ui label brown'> 여기에 알맞는 코드</pre>";
                 if($rc!=""){
                   echo "<pre>".$rc."</pre>";
                 }

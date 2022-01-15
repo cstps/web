@@ -15,7 +15,7 @@ Copy from http://uoj.ac
 <li>
 Copy from http://hustoj......
 <form method=POST action=problem_add_page_hustoj.php>
-  <input name=url type=text size=100 value="http://www.judgeon.net/problem.php?id=1009">
+  <input name=url type=text size=100 value="">
   <input type=submit>
 </form>
 </li>

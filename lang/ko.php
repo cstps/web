@@ -56,7 +56,7 @@
 	$MSG_TIME="실행시간";
 	$MSG_LANG="제출언어";
 	$MSG_CODE_LENGTH="코드용량";
-	$MSG_SUBMIT_TIME="제출시간";
+	$MSG_SUBMIT_TIME="등록일시";
 
 	//problemstatistics.php
 	$MSG_PD="PD";
@@ -229,9 +229,9 @@
 	$MSG_BALLOON_PENDING="Balloon Pending";
 	$MSG_DATE="Date";
 	$MSG_SIGN="Signature";
-	$MSG_RECENT_PROBLEM="Recent Problems";
-	$MSG_RECENT_CONTEST="Recent Contest";
-	$MSG_PASS_RATE="Pass Rate";
+	$MSG_RECENT_PROBLEM="최근문제";
+	$MSG_RECENT_CONTEST="최근대회";
+	$MSG_PASS_RATE="정답율";
 	$MSG_SHOW_TAGS="Show Tags";
 	$MSG_SHOW_ALL_TAGS="All Tags";
 

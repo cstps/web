@@ -83,11 +83,11 @@
         <p align=left>  
         <?php echo "<h4>".$MSG_FRONT_CODE."(언어별 분리 //C// 코드 //Python// 코드 )</h4>"?>
           <?php 
-            echo "<h6>";
+            echo "<span>";
             for($i=0;$i<count($language_name);$i++){
               echo $language_name[$i]."//";
             }
-            echo "</h6>";
+            echo "</span>";
           ?>
           <?php if($OJ_ACE_EDITOR){ ?>
           <pre style="width:80%;height:200" cols=180 rows=5 id="front_code" ></pre><br>

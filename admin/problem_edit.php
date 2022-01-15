@@ -92,13 +92,13 @@ include_once("kindeditor.php") ;
 
       <!-- ace editor front_code , rear_code accept -->
       <p align=left>  
-          <?php echo "<h4>".$MSG_FRONT_CODE."(언어별 분리 //C// 코드 //Python// 코드 )</h4>"?>
+          <?php echo "<h4>".$MSG_FRONT_CODE."(언어별  //C// 코드 //Python// 코드 *대소문자 유의*)</h4>"?>
           <?php 
-            echo "<h6>";
+            
             for($i=0;$i<count($language_name);$i++){
-              echo $language_name[$i]."//";
+              echo "<span>".$language_name[$i]."//</span>";
             }
-            echo "</h6>";
+            
           ?>
           <?php if($OJ_ACE_EDITOR){ ?>
           <pre style="width:80%;height:20%" cols=180 rows=3 id="front_code" ><?php echo htmlentities($row['front_code'],ENT_QUOTES,"UTF-8")?></pre><br>

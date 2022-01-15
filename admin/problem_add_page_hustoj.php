@@ -45,7 +45,7 @@ function getPartByMark($html,$mark1,$mark2){
   
    return $descriptionHTML;
 }
-  $url=$_POST ['url'];
+  $url="http://www.judgeon.net/problem.php?id=".$_POST ['url'];
 
   if (!$url) $url=$_GET['url'];
   if (strpos($url, "http") === false){
