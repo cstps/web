@@ -74,7 +74,13 @@ if (isset($_GET['search']) && trim($_GET['search'])!="") {
 	$pstart = 0;
 	$pend = 100;
 
-}else if (isset($_GET['list']) && trim($_GET['list']!="")){
+}else if (isset($_GET['search2']) && trim($_GET['search2'])!=""){
+	$search =  "%".($_GET['search2'])."%";
+	$filter_sql = " `source` = ?";
+	$pstart = 0;
+	$pend = 100;
+}
+else if (isset($_GET['list']) && trim($_GET['list']!="")){
         $plist= explode(",",$_GET['list']);
 	$pids="0";
 	foreach($plist as $pid){
@@ -112,6 +118,7 @@ if ($OJ_FREE_PRACTICE){  // open free practice without limit of contest using
 
 	$sql = "SELECT * FROM (SELECT @ROWNUM := @ROWNUM + 1 AS ROWNUM, `problem_id`,`title`,`source`,`submit`,`accepted`,defunct FROM `problem`, (SELECT @ROWNUM := 0) TEMP ORDER BY `problem_id`) A WHERE $filter_sql";
 
+
 }else {  //page problems (not include in contests period)
 	$now = strftime("%Y-%m-%d %H:%M",time());
 	$sql = "SELECT * FROM (SELECT @ROWNUM := @ROWNUM + 1 AS ROWNUM, `problem_id`,`title`,`source`,`submit`,`accepted`,defunct " .
@@ -128,7 +135,12 @@ if ($OJ_FREE_PRACTICE){  // open free practice without limit of contest using
 
 //echo htmlentities( $sql);
 if (isset($_GET['search']) && trim($_GET['search'])!="") {
+
 	$result = pdo_query($sql,$search,$search);
+}else if (isset($_GET['search2'])  && trim($_GET['search2'])!=""){
+	
+	$result = pdo_query($sql,$search2);
+	
 }
 else {
 	$result = mysql_query_cache($sql);
