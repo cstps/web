@@ -47,8 +47,10 @@ $hint = str_replace("</p>", "<br />", $hint);
 $hint = str_replace(",", "&#44;", $hint);
 
 $source = $_POST['source'];
+$creator = $_POST['creator'];
 
 $spj = $_POST['spj'];
+
 
 // 앞뒤, 금지어, 포인트 추가
 //빈줄 제거
@@ -103,8 +105,14 @@ if(strlen($test_output) && !strlen($test_input)) $test_input = "0";
 if(strlen($test_input)) mkdata($pid,"test.in", $test_input, $OJ_DATA);
 if(strlen($test_output)) mkdata($pid,"test.out", $test_output, $OJ_DATA);
 
+// 만든 사람 정보 추가하기 없으면 로그인 정보 
+
 $sql = "INSERT INTO `privilege` (`user_id`,`rightstr`) VALUES(?,?)";
-pdo_query($sql, $_SESSION[$OJ_NAME.'_'.'user_id'], "p$pid");
+if(trim($creator)!=""){
+  pdo_query($sql, trim($creator), "p$pid");
+}else{
+  pdo_query($sql, $_SESSION[$OJ_NAME.'_'.'user_id'], "p$pid");
+}
 $_SESSION[$OJ_NAME.'_'."p$pid"] = true;
   
 echo "&nbsp;&nbsp;- <a href='javascript:phpfm($pid);'>Add more TestData now!</a>";

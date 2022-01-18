@@ -71,7 +71,7 @@ div[class*=ace_br] {
       <div class="row" style="margin-top: -23px">
           <span class="ui label">문제유형</span>
           <span class="ui label">채점방법：<?php if($row['spj']) echo "Special Judge"; else echo "일반" ; ?></span>
-          <span class="ui label">출제자：<span id='creator'></span></span>
+          <span class="ui label"><?php echo $MSG_Creator; ?>：<span id='creator'></span></span>
       </div>
       <div class="row" style="margin-top: -23px">
           <span class="ui label">제출：<?php echo $row['submit']; ?></span>
@@ -249,7 +249,7 @@ div[class*=ace_br] {
     $tcolor=0;
   ?>
   <?php if($row['source']){
-    $cats=explode(" ",$row['source']);
+    $cats=explode("//",$row['source']);
   ?>
     <div class="row">
       <div class="column">

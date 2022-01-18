@@ -85,10 +85,19 @@ include_once("kindeditor.php") ;
       </p>
 
       <p align=left>
-        <?php echo "<h4>".$MSG_SOURCE."</h4>"?>
+        <?php echo "<h4>".$MSG_SOURCE."(//로구분)</h4>"?>
         <textarea name=source style="width:80%;" rows=1><?php echo htmlentities($row['source'],ENT_QUOTES,"UTF-8")?></textarea>
       </p>
-
+        <!-- 출제자 정보 얻고 수정할 수 있도록 -->
+      <p align=left>
+          <?php echo "<h4>".$MSG_Creator."</h4>"?>
+          <?php // creator 정보 가져오기 
+            $sqltmp = "select `user_id` from `privilege` where `rightstr`=?";
+            $resulttmp = pdo_query($sqltmp,"p".(trim($_GET['id'])));
+            $rowtmp = $resulttmp[0];
+          ?>
+          <textarea name=creator style="width:80%;" rows=1><?php echo htmlentities($rowtmp['user_id'],ENT_QUOTES,"UTF-8")?></textarea>
+      </p>
 
       <!-- ace editor front_code , rear_code accept -->
       <p align=left>  
@@ -174,6 +183,7 @@ include_once("kindeditor.php") ;
       $hint = str_replace(",", "&#44;", $hint);
 
       $source = $_POST['source'];
+      $creator = $_POST['creator'];
       $spj = $_POST['spj'];
 
       // 앞뒤, 금지어, 포인트 추가
@@ -239,7 +249,9 @@ include_once("kindeditor.php") ;
 
       @pdo_query($sql,$title,$time_limit,$memory_limit,$description,$input,$output,$sample_input,$sample_output,$hint,$source,$spj,$front_code, $rear_code, $ban_code, $pro_point,$id);
 
-      
+      // creator update
+      $sql_creator = "UPDATE `privilege` SET `user_id`=? where `rightstr`=?";
+      @pdo_query($sql_creator,$creator,"p".$id);
 
       echo "Edit OK!<br>";
       echo "<a href='../problem.php?id=$id'>See The Problem!</a>";

@@ -27,7 +27,7 @@
       <input type=hidden name=problem_id value="New Problem">
         <p align=left>
           <?php echo "<h3>".$MSG_TITLE."</h3>"?>
-          <input class="input input-xxlarge" style="width:100%;" type=text name=title><br><br>
+          <input class="input input-xxlarge" style="width:80%;" type=text name=title><br><br>
         </p>
         <p align=left>
           <?php echo $MSG_Time_Limit?><br>
@@ -50,21 +50,21 @@
         </p>
         <p align=left>
           <?php echo "<h4>".$MSG_Sample_Input."</h4>"?>
-          <textarea  class="input input-large" style="width:100%;" rows=13 name=sample_input></textarea><br><br>
+          <textarea  class="input input-large" style="width:80%;" rows=13 name=sample_input></textarea><br><br>
         </p>
         <p align=left>
           <?php echo "<h4>".$MSG_Sample_Output."</h4>"?>
-          <textarea  class="input input-large" style="width:100%;" rows=13 name=sample_output></textarea><br><br>
+          <textarea  class="input input-large" style="width:80%;" rows=13 name=sample_output></textarea><br><br>
         </p>
         <p align=left>
           <?php echo "<h4>".$MSG_Test_Input."</h4>"?>
           <?php echo "(".$MSG_HELP_MORE_TESTDATA_LATER.")"?><br>
-          <textarea class="input input-large" style="width:100%;" rows=13 name=test_input></textarea><br><br>
+          <textarea class="input input-large" style="width:80%;" rows=13 name=test_input></textarea><br><br>
         </p>
         <p align=left>
           <?php echo "<h4>".$MSG_Test_Output."</h4>"?>
           <?php echo "(".$MSG_HELP_MORE_TESTDATA_LATER.")"?><br>
-          <textarea class="input input-large" style="width:100%;" rows=13 name=test_output></textarea><br><br>
+          <textarea class="input input-large" style="width:80%;" rows=13 name=test_output></textarea><br><br>
         </p>
         <p align=left>
           <?php echo "<h4>".$MSG_HINT."</h4>"?>
@@ -76,8 +76,12 @@
           <?php echo "No "?><input type=radio name=spj value='0' checked><?php echo "/ Yes "?><input type=radio name=spj value='1'><br><br>
         </p>
         <p align=left>
-          <?php echo "<h4>".$MSG_SOURCE."</h4>"?>
-          <textarea name=source style="width:100%;" rows=1></textarea><br><br>
+          <?php echo "<h4>".$MSG_SOURCE."(//로 구분)</h4>"?>
+          <textarea name=source style="width:80%;" rows=1></textarea><br><br>
+        </p>
+        <p align=left>
+          <?php echo "<h4>".$MSG_Creator."(문제 출제자와 등록자가 다른 경우만 작성) </h4>"?>
+          <textarea name=creator style="width:80%;" rows=1></textarea><br><br>
         </p>
         
         <p align=left>  
@@ -108,7 +112,7 @@
         </p>
         <p align=left> 
           <?php echo "<h4>".$MSG_BAN_CODE."(/로 구분해서 입력 ex: for/if )</h4>"?>
-          <input name=ban_code style="width:100%;" ></input><br><br>
+          <input name=ban_code style="width:80%;" ></input><br><br>
         </p>
         <p align=left> 
           <?php echo "<h4>".$MSG_PRO_POINT."(정수로 입력)</h4>"?>

@@ -232,8 +232,9 @@
 	$MSG_RECENT_PROBLEM="최근문제";
 	$MSG_RECENT_CONTEST="최근대회";
 	$MSG_PASS_RATE="정답율";
-	$MSG_SHOW_TAGS="Show Tags";
-	$MSG_SHOW_ALL_TAGS="All Tags";
+	$MSG_SHOW_TAGS="출처/분류 보기";
+	$MSG_SHOW_ALL_TAGS="모든 출처/분류 확인";
+	$MSG_TAG="출처/분류";
 
 	$MSG_HELP_SEEOJ="OJ 확인";
 	$MSG_HELP_ADD_NEWS="첫 페이지 공지사항 추가";

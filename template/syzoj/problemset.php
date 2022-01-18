@@ -8,7 +8,7 @@
           <form action="" method="get">
             <div class="ui search" style="width: 280px; height: 28px; margin-top: -5.3px;float:left ">
               <div class="ui left icon input" style="width: 100%; ">
-                <input class="prompt" style="width: 100%; " type="text" value="" placeholder=" <?php echo $MSG_TITLE;?> …" name="search">
+                <input class="prompt" style="width: 100%; " type="text" value="" placeholder=" <?php echo $MSG_TITLE."/".$MSG_TAG?>  …" name="search">
                 <i class="search icon"></i>
               </div>
               <div class="results" style="width: 100%; "></div>
@@ -194,7 +194,8 @@
               echo "<div class=\"show_tag_controled\" style=\"float: right; \">";
               echo "<span class=\"ui header\">";
               $category=array();
-              $cate=explode(" ",$row['source']);
+              // //로 출처 분류
+              $cate=explode("//",$row['source']);
               foreach($cate as $cat){
                 array_push($category,trim($cat));	
               }
@@ -204,7 +205,7 @@
                 $hash_num=hexdec(substr(md5($cat),0,15));
                 $label_theme=$color[$tcolor%count($color)];
                 $tcolor++;
-                echo "<a href=\"problemset.php?search=".htmlentities($cat,ENT_QUOTES,'UTF-8')."\" class=\"ui tiny ".$label_theme." label\">";
+                echo "<a href=\"problemset.php?search2=".htmlentities($cat,ENT_QUOTES,'UTF-8')."\" class=\"ui tiny ".$label_theme." label\">";
                          echo htmlentities($cat,ENT_QUOTES,'UTF-8');
                 echo "</a>";
               }

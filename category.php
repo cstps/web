@@ -18,7 +18,8 @@
 	$result=mysql_query_cache($sql);//mysql_escape_string($sql));
 	$category=array();
         foreach ($result as $row){
-		$cate=explode(" ",$row['source']);
+		// //출처 분리
+		$cate=explode("//",$row['source']);
 		foreach($cate as $cat){
 			array_push($category,trim($cat));	
 		}
