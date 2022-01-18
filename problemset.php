@@ -121,7 +121,8 @@ if ($OJ_FREE_PRACTICE){  // open free practice without limit of contest using
 
 }else {  //page problems (not include in contests period)
 	$now = strftime("%Y-%m-%d %H:%M",time());
-	$sql = "SELECT * FROM (SELECT @ROWNUM := @ROWNUM + 1 AS ROWNUM, `problem_id`,`title`,`source`,`submit`,`accepted`,defunct " .
+	// @ROWNUM 은 순번이 정렬되지 않는 문제가 있어 ROW_NUMBER()를 활용해야 한다. 
+	$sql = "SELECT * FROM (SELECT ROW_NUMBER() over(order by problem_id) AS ROWNUM, `problem_id`,`title`,`source`,`submit`,`accepted`,defunct " .
 	"FROM `problem`, (SELECT @ROWNUM := 0) TEMP " .
 	"WHERE `defunct`='N' AND `problem_id` NOT IN (
 		SELECT  `problem_id`
