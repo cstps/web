@@ -262,7 +262,7 @@ div[class*=ace_br] {
             $label_theme=$color[$tcolor%count($color)];
             $tcolor++;
             ?>
-            <a href="<?php echo "problemset.php?search=".htmlentities($cat,ENT_QUOTES,'utf-8') ?>" class="ui medium <?php echo $label_theme; ?> label">
+            <a href="<?php echo "problemset.php?search2=".htmlentities($cat,ENT_QUOTES,'utf-8') ?>" class="ui medium <?php echo $label_theme; ?> label">
               <?php echo htmlentities($cat,ENT_QUOTES,'utf-8'); ?>
             </a>
           <?php } ?>
