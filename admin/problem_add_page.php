@@ -165,7 +165,6 @@
       editorFrontCode.setTheme("ace/theme/chrome");
       editorFrontCode.session.setMode("ace/mode/c_cpp");
       editorFrontCode.setOptions({
-        enableBasicAutocompletion: true,
         enableSnippets: true,
         enableLiveAutocompletion: false,
       });
@@ -173,7 +172,6 @@
       editorRearCode.setTheme("ace/theme/chrome");
       editorRearCode.session.setMode("ace/mode/c_cpp");
       editorRearCode.setOptions({
-        enableBasicAutocompletion: true,
         enableSnippets: true,
         enableLiveAutocompletion: false,
       });

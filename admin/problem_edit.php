@@ -190,7 +190,9 @@ include_once("kindeditor.php") ;
       // 빈줄 제거
       $front_code= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $_POST['front_code']);
       $rear_code= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $_POST['rear_code']);
-      
+      //$front_code = str_replace(",", "&#44;", $front_code);
+      //$rear_code = str_replace(",", "&#44;", $rear_code);
+
       $ban_code = $_POST['ban_code'];
       $pro_point = $_POST['pro_point'];
 
@@ -225,8 +227,9 @@ include_once("kindeditor.php") ;
       $hint = RemoveXSS($hint);
       $basedir = $OJ_DATA."/$id";
 
-      $front_code = RemoveXSS($front_code);
-      $rear_code = RemoveXSS($rear_code);
+      // code에서 콤마가 자동으로 제거 되어 이를 적용하지 않음
+      //$front_code = RemoveXSS($front_code);
+      //$rear_code = RemoveXSS($rear_code);
       $ban_code = RemoveXSS($ban_code);
 
 
@@ -281,7 +284,6 @@ include_once("kindeditor.php") ;
       editorFrontCode.setTheme("ace/theme/chrome");
       editorFrontCode.session.setMode("ace/mode/c_cpp");
       editorFrontCode.setOptions({
-        enableBasicAutocompletion: true,
         enableSnippets: true,
         enableLiveAutocompletion: false,
       });
@@ -289,7 +291,6 @@ include_once("kindeditor.php") ;
       editorRearCode.setTheme("ace/theme/chrome");
       editorRearCode.session.setMode("ace/mode/c_cpp");
       editorRearCode.setOptions({
-        enableBasicAutocompletion: true,
         enableSnippets: true,
         enableLiveAutocompletion: false,
       });

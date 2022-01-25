@@ -90,8 +90,8 @@ $input = RemoveXSS($input);
 $output = RemoveXSS($output);
 $hint = RemoveXSS($hint);
 
-$front_code = RemoveXSS($front_code);
-$rear_code = RemoveXSS($rear_code);
+//$front_code = RemoveXSS($front_code);
+//$rear_code = RemoveXSS($rear_code);
 $ban_code = RemoveXSS($ban_code);
 
 //echo "->".$OJ_DATA."<-"; 
