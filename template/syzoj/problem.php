@@ -245,7 +245,6 @@ div[class*=ace_br] {
     </div>
   <?php }?>
   <?php
-    $color=array("blue","teal","orange","pink","olive","red","violet","yellow","green","purple");
     $tcolor=0;
   ?>
   <?php if($row['source']){
@@ -259,10 +258,10 @@ div[class*=ace_br] {
         <div class="ui bottom attached segment" id="show_tag_div">
 
           <?php foreach($cats as $cat){ 
-            $label_theme=$color[$tcolor%count($color)];
+            $label_theme=$category_color[$tcolor%count($category_color)];
             $tcolor++;
             ?>
-            <a href="<?php echo "problemset.php?search2=".htmlentities($cat,ENT_QUOTES,'utf-8') ?>" class="ui medium <?php echo $label_theme; ?> label">
+            <a href="<?php echo "problemset.php?search2=".htmlentities(urlencode($cat),ENT_QUOTES,'utf-8') ?>" class="ui medium <?php echo $label_theme; ?> label">
               <?php echo htmlentities($cat,ENT_QUOTES,'utf-8'); ?>
             </a>
           <?php } ?>

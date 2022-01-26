@@ -139,7 +139,7 @@ if (isset($_GET['search']) && trim($_GET['search'])!="") {
 
 	$result = pdo_query($sql,$search,$search);
 }else if (isset($_GET['search2'])  && trim($_GET['search2'])!=""){
-	// var_dump($sql.$search);
+	// var_dump($_GET['search2']);
 	$result = pdo_query($sql,$search);
 	$pend = count($result);
 
@@ -187,8 +187,7 @@ foreach ($result as $row) {
 
 		if ($label_theme=="")
 			$label_theme = "default";
-
-		$view_problemset[$i][3] .= "<a title='".htmlentities($cat,ENT_QUOTES,'UTF-8')."' class='label label-$label_theme' style='display: inline-block;' href='problemset.php?search2=".htmlentities(urlencode($cat),ENT_QUOTES,'UTF-8')."'>".mb_substr($cat,0,10,'utf8')."</a>&nbsp;";
+		$view_problemset[$i][3] .= "<a title='".htmlentities($cat,ENT_QUOTES,'UTF-8')."' class='label label-$label_theme' style='display: inline-block;' href='problemset.php?search2=".htmlentities(urlencode($cat),ENT_QUOTES,'utf-8')."'>".htmlentities($cat,ENT_QUOTES,'utf-8')."</a>&nbsp;";
 	}
 	$view_problemset[$i][3] .= "</div >";
 	$view_problemset[$i][4] = "<div class='center'><a href='status.php?problem_id=".$row['problem_id']."&jresult=4'>".$row['accepted']."</a></div>";

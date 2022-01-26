@@ -35,7 +35,7 @@
 			$label_theme=$color_theme[$hash_num%count($color_theme)];
 			if($label_theme=="") $label_theme="default";
 			/* $view_category.= "<a class='label label-$label_theme' style='display: inline-block;' href='problemset.php?search=".htmlentities(urlencode($cat),ENT_QUOTES,'utf-8')."'>".htmlentities($cat,ENT_QUOTES,'utf-8')."</a>&nbsp;"; */
-			
+
 			$view_category.= "<a class='label label-$label_theme' style='display: inline-block;' href='problemset.php?search2=".htmlentities(urlencode($cat),ENT_QUOTES,'utf-8')."'>".htmlentities($cat,ENT_QUOTES,'utf-8')."</a>&nbsp;";
 
 		}

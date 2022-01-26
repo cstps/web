@@ -164,9 +164,8 @@
           //   echo "</tr>";
           // }
           ?>
-
+        
         <?php
-          $color=array("blue","teal","orange","pink","olive","red","yellow","green","purple");
           $tcolor=0;
           $i=0;
           foreach ($result as $row){
@@ -203,9 +202,9 @@
               foreach($category as $cat){
                 if(trim($cat)=="") continue;
                 $hash_num=hexdec(substr(md5($cat),0,15));
-                $label_theme=$color[$tcolor%count($color)];
+                $label_theme=$category_color[$tcolor%count($category_color)];
                 $tcolor++;
-                echo "<a href=\"problemset.php?search2=".htmlentities($cat,ENT_QUOTES,'UTF-8')."\" class=\"ui tiny ".$label_theme." label\">";
+                echo "<a href=\"problemset.php?search2=".htmlentities(urlencode($cat),ENT_QUOTES,'UTF-8')."\" class=\"ui tiny ".$label_theme." label\">";
                          echo htmlentities($cat,ENT_QUOTES,'UTF-8');
                 echo "</a>";
               }
@@ -223,7 +222,7 @@
             echo  "</tr>";
           }
         ?>
-
+  
 
 
     </tbody>
