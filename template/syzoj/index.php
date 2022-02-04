@@ -14,7 +14,7 @@
                     </thead>
                     <tbody>
                         <?php
-                        $sql_news = "select * FROM `news` WHERE `defunct`!='Y' AND `title`!='faqs.cn' ORDER BY `importance` ASC,`time` DESC LIMIT 10";
+                        $sql_news = "select * FROM `news` WHERE `defunct`!='Y' AND `title`!='faqs.cn' ORDER BY `importance` ASC,`time` DESC LIMIT 5";
                         $result_news = mysql_query_cache( $sql_news );
                         if ( $result_news ) {
                             foreach ( $result_news as $row ) {
@@ -109,7 +109,7 @@
                     <tbody>
 
                         <?php
-                        $sql_users = "select * FROM `users` where defunct='N' ORDER BY `solved` DESC LIMIT 15";
+                        $sql_users = "select * FROM `users` where defunct='N' ORDER BY `solved` DESC LIMIT 5";
                         $result_users = mysql_query_cache( $sql_users );
                         if ( $result_users ) {
                             $i = 1;
