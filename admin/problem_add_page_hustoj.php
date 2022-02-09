@@ -134,6 +134,7 @@ function getPartByMark($html,$mark1,$mark2){
 </p>
 <p>SpecialJudge: N<input type=radio name=spj value='0' checked>Y<input type=radio name=spj value='1'></p>
 <p align=left>Source:<br><textarea name=source rows=1 cols=70><?php echo $sourceHTML?></textarea></p>
+<p align=left>만든사람:<br><textarea name=creator rows=1 cols=70></textarea></p>
 <p align=left>  
   
 <?php echo "<h4>".$MSG_FRONT_CODE."</h4>"?>
