@@ -1,4 +1,4 @@
-<?php $show_title="评测状态 - $OJ_NAME"; ?>
+<?php $show_title="$OJ_NAME"; ?>
 <?php include("template/$OJ_TEMPLATE/header.php");?>
 <script src="template/<?php echo $OJ_TEMPLATE?>/js/textFit.min.js"></script>
 <div class="padding">

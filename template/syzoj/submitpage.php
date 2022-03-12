@@ -314,6 +314,8 @@ function loadFromBlockly(){
 	    enableBasicAutocompletion: true,
 	    enableSnippets: true,
 	    enableLiveAutocompletion: true,
+		fontSize: "18pt", // font size 키우기
+
     });
    reloadtemplate($("#language").val()); 
      

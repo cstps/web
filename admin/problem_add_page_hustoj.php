@@ -64,7 +64,10 @@ function getPartByMark($html,$mark1,$mark2){
   $element=$html->find('h2',0);
   $html_original = $html;
   $index = mb_strpos($element->plaintext,":");
-  $title=mb_substr($element->plaintext,$index+2,mb_strlen($element->plaintext)-$index-1);
+
+  // $title=mb_substr($element->plaintext,$index+2,mb_strlen($element->plaintext)-$index-1);
+  $title=mb_substr($element->plaintext,$index-4,mb_strlen($element->plaintext));
+  
   $i=1;
   $sample_outputHTML=$sample_inputHTML=$descriptionHTML="";
   $inputHTML=$outputHTML="";
