@@ -194,7 +194,8 @@ if (isset($_GET['problem_id']) && $_GET['problem_id']!="") {
 
 // check the user_id arg
 $user_id = "";
-if (isset($OJ_ON_SITE_CONTEST_ID)&&$OJ_ON_SITE_CONTEST_ID>0&&!isset($_SESSION[$OJ_NAME.'_'.'administrator'])) {
+// source_browser로도 대회에서 푼 학생의 채점현황을 모두 볼수 있도록 추가
+if (isset($OJ_ON_SITE_CONTEST_ID)&&$OJ_ON_SITE_CONTEST_ID>0&&!isset($_SESSION[$OJ_NAME.'_'.'administrator'])&&!isset($_SESSION[$OJ_NAME.'_'.'source_browser'])) {
   $_GET['user_id'] = $_SESSION[$OJ_NAME.'_'.'user_id'];   
 }
 
