@@ -138,4 +138,10 @@
     <?php } ?>
 
 </div>
+<!-- 5초 간격으로 랭킹 정보 갱신 -->
+<script type="text/javascript">
+    setInterval(function(){
+      $(".padding").load(location.href+" .padding>*","");
+    },5000);
+</script>
 <?php include("template/$OJ_TEMPLATE/footer.php");?>
