@@ -36,8 +36,11 @@
         <div class="row">
             <div class="column">
                 <div class="ui buttons">
-                    <a class="ui small blue button" href="contestrank.php?cid=<?php echo $view_cid?>">ACM순위</a>
-                    <a class="ui small yellow button" href="contestrank-oi.php?cid=<?php echo $view_cid?>">OI순위</a>
+                    <a class="ui small blue button" href="contestrank.php?cid=<?php echo $view_cid?>">순위</a>
+                    <?php
+                    if( isset($_SESSION[$OJ_NAME.'_'."source_browser"])) { ?>
+                        <a class="ui small yellow button" href="contestrank-oi.php?cid=<?php echo $view_cid?>">OI순위</a>
+                    <?php  } ?>
                     <a class="ui small positive button" href="status.php?cid=<?php echo $view_cid?>">제출정보</a>
                     <!-- <a class="ui small pink button" href="conteststatistics.php?cid=<?php echo $view_cid?>">比赛统计</a> -->
                 </div>

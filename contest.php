@@ -156,9 +156,10 @@ if (isset($_GET['cid'])) {
 		$view_errors .= "<br><br>";
 
 		$view_errors .= "<div class='btn-group'>";
-		$view_errors .= "<a href=contestrank.php?cid=$view_cid class='btn btn-primary'>$MSG_STANDING</a>";
-		$view_errors .= "<a href=contestrank-oi.php?cid=$view_cid class='btn btn-primary'>OI$MSG_STANDING</a>";
-		$view_errors .= "<a href=conteststatistics.php?cid=$view_cid class='btn btn-primary'>$MSG_STATISTICS</a>";
+		# 대회정보가 안보이게 수정
+		# $view_errors .= "<a href=contestrank.php?cid=$view_cid class='btn btn-primary'>$MSG_STANDING</a>";
+		# $view_errors .= "<a href=contestrank-oi.php?cid=$view_cid class='btn btn-primary'>OI$MSG_STANDING</a>";
+		# $view_errors .= "<a href=conteststatistics.php?cid=$view_cid class='btn btn-primary'>$MSG_STATISTICS</a>";
 		$view_errors .= "</div>";
 
 		$view_errors .= "<br><br>";
@@ -310,7 +311,7 @@ else {
 		if (trim($row['title'])=="")
 			$row['title'] = $MSG_CONTEST.$row['contest_id'];
 
-		$view_contest[$i][1] = "<a href='contest.php?cid=".$row['contest_id']."'>".$row['title']."</a>";
+		$view_contest[$i][1] = "<span class='btn btn-outline-primary'><a href='contest.php?cid=".$row['contest_id']."'>".$row['title']."</a></span>";
 		$start_time = strtotime($row['start_time']);
 		$end_time = strtotime($row['end_time']);
 		$now = time();
@@ -330,7 +331,7 @@ else {
 		}
 		else {
 			//running
-			$view_contest[$i][2] = "<span class='ui button pink'>$MSG_Running : </span>"." ".$row['start_time']."&nbsp;";
+			$view_contest[$i][2] = "<span class=''>$MSG_Running : </span>"." ".$row['start_time']."&nbsp;";
 			$view_contest[$i][2] .= "<span class='text-danger'>$MSG_LeftTime : </span>"." ".formatTimeLength($left)."</span>";
     }
 
