@@ -94,5 +94,11 @@ echo "</tbody></table>";
 </div>
 
 </div> <!-- /container -->
+<!-- 5초 간격으로 랭킹 정보 갱신 -->
+<script type="text/javascript">
+    setInterval(function(){
+      $("#rank").load(location.href+" #rank>*","");
+    },5000);
+</script>
 <?php include(dirname(__FILE__)."/footer.php");?>	
 </html>
