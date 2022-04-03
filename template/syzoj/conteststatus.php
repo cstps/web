@@ -164,12 +164,12 @@
 </script>
         <script src="template/bs3/auto_refresh.js?v=0.43" ></script>
         <script>
-  function selectPerson() {
+  function selectPerson() { // 발표자 선택해서 알림으로 보여주기
     var rows = document.getElementById("result-tab").getElementsByTagName("tr");
-      var cnt = Math.floor(Math.random() * (rows.length-1)) + 1;
-      var cells = rows[cnt].getElementsByTagName("td");
-      var cell_1 = cells[1].firstChild.firstChild.firstChild.data;
-      alert(cnt, cell_1);
+    var cnt = Math.floor(Math.random() * (rows.length-1)) + 1;
+    var cells = rows[cnt].getElementsByTagName("td");
+    var cell_1 = cells[1].firstChild.firstChild.firstChild.data;
+    alert("발표자 아이디는 : " + cell_1);
   }
 </script>
 <?php include("template/$OJ_TEMPLATE/footer.php");?>
