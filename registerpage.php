@@ -4,9 +4,23 @@
 	$OJ_CACHE_SHARE=false;
 	require_once('./include/cache_start.php');
     require_once('./include/db_info.inc.php');
-if(isset($OJ_REGISTER)&&!$OJ_REGISTER) exit(0);
+	// 비공개 회원가입을 경우 회원가입 안된다는 페이지 표시 22.4.4
+if(isset($OJ_REGISTER)&&!$OJ_REGISTER) {
+
+	$view_errors = "<center>";
+	$view_errors .= "<h3>비공개 회원가입</h3>";
+	$view_errors .= "<p>비공개 회원가입으로 운영되고 있습니다.</p>";
+	$view_errors .= "<br>";
+	$view_errors .= "<span class=text-success>선생님이 안내한 아이디를 이용해서 로그인 하세요</span>";
+	$view_errors .= "</center>";
+	$view_errors .= "<br><br>";
+
+	require("template/".$OJ_TEMPLATE."/error.php");
+	exit(0);
+}
+
 	require_once('./include/setlang.php');
-	$view_title= "Registe a new account";
+	$view_title= "Register a new account";
 	
 ///////////////////////////MAIN	
 	
