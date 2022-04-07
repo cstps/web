@@ -44,7 +44,11 @@
                     else if($rank==2)
                       echo "<div class=\"ui ribbon label\">";
                     else if($rank==3)
-                      echo "<div class=\"ui brown ribbon label\" style=\"background-color: #C47222 !important;\">";
+                      echo "<div class=\"ui ribbon label\">";
+                    else if($rank==4)
+                      echo "<div class=\"ui brown ribbon label\">";
+                    else if($rank==5)
+                      echo "<div class=\"ui brown ribbon label\">";
                     else
                       echo "<div>";
                     echo $rank++;

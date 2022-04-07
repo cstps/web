@@ -263,14 +263,19 @@ else {
 	$mycontests = "";
 	$wheremy = "";
 	if (isset($_SESSION[$OJ_NAME.'_user_id'])) {
+		// 대회 제출 이력이 있을 경우 대회 목록을 가져온다.
 		$sql = "select distinct contest_id from solution where contest_id>0 and user_id=?";
 		$result = pdo_query($sql,$_SESSION[$OJ_NAME.'_user_id']);
 
+		//대회 번호를 저장한다.
+		
 		foreach ($result as $row) {
 			$mycontests .= ",".$row[0];
-	  }
+	  	}
 
+		// 대회 제출 권한이 있는 경우 
 		$len = mb_strlen($OJ_NAME.'_');
+		
 
 		foreach ($_SESSION as $key => $value) {
 			if (($key[$len]=='m' || $key[$len]=='c') && intval(mb_substr($key,$len+1))>0) {
