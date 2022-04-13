@@ -22,7 +22,7 @@
 		}
  	}
         $view_title= $MSG_RANKLIST;
-	if(!isset($OJ_RANK_HIDDEN)) $OJ_RANK_HIDDEN="'admin','zhblue'";
+	if(!isset($OJ_RANK_HIDDEN)) $OJ_RANK_HIDDEN="'admin','seotos','root'";
 
         $scope="";
         if(isset($_GET['scope']))
@@ -44,7 +44,9 @@
                 if(isset($OJ_LANG)){
                         require_once("./lang/$OJ_LANG.php");
                 }
+
                 $page_size=50;
+                if(isset($_GET['prefix'])) $page_size=300;
                 //$rank = intval ( $_GET ['start'] );
                 if ($rank < 0)
                         $rank = 0;
@@ -64,7 +66,7 @@
                                         break;
                                 case 'm':
                                         $s=date('Y').'-'.date('m').'-01';
-                                        ;break;
+                                        break;
                                 default :
                                         $s=date('Y').'-01-01';
                         }

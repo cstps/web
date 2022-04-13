@@ -85,8 +85,8 @@
                     class="calendar icon"></i> <?php echo $MSG_CONTEST?></a>
             <a class="item <?php if ($url=="status.php") echo "active";?>" href="<?php echo $path_fix?>status.php"><i
                     class="tasks icon"></i><?php echo $MSG_STATUS?></a>
-            <a class="item <?php if ($url=="ranklist.php") echo "active";?>"
-                href="<?php echo $path_fix?>ranklist.php"><i class="signal icon"></i> <?php echo $MSG_RANKLIST?></a>
+            <a class="item <?php if ($url=="ranklist.php?scope=y") echo "active";?>"
+                href="<?php echo $path_fix?>ranklist.php?scope=y"><i class="signal icon"></i> <?php echo $MSG_RANKLIST?></a>
             <!--<a class="item <?php //if ($url=="contest.php") echo "active";?>" href="/discussion/global"><i class="comments icon"></i> 讨论</a>-->
             <a class="item <?php if ($url=="faqs.php") echo "active";?>" href="<?php echo $path_fix?>faqs.php"><i
                     class="help circle icon"></i> <?php echo $MSG_FAQ?></a>
