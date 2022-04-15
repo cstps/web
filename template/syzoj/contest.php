@@ -39,7 +39,7 @@
                     <a class="ui small blue button" href="contestrank.php?cid=<?php echo $view_cid?>">순위</a>                    
                     <a class="ui small yellow button" href="contestrank-oi.php?cid=<?php echo $view_cid?>">순위(점수반영)</a>                    
                     <a class="ui small positive button" href="status.php?cid=<?php echo $view_cid?>">제출정보</a>
-                    <!-- <a class="ui small pink button" href="conteststatistics.php?cid=<?php echo $view_cid?>">比赛统计</a> -->
+                    <!-- <a class="ui small pink button" href="conteststatistics.php?cid=<?php echo $view_cid?>">대회통계</a> -->
                 </div>
                 <div class="ui buttons right floated">
 

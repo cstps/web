@@ -162,6 +162,7 @@
 	$MSG_CHANGENUM_PROBLEM="문제번호 변경";
 	$MSG_UPDATE_DATABASE="데이터베이스 업데이트";
 	$MSG_BACKUP_DATABASE="데이터베이스 백업";
+	$MSG_SETDBINFO="기본설정변경";
 	$MSG_ONLINE="Online";
 	$MSG_SET_LOGIN_IP="IP 변경";
 	$MSG_PRIVILEGE_TYPE="권한 종류";
