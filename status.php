@@ -315,7 +315,7 @@ for ($i=0; $i<$rows_cnt; $i++) {
     else
       $view_status[$i][1] = "<a href='userinfo.php?user=".$row['user_id']."' title='".$row['nick']."'>".$row['user_id']."</a>";
   }
-  $view_status[$i]['nick']=$row['nick'];
+  //  별명 숨김 $view_status[$i]['nick']=$row['nick'];
 
   if ($row['contest_id']>0) {
     if (isset($end_time) && time() < $end_time) {
