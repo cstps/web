@@ -10,7 +10,17 @@ require_once('./include/db_info.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 $view_title = "$MSG_STATUS";
-
+// 로그인 하기 전에는 채점기록 숨기기 
+if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
+	if (isset($OJ_GUEST) && $OJ_GUEST) {
+		$_SESSION[$OJ_NAME.'_'.'user_id'] = "Guest";
+	}
+	else {
+		$view_errors = "<button><a href=loginpage.php>$MSG_Login</a></button>";
+		require("template/".$OJ_TEMPLATE."/error.php");
+		exit(0);
+	}
+}
 function formatTimeLength($length) {
   $hour = 0;
   $minute = 0;
