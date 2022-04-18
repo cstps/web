@@ -325,8 +325,7 @@ for ($i=0; $i<$rows_cnt; $i++) {
     else
       $view_status[$i][1] = "<a href='userinfo.php?user=".$row['user_id']."' title='".$row['nick']."'>".$row['user_id']."</a>";
   }
-  //  별명 숨김 $view_status[$i]['nick']=$row['nick'];
-
+  $view_status[$i]['nick']=$row['nick'];
   if ($row['contest_id']>0) {
     if (isset($end_time) && time() < $end_time) {
       $view_status[$i][2] = "<div><a href='problem.php?cid=".$row['contest_id']."&pid=".$row['num']."'>";
