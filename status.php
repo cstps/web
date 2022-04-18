@@ -325,7 +325,11 @@ for ($i=0; $i<$rows_cnt; $i++) {
     else
       $view_status[$i][1] = "<a href='userinfo.php?user=".$row['user_id']."' title='".$row['nick']."'>".$row['user_id']."</a>";
   }
-  $view_status[$i]['nick']=$row['nick'];
+  if(isset($_SESSION[$OJ_NAME.'_'.'administrator']))
+    $view_status[$i]['nick']=$row['nick'];
+  else
+    $view_status[$i]['nick']="비공개";  // 일반 사용자는 별명 숨김
+
   if ($row['contest_id']>0) {
     if (isset($end_time) && time() < $end_time) {
       $view_status[$i][2] = "<div><a href='problem.php?cid=".$row['contest_id']."&pid=".$row['num']."'>";
