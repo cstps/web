@@ -31,7 +31,10 @@ if (isset($OJ_LANG)) {
         echo "<td>".$OJ_CE_PENALTY."</td>";
         echo "<td>".$OJ_LANGMASK."</td>";
         echo "<td>".$OJ_REGISTER."</td>";
-        echo "<td>".$OJ_OI_MODE."</td>";
+        echo "<td><label class='switch'>
+        <input type='checkbox' name='switch'>
+        <div class='slider'></div>
+      </label> ".$OJ_OI_MODE."</td>";
         //echo "<td><a href=news_df_change.php?id=".$row['news_id']."&getkey=".$_SESSION[$OJ_NAME.'_'.'getkey'].">".($row['defunct']=="N"?"<span class=green>On</span>":"<span class=red>Off</span>")."</a>"."</td>";
         //echo "<td><a href=news_add_page.php?cid=".$row['news_id'].">Copy</a></td>";
         echo "</tr>";
