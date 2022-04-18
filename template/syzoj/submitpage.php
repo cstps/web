@@ -1,13 +1,7 @@
 <?php $show_title="제출 - $OJ_NAME"; ?>
 <?php include("template/$OJ_TEMPLATE/header.php");?>
 
-  <style>
-#source {
-    width: 80%;
-    height: 600px;
-}
-  </style>
-    
+  
 <center>
 
 <script src="<?php echo $OJ_CDN_URL?>include/checksource.js"></script>
@@ -50,10 +44,10 @@ echo"<option value=$i ".( $lastlang==$i?"selected":"").">
 <br>
 </span>
 <?php if($OJ_ACE_EDITOR){ ?>
-	<pre style="width:80%;height:600" cols=180 rows=20 id="source"><?php echo htmlentities($view_src,ENT_QUOTES,"UTF-8")?></pre><br>
+	<pre style="width:50%;height:300px" cols=180 rows=20 id="source"><?php echo htmlentities($view_src,ENT_QUOTES,"UTF-8")?></pre><br>
 	<input type=hidden id="hide_source" name="source" value=""/>
 <?php }else{ ?>
-	<textarea style="width:80%;height:600" cols=180 rows=20 id="source" name="source"><?php echo htmlentities($view_src,ENT_QUOTES,"UTF-8")?></textarea><br>
+	<textarea style="width:60%;height:300px" cols=180 rows=20 id="source" name="source"><?php echo htmlentities($view_src,ENT_QUOTES,"UTF-8")?></textarea><br>
 <?php }?>
 
 <?php if (isset($OJ_TEST_RUN)&&$OJ_TEST_RUN){?>
