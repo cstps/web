@@ -23,16 +23,11 @@
  
                     <img style="margin-top: -100%; "  src="<?php echo $grav_url; ?>">
                 </div>
-                <div class="content">
-                    <div class="header"><?php echo $nick?></div>
-                    <div class="meta">
-                        <a class="group"><?php echo $school?></a>
-                    </div>
+                <div class="ui top attached block content">
+                    <i class="check icon"></i>통과 : <?php echo $AC ?> 문제
+                    <div style="float: right;"><i class="star icon"></i>순위: <?php echo $Rank ?></div>
                 </div>
-                <div class="extra content">
-                    <a><i class="check icon"></i>통과 : <?php echo $AC ?> 문제</a>
-                    <a style="float: right; "><i class="star icon"></i>순위: <?php echo $Rank ?></a>
-                </div>
+                
             </div>
 
         </div>
@@ -43,16 +38,24 @@
                         <div class="ui grid">
                             <div class="eight wide column">
                                 <div class="ui grid">
+                                    <div class ="row">
+                                        <div class="column">
+                                            <h4 class="ui top attached block header">별명</h4>
+                                            <div class="ui bottom attached header"><?php echo $nick?>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="row">
                                         <div class="column">
                                            <h4 class="ui top attached block header">사용자ID</h4>
-                                           <div class="ui bottom attached segment"><?php echo $user?></div>
+                                           <div class="ui bottom attached header"><?php echo $user?></div>
                                         </div>
                                     </div>
                                       <div class="row">
                                           <div class="column">
                                               <h4 class="ui top attached block header">Email</h4>
-                                              <div class="ui bottom attached segment" class="font-content"><?php echo $email?></div>
+                                              <div class="ui bottom attached header" class="font-content"><?php echo $email?></div>
                                           </div>
                                       </div>
                                     <div class="row">
@@ -62,6 +65,8 @@
                                             <div class="ui bottom attached segment" class="font-content"><?php echo $school?></div>
                                         </div>
                                     </div>
+
+
                                     <!-- <div class="row">
                                         <div class="column">
                                             <h4 class="ui top attached block header">注册于</h4>
@@ -70,33 +75,6 @@
                                             </div>
                                         </div>
                                     </div> -->
-                                    <div class="row">
-                                        <div class="column">
-                                            <h4 class="ui top attached block header">통과한 문제</h4>
-                                            <div class="ui bottom attached segment">
-                                                <script language='javascript'>
-                                                  function p(id,c,point){
-                                                    document.write("<a href=problem.php?id="+id+">"+id+"</a>("+point+"점)");
-                                                  }
-                                                  <?php $sql="SELECT `problem_id`,count(1) from solution where `user_id`=? and result=4 group by `problem_id` ORDER BY `problem_id` ASC";
-                                                        
-                                                  if ($result=pdo_query($sql,$user)){ 
-                                                      foreach($result as $row){
-                                                        // 문제에서 점수 부분을 구한다. 
-                                                        $sql_pro_point = "SELECT `pro_point` from problem where `problem_id`=? ";
-                                                        $result_pro_point = pdo_query($sql_pro_point,$row[0]);                                                        
-                                                        // pdo_query 에서 쿼리의  ?에 해당하는 값을 pdo_query()의 두번째 매개변수로 전달하여 쿼리를 실행하면 결과는
-                                                        // 연관배열 형태로 돌려주기 때문에  key와 value로 값을 참조하고 기본 array로 반환하기 때문에 [0][키값] 형태로
-                                                        // 작성되어야 한다. 
-                                                        $point = $result_pro_point[0]['pro_point'];
-                                                        echo "p($row[0],$row[1],$point);";                                                        
-                                                      }
-                                                  }
-                                                  ?>
-                                                </script>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                             <div class="eight wide column">
@@ -116,62 +94,34 @@
                     </div>
 
                 </div>
-
-                <!-- <div class="row">
-                    <div class="column">
-                        <h4 class="ui top attached block header">帖子</h4>
-                        <div class="ui bottom attached <% if (!show_user.articles.length) { %>center aligned <% } %>segment">
-													  <% if (!show_user.articles.length) { %>该用户从未发表帖子<% } else { %>
-                            <table class="ui very basic table">
-                                <thead>
-                                    <tr>
-                                        <th>标题</th>
-                                        <th>时间</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% for (let article of show_user.articles) { %>
-                                    <tr>
-																			  <td><a href="<%= syzoj.utils.makeUrl(['article', article.id]) %>"><%= article.title %></a></td>
-                                        <td><%= syzoj.utils.formatDate(article.public_time) %></td>
-                                    </tr>
-                                    <% } %>
-                                </tbody>
-                            </table>
-													  <% } %>
-                        </div>
-                    </div>
-                </div> -->
-                <!-- <div class="row">
-                    <div class="column">
-                        <h4 class="ui top attached block header">比赛</h4>
-                        <div class="ui bottom attached segment">
-                            <table class="ui very basic table">
-                                <thead>
-                                    <tr>
-                                        <th>比赛</th>
-                                        <th>名次</th>
-                                        <th>积分</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% for (const history of ratingHistories) { %>
-                                    <tr>
-                                        <td><%= history.contestName %></td>
-                                        <td><%= history.rank != null ? history.rank + " / " + history.participants : '' %></td>
-                                        <td><%= history.value %> 
-                                            <% if(history.delta != null) { %> 
-                                                <span class="<%= history.delta >= 0 ? 'rating_up' : 'rating_down' %>">
-                                                (<%= (history.delta < 0 ? '' : '+') + history.delta %>)
-                                            <% } %>
-                                        </td>
-                                    </tr>
-                                    <% } %>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div> -->
+            </div>
+        </div>
+    </div>
+    <div class="row">
+            <div class="wide column">
+                <h4 class="ui top attached block header">통과한 문제</h4>
+                <div class="ui bottom attached segment">
+                    <script language='javascript'>
+                        function p(id,c,point){
+                        document.write("<a href=problem.php?id="+id+">"+id+"( "+point+"점) </a>");
+                        }
+                        <?php $sql="SELECT `problem_id`,count(1) from solution where `user_id`=? and result=4 group by `problem_id` ORDER BY `problem_id` ASC";
+                            
+                        if ($result=pdo_query($sql,$user)){ 
+                            foreach($result as $row){
+                            // 문제에서 점수 부분을 구한다. 
+                            $sql_pro_point = "SELECT `pro_point` from problem where `problem_id`=? ";
+                            $result_pro_point = pdo_query($sql_pro_point,$row[0]);                                                        
+                            // pdo_query 에서 쿼리의  ?에 해당하는 값을 pdo_query()의 두번째 매개변수로 전달하여 쿼리를 실행하면 결과는
+                            // 연관배열 형태로 돌려주기 때문에  key와 value로 값을 참조하고 기본 array로 반환하기 때문에 [0][키값] 형태로
+                            // 작성되어야 한다. 
+                            $point = $result_pro_point[0]['pro_point'];
+                            echo "p($row[0],$row[1],$point);";                                                        
+                            }
+                        }
+                        ?>
+                    </script>
+                </div>
             </div>
         </div>
     </div>
