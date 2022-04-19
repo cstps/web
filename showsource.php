@@ -12,6 +12,15 @@ if (!isset($_GET['id'])){
 	require("template/".$OJ_TEMPLATE."/error.php");
 	exit(0);
 }
+// 수행평가 모드 체크
+$exam_check_sql = "SELECT `id`,`exam_mode`,`register`FROM `setting` ";
+$exam_result = pdo_query($exam_check_sql);
+$exam_mode = $exam_result[0]['exam_mode'];
+if( ($exam_mode =='Y' && !isset($_SESSION[$OJ_NAME."_source_browser"]))){
+	$view_errors = "수행평가 모드입니다.";
+	require("template/".$OJ_TEMPLATE."/error.php");
+	exit(0);
+}
 $ok=false;
 $id=intval($_GET['id']);
 $sql="SELECT * FROM `solution` WHERE `solution_id`=?";
@@ -111,6 +120,7 @@ if(isset($_SESSION[$OJ_NAME.'_'.'s'.$sproblem_id])){
 
 }
 $view_source="No source code available!";
+
 if (isset($_SESSION[$OJ_NAME.'_'.'user_id'])&&$row && $owner ==$_SESSION[$OJ_NAME.'_'.'user_id']) $ok=true;
 if (isset($_SESSION[$OJ_NAME.'_'.'source_browser'])) $ok=true;
 

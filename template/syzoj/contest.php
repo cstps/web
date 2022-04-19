@@ -36,9 +36,20 @@
         <div class="row">
             <div class="column">
                 <div class="ui buttons">
+                    <?php
+                        // 수행평가 모드 체크
+                        $exam_check_sql = "SELECT `id`,`exam_mode`,`register`FROM `setting` ";
+                        $exam_result = pdo_query($exam_check_sql);
+                        $exam_mode = $exam_result[0]['exam_mode'];
+                        if($exam_mode=='N' || isset($_SESSION[$OJ_NAME.'_'.'vip']) || isset($_SESSION[$OJ_NAME.'_'.'administrator']) ){
+                     ?>
                     <a class="ui small blue button" href="contestrank.php?cid=<?php echo $view_cid?>">순위</a>                    
                     <a class="ui small yellow button" href="contestrank-oi.php?cid=<?php echo $view_cid?>">순위(점수반영)</a>                    
                     <a class="ui small positive button" href="status.php?cid=<?php echo $view_cid?>">제출정보</a>
+                    <?php } 
+                    else {
+                        echo "<a class='ui small blue button'>수행평가 모드입니다. 세부적인 정보를 볼 수 없습니다.</a>";                                            
+                    }?>
                     <!-- <a class="ui small pink button" href="conteststatistics.php?cid=<?php echo $view_cid?>">대회통계</a> -->
                 </div>
                 <div class="ui buttons right floated">
