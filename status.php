@@ -472,20 +472,30 @@ for ($i=0; $i<$rows_cnt; $i++) {
       $view_status[$i][6] = $language_name[$row['language']];
     }
     else {
-      if( (isset($end_time) && time() < $end_time)
-		||(isset($_SESSION[$OJ_NAME.'_'.'user_id']) && strtolower($row['user_id'])==strtolower($_SESSION[$OJ_NAME.'_'.'user_id'])) 
-		||isset($_SESSION[$OJ_NAME.'_'.'source_browser'])
-	)
-        $view_status[$i][6] = "<a target=_self href=showsource.php?id=".$row['solution_id'].">".$language_name[$row['language']]."</a>";
+      // 수행평가 모드 체크
+      $exam_check_sql = "SELECT `id`,`exam_mode`,`register`FROM `setting` ";
+      $exam_result = pdo_query($exam_check_sql);
+      $exam_mode = $exam_result[0]['exam_mode'];
+
+      if( (isset($end_time) && time() < $end_time)||
+          (isset($_SESSION[$OJ_NAME.'_'.'user_id']) && strtolower($row['user_id'])==strtolower($_SESSION[$OJ_NAME.'_'.'user_id'])) ||
+           isset($_SESSION[$OJ_NAME.'_'.'source_browser'])
+	    ){        
+        if($exam_mode =='Y')
+          $view_status[$i][6] = $language_name[$row['language']];
+        else
+          $view_status[$i][6] = "<a target=_self href=showsource.php?id=".$row['solution_id'].">".$language_name[$row['language']]."</a>";
+      }
       else
         $view_status[$i][6] = $language_name[$row['language']];
 
       if ($row["problem_id"]>0) {
         if ($row['contest_id']>0) {
          if (isset($end_time)&&time()<$end_time || isset($_SESSION[$OJ_NAME.'_'.'source_browser']))
+          if($exam_mode =='N')
             $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?cid=".$row['contest_id']."&pid=".$row['num']."&sid=".$row['solution_id']."\">Edit</a>";
           else
-            $view_status[$i][6] .= "";
+            $view_status[$i][6] .= "/수행모드";
         }
         else {
           $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?id=".$row['problem_id']."&sid=".$row['solution_id']."\">Edit</a>";

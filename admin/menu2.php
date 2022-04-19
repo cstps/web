@@ -101,17 +101,21 @@
     </div>
   </div>
 
-<?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])){?>
+
   <div class="btn-group" role="menu">
     <button type="button" class="btn btn-secondary dropdown-toggle btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
       <?php echo $MSG_SYSTEM."-".$MSG_ADMIN ?> <span class="caret"></span>
     </button>
-    <div class="dropdown-menu">
+    
+    <div class="dropdown-menu">   
+    <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])){?>
       <a class="dropdown-item btn-sm" href="rejudge.php" target="main" title="<?php echo $MSG_HELP_REJUDGE?>"><b><?php echo $MSG_SYSTEM."-".$MSG_REJUDGE?></b></a>      
       <a class="dropdown-item btn-sm" href="source_give.php" target="main" title="<?php echo $MSG_HELP_GIVESOURCE?>"><b><?php echo $MSG_SYSTEM."-".$MSG_GIVESOURCE?></b></a>
       <a class="dropdown-item btn-sm" href="../online.php" target="main"><b><?php echo $MSG_SYSTEM."-".$MSG_HELP_ONLINE?></b></a>      
       <a class="dropdown-item btn-sm" href="update_db.php" target="main" title="<?php echo $MSG_HELP_UPDATE_DATABASE?>"><b><?php echo $MSG_SYSTEM."-".$MSG_UPDATE_DATABASE?></b></a>
       <a class="dropdown-item btn-sm" href="backup.php" target="main" title="<?php echo $MSG_BACKUP_DATABASE?>"><b><?php echo $MSG_SYSTEM."-".$MSG_BACKUP_DATABASE?></b></a>
+      <?php }?>
+      <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'vip'])){?>
       <a class="dropdown-item btn-sm" href="setdbinfo.php" target="main" title="<?php echo $MSG_SETDBINFO?>"><b><?php echo $MSG_SYSTEM."-".$MSG_SETDBINFO?></b></a>
     </div>
   </div>
