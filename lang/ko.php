@@ -4,6 +4,7 @@
 	$MSG_BBS="묻고답하기";
 	$MSG_HOME="처음화면";
 	$MSG_PROBLEMS="문제";
+	$MSG_DRAWPROBLEMS ="그림문제";
 	$MSG_STATUS="채점기록";
 	$MSG_RANKLIST="순위";
 	$MSG_CONTEST="대회";

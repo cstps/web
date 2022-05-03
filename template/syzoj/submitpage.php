@@ -44,10 +44,10 @@ echo"<option value=$i ".( $lastlang==$i?"selected":"").">
 <br>
 </span>
 <?php if($OJ_ACE_EDITOR){ ?>
-	<pre style="width:50%;height:300px" cols=180 rows=20 id="source"><?php echo htmlentities($view_src,ENT_QUOTES,"UTF-8")?></pre><br>
+	<pre style="width:80%;height:300px" id="source"><?php echo htmlentities($view_src,ENT_QUOTES,"UTF-8")?></pre><br>
 	<input type=hidden id="hide_source" name="source" value=""/>
 <?php }else{ ?>
-	<textarea style="width:60%;height:300px" cols=180 rows=20 id="source" name="source"><?php echo htmlentities($view_src,ENT_QUOTES,"UTF-8")?></textarea><br>
+	<textarea style="width:80%;height:300px" id="source" name="source"><?php echo htmlentities($view_src,ENT_QUOTES,"UTF-8")?></textarea><br>
 <?php }?>
 
 <?php if (isset($OJ_TEST_RUN)&&$OJ_TEST_RUN){?>
@@ -308,7 +308,7 @@ function loadFromBlockly(){
 	    enableBasicAutocompletion: true,
 	    enableSnippets: true,
 	    enableLiveAutocompletion: true,
-		fontSize: "18pt", // font size 키우기
+		fontSize: "13pt", // font size 키우기
 
     });
    reloadtemplate($("#language").val()); 
