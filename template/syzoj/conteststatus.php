@@ -170,7 +170,8 @@
           var cells = rows[cnt].getElementsByTagName("td");
           //var cell_1 = cells[1].firstChild.firstChild.firstChild.data;
           var cell_1 = cells[1].firstChild.firstChild.firstChild;
-          alert("발표자 : " + cell_1.nodeValue);
+          var wnd = window.open("", "발표자", "width=300,height=50,left=400,top=200");
+wnd.document.write("<html><head><title>발표자!</title></head><body> <h1>발표자</h1><h1 style='font-size:50pt;color:red;padding:5px;border:1px solid black;'>"+cell_1.nodeValue+"</h1></body></html>");
           
 
         }
