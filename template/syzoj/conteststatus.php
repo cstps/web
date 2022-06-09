@@ -93,7 +93,7 @@
       <tr>
         <th>번호</th>
         <th>사용자</th>
-        <!-- 별명 숨김<th><?php echo $MSG_NICK?></th> -->
+        <th><?php echo $MSG_NICK?></th>
         <th>제목</th>
         <th>결과</th>
         <th>메모리</th>

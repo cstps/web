@@ -313,11 +313,21 @@ for ($i=0; $i<$rows_cnt; $i++) {
   
   $view_status[$i][0] = $row['solution_id'];
        
+  // 수행평가 모드 체크
+  $exam_check_sql = "SELECT `id`,`exam_mode`,`register`FROM `setting` ";
+  $exam_result = pdo_query($exam_check_sql);
+  $exam_mode = $exam_result[0]['exam_mode'];
+
   if ($row['contest_id']>0) {
     if (isset($_SESSION[$OJ_NAME.'_'.'administrator']))
       $view_status[$i][1] = "<a href='contestrank.php?cid=".$row['contest_id']."&user_id=".$row['user_id']."#".$row['user_id']."' title='".$row['ip']."'>".$row['user_id']."</a>";
     else
+    if($exam_mode =='N'){
       $view_status[$i][1] = "<a href='contestrank.php?cid=".$row['contest_id']."&user_id=".$row['user_id']."#".$row['user_id']."'>".$row['user_id']."</a>";
+    }
+    else{
+      $view_status[$i][1] = "수행모드";
+    }
   }
   else {
     if (isset($_SESSION[$OJ_NAME.'_'.'administrator']))
@@ -472,10 +482,7 @@ for ($i=0; $i<$rows_cnt; $i++) {
       $view_status[$i][6] = $language_name[$row['language']];
     }
     else {
-      // 수행평가 모드 체크
-      $exam_check_sql = "SELECT `id`,`exam_mode`,`register`FROM `setting` ";
-      $exam_result = pdo_query($exam_check_sql);
-      $exam_mode = $exam_result[0]['exam_mode'];
+
 
       if( (isset($end_time) && time() < $end_time)||
           (isset($_SESSION[$OJ_NAME.'_'.'user_id']) && strtolower($row['user_id'])==strtolower($_SESSION[$OJ_NAME.'_'.'user_id'])) ||
@@ -498,7 +505,10 @@ for ($i=0; $i<$rows_cnt; $i++) {
             $view_status[$i][6] .= "/수행모드";
         }
         else {
-          $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?id=".$row['problem_id']."&sid=".$row['solution_id']."\">Edit</a>";
+          if($exam_mode =='N')
+            $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?id=".$row['problem_id']."&sid=".$row['solution_id']."\">Edit</a>";
+          else
+            $view_status[$i][6] .= "/수행모드";
         }
       }
     }
