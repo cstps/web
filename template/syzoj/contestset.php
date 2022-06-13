@@ -6,11 +6,12 @@
       <div class="seven wide column">
           <form method=post action=contest.php >
             <div class="ui search" style="width: 280px; height: 28px; margin-top: -5.3px; ">
-              <div class="ui left icon input" style="width: 100%; ">
+              <span class="ui left label">현재시간：<span id=nowdate><?php echo date("Y-m-d H:i:s")?></span></span>
+              <div class="ui left icon input" style="width: 100%; ">                
                 <input class="prompt" style="width: 100%; " type="text" value="" placeholder=" 대회이름 …" name="keyword">
                 <i class="search icon"></i>
                 <a  class="ui button blue"  href="contest.php" ><?php echo $MSG_VIEW_ALL_CONTESTS ?></a>
-              <span class="ui button">현재시간：<span id=nowdate><?php echo date("Y-m-d H:i:s")?></span></span></div>
+              </div>
               <div class="results" style="width: 100%; "></div>
             </div>
           </form>
