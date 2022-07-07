@@ -3,7 +3,7 @@
 <div class="padding">
 <div class="ui grid" style="margin-bottom: 10px; ">
     <div class="row" style="white-space: nowrap; ">
-      <div class="seven wide column">
+        <div class="seven wide column">
           <form method=post action=contest.php >
             <div class="ui search" style="width: 280px; height: 28px; margin-top: -5.3px; ">
               <span class="ui left label">현재시간：<span id=nowdate><?php echo date("Y-m-d H:i:s")?></span></span>
@@ -15,16 +15,11 @@
               <div class="results" style="width: 100%; "></div>
             </div>
           </form>
-
-      </div>
-
-      <div class="nine wide right aligned column">
-
-      </div>
+        </div>
     </div>
   </div>
 
-      <div style="margin-bottom: 30px; ">
+  <div style="margin-bottom: 30px; ">
     
     <?php
       if(!isset($page)) $page=1;
@@ -33,21 +28,21 @@
       $start=$page>$section?$page-$section:1;
       $end=$page+$section>$view_total_page?$view_total_page:$page+$section;
     ?>
-<div style="text-align: center; ">
-  <div class="ui pagination menu" style="box-shadow: none; ">
-    <a class="<?php if($page==1) echo "disabled "; ?>icon item" href="<?php if($page<>1) echo "contest.php?page=".($page-1); ?>" id="page_prev">  
-      <i class="left chevron icon"></i>
-    </a>
-    <?php
-      for ($i=$start;$i<=$end;$i++){
-        echo "<a class=\"".($page==$i?"active ":"")."item\" href=\"contest.php?page=".$i."\">".$i."</a>";
-      }
-    ?>
-    <a class="<?php if($page==$view_total_page) echo "disabled "; ?> icon item" href="<?php if($page<>$view_total_page) echo "contest.php?page=".($page+1); ?>" id="page_next">
-    <i class="right chevron icon"></i>
-    </a>  
+    <div style="text-align: center; ">
+      <div class="ui pagination menu" style="box-shadow: none; ">
+        <a class="<?php if($page==1) echo "disabled "; ?>icon item" href="<?php if($page<>1) echo "contest.php?page=".($page-1); ?>" id="page_prev">  
+          <i class="left chevron icon"></i>
+        </a>
+        <?php
+          for ($i=$start;$i<=$end;$i++){
+            echo "<a class=\"".($page==$i?"active ":"")."item\" href=\"contest.php?page=".$i."\">".$i."</a>";
+          }
+        ?>
+        <a class="<?php if($page==$view_total_page) echo "disabled "; ?> icon item" href="<?php if($page<>$view_total_page) echo "contest.php?page=".($page+1); ?>" id="page_next">
+        <i class="right chevron icon"></i>
+        </a>  
+      </div>
   </div>
-</div>
 
 </div>
     <table class="ui very basic center aligned table">
