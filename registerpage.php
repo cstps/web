@@ -5,7 +5,13 @@
 	require_once('./include/cache_start.php');
     require_once('./include/db_info.inc.php');
 	// 비공개 회원가입을 경우 회원가입 안된다는 페이지 표시 22.4.4
-if(isset($OJ_REGISTER)&&!$OJ_REGISTER) {
+
+	// DB에서 확인하도록 수정
+	$sql="SELECT `register` FROM `setting` ";
+	$result = pdo_query($sql);
+	$row =  $result[0];
+
+if( $row['register']==0) { // 회원가입 off인 경우
 
 	$view_errors = "<center>";
 	$view_errors .= "<h3>비공개 회원가입</h3>";
