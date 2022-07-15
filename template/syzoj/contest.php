@@ -41,7 +41,7 @@
                         $exam_check_sql = "SELECT `id`,`exam_mode`,`register`FROM `setting` ";
                         $exam_result = pdo_query($exam_check_sql);
                         $exam_mode = $exam_result[0]['exam_mode'];
-                        if($exam_mode=='N' || isset($_SESSION[$OJ_NAME.'_'.'vip']) || isset($_SESSION[$OJ_NAME.'_'.'administrator']) ){
+                        if($exam_mode==0 || isset($_SESSION[$OJ_NAME.'_'.'vip']) || isset($_SESSION[$OJ_NAME.'_'.'administrator']) ){
                      ?>
                     <a class="ui small blue button" href="contestrank.php?cid=<?php echo $view_cid?>">순위</a>                    
                     <a class="ui small yellow button" href="contestrank-oi.php?cid=<?php echo $view_cid?>">순위(점수반영)</a>                    
