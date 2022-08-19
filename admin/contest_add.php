@@ -194,7 +194,16 @@ else{
       }
       ?>
       >&nbsp;
-      Minute: <input class=input-mini type=text name=sminute value=00 size=2 >
+      Minute: <input class=input-mini type=text name=sminute value=
+      <?php
+      if (isset($_GET['cid'])){
+        echo date('i',strtotime($starttime));
+      }
+      else{
+          echo "00";
+      }         
+      ?>
+      size=2 >
     </p>
     <p align=left>
       <?php echo $MSG_CONTEST.$MSG_End?>:
@@ -216,7 +225,16 @@ else{
             echo (date('H')+4)%24;
         }
       ?>>&nbsp;
-      Minute: <input class=input-mini type=text name=eminute value=00 size=2 >
+      Minute: <input class=input-mini type=text name=eminute value=
+      <?php
+      if (isset($_GET['cid'])){
+        echo date('i',strtotime($endtime));
+      }
+      else{
+          echo "00";
+      }         
+      ?>
+      size=2 >
     </p>
     <br>
     <p align=left>
