@@ -117,11 +117,13 @@ else{
     $sql = "SELECT * FROM contest WHERE `contest_id`=?";
     $result = pdo_query($sql,$cid);
     $row = $result[0];
-    $title = $row['title']."-Copy";
+    $title = $row['title']." copy";
 
     $private = $row['private'];
     $langmask = $row['langmask'];
     $description = $row['description'];
+    $starttime = $row['start_time'];
+    $endtime = $row['end_time'];
 
     $plist = "";
     $sql = "SELECT `problem_id` FROM `contest_problem` WHERE `contest_id`=? ORDER BY `num`";
@@ -174,14 +176,46 @@ else{
     </p>
     <p align=left>
       <?php echo $MSG_CONTEST.$MSG_Start?>:
-      <input class=input-large type=date name='startdate' value='<?php echo date('Y').'-'. date('m').'-'.date('d')?>' size=4 >
-      Hour: <input class=input-mini type=text name=shour size=2 value=<?php echo date('H')?>>&nbsp;
+      <input class=input-large type=date name='startdate' value=
+      <?php 
+      if (isset($_GET['cid'])){
+          echo date('Y-m-d',strtotime($starttime));
+      }
+      else{
+          echo date('Y').'-'. date('m').'-'.date('d');
+      } 
+      ?> size=4 >
+      Hour: <input class=input-mini type=text name=shour size=2 value=
+      <?php 
+      if (isset($_GET['cid'])){
+        echo date('H',strtotime($starttime));
+      }else{
+        echo date('H');
+      }
+      ?>
+      >&nbsp;
       Minute: <input class=input-mini type=text name=sminute value=00 size=2 >
     </p>
     <p align=left>
       <?php echo $MSG_CONTEST.$MSG_End?>:
-      <input class=input-large type=date name='enddate' value='<?php echo date('Y').'-'. date('m').'-'.date('d')?>' size=4 >
-      Hour: <input class=input-mini type=text name=ehour size=2 value=<?php echo (date('H')+4)%24?>>&nbsp;
+      <input class=input-large type=date name='enddate' value=
+      <?php 
+      if (isset($_GET['cid'])){
+        echo date('Y-m-d',strtotime($endtime));
+      }
+      else{
+          echo date('Y').'-'. date('m').'-'.date('d');
+      }         
+      ?> size=4 >
+      Hour: <input class=input-mini type=text name=ehour size=2 value=
+      <?php 
+        if (isset($_GET['cid'])){
+          echo date('H',strtotime($endtime));
+        }
+        else{
+            echo (date('H')+4)%24;
+        }
+      ?>>&nbsp;
       Minute: <input class=input-mini type=text name=eminute value=00 size=2 >
     </p>
     <br>
