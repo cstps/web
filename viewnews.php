@@ -23,7 +23,7 @@ $sql = "select * "
 . "LIMIT 50";
 $result = mysql_query_cache( $sql ); //mysql_escape_string($sql));
 if ( !$result ) {
-	$new_title = $news_content = "公告不存在!";
+	$new_title = $news_content = "게시글이 없음!";
 } else {
 	foreach ( $result as $row ) {
 		$news_title=$row['title'];

@@ -148,6 +148,7 @@
 	$MSG_EXPLANATION="설명";
 	$MSG_LIST="리스트";
 	$MSG_NEWS="공지사항";
+	$CODING_MSG_NEWS = "IT-NEWS";
 	$MSG_CONTENTS="내용";
 	$MSG_SAVE="저장";	
 	
