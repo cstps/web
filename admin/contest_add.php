@@ -90,8 +90,9 @@ if(isset($_POST['startdate'])){
       }
     }
     //echo $sql_1;
-    $sql = "UPDATE `problem` SET defunct='N' WHERE `problem_id` IN ($plist)";
-    pdo_query($sql) ;
+    // 22.08.24 대회 문제를 등록해도 기본 공개/비공개 정보를 그대로 유지 되도록 수정
+    // $sql = "UPDATE `problem` SET defunct='N' WHERE `problem_id` IN ($plist)";
+    // pdo_query($sql) ;
   }
 
   $sql = "DELETE FROM `privilege` WHERE `rightstr`=?";

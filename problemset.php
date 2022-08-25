@@ -121,6 +121,12 @@ if ($OJ_FREE_PRACTICE){  // open free practice without limit of contest using
 
 }else {  //page problems (not include in contests period)
 	$now = strftime("%Y-%m-%d %H:%M",time());
+
+	// 비공개로 되어 있지 않은 문제는 비공개 대회에 있다고 해도 보이도록 수정
+	$sql = "SELECT * FROM (SELECT ROW_NUMBER() over(order by problem_id) AS ROWNUM, `problem_id`,`title`,`source`,`submit`,`accepted`,defunct " .
+	"FROM `problem` WHERE `defunct`='N' ORDER BY `problem_id` ) A WHERE $filter_sql";
+
+	/*
 	// @ROWNUM 은 순번이 정렬되지 않는 문제가 있어 ROW_NUMBER()를 활용해야 한다. 
 	$sql = "SELECT * FROM (SELECT ROW_NUMBER() over(order by problem_id) AS ROWNUM, `problem_id`,`title`,`source`,`submit`,`accepted`,defunct " .
 	"FROM `problem`, (SELECT @ROWNUM := 0) TEMP " .
@@ -131,6 +137,7 @@ if ($OJ_FREE_PRACTICE){  // open free practice without limit of contest using
 			 " AND (c.`defunct` = 'N' AND '$now'<c.`end_time`)" .    // option style show all non-running contest
 			//"and (c.`end_time` >  '$now'  OR c.private =1)" .    // original style , hidden all private contest problems
 	") ORDER BY `problem_id` ) A WHERE $filter_sql";
+	*/
 }
 // End Page Setting
 

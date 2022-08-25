@@ -34,11 +34,17 @@ if (isset($_GET['id'])) {
 	else if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor']))
 		$sql = "SELECT * FROM `problem` WHERE `problem_id`=?";
 	else
+
+		// 대회에서 선택한 문제 여부가 아닌 공개/비공개 문제에 따라 보이도록 하기
+		$sql = "SELECT * FROM `problem` WHERE `problem_id`=? AND `defunct`='N' ";
+		/*
 		$sql = "SELECT * FROM `problem` WHERE `problem_id`=? AND `defunct`='N' AND `problem_id` NOT IN (
 				SELECT `problem_id` FROM `contest_problem` WHERE `contest_id` IN (
 					SELECT `contest_id` FROM `contest` WHERE ( `end_time`>'$now' and defunct='N' ) or `private`='1'    
 				)
-			)";        //////////  people should not see the problem used in contest before they end by modifying url in browser address bar
+			)";        
+		*/
+		//////////  people should not see the problem used in contest before they end by modifying url in browser address bar
 				   /////////   if you give students opportunities to test their result out side the contest ,they can bypass the penalty time of 20 mins for
 	                           /////////   each non-AC sumbission in contest. if you give them opportunities to view problems before exam ,they will ask classmates to write
 	                           /////////   code for them in advance, if you want to share private contest problem to practice you should modify the contest into public
@@ -117,15 +123,15 @@ if (count($result)!=1) {
 
 	if (isset($_GET['id'])) {
 		$id = intval($_GET['id']);
+		
+		// 대회에서 사용 여부와 상관없이 되도록... 여기를 수정해 주어야 할듯
 
-	      	if(count($used_in_contests)>0){
-
-	      		if (!(isset($OJ_EXAM_CONTEST_ID)||isset($OJ_ON_SITE_CONTEST_ID))) {
+	    if(count($used_in_contests)>0){
+      		if (!(isset($OJ_EXAM_CONTEST_ID)||isset($OJ_ON_SITE_CONTEST_ID))) {
 					$view_errors.= "<hr><br>$MSG_PROBLEM_USED_IN";
 					/* 비공개 대회에서 사용중이라는 정보만 제공
 					foreach($used_in_contests as $contests){
 						$view_errors.= "<a class='label label-warning' href='contest.php?cid=". $contests[0]."'>".$contests[1]." </a><br>";	
-					
 					}
 					*/
 					//echo "</div>";
