@@ -124,13 +124,58 @@
                         <?php
                         $sql_users = "select * FROM `users` where defunct='N' ORDER BY `solved` DESC LIMIT 10";
                         $result_users = mysql_query_cache( $sql_users );
+
+
                         if ( $result_users ) {
+
                             $i = 1;
                             foreach ( $result_users as $row ) {
-                                echo "<tr>"."<td>".$i++."</td>"."<td>"
+                                // 랭크 정보도 추가 
+                                $solCnt = $row['solved']; // 통과 개수
+                                
+                                $rankX = 0; // 이미지 표시 위치
+                                $rankY = 0; // 
+
+                                $level_up_cnt = 0; // 레벨업하기 위한 문제 개수
+                                $hobong = 0;        // 레벨의 호봉 최대치
+                                
+                                if($solCnt<50){
+                                        // 10문제가 레벨업 기준값
+                                        $level_up_cnt = 10;
+                                        $rankX = ($solCnt - ($solCnt % $level_up_cnt))/$level_up_cnt;                             
+                                }
+                                else if($solCnt<98){
+                                        // 8문제가 레벨업 기준값
+                                        $level_up_cnt = 8;
+                                        $rankX = (($solCnt-50) - (($solCnt-50)% $level_up_cnt))/$level_up_cnt;
+                                        $rankY = 1;
+                                }
+                                else{
+                                        // 6문제가 레벨업 기준값
+                                        $level_up_cnt = 6;
+                                        $rankX = (($solCnt-98) - (($solCnt-98)% $level_up_cnt))/$level_up_cnt;
+                                        for($rankY = 2, $hobong = 6;$rankX>$level_up_cnt;){
+                                                $rankX -=$level_up_cnt;
+                                                $rankY++;
+                                                $hobong++;
+                                        }        
+                                }
+
+                                $rankX *=(-25);
+                                $rankX .="px";
+                                $rankY *=(-25);
+                                $rankY .="px";
+
+                                echo "<tr><td><div style='
+                                display:inline-block;
+                                width:25px;
+                                height:25px;
+                                background:url(../../../image/rank25.jpg);
+                                background-position: $rankX $rankY;
+                                '></div>".str_pad($i++,2,"0",STR_PAD_LEFT)."</td><td>"
                                     ."<a href=\"userinfo.php?user=".$row["user_id"]."\">"
                                     .$row["user_id"]."</a></td>"
-                                    ."<td>".$row["solved"]."</td>"."</tr>";
+                                    ."<td>".$row["solved"]."</td></tr>";
                             }
                         }
                         ?>
