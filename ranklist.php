@@ -146,16 +146,15 @@
                         $rankY *=(-25);
 
                         $rankY .="px";
-                        $view_rank[$i][0]= "
-                        <div style='
-                                display:inline-block;
-                                width:25px;
-                                height:25px;
-                                background:url(../../../image/rank25.jpg);
-                                background-position: $rankX $rankY;
-                        '></div>".str_pad($rank,3,"0",STR_PAD_LEFT);
+                        $view_rank[$i][0]= str_pad($rank,3,"0",STR_PAD_LEFT);
 
-                        $view_rank[$i][1]=  "<div><a href='userinfo.php?user=" .htmlentities ( $row['user_id'],ENT_QUOTES,"UTF-8") . "'>" . $row['user_id'] . "</a>"."</div>";
+                        $view_rank[$i][1]=  "<div><div style='
+                        display:inline-block;
+                        width:25px;
+                        height:25px;
+                        background:url(../../../image/rank25.jpg);
+                        background-position: $rankX $rankY;
+                        '></div><a href='userinfo.php?user=" .htmlentities ( $row['user_id'],ENT_QUOTES,"UTF-8") . "'>" . $row['user_id'] . "</a>"."</div>";
                         // 별명 숨김 $view_rank[$i][2]=  "<div class=center>" . htmlentities ( $row['nick'] ,ENT_QUOTES,"UTF-8") ."</div>";
                         $view_rank[$i][3]=  "<div class=center><a href='status.php?user_id=" .htmlentities ( $row['user_id'],ENT_QUOTES,"UTF-8") ."&jresult=4'>" . $row['solved']."</a>"."</div>";
                         $view_rank[$i][4]=  "<div class=center><a href='status.php?user_id=" . htmlentities ($row['user_id'],ENT_QUOTES,"UTF-8") ."'>" . $row['submit'] . "</a>"."</div>";

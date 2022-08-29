@@ -111,12 +111,12 @@
             </div>
             <h4 class="ui top attached block header"><i class="ui signal icon"></i><?php echo $MSG_RANKLIST;?></h4>
             <div class="ui bottom attached segment">
-                <table class="ui very basic center aligned table" style="table-layout: fixed; ">
+                <table class="ui very basic aligned table" style="table-layout: fixed; ">
                     <thead>
                         <tr>
-                            <th style="width: 30%; ">순위</th>
-                            <th style="width: 40%; "><?php echo $MSG_USER_ID;?></th>
-                            <th style="width: 30%; "><?php echo $MSG_SOVLED ;?></th>
+                            <th style="width: 20%; ">순위</th>
+                            <th style="width: 55%; "><?php echo $MSG_USER_ID;?></th>
+                            <th style="width: 25%; "><?php echo $MSG_SOVLED ;?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -166,14 +166,14 @@
                                 $rankY *=(-25);
                                 $rankY .="px";
 
-                                echo "<tr><td><div style='
-                                display:inline-block;
-                                width:25px;
-                                height:25px;
-                                background:url(../../../image/rank25.jpg);
-                                background-position: $rankX $rankY;
-                                '></div>".str_pad($i++,2,"0",STR_PAD_LEFT)."</td><td>"
-                                    ."<a href=\"userinfo.php?user=".$row["user_id"]."\">"
+                                echo "<tr><td>".str_pad($i++,2,"0",STR_PAD_LEFT)."</td><td>"
+                                    ."<div style='
+                                    display:inline-block;
+                                    width:25px;
+                                    height:25px;
+                                    background:url(../../../image/rank25.jpg);
+                                    background-position: $rankX $rankY;
+                                    '></div><a href=\"userinfo.php?user=".$row["user_id"]."\">"
                                     .$row["user_id"]."</a></td>"
                                     ."<td>".$row["solved"]."</td></tr>";
                             }

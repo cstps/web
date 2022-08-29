@@ -14,7 +14,7 @@
       <button class="ui mini button" type="submit"><?php echo $MSG_SEARCH?></button>
     </div>
   </form>
-	    <table class="ui very basic center aligned table" style="table-layout: fixed; ">
+	    <table class="ui very basic aligned table" style="table-layout: fixed; ">
 	        <thead>
 	        <tr>
 	            <th style="width: 60px; "><?php echo $MSG_Number?></th>
