@@ -1,6 +1,21 @@
 <?php 
 require_once("./include/db_info.inc.php");
-if(isset($OJ_REGISTER)&&!$OJ_REGISTER) exit(0);
+$sql="SELECT `register` FROM `setting` ";
+$result = pdo_query($sql);
+$row =  $result[0];
+if( $row['register']==0) { // 회원가입 off인 경우
+
+	$view_errors = "<center>";
+	$view_errors .= "<h3>비공개 회원가입</h3>";
+	$view_errors .= "<p>비공개 회원가입으로 운영되고 있습니다.</p>";
+	$view_errors .= "<br>";
+	$view_errors .= "<span class=text-success>선생님이 안내한 아이디를 이용해서 로그인 하세요</span>";
+	$view_errors .= "</center>";
+	$view_errors .= "<br><br>";
+	
+	require("template/".$OJ_TEMPLATE."/error.php");
+	exit(0);
+}
 require_once("./include/my_func.inc.php");
 if(isset($OJ_CSRF)&&$OJ_CSRF)require_once("./include/csrf_check.php");
 $err_str="";
@@ -10,37 +25,38 @@ $user_id=trim($_POST['user_id']);
 $len=strlen($user_id);
 $email=trim($_POST['email']);
 $school=trim($_POST['school']);
-if(isset($OJ_VCODE)&&$OJ_VCODE)$vcode=trim($_POST['vcode']);
-if($OJ_VCODE&&($vcode!= $_SESSION[$OJ_NAME.'_'."vcode"]||$vcode==""||$vcode==null) ){
+$vcode=trim($_POST['vcode']);
+if($vcode!= $_SESSION[$OJ_NAME.'_'."vcode"]||$vcode==""||$vcode==null){
 	$_SESSION[$OJ_NAME.'_'."vcode"]=null;
-	$err_str=$err_str."Verification Code Wrong!\\n";
+	$err_str=$err_str."확인코드가 틀렸습니다.\\n";
 	$err_cnt++;
 }
 if($OJ_LOGIN_MOD!="hustoj"){
-	$err_str=$err_str."System do not allow register.\\n";
+	$err_str=$err_str."회원가입을 허락하지 않습니다.\\n";
 	$err_cnt++;
 }
 
 if($len>20){ 
-	$err_str=$err_str."User ID Too Long!\\n";
+	$err_str=$err_str."아이디가 너무 길어요!\\n";
 	$err_cnt++;
 }else if ($len<3){
 	$err_str=$err_str." $MSG_WARNING_USER_ID_SHORT\\n";
 	$err_cnt++;
 }
 if (!is_valid_user_name($user_id)){
-	$err_str=$err_str."User ID can only contain NUMBERs & LETTERs!\\n";
+	$err_str=$err_str."사용자 아이디는 영문자+숫자만 가능!\\n";
 	$err_cnt++;
 }
 $nick=trim($_POST['nick']);
 $len=strlen($nick);
 if ($len>100){
-	$err_str=$err_str."Nick Name Too Long!\\n";
+	$err_str=$err_str."별명이 너무 길어요!\\n";
 	$err_cnt++;
 }else if ($len==0) $nick=$user_id;
 if (strcmp($_POST['password'],$_POST['rptpassword'])!=0){
 	$err_str=$err_str."$MSG_WARNING_REPEAT_PASSWORD_DIFF!\\n";
 	$err_cnt++;
+	
 }
 if (strlen($_POST['password'])<6){
 	$err_cnt++;
@@ -48,21 +64,20 @@ if (strlen($_POST['password'])<6){
 }
 $len=strlen($_POST['school']);
 if ($len>100){
-	$err_str=$err_str."School Name Too Long!\\n";
+	$err_str=$err_str."소속/학교 이름이 너무 김!\\n";
 	$err_cnt++;
 }
 $len=strlen($_POST['email']);
 if ($len>100){
-	$err_str=$err_str."Email Too Long!\\n";
+	$err_str=$err_str."메일주소가 너무 김!\\n";
 	$err_cnt++;
 }
 if ($err_cnt>0){
 	print "<script language='javascript'>\n";
 	print "alert('";
 	print $err_str;
-	print "');\n history.go(-1);\n</script>";
+	print "');\n location.href = 'https://1024.kr/registerpage.php';\n</script>";
 	exit(0);
-	
 }
 $password=pwGen($_POST['password']);
 $sql="SELECT `user_id` FROM `users` WHERE `users`.`user_id` = ?";
@@ -118,4 +133,4 @@ if(!isset($OJ_REG_NEED_CONFIRM)||!$OJ_REG_NEED_CONFIRM){
 	        if($OJ_SaaS_ENABLE && $domain==$DOMAIN)    create_subdomain($cid,"syzoj",3);
 }
 ?>
-<script>history.go(-2);</script>
+<script>window.location.href = 'https://1024.kr/';</script>

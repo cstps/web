@@ -8,37 +8,36 @@
           <form action="register.php" method="post" role="form" class="ui form">
                 <div class="field">
                     <label for="username">사용자ID*</label>
-                    <input name="user_id" class="form-control" placeholder="" type="text">
+                    <input name="user_id" class="form-control" placeholder="ID는 영어만 또는 영어+숫자만 최대크기 20이하." type="text">
                 </div>
                 <div class="field">
-                    <label for="username">별명*</label>
-                    <input name="nick" placeholder="" type="text">
+                    <label for="username">별명</label>
+                    <input name="nick" placeholder="없으면 생략가능" type="text">
                 </div>
                 <div class="two fields">
                     <div class="field">
                     <label class="ui header">비밀번호*</label>
-                      <input name="password" placeholder="" type="password">
+                      <input name="password" placeholder="6글자 이상" type="password">
                     </div>
                     <div class="field">
                       <label class="ui header">비밀번호확인*</label>
-                      <input name="rptpassword" placeholder="" type="password">
+                      <input name="rptpassword" placeholder="동일한 비밀번호 한번 더" type="password">
                     </div>
                 </div>
                 <div class="field">
                     <label for="username">소속/학교</label>
-                    <input name="school" placeholder="" type="text" value="">
+                    <input name="school" placeholder="없으면 생략가능" type="text" value="">
                 </div>
                 <div class="field">
-                    <label for="email">이메일*</label>
-                    <input name="email" placeholder="" type="text">
-                </div>
-                <?php if($OJ_VCODE){?>
+                    <label for="email">이메일</label>
+                    <input name="email" placeholder="없으면 생략가능" type="text">
+                </div>                
                   <div class="field">
-                    <label for="email">확인코드*</label>
+                    <label for="vcode">확인코드*</label>
                     <input name="vcode" class="form-control" placeholder="" type="text">
                     <img alt="click to change" src="vcode.php" onclick="this.src='vcode.php?'+Math.random()" height="30px">
                   </div>
-                <?php }?>
+                
                 <button name="submit" type="submit" class="ui button">가입</button>
                 <button name="submit" type="reset" class="ui button">초기화</button>
             </form>

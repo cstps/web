@@ -64,7 +64,12 @@
                         <a class="ui button" style="margin-right: 0.5em; " href="loginpage.php">
                         <?php echo $MSG_LOGIN?> 
                         </a>
-                        <?php if(isset($OJ_REGISTER)&&$OJ_REGISTER ){ ?>
+                        <?php	// DB에서 확인하도록 수정
+                            $sql="SELECT `register` FROM `setting` ";
+                            $result = pdo_query($sql);
+                            $row =  $result[0];
+
+                            if( $row['register']==1){ ?>
                         <a class="ui primary button" href="registerpage.php">
                         <?php echo $MSG_REGISTER?> 
                         </a>
