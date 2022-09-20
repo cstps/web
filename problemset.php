@@ -199,6 +199,7 @@ foreach ($result as $row) {
 	$view_problemset[$i][3] .= "</div >";
 	$view_problemset[$i][4] = "<div class='center'><a href='status.php?problem_id=".$row['problem_id']."&jresult=4'>".$row['accepted']."</a></div>";
 	$view_problemset[$i][5] = "<div class='center'><a href='status.php?problem_id=".$row['problem_id']."'>".$row['submit']."</a></div>";
+	
 	$i++;
 }
 if(isset($_GET['ajax'])){

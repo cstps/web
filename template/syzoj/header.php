@@ -66,10 +66,10 @@
                         </a>
                         <?php	// DB에서 확인하도록 수정
                             $sql="SELECT `register` FROM `setting` ";
-                            $result = pdo_query($sql);
-                            $row =  $result[0];
+                            $reg_result = pdo_query($sql);
+                            $reg_row =  $reg_result[0];
 
-                            if( $row['register']==1){ ?>
+                            if( $reg_row['register']==1){ ?>
                         <a class="ui primary button" href="registerpage.php">
                         <?php echo $MSG_REGISTER?> 
                         </a>
