@@ -32,8 +32,6 @@
     <title><?php echo $show_title ?></title>
     <?php include("template/$OJ_TEMPLATE/css.php");?>
     <script src="<?php echo $OJ_CDN_URL?>/include/jquery-latest.js"></script>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1269444273331454"
-     crossorigin="anonymous"></script>
 </head>
 
 <body style="position: relative; margin-top: 49px; height: calc(100% - 49px); overflow-y: overlay; ">
