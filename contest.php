@@ -305,16 +305,17 @@ else {
   $sql = "SELECT * FROM `contest` WHERE `defunct`='N' ORDER BY `contest_id` DESC LIMIT 1000";
 
 	if ($keyword) {
-		$sql = "SELECT *  FROM contest WHERE contest.defunct='N' AND contest.title LIKE ? $wheremy  ORDER BY contest_id DESC";
+		$sql = "SELECT *  FROM contest WHERE contest.defunct='N' AND contest.title LIKE ? $wheremy  ORDER BY contest_id ASC";
 		$sql .= " limit ".strval($pstart).",".strval($pend); 
 
 		$result = pdo_query($sql,$keyword);
 	}
 	else {
-		$sql = "SELECT *  FROM contest WHERE contest.defunct='N' $wheremy  ORDER BY contest_id DESC";
-		$sql .= " limit ".strval($pstart).",".strval($pend); 
-		//echo $sql;
-		$result = mysql_query_cache($sql);
+		if ($wheremy !=""){ // 대회에 관련된 권한이 하나도 없을 경우 대회가 안보이고, 권한이 있을 때만
+			$sql = "SELECT *  FROM contest WHERE contest.defunct='N' $wheremy  ORDER BY contest_id ASC";
+			$sql .= " limit ".strval($pstart).",".strval($pend); 
+			$result = mysql_query_cache($sql);
+		}
 	}
 
 	$view_contest = Array();

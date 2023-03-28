@@ -63,8 +63,6 @@ if(isset($_GET['keyword']) && $_GET['keyword']!=""){
     <tr>
       <td>ID</td>
       <td>TITLE</td>
-      <td>START</td>
-      <td>END</td>
       <td>OPEN</td>
       <td>NOW</td>
       <td>EDIT</td>
@@ -72,14 +70,14 @@ if(isset($_GET['keyword']) && $_GET['keyword']!=""){
       <td>EXPORT</td>
       <td>LOGS</td>
       <td>SUSPECT</td>
+      <td>START</td>
+      <td>END</td>
     </tr>
     <?php
     foreach($result as $row){
       echo "<tr>";
       echo "<td>".$row['contest_id']."</td>";
-      echo "<td><a href='../contest.php?cid=".$row['contest_id']."'>".$row['title']."</a></td>";
-      echo "<td>".$row['start_time']."</td>";
-      echo "<td>".$row['end_time']."</td>";
+      echo "<td align='left'><a href='../contest.php?cid=".$row['contest_id']."'>".$row['title']."</a></td>";      
       $cid = $row['contest_id'];
       if(isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'."m$cid"])){
         echo "<td><a href=contest_pr_change.php?cid=".$row['contest_id']."&getkey=".$_SESSION[$OJ_NAME.'_'.'getkey'].">".($row['private']=="0"?"<span class=green>Public</span>":"<span class=red>Private<span>")."</a></td>";
@@ -96,6 +94,8 @@ if(isset($_GET['keyword']) && $_GET['keyword']!=""){
         echo "<td colspan=5 align=right><a href=contest_add.php?cid=".$row['contest_id'].">Copy</a><td>";
       }
       echo "<td><a href='suspect_list.php?cid=".$row['contest_id']."'>Suspect</a></td>";
+      echo "<td>".$row['start_time']."</td>";
+      echo "<td>".$row['end_time']."</td>";
       echo "</tr>";
     }
   ?>

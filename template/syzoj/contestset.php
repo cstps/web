@@ -10,7 +10,9 @@
               <div class="ui left icon input" style="width: 100%; ">                
                 <input class="prompt" style="width: 100%; " type="text" value="" placeholder=" 대회이름 …" name="keyword">
                 <i class="search icon"></i>
-                <a  class="ui button blue"  href="contest.php" ><?php echo $MSG_VIEW_ALL_CONTESTS ?></a>
+                <!-- all contest view remove
+                  <a  class="ui button blue"  href="contest.php" ><?php echo $MSG_VIEW_ALL_CONTESTS ?></a>
+                  !-->
               </div>
               <div class="results" style="width: 100%; "></div>
             </div>
