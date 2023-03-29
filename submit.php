@@ -56,8 +56,9 @@ else {
   $id = intval($_POST['id']);
   $sql = "SELECT `problem_id` FROM `problem` WHERE `problem_id`='$id' ";
     
-  if(!isset($_SESSION[$OJ_NAME.'_'.'administrator']))
-    $sql .= " and defunct='N'";
+  if(!isset($_SESSION[$OJ_NAME.'_'.'administrator'])) // admin이 아닐경우
+    if(!isset($_SESSION[$OJ_NAME.'_m'.$id]))// 출제가 아닌경우
+      $sql .= " and defunct='N'"; // 비공개는 안보이도록  
 }
 //echo $sql;
 
