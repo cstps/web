@@ -61,7 +61,7 @@ class TM {
 			if (!isset($this->p_wa_num[$pid]))
 				$this->p_wa_num[$pid] = 0;
 
-			$this->time += $sec+$this->p_wa_num[$pid]*1200;
+			$this->time += $sec+$this->p_wa_num[$pid]*60;
 			//echo "Time:".$this->time."<br>";
 			//echo "Solved:".$this->solved."<br>";
 		}
