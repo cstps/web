@@ -19,6 +19,16 @@ if( ($exam_mode =='Y' && !isset($_SESSION[$OJ_NAME."_source_browser"]))){
 	require("template/".$OJ_TEMPLATE."/error.php");
 	exit(0);
 }
+if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
+	if (isset($OJ_GUEST) && $OJ_GUEST) {
+		$_SESSION[$OJ_NAME.'_'.'user_id'] = "Guest";
+	}
+	else {
+		$view_errors = "<button><a href=loginpage.php>$MSG_Login</a></button>";
+		require("template/".$OJ_TEMPLATE."/error.php");
+		exit(0);
+	}
+}
 
 class TM {
 	var $solved = 0;
