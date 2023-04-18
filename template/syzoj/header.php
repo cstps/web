@@ -21,7 +21,7 @@
 ?>
 
 <!DOCTYPE html>
-<html lang="cn" style="position: fixed; width: 100%; overflow: hidden; ">
+<html lang="ko" style="position: fixed; width: 100%; overflow: hidden; ">
 
 <head>
     <meta charset="utf-8">
