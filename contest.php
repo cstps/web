@@ -241,12 +241,23 @@ if (isset($_GET['cid'])) {
 
 		$view_problemset[$cnt][3] = $row['source'];
 
+		  // 수행평가 모드 체크
+        $exam_check_sql = "SELECT `id`,`exam_mode`,`register`FROM `setting` ";
+        $exam_result = pdo_query($exam_check_sql);
+        $exam_mode = $exam_result[0]['exam_mode'];
+        if($exam_mode==0 || isset($_SESSION[$OJ_NAME.'_'.'vip']) || isset($_SESSION[$OJ_NAME.'_'.'administrator']) ){
+
 		if (!$noip)
 			$view_problemset[$cnt][4] = $row['accepted'];
 		else
 			$view_problemset[$cnt][4] = "";
     
-    $view_problemset[$cnt][5] = $row['submit'];
+    	$view_problemset[$cnt][5] = $row['submit'];
+		}
+		else{
+			$view_problemset[$cnt][4] = "평가중";
+			$view_problemset[$cnt][5] = "평가중";
+		}
     $cnt++;
   }
 }
