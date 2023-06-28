@@ -39,7 +39,7 @@
                     </thead>
                     <tbody>
                         <?php
-                        $sql_news = "select * FROM `coding_news` WHERE `defunct`!='Y' ORDER BY `importance` ASC,`time` DESC LIMIT 5";
+                        $sql_news = "select * FROM `coding_news` WHERE `defunct`!='Y' ORDER BY `importance` ASC,`time` DESC LIMIT 10";
                         $result_news = mysql_query_cache( $sql_news );
                         if ( $result_news ) {
                             foreach ( $result_news as $row ) {
