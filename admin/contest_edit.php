@@ -36,7 +36,8 @@ if(isset($_POST['startdate'])){
   $private = $_POST['private'];
   $password = $_POST['password'];
   $description = $_POST['description'];
- 
+
+
   if(get_magic_quotes_gpc()){
     $title = stripslashes($title);
     $private = stripslashes($private);    
@@ -181,6 +182,7 @@ if(isset($_POST['startdate'])){
       <div id="ptitles"></div>
     </p>
     <br>
+
     <p align=left>
       <?php echo "<h4>".$MSG_CONTEST."-".$MSG_Description."</h4>"?>
       <textarea class=kindeditor rows=13 name=description cols=80>
@@ -238,27 +240,41 @@ if(isset($_POST['startdate'])){
       <div align=center>
         <?php require_once("../include/set_post_key.php");?>
         <input type=submit value='<?php echo $MSG_SAVE?>' name=submit> <input type=reset value=Reset name=reset>
+        
       </div>
     </p>
   </form>
 </div>
 <script>
-	function showTitles(){
-		let ts=$("#ptitles");
-		let pids=$("#plist").val().split(",");
-		let html="";
-		pids.forEach(function(v,i,a){
-			let title=$.ajax({url:"ajax.php",method:"post",data:{"pid":v,"m":"problem_get_title"},async:false}).responseText;
-			html+=(v)+":<a href='../problem.php?id="+v+"' target='_blank'>"+title+"</a><br>\n";
-			console.log(v);
-		});
-		ts.html(html);
-		
-	}
-	$(document).ready(function(){
-		showTitles();
-	
-	});
+  async function showTitles(){
+      let ts = document.querySelector("#ptitles");
+      let pids = document.querySelector("#plist").value.split(",");
+      let html = "";
+      for (let v of pids) {
+          let response = await fetch("ajax.php", {
+              method: 'POST',
+              headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+              body: new URLSearchParams({"pid":v, "m":"problem_get_title"})
+          });
+
+          let title = await response.text();
+          if (v.length!==0){
+            html += `${v}:<a href='../problem.php?id=${v}' target='_blank'>${title}</a> -> 점수 : 
+            <input type=text name=cpoint[] style="width:150px;" value="">`;
+            html +=`<br>\n`;
+          }
+
+      }
+      
+      
+      ts.innerHTML = html;
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+      showTitles();
+      
+  });
+
 
 </script>
 </body>

@@ -338,8 +338,12 @@ else{
           });
 
           let title = await response.text();
-
-          html += `${v}:<a href='../problem.php?id=${v}' target='_blank'>${title}</a><br>\n`;
+          if (v.length!==0){
+            html += `${v}:<a href='../problem.php?id=${v}' target='_blank'>${title}</a> -> 점수 : 
+            <input type=text name=cpoint[] style="width:150px;" value="">
+            `;
+            html +=`<br>\n`;
+          }
       }
 
       ts.innerHTML = html;
