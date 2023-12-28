@@ -201,8 +201,8 @@
 	$MSG_Public="공개";
 	$MSG_Private="비공개";
 	$MSG_Running="대회시작";
-	$MSG_Start="대회예정";
-	$MSG_End="대회종료";
+	$MSG_Start="시작일시";
+	$MSG_End="종료일시";
 	$MSG_TotalTime="대회시간";
 	$MSG_LeftTime="남은시간";
 	$MSG_Ended="대회종료";

@@ -305,14 +305,17 @@ else{
 </div>
 
 <script>
+
+  /*
 	function showTitles(){
 		let ts=$("#ptitles");
 		let pids=$("#plist").val().split(",");
 		let html="";
 		pids.forEach(function(v,i,a){
+
 			let title=$.ajax({url:"ajax.php",method:"post",data:{"pid":v,"m":"problem_get_title"},async:false}).responseText;
 			html+=(v)+":<a href='../problem.php?id="+v+"' target='_blank'>"+title+"</a><br>\n";
-			console.log(v);
+			
 		});
 		ts.html(html);
 		
@@ -321,6 +324,31 @@ else{
 		showTitles();
 	
 	});
+ */
+  async function showTitles(){
+      let ts = document.querySelector("#ptitles");
+      let pids = document.querySelector("#plist").value.split(",");
+      let html = "";
+
+      for (let v of pids) {
+          let response = await fetch("ajax.php", {
+              method: 'POST',
+              headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+              body: new URLSearchParams({"pid":v, "m":"problem_get_title"})
+          });
+
+          let title = await response.text();
+
+          html += `${v}:<a href='../problem.php?id=${v}' target='_blank'>${title}</a><br>\n`;
+      }
+
+      ts.innerHTML = html;
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+      showTitles();
+  });
+
 
 </script>
 <?php }
