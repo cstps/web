@@ -281,11 +281,13 @@ else {
     <?php printTestCases($row['problem_id'],$OJ_DATA)?>
     <hint><![CDATA[<?php echo $row['hint']?>]]></hint>
     <source><![CDATA[<?php echo fixcdata($row['source'])?>]]></source>
-
+    <creator><![CDATA[<?php echo fixcdata($row['creator'])?>]]></creator>
+    
     <front_code><![CDATA[<?php echo fixcdata($row['front_code'])?>]]></front_code>
     <rear_code><![CDATA[<?php echo fixcdata($row['rear_code'])?>]]></rear_code>
     <ban_code><![CDATA[<?php echo fixcdata($row['ban_code'])?>]]></ban_code>
     <pro_point><![CDATA[<?php echo fixcdata($row['pro_point'])?>]]></pro_point>
+    
 
     <?php
     $pid = $row['problem_id'];
