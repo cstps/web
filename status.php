@@ -487,9 +487,13 @@ for ($i=0; $i<$rows_cnt; $i++) {
       if( (isset($end_time) && time() < $end_time)||
           (isset($_SESSION[$OJ_NAME.'_'.'user_id']) && strtolower($row['user_id'])==strtolower($_SESSION[$OJ_NAME.'_'.'user_id'])) ||
            isset($_SESSION[$OJ_NAME.'_'.'source_browser'])
-	    ){        
-        if($exam_mode ==1)
+	    ){
+        if ( isset($_SESSION[$OJ_NAME.'_'.'source_browser'] )){
+          $view_status[$i][6] = "<a target=_self href=showsource.php?id=".$row['solution_id'].">".$language_name[$row['language']]."</a>";
+        }        
+        else if($exam_mode ==1)
           $view_status[$i][6] = $language_name[$row['language']];
+        
         else
           $view_status[$i][6] = "<a target=_self href=showsource.php?id=".$row['solution_id'].">".$language_name[$row['language']]."</a>";
       }
@@ -499,7 +503,7 @@ for ($i=0; $i<$rows_cnt; $i++) {
       if ($row["problem_id"]>0) {
         if ($row['contest_id']>0) {
          if (isset($end_time)&&time()<$end_time || isset($_SESSION[$OJ_NAME.'_'.'source_browser']))
-          if($exam_mode ==0)
+          if($exam_mode ==0 or isset($_SESSION[$OJ_NAME.'_'.'source_browser']))
             $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?cid=".$row['contest_id']."&pid=".$row['num']."&sid=".$row['solution_id']."\">Edit</a>";
           else
             $view_status[$i][6] .= "/수행모드";

@@ -25,7 +25,7 @@ $row = $result[0];
 
 $ids = intval($row['ids']);
 
-$idsperpage = 100;
+$idsperpage = 350;
 $pages = intval(ceil($ids/$idsperpage));
 
 if(isset($_GET['page'])){ $page = intval($_GET['page']);}

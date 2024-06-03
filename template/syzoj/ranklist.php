@@ -6,8 +6,11 @@
   <a href="ranklist.php?scope=w">Week</a>
   <a href="ranklist.php?scope=m">Month</a>
   <a href="ranklist.php?scope=y">Year</a>
-  <div><a class="label label-success" href="ranklist.php?prefix=jt23">제일</a>
-  <a class="label label-warning"class="small ui positive" href="ranklist.php?prefix=gy23">개양</a></div>
+  <div>
+    <a class="label label-success" href="ranklist.php?prefix=jt24">제일</a>
+    <a class="label label-warning"class="small ui positive" href="ranklist.php?prefix=gy24">개양</a>
+    <a class="label label-primary"class="small ui positive" href="ranklist.php?prefix=js24">지수</a>
+  </div>
   <form action="ranklist.php" class="ui mini form" method="get" role="form" style="margin-bottom: 25px; text-align: right; ">
     <div class="ui action left icon input inline" style="width: 180px; margin-right: 77px; ">
       <i class="search icon"></i><input name="prefix" placeholder="<?php echo $MSG_USER?>" type="text" value="<?php echo htmlentities(isset($_GET['prefix'])?$_GET['prefix']:"",ENT_QUOTES,"utf-8") ?>">

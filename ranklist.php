@@ -45,7 +45,7 @@
                         require_once("./lang/$OJ_LANG.php");
                 }
 
-                $page_size=50;
+                $page_size=300;
                 if(isset($_GET['prefix'])) $page_size=300;
                 //$rank = intval ( $_GET ['start'] );
                 if ($rank < 0)
