@@ -51,10 +51,11 @@ if (isset($_POST['cid'])) {
   $cid = abs(intval($_POST['cid']));
     
   $sql = "SELECT `problem_id`,'N' FROM `contest_problem` WHERE `num`='$pid' AND contest_id=$cid";
-
+  
   // 대회 비공개로 변경될 경우 제출 문제에서 제출이 안되도록 코드 시작
+  $now = date('Y/m/d H:i:s D',time());
   if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor']))
-  $sql = "SELECT langmask,private,defunct FROM `contest` WHERE `defunct`='N' AND `contest_id`=?";
+  $sql = "SELECT langmask,private,defunct FROM `contest` WHERE  `contest_id`=?";
   else
     $sql = "SELECT langmask,private,defunct FROM `contest` WHERE `defunct`='N' AND `contest_id`=? AND (`start_time`<='$now' AND '$now'<`end_time`)";
 
@@ -66,6 +67,7 @@ if (isset($_POST['cid'])) {
     exit(0);
   }
   // 대회 비공개로 변경될 경우 제출 문제에서 제출이 안되도록 코드 끝
+  
 }
 else {
   $id = intval($_POST['id']);
