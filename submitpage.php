@@ -25,6 +25,20 @@ if (isset($_GET['id'])) {
 else if (isset($_GET['cid']) && isset($_GET['pid'])) {
 	$cid = intval($_GET['cid']);
 	$pid = intval($_GET['pid']);
+	// 대회 비공개로 변경될 경우 제출 문제에서 제출이 안되도록 코드 시작
+	if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor']))
+	$sql = "SELECT langmask,private,defunct FROM `contest` WHERE `defunct`='N' AND `contest_id`=?";
+	else
+		$sql = "SELECT langmask,private,defunct FROM `contest` WHERE `defunct`='N' AND `contest_id`=? AND (`start_time`<='$now' AND '$now'<`end_time`)";
+
+	$result = pdo_query($sql,$cid);
+	$rows_cnt = count($result);
+	if ($rows_cnt==0) {
+		$view_errors = "<title>$MSG_CONTEST</title><h2>No such Contest!</h2>";
+		require("template/".$OJ_TEMPLATE."/error.php");
+		exit(0);
+	}
+	// 대회 비공개로 변경될 경우 제출 문제에서 제출이 안되도록 코드 끝
 
 	$psql = "SELECT problem_id FROM contest_problem WHERE contest_id=? AND num=?";
 	$data = pdo_query($psql,$cid,$pid);

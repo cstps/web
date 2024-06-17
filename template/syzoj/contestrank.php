@@ -9,7 +9,14 @@
 </style>
 <div style="margin-bottom:40px; ">
     <h1 style="text-align: center;">Contest RankList -- <?php echo $title?></h1>
-    <!-- <a href="contestrank.xls.php?cid=<?php echo $cid?>" >Download</a> -->
+    <?php
+      if(isset($_SESSION[$OJ_NAME.'_'."administrator"])||
+      isset($_SESSION[$OJ_NAME.'_'."m$cid"])||
+      isset($_SESSION[$OJ_NAME.'_'."source_browser"])||
+      isset($_SESSION[$OJ_NAME.'_'."contest_creator"])
+       )
+       echo "<a href=contestrank.xls.php?cid=$cid>Download</a>";
+    ?>
 </div>
 <div class="padding" style="overflow-y:auto;">
     <?php if($user_cnt>0){ ?>
