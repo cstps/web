@@ -44,8 +44,7 @@
                             <?php echo $_SESSION[$OJ_NAME.'_'.'user_id']; ?>
                             <i class="dropdown icon"></i>
                             <div class="menu">
-                                <a class="item" href="<?php echo $path_fix?>mail.php"><i
-                                        class="edit icon"></i><?php echo $MSG_Message_Send;?></a>
+                                <a class="item" href="<?php echo $path_fix?>mail.php"><?php echo $MSG_Message_Send;?></a>
                                 <a class="item" href="<?php echo $path_fix?>modifypage.php"><i
                                         class="edit icon"></i><?php echo $MSG_REG_INFO;?></a>
                     <?php if ($OJ_SaaS_ENABLE){ ?>
@@ -81,25 +80,34 @@
            <!-- <a class="header item" href="/"><span style="font-family: 'Exo 2'; font-size: 1.5em; font-weight: 500; "><?php echo $domain==$DOMAIN?$OJ_NAME:ucwords($OJ_NAME)."'s OJ"?></span></a>
                         -->
                 
-	        <a class="item <?php if ($url=="") echo "active";?>" href="/"><i class="home icon"></i> <?php echo $MSG_HOME?></a>
+	        <a class="item <?php if ($url=="") echo "active";?>" href="/"><?php echo $MSG_HOME?></a>
             <a class="item <?php if ($url=="problemset.php") echo "active";?>"
-                href="<?php echo $path_fix?>problemset.php"><i class="list icon"></i><?php echo $MSG_PROBLEMS?> </a>
+                href="<?php echo $path_fix?>problemset.php"><?php echo $MSG_PROBLEMS?> </a>
             <a class="item <?php if ($url=="drawproblemset.php") echo "active";?>"
-                href="<?php echo $path_fix?>drawproblemset.php"><i class="list icon"></i><?php echo $MSG_DRAWPROBLEMS?> </a>
+                href="<?php echo $path_fix?>drawproblemset.php"><?php echo $MSG_DRAWPROBLEMS?> </a>
             <a class="item <?php if ($url=="category.php") echo "active";?>"
-                href="<?php echo $path_fix?>category.php"><i class="globe icon"></i><?php echo $MSG_SOURCE?></a>
-            <a class="item <?php if ($url=="contest.php") echo "active";?>" href="<?php echo $path_fix?>contest.php<?php if(isset($_SESSION[$OJ_NAME."_user_id"])) echo "?my" ?>" ><i
-                    class="calendar icon"></i> <?php echo $MSG_CONTEST?></a>
-            <a class="item <?php if ($url=="status.php") echo "active";?>" href="<?php echo $path_fix?>status.php"><i
-                    class="tasks icon"></i><?php echo $MSG_STATUS?></a>
+                href="<?php echo $path_fix?>category.php"><?php echo $MSG_SOURCE?></a>
+            <a class="item <?php if ($url=="contest.php") echo "active";?>" href="<?php echo $path_fix?>contest.php<?php if(isset($_SESSION[$OJ_NAME."_user_id"])) echo "?my" ?>" >
+                <?php echo $MSG_CONTEST?>
+            </a>
+            <a class="item <?php if ($url=="status.php") echo "active";?>" href="<?php echo $path_fix?>status.php"><?php echo $MSG_STATUS?></a>
             <a class="item <?php if ($url=="ranklist.php?prefix=") echo "active";?>"
-                href="<?php echo $path_fix?>ranklist.php?prefix="><i class="signal icon"></i> <?php echo $MSG_RANKLIST?></a>
+                href="<?php echo $path_fix?>ranklist.php?prefix="><?php echo $MSG_RANKLIST?></a>    
+            <!-- 유틸리티 추가 -->
+                
+            
+            <div class="ui simple dropdown item"><?php echo $MSG_ULTILIST?><i class="dropdown icon"></i>
+            <ul class="menu">
+                <a class="item" href="<?php echo $path_fix?>pc.php"><?php echo $MSG_POINTCHECK?></a>
+                <a class="item" href="<?php echo $path_fix?>"><i class="edit icon"></i>개발중</a>
+            </ul>
+            </div>
+            
             <!--<a class="item <?php //if ($url=="contest.php") echo "active";?>" href="/discussion/global"><i class="comments icon"></i> 讨论</a>-->
-            <a class="item <?php if ($url=="faqs.php") echo "active";?>" href="<?php echo $path_fix?>faqs.php"><i
-                    class="help circle icon"></i> <?php echo $MSG_FAQ?></a>
+            <a class="item <?php if ($url=="faqs.php") echo "active";?>" href="<?php echo $path_fix?>faqs.php"></i> <?php echo $MSG_FAQ?></a>
 
               <?php if (isset($OJ_BBS)&& $OJ_BBS){ ?>
-                  <a class='item' href="discuss.php"><i class="clipboard icon"></i> <?php echo $MSG_BBS?></a>
+                  <a class='item' href="discuss.php"> <?php echo $MSG_BBS?></a>
               <?php }?>
             <?php if(isset($_GET['cid'])){
             	$cid=intval($_GET['cid']);

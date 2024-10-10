@@ -1,4 +1,4 @@
-<?php $show_title="$MSG_SOURCE - $OJ_NAME"; ?>
+<?php $show_title="$MSG_DRAWPROBLEMS- $OJ_NAME"; ?>
 
 <?php include("template/$OJ_TEMPLATE/header.php");?>
     <link rel="stylesheet" href="<?php echo $OJ_CDN_URL?>/include/codemirror.css" />

@@ -1,0 +1,100 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column; /* 상하로 배치 */
+    height: 100vh; /* 화면 전체 높이를 차지 */
+    margin: 0;
+    background-color: #f4f4f9;
+}
+
+.cal_container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    flex-grow: 1; /* 남은 공간을 모두 차지 */
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0; /* 아래쪽 여유 공간을 제거 */
+    width: 100%; /* 가로로 꽉 차게 설정 */
+}
+
+h1 {
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 40px;
+    margin-bottom: 20px;
+}
+
+.result {
+    font-size: 30px;
+    margin-bottom: 20px;
+}
+
+.digit-sum {
+    color: red;
+    font-size: 60px;
+    font-weight: bold;
+}
+
+.history {
+    font-size: 16px;
+    margin-top: 10px;
+    text-align: left;
+    color: #555;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.sum {
+    color: blue;
+    font-size: 30px;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #6a109e;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-between; /* 좌우로 버튼들을 배치 */
+    width: 100%; /* 부모 요소의 너비를 지정 */
+    margin-top: 20px; /* 버튼 상단 여백 */
+  }
+
+button:focus {
+    outline: none;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.hint{
+    text-align: left;
+}
+
+footer {
+    background-color: #f1f1f1;
+    text-align: center;
+    padding: 10px;
+    width: 100%;
+    margin-top: auto; /* footer를 하단에 고정 */
+}

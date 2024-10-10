@@ -1,16 +1,16 @@
 <?php
 	//oj-header.php
-	$MSG_FAQ="자주묻는질문";
-	$MSG_BBS="묻고답하기";
-	$MSG_HOME="처음화면";
-	$MSG_PROBLEMS="문제";
-	$MSG_DRAWPROBLEMS ="그림문제";
-	$MSG_STATUS="채점기록";
-	$MSG_RANKLIST="순위";
-	$MSG_CONTEST="대회";
+	$MSG_FAQ="❓자주묻는질문❗";
+	$MSG_BBS="🙋‍♂️묻고답하기";
+	$MSG_HOME="🏠처음화면";
+	$MSG_PROBLEMS="🧩문제";
+	$MSG_DRAWPROBLEMS ="🖼️그림문제";
+	$MSG_STATUS="📊채점기록";
+	$MSG_RANKLIST="📈순위";
+	$MSG_CONTEST="🏆대회";
 	$MSG_RECENT_CONTEST="세계대회";
 	$MSG_LOGOUT="로그아웃";
-	$MSG_LOGIN="로그인";
+	$MSG_LOGIN="👤로그인";
 	$MSG_LOST_PASSWORD="비밀번호 분실";
 	$MSG_REGISTER="회원가입";
 	$MSG_ADMIN="관리";
@@ -19,7 +19,7 @@
 	$MSG_STATISTICS="통계";
 	$MSG_USERINFO="회원정보";
 	$MSG_MAIL="E-mail";
-	$MSG_Message_Send="메시지보내기";
+	$MSG_Message_Send="📝메시지보내기";
 
 	//status.php
 	$MSG_Pending="채점 대기중";
@@ -80,7 +80,7 @@
 	$MSG_SEARCH="검색";
 	$MSG_PROBLEM_ID="문제ID";
 	$MSG_TITLE="제목";
-	$MSG_SOURCE="출처/분류";
+	$MSG_SOURCE="🏷️출처/분류";
 	$MSG_SUBMIT_NUM="제출";	
 	$MSG_SUBMIT="제출";
 
@@ -139,7 +139,9 @@
 	$MSG_BAN_CODE="금지어";
 	$MSG_PRO_POINT="문제 포인트";
 
-
+	//유용한 기능
+	$MSG_ULTILIST="🔥도구";
+	$MSG_POINTCHECK="🧮평가점수계산";
 
 	//admin menu
 	$MSG_SEEOJ="OJ확인";
