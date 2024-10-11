@@ -11,17 +11,17 @@
     <h1> 🎯 실시간 점수 합 계산기 🎯 </h1>
     <div class='hint'>
         <h2> 📣사용법📣 </h2>
-        <div class='description'>✨ 한자리 숫자를 입력하면 실시간으로 점수 계산</div>
+        <div class='description'>✨ 숫자를 입력하면 실시간으로 점수 계산</div>
         <div class='description'>✨ 입력후 Enter 자동으로 기록</div>
-        <div class='description'>✨ ESC키 두번 누르면 모두 초기화</div>
+        <div class='description'>✨ ESC키 두 번 누르면 모두 초기화</div>
     </div>
     <input id="numberInput" type="number" placeholder="숫자입력 후 Enter > 자동 저장" />
     <div class="result" id="digitSum">
         🎉합: <span class="digit-sum">0</span>
     </div>
     <div class="button-container">
-        <button id="saveButton" title="수 입력후 Enter">💾저장하기</button>
-        <button id="copyAllButton">&#x1F4CB기록복사</button>
+        <button id="saveButton" title="수 입력후 Enter">💾기록하기</button>
+        <button id="copyAllButton">📋기록복사</button>
         <button id="resetButton" title='ESC 두번 누르면 됩니다.'>🔄초기화</button>
     </div>
     <div class="history" id="history">
