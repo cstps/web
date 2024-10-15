@@ -29,9 +29,18 @@
     <meta name="naver-site-verification" content="866e66a9030a529a02cccfa25e8268f6de840213" />
     <meta name="viewport" content="width=device-width, initial-scale=0.65">
     <meta name="description" content="online coding judge site for student">
+    <!-- naver webmaster 24.10.15 -->
+    <meta name="naver-site-verification" content="866e66a9030a529a02cccfa25e8268f6de840213" />
+    <meta property="og:type" content="website"> 
+    <meta property="og:title" content="1024 Online Judge Site">
+    <meta property="og:description" content="초중고 학생 대상 실시간 코딩 채점 시스템">
+    <meta property="og:image" content="./image/logo.png">
+    <meta property="og:url" content="https://1024.kr">
+
     <title><?php echo $show_title ?></title>
     <?php include("template/$OJ_TEMPLATE/css.php");?>
     <script src="<?php echo $OJ_CDN_URL?>/include/jquery-latest.js"></script>
+    
 </head>
 
 <body style="position: relative; margin-top: 49px; height: calc(100% - 49px); overflow-y: overlay; ">

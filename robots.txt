@@ -1,2 +1,6 @@
 User-agent: *
-Allow: /
+Disallow:/*admin*/
+Disallow:/image*/
+Disallow:/include/
+Disallow:/upload/
+
