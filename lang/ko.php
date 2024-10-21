@@ -83,6 +83,7 @@
 	$MSG_SOURCE="🏷️출처/분류";
 	$MSG_SUBMIT_NUM="제출";	
 	$MSG_SUBMIT="제출";
+	$MSG_PASSFAIL="통과";
 
 	//submit.php
 	$MSG_VCODE_WRONG="확인코드가 다릅니다.";
@@ -149,8 +150,8 @@
 	$MSG_MENU="메뉴";
 	$MSG_EXPLANATION="설명";
 	$MSG_LIST="리스트";
-	$MSG_NEWS="공지사항";
-	$CODING_MSG_NEWS = "IT-NEWS";
+	$MSG_NEWS="📢공지사항";
+	$CODING_MSG_NEWS = "📺IT-NEWS";
 	$MSG_CONTENTS="내용";
 	$MSG_SAVE="저장";	
 	
@@ -234,8 +235,8 @@
 	$MSG_BALLOON_PENDING="Balloon Pending";
 	$MSG_DATE="Date";
 	$MSG_SIGN="Signature";
-	$MSG_RECENT_PROBLEM="최근문제";
-	$MSG_RECENT_CONTEST="최근대회";
+	$MSG_RECENT_PROBLEM="🧩최근문제";
+	$MSG_RECENT_CONTEST="🏆최근대회";
 	$MSG_PASS_RATE="정답율";
 	$MSG_SHOW_TAGS="출처/분류 보기";
 	$MSG_SHOW_ALL_TAGS="모든 출처/분류 확인";

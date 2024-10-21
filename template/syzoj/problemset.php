@@ -101,7 +101,7 @@
       <tr>
 
         <?php if (isset($_SESSION[$OJ_NAME.'_'.'user_id'])){?>
-          <th class="one wide"><?php echo $MSG_STATUS?></th>
+          <th class="one wide"><?php echo $MSG_PASSFAIL?></th>
         <?php } ?>
         <th class="one wide"><?php echo $MSG_PROBLEM_ID?></th>
         <th class="left aligned"><?php echo $MSG_TITLE?></th>

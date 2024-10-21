@@ -3,7 +3,7 @@
 <div class="padding">
     <div class="ui three column grid">
         <div class="eleven wide column">
-            <h4 class="ui top attached block header"><i class="ui info icon"></i><?php echo $MSG_NEWS;?></h4>
+            <h4 class="ui top attached block header"><?php echo $MSG_NEWS;?></h4>
             <div class="ui bottom attached segment">
                 <table class="ui very basic center aligned table">
                     <thead>
@@ -28,7 +28,7 @@
                     </tbody>
                 </table>
             </div>
-            <h4 class="ui top attached block header"><i class="ui info icon"></i><?php echo $CODING_MSG_NEWS;?></h4>
+            <h4 class="ui top attached block header"><?php echo $CODING_MSG_NEWS;?></h4>
             <div class="ui bottom attached segment">
                 <table class="ui very basic center aligned table">
                     <thead>
@@ -53,7 +53,7 @@
                     </tbody>
                 </table>
             </div>
-            <h4 class="ui top attached block header"><i class="ui rss icon"></i> <?php echo $MSG_RECENT_PROBLEM;?> </h4>
+            <h4 class="ui top attached block header"><?php echo $MSG_RECENT_PROBLEM;?> </h4>
             <div class="ui bottom attached segment">
                 <table class="ui very basic center aligned table">
                     <thead>
@@ -83,7 +83,7 @@
             
         </div>
         <div class="right floated five wide column">
-        <h4 class="ui top attached block header"><i class="ui calendar icon"></i><?php echo $MSG_RECENT_CONTEST ;?></h4>
+        <h4 class="ui top attached block header"><?php echo $MSG_RECENT_CONTEST ;?></h4>
             <div class="ui bottom attached center aligned segment">
                 <table class="ui very basic center aligned table">
                     <thead>
@@ -109,7 +109,7 @@
                     </tbody>
                 </table>
             </div>
-            <h4 class="ui top attached block header"><i class="ui signal icon"></i><?php echo $MSG_RANKLIST;?></h4>
+            <h4 class="ui top attached block header"><?php echo $MSG_RANKLIST;?></h4>
             <div class="ui bottom attached segment">
                 <table class="ui very basic aligned table" style="table-layout: fixed; ">
                     <thead>
