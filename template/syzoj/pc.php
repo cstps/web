@@ -8,14 +8,14 @@
 <script src="<?php echo $OJ_CDN_URL ?>/include/processing.min.js"></script>
 
 <div class="cal_container">
-    <h1> 🎯 실시간 점수 합 계산기 🎯 </h1>
+    <h1> 🎯 실시간 평가점수 계산기 🎯 </h1>
     <div class='hint'>
         <h2> 📣사용법📣 </h2>
         <div class='description'>✨ 숫자를 입력하면 실시간으로 점수 계산</div>
         <div class='description'>✨ 입력후 Enter 자동으로 기록</div>
         <div class='description'>✨ ESC키 두 번 누르면 모두 초기화</div>
     </div>
-    <input id="numberInput" type="number" placeholder="숫자입력 후 Enter > 자동 저장" />
+    <input id="numberInput" type="number" placeholder="숫자입력 후 Enter > 자동 기록" />
     <div class="result" id="digitSum">
         🎉합: <span class="digit-sum">0</span>
     </div>
