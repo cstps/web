@@ -37,7 +37,8 @@ div[class*=ace_br] {
   vertical-align: top;
 }
 </style>
-<script src="https://pagecdn.io/lib/ace/1.4.13/ace.min.js" crossorigin="anonymous" integrity="sha256-GjtAsBCI/KPlEYQf0I8yNimcThRoWMnk7Vpi+dUt+GY=" ></script>
+
+<script src="<?php echo $OJ_CDN_URL.$path_fix."template/$OJ_TEMPLATE/"?>js/ace.min.js"></script>
 <script src="<?php echo $OJ_CDN_URL.$path_fix."template/$OJ_TEMPLATE/"?>clipboard.min.js"></script>
 <div class="ui center aligned grid">
     <div class="row">
@@ -273,7 +274,7 @@ div[class*=ace_br] {
   
     
 </div>
-
+<!--
   <script type="text/javascript">
   var editor = ace.edit("editor");
   var lastSubmitted = '';
@@ -311,7 +312,7 @@ div[class*=ace_br] {
     });
   });
   </script>
-
+-->
   <script src="https://cdn.staticfile.org/css-element-queries/0.4.0/ResizeSensor.min.js"></script>
 
   

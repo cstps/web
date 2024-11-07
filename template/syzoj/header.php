@@ -30,7 +30,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=0.65">
     <meta name="description" content="online coding judge site for student">
     <!-- naver webmaster 24.10.15 -->
-    <meta name="naver-site-verification" content="866e66a9030a529a02cccfa25e8268f6de840213" />
     <meta property="og:type" content="website"> 
     <meta property="og:title" content="1024 Online Judge Site">
     <meta property="og:description" content="초중고 학생 대상 실시간 코딩 채점 시스템">
@@ -40,21 +39,7 @@
     <title><?php echo $show_title ?></title>
     <?php include("template/$OJ_TEMPLATE/css.php");?>
     <script src="<?php echo $OJ_CDN_URL?>/include/jquery-latest.js"></script>
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-PMGHQPWP');</script>
-    <!-- End Google Tag Manager -->
-     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDQ6HEBFN1"></script>
-    <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
 
-    gtag('config', 'G-NDQ6HEBFN1');
 </script>
 </head>
 

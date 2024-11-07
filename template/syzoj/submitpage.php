@@ -1,10 +1,7 @@
 <?php $show_title="제출 - $OJ_NAME"; ?>
 <?php include("template/$OJ_TEMPLATE/header.php");?>
-
-  
 <center>
-
-<script src="<?php echo $OJ_CDN_URL?>include/checksource.js"></script>
+ <script src="<?php echo $OJ_CDN_URL?>include/checksource.js"></script>
 <form id=frmSolution action="submit.php" method="post" onsubmit='do_submit()'>
 <?php if (isset($id)){?>
 Problem <span class=blue><b><?php echo $id?></b></span>
@@ -253,7 +250,7 @@ function switchLang(lang){
 
 }
 function reloadtemplate(lang){
-   console.log("lang="+lang);
+   //console.log("lang="+lang);
    document.cookie="lastlang="+lang.value;
    //alert(document.cookie);
    var url=window.location.href;
