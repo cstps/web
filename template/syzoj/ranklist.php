@@ -7,9 +7,7 @@
   <a href="ranklist.php?scope=m">Month</a>
   <a href="ranklist.php?scope=y">Year</a>
   <div>
-    <a class="label label-success" href="ranklist.php?prefix=jt24">제일</a>
-    <a class="label label-warning"class="small ui positive" href="ranklist.php?prefix=gy24">개양</a>
-    <a class="label label-primary"class="small ui positive" href="ranklist.php?prefix=js24">지수</a>
+    <a class="label label-success" href="ranklist.php?prefix=jt24"></a>
   </div>
   <form action="ranklist.php" class="ui mini form" method="get" role="form" style="margin-bottom: 25px; text-align: right; ">
     <div class="ui action left icon input inline" style="width: 180px; margin-right: 77px; ">
