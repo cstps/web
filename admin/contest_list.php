@@ -43,11 +43,24 @@ $sql = "";
 if(isset($_GET['keyword']) && $_GET['keyword']!=""){
   $keyword = $_GET['keyword'];
   $keyword = "%$keyword%";
-  $sql = "SELECT `contest_id`,`title`,`start_time`,`end_time`,`private`,`defunct` FROM `contest` WHERE (title LIKE ?) OR (description LIKE ?) ORDER BY `contest_id` DESC";
+  $sql = "SELECT `contest_id`,`title`,`start_time`,`end_time`,`private`,`defunct`,`codevisible` FROM `contest` WHERE (title LIKE ?) OR (description LIKE ?) ORDER BY `contest_id` DESC";
   $result = pdo_query($sql,$keyword,$keyword);
 }else{
-  $sql = "SELECT `contest_id`,`title`,`start_time`,`end_time`,`private`,`defunct` FROM `contest` ORDER BY `contest_id` DESC LIMIT $sid, $idsperpage";
-  $result = pdo_query($sql);
+  $sql = "SELECT `contest_id`,`title`,`start_time`,`end_time`,`private`,`defunct`,`codevisible` FROM `contest` ORDER BY `contest_id` DESC LIMIT $sid, $idsperpage";
+  $result_all = pdo_query($sql);
+
+  // "내가 만든 대회만 보기"가 설정된 경우, 세션 정보로 필터링
+  if (isset($_GET['my'])) {
+    $result = array();
+    foreach ($result_all as $row) {
+      $cid = $row['contest_id'];
+      if (isset($_SESSION[$OJ_NAME . '_m' . $cid])) {
+        $result[] = $row;
+      }
+    }
+  } else {
+    $result = $result_all;
+  }
 }
 ?>
 
@@ -57,12 +70,24 @@ if(isset($_GET['keyword']) && $_GET['keyword']!=""){
   <button type="submit" class="form-control"><?php echo $MSG_SEARCH?></button>
 </form>
 </center>
-
+<center style="margin:10px;">
+  <div class="btn-group" role="group">
+    <a class="btn btn-<?php echo isset($_GET['my']) ? 'secondary' : 'primary'; ?>" 
+       href="contest_list.php"<?php echo isset($_GET['my']) ? '' : ' disabled'; ?>>
+       전체 대회 보기
+    </a>
+    <a class="btn btn-<?php echo isset($_GET['my']) ? 'primary' : 'secondary'; ?>" 
+       href="contest_list.php?my=1"<?php echo isset($_GET['my']) ? ' disabled' : ''; ?>>
+       내가 만든 대회 보기
+    </a>
+  </div>
+</center>
 <center>
   <table width=100% border=1 style="text-align:center;">
     <tr>
       <td>ID</td>
       <td>TITLE</td>
+      <td>CODEVISIBLE</td>
       <td>OPEN</td>
       <td>NOW</td>
       <td>EDIT</td>
@@ -80,6 +105,7 @@ if(isset($_GET['keyword']) && $_GET['keyword']!=""){
       echo "<td align='left'><a href='../contest.php?cid=".$row['contest_id']."'>".$row['title']."</a></td>";      
       $cid = $row['contest_id'];
       if(isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'."m$cid"])){
+        echo "<td><a href=contest_cv_change.php?cid=".$row['contest_id']."&getkey=".$_SESSION[$OJ_NAME.'_'.'getkey'].">".($row['codevisible']=="0"?"<span class=green>Visible</span>":"<span class=red>NotVisible<span>")."</a></td>";
         echo "<td><a href=contest_pr_change.php?cid=".$row['contest_id']."&getkey=".$_SESSION[$OJ_NAME.'_'.'getkey'].">".($row['private']=="0"?"<span class=green>Public</span>":"<span class=red>Private<span>")."</a></td>";
         echo "<td><a href=contest_df_change.php?cid=".$row['contest_id']."&getkey=".$_SESSION[$OJ_NAME.'_'.'getkey'].">".($row['defunct']=="N"?"<span class=green>Available</span>":"<span class=red>Reserved</span>")."</a></td>";
         echo "<td><a href=contest_edit.php?cid=".$row['contest_id'].">Edit</a></td>";
@@ -88,14 +114,17 @@ if(isset($_GET['keyword']) && $_GET['keyword']!=""){
           echo "<td><a href=\"problem_export_xml.php?cid=".$row['contest_id']."&getkey=".$_SESSION[$OJ_NAME.'_'.'getkey']."\">Export</a></td>";
         }else{
           echo "<td></td>";
+          
         }
         echo "<td> <a href=\"../export_contest_code.php?cid=".$row['contest_id']."&getkey=".$_SESSION[$OJ_NAME.'_'.'getkey']."\">Logs</a></td>";
       }else{
         echo "<td colspan=5 align=right><a href=contest_add.php?cid=".$row['contest_id'].">Copy</a><td>";
+        echo "<td></td>";
       }
       echo "<td><a href='suspect_list.php?cid=".$row['contest_id']."'>Suspect</a></td>";
       echo "<td>".$row['start_time']."</td>";
       echo "<td>".$row['end_time']."</td>";
+      
       echo "</tr>";
     }
   ?>
@@ -108,13 +137,13 @@ if(!(isset($_GET['keyword']) && $_GET['keyword']!=""))
   echo "<div style='display:inline;'>";
   echo "<nav class='center'>";
   echo "<ul class='pagination pagination-sm'>";
-  echo "<li class='page-item'><a href='contest_list.php?page=".(strval(1))."'>&lt;&lt;</a></li>";
-  echo "<li class='page-item'><a href='contest_list.php?page=".($page==1?strval(1):strval($page-1))."'>&lt;</a></li>";
-  for($i=$spage; $i<=$epage; $i++){
-    echo "<li class='".($page==$i?"active ":"")."page-item'><a title='go to page' href='contest_list.php?page=".$i.(isset($_GET['my'])?"&my":"")."'>".$i."</a></li>";
-  }
-  echo "<li class='page-item'><a href='contest_list.php?page=".($page==$pages?strval($page):strval($page+1))."'>&gt;</a></li>";
-  echo "<li class='page-item'><a href='contest_list.php?page=".(strval($pages))."'>&gt;&gt;</a></li>";
+  echo "<li class='page-item'><a href='contest_list.php?page=".(strval(1)).(isset($_GET['my'])?"&my=1":"")."'>&lt;&lt;</a></li>";
+echo "<li class='page-item'><a href='contest_list.php?page=".($page==1?strval(1):strval($page-1)).(isset($_GET['my'])?"&my=1":"")."'>&lt;</a></li>";
+for($i=$spage; $i<=$epage; $i++){
+  echo "<li class='".($page==$i?"active ":"")."page-item'><a title='go to page' href='contest_list.php?page=".$i.(isset($_GET['my'])?"&my=1":"")."'>".$i."</a></li>";
+}
+echo "<li class='page-item'><a href='contest_list.php?page=".($page==$pages?strval($page):strval($page+1)).(isset($_GET['my'])?"&my=1":"")."'>&gt;</a></li>";
+echo "<li class='page-item'><a href='contest_list.php?page=".(strval($pages)).(isset($_GET['my'])?"&my=1":"")."'>&gt;&gt;</a></li>";
   echo "</ul>";
   echo "</nav>";
   echo "</div>";

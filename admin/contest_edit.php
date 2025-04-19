@@ -33,6 +33,7 @@ if(isset($_POST['startdate'])){
   //echo $endtime;
  
   $title = $_POST['title'];
+  $codevisible = $_POST['codevisible'];
   $private = $_POST['private'];
   $password = $_POST['password'];
   $description = $_POST['description'];
@@ -40,6 +41,7 @@ if(isset($_POST['startdate'])){
 
   if(get_magic_quotes_gpc()){
     $title = stripslashes($title);
+    $codevisible = stripslashes($codevisible);  
     $private = stripslashes($private);    
     $password = stripslashes($password);
     $description = stripslashes($description);
@@ -63,9 +65,9 @@ if(isset($_POST['startdate'])){
   $description = str_replace(",", "&#44;", $description);
 
 
-  $sql = "UPDATE `contest` SET `title`=?,`description`=?,`start_time`=?,`end_time`=?,`private`=?,`langmask`=?,`password`=? WHERE `contest_id`=?";
+  $sql = "UPDATE `contest` SET `title`=?,`description`=?,`start_time`=?,`end_time`=?,`codevisible`=?,`private`=?,`langmask`=?,`password`=? WHERE `contest_id`=?";
   //echo $sql;
-  pdo_query($sql,$title,$description,$starttime,$endtime,$private,$langmask,$password,$cid);
+  pdo_query($sql,$title,$description,$starttime,$endtime,$codevisible,$private,$langmask,$password,$cid);
 
   $sql = "DELETE FROM `contest_problem` WHERE `contest_id`=?";
   pdo_query($sql,$cid);
@@ -128,6 +130,7 @@ if(isset($_POST['startdate'])){
   $row = $result[0];
   $starttime = $row['start_time'];
   $endtime = $row['end_time'];
+  $codevisible = $row['codevisible'];
   $private = $row['private'];
   $password = $row['password'];
   $langmask = $row['langmask'];
@@ -214,6 +217,11 @@ if(isset($_POST['startdate'])){
 
           <td height="10px">
             <p align=left>
+              <?php echo $MSG_CONTEST."-".$MSG_CodePublic?>:
+              <select name=codevisible style="width:150px;">
+                <option value=0 <?php echo $codevisible=='0'?'selected=selected':''?>><?php echo $MSG_CodePublic?></option>
+                <option value=1 <?php echo $codevisible=='1'?'selected=selected':''?>><?php echo $MSG_CodePrivate?></option>
+              </select>
               <?php echo $MSG_CONTEST."-".$MSG_Public?>:
               <select name=private style="width:150px;">
                 <option value=0 <?php echo $private=='0'?'selected=selected':''?>><?php echo $MSG_Public?></option>

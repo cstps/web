@@ -36,12 +36,14 @@ if(isset($_POST['startdate'])){
   //echo $endtime;
 
   $title = $_POST['title'];
+  $codevisible = $_POST['codevisible'];
   $private = $_POST['private'];
   $password = $_POST['password'];
   $description = $_POST['description'];
   
   if(get_magic_quotes_gpc()){
     $title = stripslashes($title);
+    $codevisible = stripslashes($codevisible);
     $private = stripslashes($private);
     $password = stripslashes($password);
     $description = stripslashes($description);
@@ -56,15 +58,15 @@ if(isset($_POST['startdate'])){
   $langmask = ((1<<count($language_ext))-1)&(~$langmask);
   //echo $langmask; 
 
-  $sql = "INSERT INTO `contest`(`title`,`start_time`,`end_time`,`private`,`langmask`,`description`,`password`,`user_id`)
-          VALUES(?,?,?,?,?,?,?,?)";
+  $sql = "INSERT INTO `contest`(`title`,`start_time`,`end_time`,`codevisible`,`private`,`langmask`,`description`,`password`,`user_id`)
+          VALUES(?,?,?,?,?,?,?,?,?)";
 
   $description = str_replace("<p>", "", $description); 
   $description = str_replace("</p>", "<br />", $description);
   $description = str_replace(",", "&#44; ", $description);
   $user_id=$_SESSION[$OJ_NAME.'_'.'user_id'];
-  echo $sql.$title.$starttime.$endtime.$private.$langmask.$description.$password,$user_id;
-  $cid = pdo_query($sql,$title,$starttime,$endtime,$private,$langmask,$description,$password,$user_id) ;
+  echo $sql.$title.$starttime.$endtime.$codevisible.$private.$langmask.$description.$password,$user_id;
+  $cid = pdo_query($sql,$title,$starttime,$endtime,$codevisible,$private,$langmask,$description,$password,$user_id) ;
   echo "Add Contest ".$cid;
 
   $sql = "DELETE FROM `contest_problem` WHERE `contest_id`=$cid";
@@ -120,6 +122,7 @@ else{
     $row = $result[0];
     $title = $row['title'];
 
+    $codevisible = $row['codevisible'];
     $private = $row['private'];
     $langmask = $row['langmask'];
     $description = $row['description'];
@@ -273,6 +276,11 @@ else{
           </td>
           <td height="10px">
             <p align=left>
+              <?php echo $MSG_CONTEST."-".$MSG_CodePublic?>:
+              <select name=codevisible style="width:150px;">
+                <option value=0 <?php echo $codevisible=='0'?'selected=selected':''?>><?php echo $MSG_CodePublic?></option>
+                <option value=1 <?php echo $codevisible=='1'?'selected=selected':''?>><?php echo $MSG_CodePrivate?></option>
+              </select>
               <?php echo $MSG_CONTEST."-".$MSG_Public?>:
               <select name=private style="width:150px;">
                 <option value=0 <?php echo $private=='0'?'selected=selected':''?>><?php echo $MSG_Public?></option>

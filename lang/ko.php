@@ -203,6 +203,8 @@
 
 	$MSG_Public="공개";
 	$MSG_Private="비공개";
+	$MSG_CodePublic="자기코드봄";
+	$MSG_CodePrivate="자기코드못봄";
 	$MSG_Running="대회시작";
 	$MSG_Start="시작일시";
 	$MSG_End="종료일시";

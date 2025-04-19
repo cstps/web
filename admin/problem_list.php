@@ -62,6 +62,19 @@ if(isset($_GET['keyword']) && $_GET['keyword']!=""){
 </form>
 </center>
 
+<center style="margin: 15px;">
+  <div class="btn-group" role="group">
+    <a class="btn btn-<?php echo isset($_GET['my']) ? 'secondary' : 'primary'; ?>" 
+       href="problem_list.php">
+      전체 문제 보기
+    </a>
+    <a class="btn btn-<?php echo isset($_GET['my']) ? 'primary' : 'secondary'; ?>" 
+       href="problem_list.php?my=1">
+      내가 만든 문제만 보기
+    </a>
+  </div>
+</center>
+
 <?php
 /*
 echo "<select class='input-mini' onchange=\"location.href='problem_list.php?page='+this.value;\">";
@@ -84,7 +97,7 @@ echo "</select>";
       <td width=60px><?php echo $MSG_PROBLEM_ID?><input type=checkbox style='vertical-align:2px;' onchange='$("input[type=checkbox]").prop("checked", this.checked)'></td>
       <td><?php echo $MSG_TITLE?></td>
       <td><?php echo $MSG_AC?></td>
-      <td></td>
+      <td><?php echo $MSG_DATE?></td>
       <?php
       if(isset($_SESSION[$OJ_NAME.'_'.'administrator']) ||isset($_SESSION[$OJ_NAME.'_'.'problem_editor'])){
         if(isset($_SESSION[$OJ_NAME.'_'.'administrator']) ||isset($_SESSION[$OJ_NAME.'_'.'problem_editor']))
@@ -94,47 +107,67 @@ echo "</select>";
       ?>
     </tr>
         <tr>
-      <td colspan=2 style="height:40px;">Checked to</td>
-      <td colspan=6>
+      <td colspan=1 style="height:40px;">Checked to</td>
+      <td colspan=7>
         <input type=submit name='problem2contest' value='New Contest'>
         <input type=submit name='enable' value='Available' onclick='$("form").attr("action","problem_df_change.php")'>
         <input type=submit name='disable' value='Reserved' onclick='$("form").attr("action","problem_df_change.php")'>
-        <input type=submit name='plist' value='NewsProblemList' onclick='$("form").attr("action","news_add_page.php")'>
+        <!-- <input type=submit name='plist' value='NewsProblemList' onclick='$("form").attr("action","news_add_page.php")'> -->
       </td>
     </tr>
     <?php
-    foreach($result as $row){
+    $filtered_result = array();
+
+    $is_admin = isset($_SESSION[$OJ_NAME.'_administrator']);
+    
+    if (isset($_GET['my']) && !$is_admin) {
+      foreach ($result as $row) {
+        $pid = $row['problem_id'];
+        if (isset($_SESSION[$OJ_NAME.'_p'.$pid])) {
+          $filtered_result[] = $row;
+        }
+      }
+    } else {
+      $filtered_result = $result;
+    }
+
+    foreach($filtered_result as $row){
       echo "<tr>";
         echo "<td>".$row['problem_id']." <input type=checkbox style='vertical-align:2px;' name='pid[]' value='".$row['problem_id']."'></td>";
         echo "<td><a href='../problem.php?id=".$row['problem_id']."'>".$row['title']."</a></td>";
         echo "<td>".$row['accepted']."</td>";
         echo "<td>".$row['in_date']."</td>";
-        if(isset($_SESSION[$OJ_NAME.'_'.'administrator'])||isset($_SESSION[$OJ_NAME.'_'.'problem_editor'])){
-          if(isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor'])){
-            echo "<td><a href=problem_df_change.php?id=".$row['problem_id']."&getkey=".$_SESSION[$OJ_NAME.'_'.'getkey'].">".($row['defunct']=="N"?"<span titlc='click to reserve it' class=green>Available</span>":"<span class=red title='click to be available'>Reserved</span>")."</a><td>";
-            if($OJ_SAE||function_exists("system")){
-    ?>
-              <a href=# onclick='javascript:if(confirm("Delete?")) location.href="problem_del.php?id=<?php echo $row['problem_id']?>&getkey=<?php echo $_SESSION[$OJ_NAME.'_'.'getkey']?>"'>Delete</a>
-        <?php
+        $pid = $row['problem_id'];
+        $is_admin = isset($_SESSION[$OJ_NAME.'_administrator']);
+        $is_owner = isset($_SESSION[$OJ_NAME.'_p'.$pid]);
+
+        // STATUS / DELETE
+        if ($is_admin || $is_owner) {
+          echo "<td><a href='problem_df_change.php?id=$pid&getkey=".$_SESSION[$OJ_NAME.'_getkey']."'>"
+              .($row['defunct']=="N"
+                ? "<span title='click to reserve it' class='green'>Available</span>"
+                : "<span class='red' title='click to be available'>Reserved</span>")
+              ."</a></td>";
+
+          if($OJ_SAE || function_exists("system")){
+            echo "<td><a href='#' onclick='if(confirm(\"Delete?\")) location.href=\"problem_del.php?id=$pid&getkey=".$_SESSION[$OJ_NAME.'_getkey']."\"'>Delete</a></td>";
+          } else {
+            echo "<td>--</td>";
+          }
+        } else {
+          echo "<td>--</td><td>--</td>"; // 권한 없으면 비워두기
         }
-      }
-      if(isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'."p".$row['problem_id']]) ){
-        echo "<td><a href=problem_edit.php?id=".$row['problem_id']."&getkey=".$_SESSION[$OJ_NAME.'_'.'getkey'].">Edit</a>";
-        echo "<td><a href='javascript:phpfm(".$row['problem_id'].");'>TestData</a>";
-      }
-    }
+
+        // EDIT / TESTDATA
+        if ($is_admin || $is_owner) {
+          echo "<td><a href='problem_edit.php?id=$pid&getkey=".$_SESSION[$OJ_NAME.'_getkey']."'>Edit</a></td>";
+          echo "<td><a href='javascript:phpfm($pid);'>TestData</a></td>";
+        } else {
+          echo "<td>--</td><td>--</td>";
+        }
     echo "</tr>";
   }
 ?>
-    <tr>
-      <td colspan=2 style="height:40px;">Checked to</td>
-      <td colspan=6>
-        <input type=submit name='problem2contest' value='New Contest'>
-        <input type=submit name='enable' value='Available' onclick='$("form").attr("action","problem_df_change.php")'>
-        <input type=submit name='disable' value='Reserved' onclick='$("form").attr("action","problem_df_change.php")'>
-        <input type=submit name='plist' value='NewsProblemList' onclick='$("form").attr("action","news_add_page.php")'>
-      </td>
-    </tr>
   </form>
 </table>
 </center>
@@ -159,13 +192,18 @@ if(!(isset($_GET['keyword']) && $_GET['keyword']!=""))
   echo "<div style='display:inline;'>";
   echo "<nav class='center'>";
   echo "<ul class='pagination pagination-sm'>";
-  echo "<li class='page-item'><a href='problem_list.php?page=".(strval(1))."'>&lt;&lt;</a></li>";
-  echo "<li class='page-item'><a href='problem_list.php?page=".($page==1?strval(1):strval($page-1))."'>&lt;</a></li>";
+
+  echo "<li class='page-item'><a href='problem_list.php?page=1".(isset($_GET['my']) ? "&my=1" : "")."'>&lt;&lt;</a></li>";
+  echo "<li class='page-item'><a href='problem_list.php?page=".($page==1?1:$page-1).(isset($_GET['my']) ? "&my=1" : "")."'>&lt;</a></li>";
+
   for($i=$spage; $i<=$epage; $i++){
-    echo "<li class='".($page==$i?"active ":"")."page-item'><a title='go to page' href='problem_list.php?page=".$i.(isset($_GET['my'])?"&my":"")."'>".$i."</a></li>";
+    echo "<li class='".($page==$i?"active ":"")."page-item'><a title='go to page' href='problem_list.php?page=$i".(isset($_GET['my']) ? "&my=1" : "")."'>$i</a></li>";
   }
-  echo "<li class='page-item'><a href='problem_list.php?page=".($page==$pages?strval($page):strval($page+1))."'>&gt;</a></li>";
-  echo "<li class='page-item'><a href='problem_list.php?page=".(strval($pages))."'>&gt;&gt;</a></li>";
+
+  echo "<li class='page-item'><a href='problem_list.php?page=".($page==$pages?$page:$page+1).(isset($_GET['my']) ? "&my=1" : "")."'>&gt;</a></li>";
+  echo "<li class='page-item'><a href='problem_list.php?page=$pages".(isset($_GET['my']) ? "&my=1" : "")."'>&gt;&gt;</a></li>";
+
+
   echo "</ul>";
   echo "</nav>";
   echo "</div>";

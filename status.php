@@ -110,17 +110,19 @@ if (isset($_GET['cid'])) {
   $cid = intval($_GET['cid']);
   $sql = $sql." AND `contest_id`='$cid' and num>=0 ";
   $str2 = $str2."&cid=$cid";
-  $sql_lock = "SELECT `start_time`,`title`,`end_time` FROM `contest` WHERE `contest_id`=?";
+  $sql_lock = "SELECT `start_time`,`title`,`end_time`, `codevisible` FROM `contest` WHERE `contest_id`=?";
   $result = pdo_query($sql_lock,$cid);
   $rows_cnt = count($result);
   $start_time = 0;
   $end_time = 0;
 
+
   if ($rows_cnt>0) {
     $row = $result[0];
     $start_time = strtotime($row[0]);
     $title = $row[1];
-    $end_time = strtotime($row[2]);       
+    $end_time = strtotime($row[2]);
+    $codevisible = isset($row['codevisible']) ? intval($row['codevisible']) : 0;
     
 	$noip = (time()<$end_time) && (stripos($title,$OJ_NOIP_KEYWORD)!==false);
 	if(isset($_SESSION[$OJ_NAME.'_'."administrator"])||
@@ -319,6 +321,7 @@ for ($i=0; $i<$rows_cnt; $i++) {
   $exam_mode = $exam_result[0]['exam_mode'];
 
   if ($row['contest_id']>0) {
+
     if (isset($_SESSION[$OJ_NAME.'_'.'administrator']))
       $view_status[$i][1] = "<a href='contestrank.php?cid=".$row['contest_id']."&user_id=".$row['user_id']."#".$row['user_id']."' title='".$row['ip']."'>".$row['user_id']."</a>";
     else if($exam_mode ==0 || isset($_SESSION[$OJ_NAME.'_'.'source_browser'])){
@@ -483,35 +486,44 @@ for ($i=0; $i<$rows_cnt; $i++) {
     else {
 
 
-      if( (isset($end_time) && time() < $end_time)||
-          (isset($_SESSION[$OJ_NAME.'_'.'user_id']) && strtolower($row['user_id'])==strtolower($_SESSION[$OJ_NAME.'_'.'user_id'])) ||
-           isset($_SESSION[$OJ_NAME.'_'.'source_browser'])
-	    ){
-        if ( isset($_SESSION[$OJ_NAME.'_'.'source_browser'] )){
-          $view_status[$i][6] = "<a target=_self href=showsource.php?id=".$row['solution_id'].">".$language_name[$row['language']]."</a>";
-        }        
-        else if($exam_mode ==1)
-          $view_status[$i][6] = $language_name[$row['language']];
-        
-        else
-          $view_status[$i][6] = "<a target=_self href=showsource.php?id=".$row['solution_id'].">".$language_name[$row['language']]."</a>";
-      }
-      else
-        $view_status[$i][6] = $language_name[$row['language']];
+      $is_admin = isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'source_browser']) || isset($_SESSION[$OJ_NAME."_m$cid"]);
+      $is_owner = (isset($_SESSION[$OJ_NAME.'_'.'user_id']) && strtolower($row['user_id']) == strtolower($_SESSION[$OJ_NAME.'_'.'user_id']));
 
-      if ($row["problem_id"]>0) {
-        if ($row['contest_id']>0) {
-         if (isset($end_time)&&time()<$end_time || isset($_SESSION[$OJ_NAME.'_'.'source_browser']))
-          if($exam_mode ==0 or isset($_SESSION[$OJ_NAME.'_'.'source_browser']))
-            $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?cid=".$row['contest_id']."&pid=".$row['num']."&sid=".$row['solution_id']."\">Edit</a>";
-          else
-            $view_status[$i][6] .= "/수행모드";
-        }
-        else {
-          if($exam_mode ==0)
+      if (
+          ($codevisible == 0 || $is_admin) && // 👈 codevisible이 허용된 경우 or 관리자
+          ((isset($end_time) && time() < $end_time) || $is_owner || $is_admin)
+      ) {
+          if (isset($_SESSION[$OJ_NAME.'_'.'source_browser'])) {
+              $view_status[$i][6] = "<a target=_self href=showsource.php?id=".$row['solution_id']."'>".$language_name[$row['language']]."</a>";
+          } else if ($exam_mode == 1) {
+              $view_status[$i][6] = $language_name[$row['language']];
+          } else {
+              $view_status[$i][6] = "<a target=_self href=showsource.php?id=".$row['solution_id']."'>".$language_name[$row['language']]."</a>";
+          }
+      } else {
+          $view_status[$i][6] = $language_name[$row['language']];
+      }
+      $is_admin = isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'source_browser']) || isset($_SESSION[$OJ_NAME."_m$cid"]);
+
+      if ($row["problem_id"] > 0) {
+        if ($row['contest_id'] > 0) {
+          if ((isset($end_time) && time() < $end_time) || $is_admin) {
+            if ($exam_mode == 0 || $is_admin) {
+              if ($codevisible == 0 || $is_admin) {
+                $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?cid=".$row['contest_id']."&pid=".$row['num']."&sid=".$row['solution_id']."\">Edit</a>";
+              } else {
+                $view_status[$i][6] .= "/제한"; // codevisible == 1 → 일반 유저 차단
+              }
+            } else {
+              $view_status[$i][6] .= "/수행모드"; // 시험 모드 중이면 edit 차단
+            }
+          }
+        } else {
+          if ($exam_mode == 0) {
             $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?id=".$row['problem_id']."&sid=".$row['solution_id']."\">Edit</a>";
-          else
+          } else {
             $view_status[$i][6] .= "/수행모드";
+          }
         }
       }
     }

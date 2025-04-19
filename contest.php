@@ -142,8 +142,9 @@ if (isset($_GET['cid'])) {
 
 		if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']))
 			$contest_ok = true;
-
-		if (!isset($_SESSION[$OJ_NAME.'_'.'administrator']) && $now<$start_time) {
+		
+		// admin과  대회 생성자일 경우 대회시작전이라도 대회 정보 볼수 있게 수정
+		if ((!isset($_SESSION[$OJ_NAME.'_'.'administrator']) && !isset($_SESSION[$OJ_NAME.'_'."m$cid"]))&& $now<$start_time) {
 			$view_errors = "";
 			$view_errors .= "<h3>$MSG_CONTEST_ID : $view_cid - $view_title</h3>";
 			// $view_errors .= "<p>$view_description</p>";
@@ -282,34 +283,30 @@ else {
 	//echo "$keyword";
 	$mycontests = "";
 	$wheremy = "";
+
 	if (isset($_SESSION[$OJ_NAME.'_user_id'])) {
-		// 대회 제출 이력이 있을 경우 대회 목록을 가져온다.
-		$sql = "select distinct contest_id from solution where contest_id>0 and user_id=?";
-		$result = pdo_query($sql,$_SESSION[$OJ_NAME.'_user_id']);
+		$uid = $_SESSION[$OJ_NAME.'_user_id'];
+		$sql = "SELECT rightstr FROM privilege WHERE user_id=? AND (rightstr LIKE 'c%' OR rightstr LIKE 'm%')";
+		$result = pdo_query($sql, $uid);
 
-		//대회 번호를 저장한다.
-		
 		foreach ($result as $row) {
-			$mycontests .= ",".$row[0];
-	  	}
-
-		// 대회 제출 권한이 있는 경우 
-		$len = mb_strlen($OJ_NAME.'_');
-		
-
-		foreach ($_SESSION as $key => $value) {
-			if (($key[$len]=='m' || $key[$len]=='c') && intval(mb_substr($key,$len+1))>0) {
-				//echo substr($key,1)."<br>";
-				$mycontests .= ",".intval(mb_substr($key,$len+1));
+			if (preg_match('/^[cm](\d+)$/', $row['rightstr'], $matches)) {
+				$mycontests .= ",".$matches[1];
 			}
 		}
 
-		//echo "=====>$mycontests<====";
+		if (strlen($mycontests) > 0) {
+			$mycontests = substr($mycontests, 1); // 맨 앞 콤마 제거
+		}
 
-		if (strlen($mycontests)>0)
-			$mycontests=substr($mycontests,1);
-		if (isset($_GET['my'])&&$mycontests!="")
-	  		if(isset($_GET['my'])) $wheremy=" and( contest_id in ($mycontests) or user_id='".$_SESSION[$OJ_NAME.'_user_id']."')";
+		if (isset($_GET['my']) && $mycontests != "") {
+			$wheremy = " AND contest_id IN ($mycontests)";
+		}
+
+		// 관리자/출제자는 모든 대회 표시
+		if (isset($_SESSION[$OJ_NAME.'_administrator']) ) {
+			$wheremy = ""; // 관리자 예외 처리
+		}
 	}
 
   $sql = "SELECT * FROM `contest` WHERE `defunct`='N' ORDER BY `contest_id` DESC LIMIT 1000";
@@ -321,8 +318,20 @@ else {
 		$result = pdo_query($sql,$keyword);
 	}
 	else {
-		if ($wheremy !=""){ // 대회에 관련된 권한이 하나도 없을 경우 대회가 안보이고, 권한이 있을 때만
+		if (isset($_GET['my']) && $mycontests == "" 
+      && !isset($_SESSION[$OJ_NAME.'_administrator']) 
+      ) {
+    
+			// ✅ 이 조건일 경우 쿼리도 하지 않고 빈 결과
+			$result = [];
+		
+		} else if ($wheremy != "") {
 			$sql = "SELECT *  FROM contest WHERE contest.defunct='N' $wheremy  ORDER BY contest_id ASC";
+			$sql .= " limit ".strval($pstart).",".strval($pend); 
+			$result = mysql_query_cache($sql);
+		} else {
+			// fallback: 전체 보기
+			$sql = "SELECT * FROM contest WHERE contest.defunct='N' ORDER BY contest_id ASC";
 			$sql .= " limit ".strval($pstart).",".strval($pend); 
 			$result = mysql_query_cache($sql);
 		}
