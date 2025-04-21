@@ -31,6 +31,7 @@ $pages = intval(ceil($ids/$idsperpage));
 if(isset($_GET['page'])){ $page = intval($_GET['page']);}
 else{ $page = 1;}
 
+
 $pagesperframe = 5;
 $frame = intval(ceil($page/$pagesperframe));
 
@@ -50,7 +51,7 @@ if(isset($_GET['keyword']) && $_GET['keyword']!=""){
   $result_all = pdo_query($sql);
 
   // "내가 만든 대회만 보기"가 설정된 경우, 세션 정보로 필터링
-  if (isset($_GET['my'])) {
+  if (!isset($_GET['my'])) {
     $result = array();
     foreach ($result_all as $row) {
       $cid = $row['contest_id'];
@@ -74,11 +75,11 @@ if(isset($_GET['keyword']) && $_GET['keyword']!=""){
   <div class="btn-group" role="group">
     <a class="btn btn-<?php echo isset($_GET['my']) ? 'secondary' : 'primary'; ?>" 
        href="contest_list.php"<?php echo isset($_GET['my']) ? '' : ' disabled'; ?>>
-       전체 대회 보기
+       내가 만든 대회 보기
     </a>
     <a class="btn btn-<?php echo isset($_GET['my']) ? 'primary' : 'secondary'; ?>" 
        href="contest_list.php?my=1"<?php echo isset($_GET['my']) ? ' disabled' : ''; ?>>
-       내가 만든 대회 보기
+       전체 대회 보기
     </a>
   </div>
 </center>
@@ -138,12 +139,12 @@ if(!(isset($_GET['keyword']) && $_GET['keyword']!=""))
   echo "<nav class='center'>";
   echo "<ul class='pagination pagination-sm'>";
   echo "<li class='page-item'><a href='contest_list.php?page=".(strval(1)).(isset($_GET['my'])?"&my=1":"")."'>&lt;&lt;</a></li>";
-echo "<li class='page-item'><a href='contest_list.php?page=".($page==1?strval(1):strval($page-1)).(isset($_GET['my'])?"&my=1":"")."'>&lt;</a></li>";
-for($i=$spage; $i<=$epage; $i++){
-  echo "<li class='".($page==$i?"active ":"")."page-item'><a title='go to page' href='contest_list.php?page=".$i.(isset($_GET['my'])?"&my=1":"")."'>".$i."</a></li>";
-}
-echo "<li class='page-item'><a href='contest_list.php?page=".($page==$pages?strval($page):strval($page+1)).(isset($_GET['my'])?"&my=1":"")."'>&gt;</a></li>";
-echo "<li class='page-item'><a href='contest_list.php?page=".(strval($pages)).(isset($_GET['my'])?"&my=1":"")."'>&gt;&gt;</a></li>";
+  echo "<li class='page-item'><a href='contest_list.php?page=".($page==1?strval(1):strval($page-1)).(isset($_GET['my'])?"&my=1":"")."'>&lt;</a></li>";
+  for($i=$spage; $i<=$epage; $i++){
+    echo "<li class='".($page==$i?"active ":"")."page-item'><a title='go to page' href='contest_list.php?page=".$i.(isset($_GET['my'])?"&my=1":"")."'>".$i."</a></li>";
+  }
+  echo "<li class='page-item'><a href='contest_list.php?page=".($page==$pages?strval($page):strval($page+1)).(isset($_GET['my'])?"&my=1":"")."'>&gt;</a></li>";
+  echo "<li class='page-item'><a href='contest_list.php?page=".(strval($pages)).(isset($_GET['my'])?"&my=1":"")."'>&gt;&gt;</a></li>";
   echo "</ul>";
   echo "</nav>";
   echo "</div>";
