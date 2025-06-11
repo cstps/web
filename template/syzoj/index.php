@@ -88,20 +88,25 @@
                 <table class="ui very basic center aligned table">
                     <thead>
                         <tr>
-                            <th><?php echo $MSG_CONTEST_NAME;?></th>
-                            <th><?php echo $MSG_START_TIME;?></th>
+                            <th width="70%"><?php echo $MSG_CONTEST_NAME;?></th>
+                            <th width="30%"><?php echo $MSG_START_TIME;?></th>
                         </tr>
                     </thead>
                     <tbody>
                     <?php
-                        $sql_contests = "select * FROM `contest` where defunct='N' ORDER BY `contest_id` DESC LIMIT 5";
+                        $sql_contests = "select * FROM `contest` where defunct='N' and private='public' ORDER BY `contest_id` DESC LIMIT 5";
                         $result_contests = mysql_query_cache( $sql_contests );
                         if ( $result_contests ) {
                             $i = 1;
                             foreach ( $result_contests as $row ) {
+                                $title = $row["title"];
+                                if (mb_strlen( $title)> 21){
+                                    $title = mb_substr($title,0,21)."...";
+                                }
+                                
                                 echo "<tr>"."<td>"
                                     ."<a href=\"contest.php?cid=".$row["contest_id"]."\">"
-                                    .$row["title"]."</a></td>"
+                                    . $title."</a></td>"
                                     ."<td>".$row["start_time"]."</td>"."</tr>";
                             }
                         }

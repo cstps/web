@@ -118,24 +118,6 @@
           <?php echo "<h4>".$MSG_PRO_POINT."(정수로 입력)</h4>"?>
           <input class="input input-mini" type=number min="1" max="300" step="1" name=pro_point size=20 value=1>점<br><br>
         </p>
-
-
-        <p align=left><?php echo "<h4>".$MSG_CONTEST."</h4>"?>
-          <select name=contest_id>
-            <?php
-            $sql="SELECT `contest_id`,`title` FROM `contest` WHERE `start_time`>NOW() order by `contest_id`";
-            $result=pdo_query($sql);
-            echo "<option value=''>none</option>";
-            if (count($result)==0) {
-            }
-            else {
-              foreach ($result as $row) {
-                echo "<option value='{$row['contest_id']}'>{$row['contest_id']} {$row['title']}</option>";
-              }
-            }?>
-          </select>
-        </p>
-
         <div align=center>
           <?php require_once("../include/set_post_key.php");?>
           <input type=submit value='<?php echo $MSG_SAVE?>' name=submit>

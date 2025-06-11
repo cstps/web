@@ -83,7 +83,7 @@ if(  ($ok && $OJ_FRIENDLY_LEVEL>2) ||
   if($OJ_SHOW_DIFF && $row && ($ok||$isRE) && ($OJ_TEST_RUN||is_valid($row['error'])||$ok)){ 
     $view_reinfo = htmlentities(str_replace("\n\r","\n",$row['error']),ENT_QUOTES,"UTF-8");
     // 관리자(administrator)는 모두 보이도록 합니다.
-    if(!isset($_SESSION[$OJ_NAME.'_'.'administrator'])){
+    if(!(isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'source_browser']))){
       if($OJ_SHOW_DIFF_MIN){// 채점결과 최소정보만 보여주기 21.12.20
           $str1 = "time_space_table:";
           $str2 = "==============================\n========[";
