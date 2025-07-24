@@ -26,7 +26,8 @@
 $rank=1;
 ?>
 <center><h3>OI Mode RankList -- <?php echo $title?></h3>
-<a href="contestrank.xls.php?cid=<?php echo $cid?>" >Download</a>
+<a href="/contestrank.xls.php?cid=<?php echo $cid?>">Download</a>
+
 <?php
 if($OJ_MEMCACHE){
 	?>
@@ -37,11 +38,23 @@ if($OJ_MEMCACHE){
 ?>
 </center>
 <div style="overflow: auto">
-<table id=rank class="ui very basic center aligned table"><thead><th width=5%>Rank</th><th width=10%>User</th><th width=10%>Nick</th><th width=5%>Solved</th><th width=5%>Penalty</th><th align=center>Mark</th>
+<table id=rank class="ui very basic center aligned table">
+	<thead>
+		<th width=5%>Rank</th>
+		<th width=10%>User</th>
+		<th width=10%>Nick</th>
+		<th width=5%>Solved</th>
+		<th width=5%>Penalty</th>
+		<th align=center>Total</th>
+			<?php
+			for ($i = 0; $i < $pid_cnt; $i++) {
+				$score = isset($score_map[$i]) ? $score_map[$i] : 100;
+				echo "<td><a href='problem.php?cid=$cid&pid=$i'>$PID[$i]<br/>($score)</a></td>";
+			}
+			?>
+	</thead>
+<tbody>
 <?php
-for ($i=0;$i<$pid_cnt;$i++)
-echo "<td><a href=problem.php?cid=$cid&pid=$i>$PID[$i]</a></td>";
-echo "</tr></thead>\n<tbody>";
 for ($i=0;$i<$user_cnt;$i++){
 	if ($i&1) echo "<tr class=oddrow align=center>\n";
 	else echo "<tr class=evenrow align=center>\n";
@@ -79,14 +92,15 @@ for ($i=0;$i<$user_cnt;$i++){
 		}
 		echo "<td class=well style='background-color:#$bg_color'>";
 		if(isset($U[$i])){
-			if (isset($U[$i]->p_ac_sec[$j])&&$U[$i]->p_ac_sec[$j]>0)
-				echo 100;
-				//echo sec2str($U[$i]->p_ac_sec[$j]);
-			else if (isset($U[$i]->p_wa_num[$j])&&$U[$i]->p_wa_num[$j]>0)
-				echo "(+"+$U[$i]->p_pass_rate[$j]*100+")";
+			$score = isset($score_map[$j]) ? $score_map[$j] : 100;
+			if (isset($U[$i]->p_ac_sec[$j]) && $U[$i]->p_ac_sec[$j] > 0)
+				echo $score;
+			else if (isset($U[$i]->p_wa_num[$j]) && $U[$i]->p_wa_num[$j] > 0)
+				echo "(+" . number_format($U[$i]->p_pass_rate[$j] * $score, 1) . ")";
+
 		}
 	}
-	echo "</tr>\n";
+	echo "</tr>";
 }
 echo "</tbody></table>";
 ?>

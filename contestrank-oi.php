@@ -44,43 +44,52 @@ class TM{
                 $this->p_pass_rate=array(0);
 		$this->total=0;
         }
-        function Add($pid,$sec,$res){
-//              echo "Add $pid $sec $res<br>";
-                if (isset($this->p_ac_sec[$pid])&&$this->p_ac_sec[$pid]>0)
-                        return;
-                if ($res*100<99){
-                        if(isset($this->p_pass_rate[$pid])){
-                                if($res>$this->p_pass_rate[$pid]){
-					$this->total-=$this->p_pass_rate[$pid]*100;
-					$this->p_pass_rate[$pid]=$res;
-					$this->total+=$this->p_pass_rate[$pid]*100;
-				}
-                        }else{
-                                $this->p_pass_rate[$pid]=$res;
-				$this->total+=$res*100;
-                        }
-			if(isset($this->p_wa_num[$pid])){
-	                        $this->p_wa_num[$pid]++;
-        	        }else{
-                	        $this->p_wa_num[$pid]=1;
-                       	}
+        function Add($pid, $sec, $res) {
+                global $score_map;
 
-                }else{
-                        $this->p_ac_sec[$pid]=$sec;
+                // 기본 배점은 100 (score_map에 없을 경우)
+                $score = isset($score_map[$pid]) ? $score_map[$pid] : 100;
+
+                // 이미 맞힌 경우 중복 계산 방지
+                if (isset($this->p_ac_sec[$pid]) && $this->p_ac_sec[$pid] > 0)
+                        return;
+
+                // 정답이 아닌 경우 (pass_rate < 0.99)
+                if ($res * 100 < 99) {
+                        // 이전 점수
+                        $old_rate = isset($this->p_pass_rate[$pid]) ? $this->p_pass_rate[$pid] : 0.0;
+                        if ($res > $old_rate) {
+                        $this->total += ($res - $old_rate) * $score;
+                        $this->p_pass_rate[$pid] = $res;
+                        }
+
+                        // 오답 카운트 증가
+                        if (isset($this->p_wa_num[$pid]))
+                        $this->p_wa_num[$pid]++;
+                        else
+                        $this->p_wa_num[$pid] = 1;
+
+                } else {
+                        // 정답 처리
+                        $this->p_ac_sec[$pid] = $sec;
                         $this->solved++;
-                        if(!isset($this->p_wa_num[$pid])) $this->p_wa_num[$pid]=0;
-                        if(isset($this->p_pass_rate[$pid])){
-				$this->total-=$this->p_pass_rate[$pid]*100;
-			}else{
-				$this->p_pass_rate[$pid]=$res;
-			}
-				
-			$this->total+=100;
-			$this->time+=$sec+$this->p_wa_num[$pid]*60;
-//                      echo "Time:".$this->time."<br>";
-//                      echo "Solved:".$this->solved."<br>";
+
+                        if (!isset($this->p_wa_num[$pid]))
+                        $this->p_wa_num[$pid] = 0;
+
+                        // 기존 pass_rate 점수 제거 (있다면)
+                        if (isset($this->p_pass_rate[$pid]))
+                        $this->total -= $this->p_pass_rate[$pid] * $score;
+
+                        // 정답 시 배점만큼 점수 부여
+                        $this->p_pass_rate[$pid] = 1.0;
+                        $this->total += $score;
+
+                        // 시간 패널티 누적
+                        $this->time += $sec + $this->p_wa_num[$pid] * 60;
                 }
         }
+
 }
 
 function s_cmp($A,$B){
@@ -97,6 +106,13 @@ function s_cmp($A,$B){
 // contest start time
 if (!isset($_GET['cid'])) die("No Such Contest!");
 $cid=intval($_GET['cid']);
+// 문제별 배점 로딩
+$score_map = array();
+$sql = "SELECT num, score FROM contest_problem WHERE contest_id = ?";
+$score_result = pdo_query($sql, $cid);
+foreach ($score_result as $row) {
+    $score_map[intval($row['num'])] = intval($row['score'] ?? 100); // 기본값 100점
+}
 
 
 if($OJ_MEMCACHE){

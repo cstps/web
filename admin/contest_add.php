@@ -76,21 +76,29 @@ if(isset($_POST['startdate'])){
   if(count($pieces)>0 && intval($pieces[0])>0){
      
      
-    $sql_1 = "INSERT INTO `contest_problem`(`contest_id`,`problem_id`,`num`) VALUES (?,?,?)";
-    $plist="";
-    $pid=0;
-    for($i=0; $i<count($pieces); $i++){
-      $sql="select problem_id from problem where problem_id=?";
-      $has=pdo_query($sql,$pieces[$i]);
+    $cpoints = $_POST['cpoint']; // 점수 배열 받아오기
+
+    $sql_1 = "INSERT INTO `contest_problem`(`contest_id`,`problem_id`,`num`, `score`) VALUES (?,?,?,?)";
+    $plist = "";
+    $pid = 0;
+
+    for($i = 0; $i < count($pieces); $i++){
+      $problem_id = intval($pieces[$i]);
+      $score = isset($cpoints[$i]) ? intval($cpoints[$i]) : 100; // 점수 없으면 기본 100
+
+      $sql = "SELECT problem_id FROM problem WHERE problem_id=?";
+      $has = pdo_query($sql, $problem_id);
+
       if(count($has) > 0) {
-         if($plist) $plist.=",";
-         $plist.=intval($pieces[$i]);
-         pdo_query($sql_1,$cid,$pieces[$i],$pid);
-         $pid++;
-      }else{
-         print("Problem not exists:".$pieces[$i]."<br>\n");
+        if($plist) $plist .= ",";
+        $plist .= $problem_id;
+        pdo_query($sql_1, $cid, $problem_id, $pid, $score); // score 포함
+        $pid++;
+      } else {
+        print("Problem not exists: ".$problem_id."<br>\n");
       }
     }
+
     //echo $sql_1;
     // 22.08.24 대회 문제를 등록해도 기본 공개/비공개 정보를 그대로 유지 되도록 수정
     // $sql = "UPDATE `problem` SET defunct='N' WHERE `problem_id` IN ($plist)";

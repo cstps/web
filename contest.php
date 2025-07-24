@@ -193,7 +193,23 @@ if (isset($_GET['cid'])) {
 	//$sql = "SELECT * FROM (SELECT `problem`.`title` AS `title`,`problem`.`problem_id` AS `pid`,source AS source, contest_problem.num as pnum FROM `contest_problem`,`problem` WHERE `contest_problem`.`problem_id`=`problem`.`problem_id` AND `contest_problem`.`contest_id`=? ORDER BY `contest_problem`.`num`) problem LEFT JOIN (SELECT problem_id pid1,count(distinct(user_id)) accepted FROM solution WHERE result=4 AND contest_id=? GROUP BY pid1) p1 ON problem.pid=p1.pid1 LEFT JOIN (SELECT problem_id pid2,count(1) submit FROM solution WHERE contest_id=? GROUP BY pid2) p2 ON problem.pid=p2.pid2 ORDER BY pnum";//AND `problem`.`defunct`='N'
 
 	//$result = pdo_query($sql,$cid,$cid,$cid);
-	$sql = "select p.title,p.problem_id,p.source,cp.num as pnum,cp.c_accepted accepted,cp.c_submit submit from problem p inner join contest_problem cp on p.problem_id = cp.problem_id and cp.contest_id=$cid order by cp.num";
+	$sql = "SELECT
+		p.title,
+		p.problem_id,
+		p.source,
+		cp.num AS pnum,
+		cp.score,                         -- 추가
+		cp.c_accepted AS accepted,
+		cp.c_submit AS submit
+		FROM
+		problem p
+		INNER JOIN
+		contest_problem cp
+		ON
+		p.problem_id = cp.problem_id AND cp.contest_id = $cid
+		ORDER BY
+		cp.num
+	";
 	$result = mysql_query_cache($sql);
 	$view_problemset = Array();
 
@@ -258,6 +274,8 @@ if (isset($_GET['cid'])) {
 			$view_problemset[$cnt][4] = "평가중";
 			$view_problemset[$cnt][5] = "평가중";
 		}
+	$view_problemset[$cnt][6] = $row['score']; // 추가
+
     $cnt++;
   }
 }

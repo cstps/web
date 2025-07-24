@@ -87,29 +87,30 @@
                 <table class="ui selectable celled table">
                     <thead>
                         <tr>
-                            <th class="one wide" style="text-align: center">
-                                    <?php if(isset($_SESSION[$OJ_NAME.'_'.'user_id'])) echo "상태" ?>
+                            <th class="one wide center aligned">
+                                <?php if(isset($_SESSION[$OJ_NAME.'_'.'user_id'])) echo "상태" ?>
                             </th>
-                            <th class="two wide" style="text-align: center">문제 번호</th>
-                            <th>제목</th>
-                            <th>출처</th>
+                            <th class="two wide center aligned">문제 번호</th>
+                            <th class="center aligned">제목</th>
+                            <th class="center aligned">출처</th>
                             <th class="one wide center aligned">정답</th>
                             <th class="one wide center aligned">제출</th>
+                            <th class="one wide center aligned">배점</th> <!-- ✅ 점수 열 -->
                         </tr>
                     </thead>
+
                     <tbody>
-                    <pre><code>
                         <?php
-                        foreach($view_problemset as $row){
-                          echo "<tr>";
-                          foreach($row as $table_cell){
-                            echo "<td>".$table_cell."</td>";
-                          }
-                          echo "</tr>";
-                        }
+                            foreach($view_problemset as $row){
+                                echo "<tr>";
+                                foreach($row as $table_cell){
+                                    echo "<td class=\"center aligned\">".$table_cell."</td>";
+                                }
+                                echo "</tr>";
+                            }
                         ?>
-                        </pre></code>
                     </tbody>
+
                 </table>
             </div>
         </div>

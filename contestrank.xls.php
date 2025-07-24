@@ -1,4 +1,9 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', '/tmp/php-error.log'); // 또는 다른 경로
+error_reporting(E_ALL);
+
 ini_set("display_errors","Off");
 		header ( "content-type:   application/excel" );
 		
@@ -21,6 +26,8 @@ class TM{
 	var $user_id;
     var $nick;
     var $mark=0;
+	var $score_sum = 0; // ✅ 총점
+
 	function TM(){
 		$this->solved=0;
 		$this->time=0;
@@ -30,7 +37,7 @@ class TM{
 	function Add($pid,$sec,$res,$mark_base,$mark_per_problem,$mark_per_punish){
 		global $OJ_CE_PENALTY;
 //		echo "Add $pid $sec $res<br>";
-	
+		global $score_map;
 		if (isset($this->p_ac_sec[$pid])&&$this->p_ac_sec[$pid]>0)
 			return;
 		if ($res!=4){
@@ -58,14 +65,22 @@ class TM{
 //				$this->mark=$mark_base;
 //			echo "Time:".$this->time."<br>";
 //			echo "Solved:".$this->solved."<br>";
+			$score = isset($score_map[$pid]) ? $score_map[$pid] : 100;
+			$this->score_sum += $score;
+
 		}
 	}
 }
-
+// solved - penaltiy
+// function s_cmp($A,$B){
+// //	echo "Cmp....<br>";
+// 	if ($A->solved!=$B->solved) return $A->solved<$B->solved;
+// 	else return $A->time>$B->time;
+// }
+// 총점-시간방식
 function s_cmp($A,$B){
-//	echo "Cmp....<br>";
-	if ($A->solved!=$B->solved) return $A->solved<$B->solved;
-	else return $A->time>$B->time;
+    if ($A->score_sum != $B->score_sum) return $A->score_sum < $B->score_sum;
+    return $A->time > $B->time;
 }
 
 function normalDistribution( $x,  $u,  $s) {
@@ -123,21 +138,34 @@ function  getMark($users,  $start,  $end, $s) {
 // contest start time
 if (!isset($_GET['cid'])) die("No Such Contest!");
 $cid=intval($_GET['cid']);
+// 문제별 score 불러오기
+$score_map = array();
+$sql = "SELECT `num`, `score` FROM `contest_problem` WHERE `contest_id` = ?";
+$result = pdo_query($sql, $cid);
+foreach ($result as $row) {
+    $score_map[intval($row['num'])] = intval($row['score']);
+}
+
 //require_once("contest-header.php");
 $sql="SELECT `start_time`,`title`,`end_time` FROM `contest` WHERE `contest_id`=?";
 $result=pdo_query($sql,$cid) ;
 $rows_cnt=count($result);
 $start_time=0;
 $end_time=0;
-if ($rows_cnt>0){
-	 $row=$result[0];
-	$start_time=strtotime($row[0]);
-	$title=$row[1];
-	$end_time=strtotime($row[2]);
-	
-	$ftitle=rawurlencode(preg_replace('/\.|\\\|\\/|\:|\*|\?|\"|\<|\>|\|/','',$title));
-	header ( "content-disposition:   attachment;   filename=contest".$cid."_".$ftitle.".xls" );
+if ($rows_cnt > 0) {
+    $row = $result[0];
+    $start_time = strtotime($row[0]);
+    $title = $row[1];
+    $end_time = strtotime($row[2]);
+
+    $ftitle = rawurlencode(preg_replace('/\.|\\\|\\/|\:|\*|\?|\"|\<|\>|\|/', '', $title));
+
+    ob_clean();   // ✅ 출력 버퍼 정리
+    flush();      // ✅ 즉시 출력
+    header("Content-type: application/vnd.ms-excel"); // ✅ 명시적 content-type
+    header("Content-disposition: attachment; filename=contest" . $cid . "_" . $ftitle . ".xls");
 }
+
 
 if ($start_time==0){
 	echo "No Such Contest";
@@ -208,7 +236,8 @@ $rank=1;
 //echo "<style> td{font-size:14} </style>";
 //echo "<title>Contest RankList -- $title</title>";
 echo "<center><h3>Contest RankList -- $title</h3></center>";
-echo "<table border=1><tr><td>Rank<td>User<td>Nick<td>Solved<td>Mark<td>Penalty";
+echo "<table border=1><tr><td>Rank<td>User<td>Nick<td>Solved<td>Mark<td>Score<td>Penalty";
+
 for ($i=0;$i<$pid_cnt;$i++)
 	echo "<td>$PID[$i]";
 echo "</tr>";
@@ -239,6 +268,7 @@ for ($i=0;$i<$user_cnt;$i++){
 	
 	echo $U[$i]->mark>0?intval($U[$i]->mark):0;
 	echo "</td>";
+	echo "<td>" . ($U[$i]->score_sum ?? 0) . "</td>"; // ✅ score_sum 출력
 	echo "<td>".sec2str($U[$i]->time)."</td>";
 	for ($j=0;$j<$pid_cnt;$j++){
 		echo "<td>";

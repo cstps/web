@@ -75,30 +75,42 @@ if(isset($_POST['startdate'])){
   $pieces = explode(',', $plist);
 
   if(count($pieces)>0 && strlen($pieces[0])>0){
-    $sql_1 = "INSERT INTO `contest_problem`(`contest_id`,`problem_id`,`num`) VALUES (?,?,?)";
-    
-    $plist="";
-    pdo_query("update solution set num=-1 where contest_id=?",$cid);
-    $num=0;
+    $cpoints = $_POST['cpoint'];
+    $sql_1 = "INSERT INTO `contest_problem`(`contest_id`,`problem_id`,`num`, `score`) VALUES (?,?,?,?)";
+
+    $plist = "";
+    pdo_query("UPDATE solution SET num=-1 WHERE contest_id=?", $cid);
+    $num = 0;
+
     for($i=0; $i<count($pieces); $i++){
-      $sql="select problem_id from problem where problem_id=?";
-      $pid=intval($pieces[$i]);
-      $has=pdo_query($sql,$pid);
-      if(count($has) > 0) {
-         if($plist) $plist.=",";
-         $plist.=intval($pieces[$i]);
-         pdo_query($sql_1,$cid,$pieces[$i],$num);
-	 $sql="UPDATE `contest_problem` SET `c_accepted`=(SELECT count(1) FROM `solution` WHERE `problem_id`=? and contest_id=? AND `result`=4) WHERE `problem_id`=? and contest_id=?";
-	 pdo_query($sql,$pid,$cid,$pid,$cid);
-	 $sql="UPDATE `contest_problem` SET `c_submit`=(SELECT count(1) FROM `solution` WHERE `problem_id`=? and contest_id=?) WHERE `problem_id`=? and contest_id=?";
-	 pdo_query($sql,$pid,$cid,$pid,$cid);
-      	 $sql_2 = "update solution set num=? where contest_id=? and problem_id=?;";
-      	 pdo_query($sql_2,$num,$cid,$pid);
-         $num++;
-      }else{
-         print("Problem not exists:".$pieces[$i]."<br>\n");
+      $pid = intval($pieces[$i]);
+      $score = isset($cpoints[$i]) ? intval($cpoints[$i]) : 100;
+
+      $sql = "SELECT problem_id FROM problem WHERE problem_id=?";
+      $has = pdo_query($sql, $pid);
+
+      if(count($has) > 0){
+        if($plist) $plist .= ",";
+        $plist .= $pid;
+
+        pdo_query($sql_1, $cid, $pid, $num, $score); // 점수 저장
+
+        // 정답/제출 수 업데이트
+        $sql="UPDATE `contest_problem` SET `c_accepted`=(SELECT count(1) FROM `solution` WHERE `problem_id`=? and contest_id=? AND `result`=4) WHERE `problem_id`=? and contest_id=?";
+        pdo_query($sql,$pid,$cid,$pid,$cid);
+
+        $sql="UPDATE `contest_problem` SET `c_submit`=(SELECT count(1) FROM `solution` WHERE `problem_id`=? and contest_id=?) WHERE `problem_id`=? and contest_id=?";
+        pdo_query($sql,$pid,$cid,$pid,$cid);
+
+        $sql_2 = "UPDATE solution SET num=? WHERE contest_id=? AND problem_id=?";
+        pdo_query($sql_2, $num, $cid, $pid);
+
+        $num++;
+      } else {
+        print("Problem not exists:".$pieces[$i]."<br>\n");
       }
     }
+
     // 22.08.24 대회 문제를 등록해도 기본 공개/비공개 정보를 그대로 유지 되도록 수정
     // $sql = "update `problem` set defunct='N' where `problem_id` in ($plist)";
     // pdo_query($sql) ;
@@ -138,13 +150,17 @@ if(isset($_POST['startdate'])){
   $title = htmlentities($row['title'],ENT_QUOTES,"UTF-8");
 
   $plist = "";
-  $sql = "SELECT `problem_id` FROM `contest_problem` WHERE `contest_id`=? ORDER BY `num`";
+  $sql = "SELECT `problem_id`, `score` FROM `contest_problem` WHERE `contest_id`=? ORDER BY `num`";
+
   $result=pdo_query($sql,$cid);
 
+  $score_list = array(); // 추가
   foreach($result as $row){
     if($plist) $plist .= ",";
-    $plist.=$row[0];
+    $plist .= $row[0];
+    $score_list[] = $row['score']; // 점수 저장
   }
+
 
   $ulist = "";
   $sql = "SELECT `user_id` FROM `privilege` WHERE `rightstr`=? order by user_id";
@@ -253,30 +269,33 @@ if(isset($_POST['startdate'])){
     </p>
   </form>
 </div>
+
 <script>
+  const prefilledScores = <?php echo json_encode($score_list); ?>;
   async function showTitles(){
-      let ts = document.querySelector("#ptitles");
-      let pids = document.querySelector("#plist").value.split(",");
-      let html = "";
-      for (let v of pids) {
-          let response = await fetch("ajax.php", {
-              method: 'POST',
-              headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-              body: new URLSearchParams({"pid":v, "m":"problem_get_title"})
-          });
+    let ts = document.querySelector("#ptitles");
+    let pids = document.querySelector("#plist").value.split(",");
+    let html = "";
 
-          let title = await response.text();
-          if (v.length!==0){
-            html += `${v}:<a href='../problem.php?id=${v}' target='_blank'>${title}</a> -> 점수 : 
-            <input type=text name=cpoint[] style="width:150px;" value="">`;
-            html +=`<br>\n`;
-          }
+    for (let i = 0; i < pids.length; i++) {
+        let v = pids[i].trim();
+        if (!v) continue;
 
-      }
-      
-      
-      ts.innerHTML = html;
-  }
+        let response = await fetch("ajax.php", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({"pid": v, "m": "problem_get_title"})
+        });
+
+        let title = await response.text();
+        html += `${v}:<a href='../problem.php?id=${v}' target='_blank'>${title}</a> -> 점수 : 
+        <input type="text" name="cpoint[]" style="width:150px;" value="${prefilledScores[i] ?? 100}">`;
+        html += `<br>\n`;
+    }
+
+    ts.innerHTML = html;
+}
+
 
   document.addEventListener("DOMContentLoaded", function(){
       showTitles();
