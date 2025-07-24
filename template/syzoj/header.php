@@ -108,6 +108,7 @@
             <div class="ui simple dropdown item"><a class="item <?php if ($url=="pc.php") echo "active";?>" href="<?php echo $path_fix?>pc.php"><?php echo $MSG_ULTILIST?></a><i class="dropdown icon"></i>
             <ul class="menu">
                 <a class="item" href="<?php echo $path_fix?>pc.php"><?php echo $MSG_POINTCHECK?></a>
+                <a class="item" href="<?php echo $path_fix?>charcount.php"><?php echo $MSG_CHARCOUNT?></a>
                 <a class="item" href="<?php echo $path_fix?>"><i class="edit icon"></i>개발중</a>
             </ul>
             </div>
