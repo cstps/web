@@ -311,6 +311,61 @@ function loadFromBlockly(){
    reloadtemplate($("#language").val()); 
      
 </script>
+<?php
+  $pid_for_key = isset($id) ? $id : (isset($pid) ? $pid : 'unknown');
+  $cid_prefix = isset($cid) ? "contest_" . $cid . "_" : "";
+?>
+<script>
+	// 자동 저장 기능 (localStorage 사용)
+	const localKey = "autosave_code_<?php echo $cid_prefix . $pid_for_key ?>";
+
+	// 복원 확인
+	const savedCode = localStorage.getItem(localKey);
+	if (savedCode && typeof editor !== "undefined") {
+	const shouldRestore = confirm("💾 저장된 코드가 있습니다. 복원하시겠습니까?");
+	if (shouldRestore) {
+		editor.setValue(savedCode, -1);
+		
+		// 저장 시간 표시
+		const lastSaved = localStorage.getItem(localKey + "_time");
+		if (lastSaved) {
+		const savedDate = new Date(parseInt(lastSaved));
+		const now = new Date();
+		const diffSec = Math.floor((now - savedDate) / 1000);
+		let timeStr = "";
+		if (diffSec < 60) timeStr = `${diffSec}초 전`;
+		else if (diffSec < 3600) timeStr = `${Math.floor(diffSec / 60)}분 전`;
+		else timeStr = savedDate.toLocaleString();
+
+		const notice = document.createElement("div");
+		notice.innerText = `💾 저장된 코드가 ${timeStr}에 저장되었습니다.`;
+		notice.style.color = "#666";
+		notice.style.marginBottom = "10px";
+		document.getElementById("editor").before(notice);
+		}
+	} else {
+		localStorage.removeItem(localKey);
+		localStorage.removeItem(localKey + "_time");
+	}
+	}
+
+	// 자동 저장: 5초마다
+	setInterval(() => {
+	if (typeof editor !== "undefined") {
+		const code = editor.getValue();
+		localStorage.setItem(localKey, code);
+		localStorage.setItem(localKey + "_time", Date.now());
+	}
+	}, 5000);
+
+	// 제출 시 삭제
+	document.getElementById("frmSolution").addEventListener("submit", () => {
+	localStorage.removeItem(localKey);
+	localStorage.removeItem(localKey + "_time");
+	});
+
+</script>
+
 <?php }?>
 
   </body>
