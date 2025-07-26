@@ -40,14 +40,7 @@ if(isset($_POST['startdate'])){
   $private = $_POST['private'];
   $password = $_POST['password'];
   $description = $_POST['description'];
-  
-  if(get_magic_quotes_gpc()){
-    $title = stripslashes($title);
-    $codevisible = stripslashes($codevisible);
-    $private = stripslashes($private);
-    $password = stripslashes($password);
-    $description = stripslashes($description);
-  }
+  $exam_mode = isset($_POST['exam_mode']) ? intval($_POST['exam_mode']) : 0;  
 
   $lang = $_POST['lang'];
   $langmask = 0;
@@ -58,15 +51,16 @@ if(isset($_POST['startdate'])){
   $langmask = ((1<<count($language_ext))-1)&(~$langmask);
   //echo $langmask; 
 
-  $sql = "INSERT INTO `contest`(`title`,`start_time`,`end_time`,`codevisible`,`private`,`langmask`,`description`,`password`,`user_id`)
-          VALUES(?,?,?,?,?,?,?,?,?)";
+  $sql = "INSERT INTO `contest`(`title`,`start_time`,`end_time`,`codevisible`,`private`,`langmask`,`description`,`password`,`user_id`,`exam_mode`)
+        VALUES(?,?,?,?,?,?,?,?,?,?)";
 
   $description = str_replace("<p>", "", $description); 
   $description = str_replace("</p>", "<br />", $description);
   $description = str_replace(",", "&#44; ", $description);
   $user_id=$_SESSION[$OJ_NAME.'_'.'user_id'];
-  echo $sql.$title.$starttime.$endtime.$codevisible.$private.$langmask.$description.$password,$user_id;
-  $cid = pdo_query($sql,$title,$starttime,$endtime,$codevisible,$private,$langmask,$description,$password,$user_id) ;
+
+  // echo $sql,$title,$starttime,$endtime,$codevisible,$private,$langmask,$description,$password,$user_id, $exam_mode;
+  $cid = pdo_query($sql,$title,$starttime,$endtime,$codevisible,$private,$langmask,$description,$password,$user_id, $exam_mode);
   echo "Add Contest ".$cid;
 
   $sql = "DELETE FROM `contest_problem` WHERE `contest_id`=$cid";
@@ -84,7 +78,7 @@ if(isset($_POST['startdate'])){
 
     for($i = 0; $i < count($pieces); $i++){
       $problem_id = intval($pieces[$i]);
-      $score = isset($cpoints[$i]) ? intval($cpoints[$i]) : 100; // 점수 없으면 기본 100
+      $score = isset($cpoints[$i])>0 ? intval($cpoints[$i]) : 100; // 점수 없으면 기본 100
 
       $sql = "SELECT problem_id FROM problem WHERE problem_id=?";
       $has = pdo_query($sql, $problem_id);
@@ -136,6 +130,7 @@ else{
     $description = $row['description'];
     $starttime = $row['start_time'];
     $endtime = $row['end_time'];
+    $exam_mode = $row['exam_mode'];
 
     $plist = "";
     $sql = "SELECT `problem_id` FROM `contest_problem` WHERE `contest_id`=? ORDER BY `num`";
@@ -178,6 +173,8 @@ else{
   }
 
   include_once("kindeditor.php") ;
+  
+
 ?>
 
   <div class="container">
@@ -284,18 +281,25 @@ else{
           </td>
           <td height="10px">
             <p align=left>
-              <?php echo $MSG_CONTEST."-".$MSG_CodePublic?>:
-              <select name=codevisible style="width:150px;">
-                <option value=0 <?php echo $codevisible=='0'?'selected=selected':''?>><?php echo $MSG_CodePublic?></option>
-                <option value=1 <?php echo $codevisible=='1'?'selected=selected':''?>><?php echo $MSG_CodePrivate?></option>
-              </select>
               <?php echo $MSG_CONTEST."-".$MSG_Public?>:
-              <select name=private style="width:150px;">
+              <select name=private style="width:80px;">
                 <option value=0 <?php echo $private=='0'?'selected=selected':''?>><?php echo $MSG_Public?></option>
                 <option value=1 <?php echo $private=='1'?'selected=selected':''?>><?php echo $MSG_Private?></option>
               </select>
+              <?php echo $MSG_CONTEST."-".$MSG_CodePublic?>:
+              <select name=codevisible style="width:80px;">
+                <option value=0 <?php echo $codevisible=='0'?'selected=selected':''?>><?php echo $MSG_CodePublic?></option>
+                <option value=1 <?php echo $codevisible=='1'?'selected=selected':''?>><?php echo $MSG_CodePrivate?></option>
+              </select>
+              <?php echo $MSG_CONTEST."-".$MSG_EXAMMODE?>:
+              <select name="exam_mode" style="width:80px;">
+                <option value=0 <?php echo $exam_mode=='0'?'selected=selected':''?>><?php echo $MSG_EXAMMODEOFF?></option>
+                <option value=1 <?php echo $exam_mode=='1'?'selected=selected':''?>><?php echo $MSG_EXAMMODEON?></option>
+              </select>
               <?php echo $MSG_CONTEST."-".$MSG_PASSWORD?>:
-              <input type=text name=password style="width:150px;" value="">
+              <input type=text name=password style="width:80px;" value="">
+            
+
             </p>
           </td>
         </tr>

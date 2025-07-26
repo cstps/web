@@ -99,7 +99,6 @@ if (isset($_GET['cid'])) {
 	$view_cid = $cid;
 	//print $cid;
 
-	//check contest valid
 	$sql = "SELECT * FROM `contest` WHERE `contest_id`=?";
 	$result = pdo_query($sql,$cid);
 	$rows_cnt = count($result);
@@ -112,6 +111,7 @@ if (isset($_GET['cid'])) {
 		$view_title = $row['title'];
 		$view_start_time = $row['start_time'];
 		$view_end_time = $row['end_time'];
+		$exam_mode = intval($row['exam_mode']);
 	}
 	$contest_ok = true;
 	$password = "";
@@ -259,18 +259,10 @@ if (isset($_GET['cid'])) {
 		$view_problemset[$cnt][3] = $row['source'];
 
 		  // 수행평가 모드 체크
-        $exam_check_sql = "SELECT `id`,`exam_mode`,`register`FROM `setting` ";
-        $exam_result = pdo_query($exam_check_sql);
-        $exam_mode = $exam_result[0]['exam_mode'];
-        if($exam_mode==0 || isset($_SESSION[$OJ_NAME.'_'.'vip']) || isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'source_browser'])){
-			if (!$noip)
-				$view_problemset[$cnt][4] = $row['accepted'];
-			else
-				$view_problemset[$cnt][4] = "";
-		
+        if ($exam_mode == 0 || isset($_SESSION[$OJ_NAME.'_administrator']) || isset($_SESSION[$OJ_NAME.'_contest_creator']) || isset($_SESSION[$OJ_NAME.'_source_browser']) || isset($_SESSION[$OJ_NAME.'_m'.$cid])) {
+			$view_problemset[$cnt][4] = $noip ? "" : $row['accepted'];
 			$view_problemset[$cnt][5] = $row['submit'];
-		}
-		else{
+		} else {
 			$view_problemset[$cnt][4] = "평가중";
 			$view_problemset[$cnt][5] = "평가중";
 		}

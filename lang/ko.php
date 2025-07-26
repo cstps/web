@@ -204,8 +204,11 @@
 
 	$MSG_Public="공개";
 	$MSG_Private="비공개";
-	$MSG_CodePublic="자기코드봄";
-	$MSG_CodePrivate="자기코드못봄";
+	$MSG_CodePublic="코드봄";
+	$MSG_CodePrivate="코드못봄";
+	$MSG_EXAMMODEOFF="일반모드";
+	$MSG_EXAMMODEON="수행모드";
+	$MSG_EXAMMODE="대회모드";
 	$MSG_Running="대회시작";
 	$MSG_Start="시작일시";
 	$MSG_End="종료일시";
