@@ -110,7 +110,7 @@ if (isset($_GET['cid'])) {
   $cid = intval($_GET['cid']);
   $sql = $sql." AND `contest_id`='$cid' and num>=0 ";
   $str2 = $str2."&cid=$cid";
-  $sql_lock = "SELECT `start_time`,`title`,`end_time`, `codevisible` FROM `contest` WHERE `contest_id`=?";
+  $sql_lock = "SELECT `start_time`,`title`,`end_time`, `codevisible`,`exam_mode` FROM `contest` WHERE `contest_id`=?";
   $result = pdo_query($sql_lock,$cid);
   $rows_cnt = count($result);
   $start_time = 0;
@@ -123,6 +123,7 @@ if (isset($_GET['cid'])) {
     $title = $row[1];
     $end_time = strtotime($row[2]);
     $codevisible = isset($row['codevisible']) ? intval($row['codevisible']) : 0;
+    $exam_mode = isset($row['exam_mode']) ? intval($row['exam_mode']) : 0;
     
 	$noip = (time()<$end_time) && (stripos($title,$OJ_NOIP_KEYWORD)!==false);
 	if(isset($_SESSION[$OJ_NAME.'_'."administrator"])||
@@ -299,6 +300,29 @@ $last = 0;
 for ($i=0; $i<$rows_cnt; $i++) {
   $row = $result[$i];
   //$view_status[$i]=$row;
+  // 수행모드 + 본인 아님 → 전체 정보 숨김
+  // 수행모드 + 본인 아님 → 전체 정보 숨김
+  if (isset($exam_mode) && $exam_mode == 1 &&
+      (!isset($_SESSION[$OJ_NAME.'_'.'user_id']) || $_SESSION[$OJ_NAME.'_'.'user_id'] !== $row['user_id']) &&
+      !isset($_SESSION[$OJ_NAME.'_'.'administrator']) &&
+      !isset($_SESSION[$OJ_NAME.'_'.'source_browser']) &&
+      !isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) &&
+      !isset($_SESSION[$OJ_NAME."_m$cid"])
+  ) {
+    $view_status[$i][0] = "수행모드"; // 번호
+    $view_status[$i][1] = "----"; // 사용자
+    $view_status[$i]['nick'] = "----"; // 별명
+    $view_status[$i][2] = "----"; // 문제
+    $view_status[$i][3] = "----"; // 결과
+    $view_status[$i][4] = "----"; // 메모리
+    $view_status[$i][5] = "----"; // 시간
+    $view_status[$i][6] = "----"; // 코드
+    $view_status[$i][7] = "----"; // 코드길이
+    $view_status[$i][8] = "수행모드"; // 제출 시간
+    // $view_status[$i][9] = "----"; // 채점기
+    continue; // 이 행은 여기까지만 처리
+  }
+
   if ($i==0 && $row['result']<4)
     $last = $row['solution_id'];
 
@@ -306,19 +330,22 @@ for ($i=0; $i<$rows_cnt; $i++) {
     $top = $row['solution_id'];
   
   $bottom = $row['solution_id'];
-  $flag = (!is_running(intval($row['contest_id']))) 
-  || isset($_SESSION[$OJ_NAME.'_'.'source_browser']) 
-  || isset($_SESSION[$OJ_NAME.'_'.'administrator']) 
-  || (isset($_SESSION[$OJ_NAME.'_'.'user_id'])&&!strcmp($row['user_id'],$_SESSION[$OJ_NAME.'_'.'user_id']));
+  $flag = (
+    isset($_SESSION[$OJ_NAME.'_'.'administrator']) ||
+    isset($_SESSION[$OJ_NAME.'_'.'source_browser']) ||
+    isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) ||
+    isset($_SESSION[$OJ_NAME."_m$cid"]) ||(
+        $exam_mode == 0 // 수행모드 아님
+        || (isset($_SESSION[$OJ_NAME.'_'.'user_id']) && $_SESSION[$OJ_NAME.'_'.'user_id'] === $row['user_id'])
+    )
+  );
+
+
 
   $cnt = 1-$cnt;
   
   $view_status[$i][0] = $row['solution_id'];
        
-  // 수행평가 모드 체크
-  $exam_check_sql = "SELECT `id`,`exam_mode`,`register`FROM `setting` ";
-  $exam_result = pdo_query($exam_check_sql);
-  $exam_mode = $exam_result[0]['exam_mode'];
 
   if ($row['contest_id']>0) {
 
@@ -486,24 +513,19 @@ for ($i=0; $i<$rows_cnt; $i++) {
     else {
 
 
-      $is_admin = isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'source_browser']) || isset($_SESSION[$OJ_NAME."_m$cid"]);
       $is_owner = (isset($_SESSION[$OJ_NAME.'_'.'user_id']) && strtolower($row['user_id']) == strtolower($_SESSION[$OJ_NAME.'_'.'user_id']));
-
-      if (
-          ($codevisible == 0 || $is_admin) && // 👈 codevisible이 허용된 경우 or 관리자
-          ((isset($end_time) && time() < $end_time) || $is_owner || $is_admin)
-      ) {
-          if (isset($_SESSION[$OJ_NAME.'_'.'source_browser'])) {
-              $view_status[$i][6] = "<a target=_self href=showsource.php?id=".$row['solution_id']."'>".$language_name[$row['language']]."</a>";
-          } else if ($exam_mode == 1) {
-              $view_status[$i][6] = $language_name[$row['language']];
-          } else {
-              $view_status[$i][6] = "<a target=_self href=showsource.php?id=".$row['solution_id']."'>".$language_name[$row['language']]."</a>";
-          }
-      } else {
-          $view_status[$i][6] = $language_name[$row['language']];
-      }
       $is_admin = isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'source_browser']) || isset($_SESSION[$OJ_NAME."_m$cid"]);
+
+      if ($flag) {
+        // ✅ flag: 관리자, 출제자, 본인, 수행모드 아님 → 링크 허용
+        $view_status[$i][6] = "<a target=_self href=showsource.php?id=".$row['solution_id']."'>".$language_name[$row['language']]."</a>";
+      } else {
+        // 🔒 수행모드 + 본인 아님 등 → 링크 없음
+        $view_status[$i][6] = $language_name[$row['language']];
+      }
+
+
+      // $is_admin = isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'source_browser']) || isset($_SESSION[$OJ_NAME."_m$cid"]);
 
       if ($row["problem_id"] > 0) {
         if ($row['contest_id'] > 0) {
@@ -512,17 +534,28 @@ for ($i=0; $i<$rows_cnt; $i++) {
               if ($codevisible == 0 || $is_admin) {
                 $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?cid=".$row['contest_id']."&pid=".$row['num']."&sid=".$row['solution_id']."\">Edit</a>";
               } else {
-                $view_status[$i][6] .= "/제한"; // codevisible == 1 → 일반 유저 차단
+                $view_status[$i][6] .= "/제한";
               }
-            } else {
-              $view_status[$i][6] .= "/수행모드"; // 시험 모드 중이면 edit 차단
+            }
+            else if ($exam_mode == 1 && $is_owner) {
+              $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?cid=".$row['contest_id']."&pid=".$row['num']."&sid=".$row['solution_id']."\">Edit</a>";
+            }
+            else {
+              $view_status[$i][6] .= "/수행모드";
             }
           }
-        } else {
-          if ($exam_mode == 0) {
-            $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?id=".$row['problem_id']."&sid=".$row['solution_id']."\">Edit</a>";
-          } else {
-            $view_status[$i][6] .= "/수행모드";
+        }
+        else {
+        // 연습 문제인 경우
+          if ($is_owner || $is_admin) {
+              if ($row['contest_id'] > 0) {
+                  // 대회 문제
+                  $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?cid=".$row['contest_id']."&pid=".$row['num']."&sid=".$row['solution_id']."\">Edit</a>";
+              } else {
+                  // 일반 문제
+                  $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?id=".$row['problem_id']."&sid=".$row['solution_id']."\">Edit</a>";
+              }
+
           }
         }
       }
@@ -530,17 +563,26 @@ for ($i=0; $i<$rows_cnt; $i++) {
     
     $view_status[$i][7] = $row['code_length']." bytes";
         
-  }
-  else {
-    $view_status[$i][4] = "----";
-    $view_status[$i][5] = "----";
-    $view_status[$i][6] = "----";
-    $view_status[$i][7] = "----";
-  }
+  } else {
+    // 수행모드이고 본인 제출이 아닌 경우만 --- 처리
+    if ($exam_mode == 1 && (!isset($_SESSION[$OJ_NAME.'_'.'user_id']) || $_SESSION[$OJ_NAME.'_'.'user_id'] !== $row['user_id'])) {
+        $view_status[$i][4] = "----";
+        $view_status[$i][5] = "----";
+        $view_status[$i][6] = "----";
+        $view_status[$i][7] = "----";
+    } else {
+        // 수행모드가 아니거나 본인 제출이면 메모리, 시간, 코드 언어, 길이 보여주기
+        $view_status[$i][4] = $row['memory']."KB";
+        $view_status[$i][5] = $row['time']."ms";
+        $view_status[$i][6] = $language_name[$row['language']];
+        $view_status[$i][7] = $row['code_length']." bytes";
+    }
+}
+
 
   if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])) {
     $view_status[$i][8] = $row['in_date']."[".(strtotime($row['judgetime'])-strtotime($row['in_date']))."]";
-    $view_status[$i][9] = $row['judger'];
+    // $view_status[$i][9] = $row['judger'];
   }
   else
     $view_status[$i][8]= $row['in_date'];

@@ -101,7 +101,7 @@
         <th>코드</th>
         <th>코드길이</th>
         <th>제출 시간</th>
-        <th>채점</th>
+        <!-- <th>채점</th> -->
       </tr>
     </thead>
     <tbody>
