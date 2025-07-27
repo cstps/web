@@ -6,34 +6,55 @@ $current_school = $is_school_rank ? $_GET['school'] : '';
 ?>
 
 <div class="padding"> 
-  <!-- 탭 메뉴 -->
-  <div class="ui top attached tabular menu">
-    <a href="ranklist.php" class="item <?= !$is_school_rank ? 'active' : '' ?>">전체 랭킹</a>
-    <a href="#school-tab" class="item <?= $is_school_rank ? 'active' : '' ?>" onclick="document.getElementById('school_select').scrollIntoView();">학교 랭킹</a>
-  </div>
+  <!-- 상단 탭 + prefix 검색 + Day 범위 필터 플렉스 박스 -->
+  <div class="ui pointing secondary menu" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
 
-  <!-- Scope 링크 -->
-  <div style="margin: 10px 0;">
-    <a href="ranklist.php?scope=d">Day</a>
-    <a href="ranklist.php?scope=w">Week</a>
-    <a href="ranklist.php?scope=m">Month</a>
-    <a href="ranklist.php?scope=y">Year</a>
-  </div>
+    <div style="display: flex; align-items: center; gap: 1em;">
+      <!-- 전체 랭킹 탭 -->
+      <a class="<?= !$is_school_rank ? 'active ' : '' ?>item" href="ranklist.php">전체 랭킹</a>
 
-  <!-- prefix 검색 -->
-  <form action="ranklist.php" class="ui mini form" method="get" role="form" style="margin-bottom: 25px; text-align: right;">
-    <div class="ui action left icon input inline" style="width: 180px; margin-right: 77px;">
-      <i class="search icon"></i>
-      <input name="prefix" placeholder="<?php echo $MSG_USER?>" type="text" value="<?php echo htmlentities(isset($_GET['prefix'])?$_GET['prefix']:"",ENT_QUOTES,"utf-8") ?>">
-      <button class="ui mini button" type="submit"><?php echo $MSG_SEARCH?></button>
+      <!-- 학교 랭킹 드롭다운 탭 -->
+      <div class="ui dropdown item <?= $is_school_rank ? 'active' : '' ?>">
+        <span>학교 랭킹</span> <i class="dropdown icon"></i>
+        <div class="menu">
+          <?php foreach ($schools as $row): 
+            $school = htmlentities($row['school'], ENT_QUOTES, 'UTF-8'); ?>
+            <a class="item" href="ranklist.php?school=<?= urlencode($school) ?>"><?= $school ?></a>
+          <?php endforeach; ?>
+        </div>
+      </div>
+
+      <!-- prefix 검색창 -->
+      <form action="ranklist.php" class="ui mini form" method="get" role="form" style="margin: 0;">
+        <div class="ui action left icon input" style="width: 180px;">
+          <i class="search icon"></i>
+          <input name="prefix" placeholder="<?= $MSG_USER ?>" type="text"
+                value="<?= htmlentities($_GET['prefix'] ?? "", ENT_QUOTES, "utf-8") ?>">
+          <button class="ui mini button" type="submit"><?= $MSG_SEARCH ?></button>
+        </div>
+      </form>
     </div>
-  </form>
+
+    <!-- Day/Week/Month/Year 버튼 그룹 -->
+    <div class="ui buttons mini">
+      <a href="ranklist.php?scope=d" class="ui button <?= $scope == 'd' ? 'blue' : '' ?>">Day</a>
+      <a href="ranklist.php?scope=w" class="ui button <?= $scope == 'w' ? 'blue' : '' ?>">Week</a>
+      <a href="ranklist.php?scope=m" class="ui button <?= $scope == 'm' ? 'blue' : '' ?>">Month</a>
+      <a href="ranklist.php?scope=y" class="ui button <?= $scope == 'y' ? 'blue' : '' ?>">Year</a>
+    </div>
+  </div>
+
+
 
   <!-- 학교 선택 드롭다운 -->
   <?php if (isset($schools)): ?>
     <form method="get" action="ranklist.php" style="margin-bottom: 20px;">
       <label for="school_select"><strong>학교 선택:</strong></label>
-      <select id="school_select" name="school" class="ui dropdown" style="min-width:300px;">
+      <span style="margin-left:10px; font-size:0.9em; color:#666;">
+        ※ 학교 정보는 <a href="modifypage.php" target="_blank">개인정보 수정</a>에서 설정할 수 있습니다.
+      </span>
+      <br>
+      <select id="school_select" name="school" class="ui dropdown" style="min-width:300px; margin-top: 5px;">
         <option value="">-- 학교 선택 --</option>
         <?php foreach ($schools as $row): 
           $school = htmlentities($row['school'], ENT_QUOTES, 'UTF-8'); ?>
@@ -41,6 +62,7 @@ $current_school = $is_school_rank ? $_GET['school'] : '';
         <?php endforeach; ?>
       </select>
     </form>
+
   <?php endif; ?>
 
   <!-- 순위 테이블 -->
@@ -85,11 +107,12 @@ $current_school = $is_school_rank ? $_GET['school'] : '';
 </div>
 
 <script>
-document.getElementById('school_select')?.addEventListener('change', function() {
-  if (this.value !== "") {
-    window.location.href = "ranklist.php?school=" + encodeURIComponent(this.value);
-  }
-});
+    $('.ui.dropdown').dropdown();
+  document.getElementById('school_select')?.addEventListener('change', function() {
+    if (this.value !== "") {
+      window.location.href = "ranklist.php?school=" + encodeURIComponent(this.value);
+    }
+  });
 </script>
 
 <?php include("template/$OJ_TEMPLATE/footer.php"); ?>
