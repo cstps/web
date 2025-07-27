@@ -1,4 +1,10 @@
+
 <?php
+
+        ini_set('display_errors', 1);
+        ini_set('display_startup_errors', 1);
+        error_reporting(E_ALL);
+
         $OJ_CACHE_SHARE=false;
         $cache_time=30;
         require_once('./include/cache_start.php');
@@ -6,6 +12,10 @@
 	require_once("./include/my_func.inc.php");
         require_once('./include/setlang.php');
         require_once('./include/memcache.php');
+
+
+
+
         if(isset($OJ_NOIP_KEYWORD)&&$OJ_NOIP_KEYWORD){
 		$now = strftime("%Y-%m-%d %H:%M",time());
         	$sql="select count(contest_id) from contest where start_time<'$now' and end_time>'$now' and title like '%$OJ_NOIP_KEYWORD%'";
@@ -21,8 +31,67 @@
 
 		}
  	}
+        // 학교 목록 가져오기
+        $sql = "SELECT DISTINCT school FROM users WHERE school != '' AND defunct='N' ORDER BY school ASC";
+        $schools = pdo_query($sql);
+        // ===== 특정 학교 랭킹 보기 기능 시작 =====
+        if (isset($_GET['school']) && $_GET['school'] != '') {
+                $scope = "";  // 템플릿 오류 방지를 위한 기본값
+
+                $school = trim($_GET['school']);
+
+                // 존재하는 학교인지 검사
+                $chk_sql = "SELECT COUNT(*) as cnt FROM users WHERE school = ? AND defunct='N'";
+                $chk_res = pdo_query($chk_sql, $school);
+                if (!$chk_res || $chk_res[0]['cnt'] == 0) {
+                        $view_errors = "<h2>'$school' 에 해당하는 사용자 정보가 없습니다.</h2>";
+                        require("template/$OJ_TEMPLATE/error.php");
+                        exit;
+                }
+
+                // 페이지네이션 처리
+                $start = isset($_GET['start']) ? intval($_GET['start']) : 0;
+                $page_size = 300;
+
+                // 해당 학교 사용자 랭킹 쿼리
+                $sql = "SELECT user_id, nick, solved, submit FROM users WHERE defunct='N' AND school = ? ORDER BY solved DESC, submit, reg_time LIMIT $start, $page_size";
+                $result = pdo_query($sql, $school);
+
+                $rows_cnt = count($result);
+                $view_rank = [];
+                $rank = $start;
+
+                for ($i = 0; $i < $rows_cnt; $i++) {
+                        $row = $result[$i];
+                        $rank++;
+
+                        $solved = $row['solved'];
+                        $submit = $row['submit'];
+                        $rate = $submit == 0 ? "0.00%" : sprintf("%.2lf%%", 100 * $solved / $submit);
+
+                        $view_rank[$i][0] = str_pad($rank, 3, "0", STR_PAD_LEFT);
+                        $view_rank[$i][1] = "<a href='userinfo.php?user=" . htmlentities($row['user_id']) . "'>" . $row['user_id'] . "</a>";
+                        //$view_rank[$i][2] = htmlentities($row['nick'], ENT_QUOTES, "UTF-8");
+                        $view_rank[$i][3] = "<a href='status.php?user_id=" . htmlentities($row['user_id']) . "&jresult=4'>" . $solved . "</a>";
+                        $view_rank[$i][4] = "<a href='status.php?user_id=" . htmlentities($row['user_id']) . "'>" . $submit . "</a>";
+                        $view_rank[$i][5] = $rate;
+                }
+
+                $view_title = "'$school' 랭킹";
+                $sql_count = "SELECT COUNT(1) AS cnt FROM users WHERE defunct='N' AND school=?";
+                $res_count = pdo_query($sql_count, $school);
+                $view_total = $res_count[0]['cnt'];
+
+
+                require("template/$OJ_TEMPLATE/ranklist.php");
+                if (file_exists('./include/cache_end.php')) require_once('./include/cache_end.php');
+                exit;
+        }
+
+        // ===== 학교 내 랭킹 보기 기능 끝 =====
+
         $view_title= $MSG_RANKLIST;
-	if(!isset($OJ_RANK_HIDDEN)) $OJ_RANK_HIDDEN="'admin','seotos','root'";
+	// if(!isset($OJ_RANK_HIDDEN)) $OJ_RANK_HIDDEN="'admin','seotos','root'";
 
         $scope="";
         if(isset($_GET['scope']))
@@ -35,7 +104,7 @@
 		$prefix=$_GET['prefix'];
 		$where="where user_id like ?";
 	}else{	
-		$where="where user_id not in (".$OJ_RANK_HIDDEN.") and defunct='N' ";
+		$where="where  defunct='N' ";
 	}
         $rank = 0;
         if(isset( $_GET ['start'] ))
@@ -72,18 +141,23 @@
                         }
                         //echo $s."<-------------------------";
                         $sql="SELECT users.`user_id`,`nick`,s.`solved`,t.`submit` FROM `users`
-                                        inner join
-                                        (select count(distinct problem_id) solved ,user_id from solution 
-						where in_date>str_to_date('$s','%Y-%m-%d') and result=4 
-						group by user_id order by solved desc limit " . strval ( $rank ) . ",$page_size) s 
-					on users.user_id=s.user_id
-                                        inner join
-                                        (select count( problem_id) submit ,user_id from solution 
-						where in_date>str_to_date('$s','%Y-%m-%d') 
-						group by user_id order by submit desc ) t 
-					on users.user_id=t.user_id
-                                ORDER BY s.`solved` DESC,t.submit,reg_time  LIMIT  0,50
-                         ";
+                                INNER JOIN (
+                                SELECT COUNT(DISTINCT problem_id) solved, user_id
+                                FROM solution
+                                WHERE in_date > STR_TO_DATE('$s','%Y-%m-%d') AND result = 4
+                                GROUP BY user_id
+                                ORDER BY solved DESC
+                                LIMIT " . strval($rank) . ",$page_size
+                                ) s ON users.user_id = s.user_id
+                                INNER JOIN (
+                                SELECT COUNT(problem_id) submit, user_id
+                                FROM solution
+                                WHERE in_date > STR_TO_DATE('$s','%Y-%m-%d')
+                                GROUP BY user_id
+                                ) t ON users.user_id = t.user_id
+                                ORDER BY s.solved DESC, t.submit, reg_time
+                                LIMIT " . strval($rank) . ",$page_size";  // ✅ 수정
+
 //                      echo $sql;
                 }
 
@@ -93,6 +167,7 @@
 		if(isset($_GET['prefix'])){
 			if(is_valid_user_name($_GET['prefix'])){
 				$result = pdo_query($sql,$_GET['prefix']."%");
+                                
 			}else{
 				 $view_errors =  "<h2>invalid user name prefix</h2>";
 			         require("template/".$OJ_TEMPLATE."/error.php");
@@ -100,6 +175,7 @@
 			}
 		}else{
                 	$result = mysql_query_cache($sql) ;
+                        
 		}
                 if($result) $rows_cnt=count($result);
                 else $rows_cnt=0;

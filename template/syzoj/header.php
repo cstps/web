@@ -100,8 +100,8 @@
                 <?php echo $MSG_CONTEST?>
             </a>
             <a class="item <?php if ($url=="status.php") echo "active";?>" href="<?php echo $path_fix?>status.php"><?php echo $MSG_STATUS?></a>
-            <a class="item <?php if ($url=="ranklist.php?prefix=") echo "active";?>"
-                href="<?php echo $path_fix?>ranklist.php?prefix="><?php echo $MSG_RANKLIST?></a>    
+            <a class="item <?php if ($url=="ranklist.php") echo "active";?>"
+                href="<?php echo $path_fix?>ranklist.php"><?php echo $MSG_RANKLIST?></a>    
             <!-- 유틸리티 추가 -->
                 
             
