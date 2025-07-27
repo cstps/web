@@ -1,3 +1,4 @@
+
 <?php 
 	$url=basename($_SERVER['REQUEST_URI']);
 	$dir=basename(getcwd());
@@ -20,7 +21,6 @@
 	}
 ?>
 
-<!DOCTYPE html>
 <html lang="ko" style="position: fixed; width: 100%; overflow: hidden; ">
 
 <head>

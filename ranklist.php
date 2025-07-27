@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <?php
 
         ini_set('display_errors', 1);
@@ -13,7 +13,9 @@
         require_once('./include/setlang.php');
         require_once('./include/memcache.php');
 
-
+                // 학교 목록 가져오기
+                $sql = "SELECT DISTINCT school FROM users WHERE school != '' AND defunct='N' ORDER BY school ASC";
+                $schools = pdo_query($sql);
 
 
         if(isset($OJ_NOIP_KEYWORD)&&$OJ_NOIP_KEYWORD){
@@ -31,14 +33,14 @@
 
 		}
  	}
-        // 학교 목록 가져오기
-        $sql = "SELECT DISTINCT school FROM users WHERE school != '' AND defunct='N' ORDER BY school ASC";
-        $schools = pdo_query($sql);
+
         // ===== 특정 학교 랭킹 보기 기능 시작 =====
         if (isset($_GET['school']) && $_GET['school'] != '') {
+        
                 $scope = "";  // 템플릿 오류 방지를 위한 기본값
 
-                $school = trim($_GET['school']);
+                $school = trim(urldecode($_GET['school']));
+
 
                 // 존재하는 학교인지 검사
                 $chk_sql = "SELECT COUNT(*) as cnt FROM users WHERE school = ? AND defunct='N'";
@@ -81,7 +83,7 @@
                 $sql_count = "SELECT COUNT(1) AS cnt FROM users WHERE defunct='N' AND school=?";
                 $res_count = pdo_query($sql_count, $school);
                 $view_total = $res_count[0]['cnt'];
-
+                
 
                 require("template/$OJ_TEMPLATE/ranklist.php");
                 if (file_exists('./include/cache_end.php')) require_once('./include/cache_end.php');

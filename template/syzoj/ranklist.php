@@ -1,5 +1,6 @@
 <?php $show_title = "순위 - $OJ_NAME"; ?>
 <?php include("template/$OJ_TEMPLATE/header.php"); ?>
+
 <?php
 $is_school_rank = isset($_GET['school']) && $_GET['school'] != '';
 $current_school = $is_school_rank ? $_GET['school'] : '';
@@ -19,7 +20,13 @@ $current_school = $is_school_rank ? $_GET['school'] : '';
         <div class="menu">
           <?php foreach ($schools as $row): 
             $school = htmlentities($row['school'], ENT_QUOTES, 'UTF-8'); ?>
-            <a class="item" href="ranklist.php?school=<?= urlencode($school) ?>"><?= $school ?></a>
+            <?php
+              $base = 'ranklist.php?school=' . urlencode($school);
+              if (isset($_GET['prefix'])) $base .= '&prefix=' . urlencode($_GET['prefix']);
+              if ($scope) $base .= '&scope=' . urlencode($scope);
+            ?>
+            <a class="item" href="<?= $base ?>"><?= $school ?></a>
+
           <?php endforeach; ?>
         </div>
       </div>
@@ -48,20 +55,28 @@ $current_school = $is_school_rank ? $_GET['school'] : '';
 
   <!-- 학교 선택 드롭다운 -->
   <?php if (isset($schools)): ?>
-    <form method="get" action="ranklist.php" style="margin-bottom: 20px;">
+    <form method="get" action="ranklist.php" id="schoolForm" style="margin-bottom: 20px;">
       <label for="school_select"><strong>학교 선택:</strong></label>
       <span style="margin-left:10px; font-size:0.9em; color:#666;">
         ※ 학교 정보는 <a href="modifypage.php" target="_blank">개인정보 수정</a>에서 설정할 수 있습니다.
       </span>
       <br>
-      <select id="school_select" name="school" class="ui dropdown" style="min-width:300px; margin-top: 5px;">
+
+      <input type="hidden" name="prefix" value="<?= htmlentities($_GET['prefix'] ?? "") ?>">
+      <input type="hidden" name="scope" value="<?= htmlentities($_GET['scope'] ?? "") ?>">
+
+      <!-- 변경 후 -->
+      <select id="school_select" name="school" style="min-width:300px; margin-top: 5px; padding: 6px; font-size: 14px;">
+
+
         <option value="">-- 학교 선택 --</option>
-        <?php foreach ($schools as $row): 
-          $school = htmlentities($row['school'], ENT_QUOTES, 'UTF-8'); ?>
+        <?php foreach ($schools as $row): ?>
+          <?php $school = htmlentities($row['school'], ENT_QUOTES, 'UTF-8'); ?>
           <option value="<?= $school ?>" <?= ($current_school == $school ? 'selected' : '') ?>><?= $school ?></option>
         <?php endforeach; ?>
       </select>
-    </form>
+    </form>  <!-- ✅ foreach 바깥에서 명확히 닫힘 -->
+
 
   <?php endif; ?>
 
@@ -107,12 +122,19 @@ $current_school = $is_school_rank ? $_GET['school'] : '';
 </div>
 
 <script>
-    $('.ui.dropdown').dropdown();
-  document.getElementById('school_select')?.addEventListener('change', function() {
-    if (this.value !== "") {
-      window.location.href = "ranklist.php?school=" + encodeURIComponent(this.value);
-    }
-  });
+  console.log(document.compatMode);
+
+  const selectEl = document.getElementById('school_select');
+  const formEl = document.getElementById('schoolForm');
+
+  if (selectEl && formEl) {
+    selectEl.addEventListener('change', function () {
+      formEl.submit();
+    });
+  } else {
+    console.warn("⚠️ 요소를 찾을 수 없음.");
+  }
 </script>
+
 
 <?php include("template/$OJ_TEMPLATE/footer.php"); ?>
