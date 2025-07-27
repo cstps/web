@@ -26,15 +26,39 @@ $can_see_all = (
   isset($_SESSION[$OJ_NAME.'_source_browser']) ||
   isset($_SESSION[$OJ_NAME.'_contest_creator'])
 );
+$formatted_end_time = is_numeric($end_time)
+  ? date("Y-m-d H:i:s", $end_time)
+  : date("Y-m-d H:i:s", strtotime($end_time));
 ?>
+<style>
+.time-label {
+  display: inline-block;
+  padding: 6px 12px;
+  margin-left: 5px;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+.endtime {
+  background-color: #e74c3c; /* 빨강 */
+}
+.nowtime {
+  background-color: #3498db; /* 파랑 */
+}
+</style>
 
 <div class="container">
   <div class="jumbotron">
-    <?php $rank = 1; ?>
-    <center><h3>OI Mode RankList -- <?php echo $title ?></h3>
+    
+    <h3>OI Mode RankList -- <?php echo $title ?></h3>
+    <div style="float:right; margin-top: -30px; margin-right: 10px;">
+      <span class="time-label endtime">종료시간: <span id="endtime"><?php echo $formatted_end_time; ?></span></span>
+      <span class="time-label nowtime">현재시간: <span id="nowdate"><?php echo date("Y-m-d H:i:s") ?></span></span>
+    </div>
+    <div style="clear: both;"></div>
     <?php if ($can_see_all) echo "<a href='/contestrank.xls.php?cid=$cid'>Download</a>"; ?>
-    <?php if ($OJ_MEMCACHE) echo "<a href='contestrank2.php?cid=$cid'>Replay</a>"; ?>
-    </center>
+
 
     <div style="overflow: auto">
       <table id="rank" class="ui very basic center aligned table">
@@ -56,6 +80,7 @@ $can_see_all = (
         </thead>
         <tbody>
         <?php
+        $rank = 1; 
         for ($i = 0; $i < $user_cnt; $i++) {
           $uuid = $U[$i]->user_id;
           $nick = $U[$i]->nick;
@@ -139,6 +164,23 @@ $can_see_all = (
   setInterval(function () {
     $("#rank").load(location.href + " #rank>*", "");
   }, 5000);
+
+  var diff = new Date("<?php echo date("Y/m/d H:i:s") ?>").getTime() - new Date().getTime();
+  function clock() {
+    var x = new Date(new Date().getTime() + diff);
+    var y = x.getFullYear();
+    var mon = x.getMonth() + 1;
+    var d = x.getDate();
+    var h = x.getHours();
+    var m = x.getMinutes();
+    var s = x.getSeconds();
+    var n = y + "-" + (mon >= 10 ? mon : "0" + mon) + "-" + (d >= 10 ? d : "0" + d) + " " + (h >= 10 ? h : "0" + h) + ":" + (m >= 10 ? m : "0" + m) + ":" + (s >= 10 ? s : "0" + s);
+    document.getElementById('nowdate').innerHTML = n;
+    setTimeout(clock, 1000);
+  }
+  clock();
+
+
 </script>
 
 <?php include(dirname(__FILE__) . "/footer.php"); ?>

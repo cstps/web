@@ -15,10 +15,21 @@ $can_see_all = (
   isset($_SESSION[$OJ_NAME.'_source_browser']) ||
   isset($_SESSION[$OJ_NAME.'_contest_creator'])
 );
+$end_time = isset($end_time) ? $end_time : "";
+
 ?>
 
 <div style="margin-bottom:40px;">
   <h1 style="text-align: center;">Contest RankList -- <?php echo $title ?></h1>
+  <div class="ui right floated small button">
+  종료시간：<span id="endtime"><?php echo date("Y-m-d H:i:s", $end_time) ?></span>
+  </div>
+  <div class="ui right floated small button" style="margin-right:10px;">
+    현재시간：<span id="nowdate"><?php echo date("Y-m-d H:i:s")?></span>
+  </div>
+  <div style="clear: both;"></div>
+
+
   <?php if ($can_see_all) echo "<a href=contestrank.xls.php?cid=$cid>Download</a>"; ?>
 </div>
 
@@ -147,6 +158,26 @@ $can_see_all = (
   setInterval(function() {
     $(".padding").load(location.href + " .padding>*", "");
   }, 5000);
+
+  var diff = new Date("<?php echo date("Y/m/d H:i:s")?>").getTime() - new Date().getTime();
+  function clock() {
+      var x = new Date(new Date().getTime() + diff);
+      var y = x.getFullYear();
+      var mon = x.getMonth() + 1;
+      var d = x.getDate();
+      var h = x.getHours();
+      var m = x.getMinutes();
+      var s = x.getSeconds();
+      var n = y + "-" + mon + "-" + d + " " + (h >= 10 ? h : "0" + h) + ":" + (m >= 10 ? m : "0" + m) + ":" + (s >= 10 ? s : "0" + s);
+      document.getElementById('nowdate').innerHTML = n;
+      setTimeout("clock()", 1000);
+  }
+  clock();
+
+  </script>
+
+  </script>
+
 </script>
 
 <?php include("template/$OJ_TEMPLATE/footer.php"); ?>
