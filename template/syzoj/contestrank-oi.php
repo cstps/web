@@ -79,7 +79,8 @@ $can_see_all = (
           echo "<td><a href=status.php?user_id=$uuid&cid=$cid>$usolved</a></td>";
 
           echo "<td>" . ($can_see_detail ? sec2str($U[$i]->time) : "-") . "</td>";
-          echo "<td>" . ($can_see_detail ? number_format($U[$i]->total, 2) : "-") . "</td>";
+          echo "<td>" . ($can_see_detail ? round($U[$i]->total) : "-") . "</td>";
+
 
           for ($j = 0; $j < $pid_cnt; $j++) {
             $bg_color = "eeeeee";
@@ -101,10 +102,18 @@ $can_see_all = (
             echo "<td class=well style='background-color:#$bg_color'>";
             if (isset($U[$i])) {
               if ($can_see_detail) {
-                if (isset($U[$i]->p_ac_sec[$j]) && $U[$i]->p_ac_sec[$j] > 0)
-                  echo $score;
-                else if (isset($U[$i]->p_wa_num[$j]) && $U[$i]->p_wa_num[$j] > 0)
-                  echo "(+" . number_format($U[$i]->p_pass_rate[$j] * $score, 1) . ")";
+                $wa = isset($U[$i]->p_wa_num[$j]) ? $U[$i]->p_wa_num[$j] : 0;
+                $ac = isset($U[$i]->p_ac_sec[$j]) ? $U[$i]->p_ac_sec[$j] : 0;
+                $submit_count = $ac > 0 ? $wa + 1 : $wa;
+
+                if ($ac > 0) {
+                  echo "$score($submit_count)";
+                } else if ($wa > 0) {
+                  $partial = intval(round($U[$i]->p_pass_rate[$j] * $score));
+                  echo "($partial)($submit_count)";
+                } else {
+                  echo "";
+                }
               } else {
                 if (isset($U[$i]->p_ac_sec[$j]) && $U[$i]->p_ac_sec[$j] > 0)
                   echo "✔";
@@ -114,6 +123,7 @@ $can_see_all = (
                   echo "";
               }
             }
+
             echo "</td>";
           }
           echo "</tr>";

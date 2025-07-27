@@ -65,10 +65,14 @@ $can_see_all = (
           echo "</td>";
 
           // 사용자 ID
-          echo "<td>";
-          if (isset($_GET['user_id']) && $uuid == $_GET['user_id']) echo "<td bgcolor=#ffff77>";
+          if (isset($_GET['user_id']) && $uuid == $_GET['user_id']) {
+              echo "<td bgcolor=#ffff77>";
+          } else {
+              echo "<td>";
+          }
           echo "<a name=\"$uuid\" href=userinfo.php?user=$uuid>$uuid</a>";
           echo "</td>";
+
 
           // 닉네임
           echo "<td><a href=userinfo.php?user=$uuid>".htmlentities($nick, ENT_QUOTES, "UTF-8")."</a></td>";
@@ -90,6 +94,7 @@ $can_see_all = (
 
             $wa = $U[$i]->p_wa_num[$j] ?? 0;
             $ac = $U[$i]->p_ac_sec[$j] ?? 0;
+            
 
             if ($ac > 0) {
               if ($uuid == $first_blood[$j]) {
