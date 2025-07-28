@@ -46,18 +46,34 @@ $formatted_end_time = is_numeric($end_time)
 .nowtime {
   background-color: #3498db; /* 파랑 */
 }
+.time-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
 </style>
 
-<div class="container">
-  <div class="jumbotron">
-    
-    <h3>OI Mode RankList -- <?php echo $title ?></h3>
-    <div style="float:right; margin-top: -30px; margin-right: 10px;">
-      <span class="time-label endtime">종료시간: <span id="endtime"><?php echo $formatted_end_time; ?></span></span>
-      <span class="time-label nowtime">현재시간: <span id="nowdate"><?php echo date("Y-m-d H:i:s") ?></span></span>
+<div style="margin-bottom:40px;">
+  <!-- 제목은 가운데 정렬 -->
+  <h1 style="text-align: center;">OI Mode RankList -- <?php echo $title ?></h1>
+
+  <!-- 시간은 오른쪽 정렬 -->
+  <div class="time-wrapper">
+    <div class="time-label endtime">
+      종료시간：<span id="endtime"><?php echo date("Y-m-d H:i:s", $end_time) ?></span>
     </div>
-    <div style="clear: both;"></div>
-    <?php if ($can_see_all) echo "<a href='/contestrank.xls.php?cid=$cid'>Download</a>"; ?>
+    <div class="time-label nowtime">
+      현재시간：<span id="nowdate"><?php echo date("Y-m-d H:i:s")?></span>
+    </div>
+  </div>
+
+  <div style="clear: both;"></div>
+
+  <?php if ($can_see_all) echo "<a href=contestrank.xls.php?cid=$cid>Download</a>"; ?>
+</div>
+
 
 
     <div style="overflow: auto">
@@ -157,14 +173,27 @@ $formatted_end_time = is_numeric($end_time)
         </tbody>
       </table>
     </div>
-  </div>
-</div>
+
+
+<script>
+  let currentCount = <?php echo isset($initial_update_count) ? $initial_update_count : 0 ?>;
+
+  function checkRankingUpdate() {
+    fetch(`check_ranking_update.php?cid=<?= $cid ?>&last_count=${currentCount}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.has_update && data.update_count > currentCount) {
+          console.log("🏁 랭킹 업데이트 감지됨, 새로고침");
+          location.reload();
+        }
+      })
+      .catch(err => console.error('업데이트 체크 실패', err));
+  }
+
+  setInterval(checkRankingUpdate, 5000);
+</script>
 
 <script type="text/javascript">
-  setInterval(function () {
-    $("#rank").load(location.href + " #rank>*", "");
-  }, 5000);
-
   var diff = new Date("<?php echo date("Y/m/d H:i:s") ?>").getTime() - new Date().getTime();
   function clock() {
     var x = new Date(new Date().getTime() + diff);

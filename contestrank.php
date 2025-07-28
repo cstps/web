@@ -70,6 +70,29 @@ function s_cmp($A, $B) {
 if (!isset($_GET['cid'])) die("No Such Contest!");
 $cid = intval($_GET['cid']);
 
+function getRankingUpdateCount($cid) {
+    echo "<!-- INIT COUNT: $cid -->"; // 디버깅용
+
+    // 수동으로 PDO 객체 만들기
+    global $DB_HOST, $DB_NAME, $DB_USER, $DB_PASS;
+
+    try {
+        $pdo = new PDO("mysql:host=$DB_HOST;dbname=$DB_NAME;charset=utf8", $DB_USER, $DB_PASS);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $stmt = $pdo->prepare("SELECT update_count FROM ranking_cache WHERE contest_id=?");
+        $stmt->execute([$cid]);
+        $row = $stmt->fetch();
+
+        return $row ? intval($row['update_count']) : 0;
+    } catch (PDOException $e) {
+        echo "<!-- DB ERROR: " . $e->getMessage() . " -->";
+        return 0;
+    }
+}
+
+
+
 // 1. contest 정보 가져오기
 if ($OJ_MEMCACHE) {
     $sql = "SELECT `start_time`,`title`,`end_time`,`exam_mode` FROM `contest` WHERE `contest_id`=$cid";
@@ -202,6 +225,9 @@ for ($i = 0; $i < $fb_cnt; $i++) {
 }
 
 // 7. 출력
+$initial_update_count = getRankingUpdateCount($cid);
+error_log("Initial Ranking Count: $initial_update_count"); // 또는 로그로 출력
+
 require("template/".$OJ_TEMPLATE."/contestrank.php");
 
 if (file_exists('./include/cache_end.php'))

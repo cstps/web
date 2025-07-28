@@ -18,17 +18,46 @@ $can_see_all = (
 $end_time = isset($end_time) ? $end_time : "";
 
 ?>
+<style>
+.time-label {
+  display: inline-block;
+  padding: 6px 12px;
+  margin-left: 5px;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+.endtime {
+  background-color: #e74c3c; /* 빨강 */
+}
+.nowtime {
+  background-color: #3498db; /* 파랑 */
+}
+.time-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+</style>
 
 <div style="margin-bottom:40px;">
+  <!-- 제목은 가운데 정렬 -->
   <h1 style="text-align: center;">Contest RankList -- <?php echo $title ?></h1>
-  <div class="ui right floated small button">
-  종료시간：<span id="endtime"><?php echo date("Y-m-d H:i:s", $end_time) ?></span>
-  </div>
-  <div class="ui right floated small button" style="margin-right:10px;">
-    현재시간：<span id="nowdate"><?php echo date("Y-m-d H:i:s")?></span>
-  </div>
-  <div style="clear: both;"></div>
 
+  <!-- 시간은 오른쪽 정렬 -->
+  <div class="time-wrapper">
+    <div class="time-label endtime">
+      종료시간：<span id="endtime"><?php echo date("Y-m-d H:i:s", $end_time) ?></span>
+    </div>
+    <div class="time-label nowtime">
+      현재시간：<span id="nowdate"><?php echo date("Y-m-d H:i:s")?></span>
+    </div>
+  </div>
+
+  <div style="clear: both;"></div>
 
   <?php if ($can_see_all) echo "<a href=contestrank.xls.php?cid=$cid>Download</a>"; ?>
 </div>
@@ -155,29 +184,37 @@ $end_time = isset($end_time) ? $end_time : "";
 
 <!-- 5초 간격으로 랭킹 정보 갱신 -->
 <script type="text/javascript">
-  setInterval(function() {
-    $(".padding").load(location.href + " .padding>*", "");
-  }, 5000);
+  let currentCount = <?php echo isset($initial_update_count) ? $initial_update_count : 0 ?>;
 
-  var diff = new Date("<?php echo date("Y/m/d H:i:s")?>").getTime() - new Date().getTime();
+  function checkRankingUpdate() {
+    fetch(`check_ranking_update.php?cid=<?= $cid ?>&last_count=${currentCount}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.has_update && data.update_count > currentCount) {
+          console.log("🏁 랭킹 업데이트 감지됨, 새로고침");
+          location.reload();
+        }
+      })
+      .catch(err => console.error('업데이트 체크 실패', err));
+  }
+
+  setInterval(checkRankingUpdate, 5000);
+
+  var diff = new Date("<?= date("Y/m/d H:i:s") ?>").getTime() - new Date().getTime();
   function clock() {
-      var x = new Date(new Date().getTime() + diff);
-      var y = x.getFullYear();
-      var mon = x.getMonth() + 1;
-      var d = x.getDate();
-      var h = x.getHours();
-      var m = x.getMinutes();
-      var s = x.getSeconds();
-      var n = y + "-" + mon + "-" + d + " " + (h >= 10 ? h : "0" + h) + ":" + (m >= 10 ? m : "0" + m) + ":" + (s >= 10 ? s : "0" + s);
-      document.getElementById('nowdate').innerHTML = n;
-      setTimeout("clock()", 1000);
+    var x = new Date(new Date().getTime() + diff);
+    var y = x.getFullYear();
+    var mon = x.getMonth() + 1;
+    var d = x.getDate();
+    var h = x.getHours();
+    var m = x.getMinutes();
+    var s = x.getSeconds();
+    var n = y + "-" + mon + "-" + d + " " + (h >= 10 ? h : "0" + h) + ":" + (m >= 10 ? m : "0" + m) + ":" + (s >= 10 ? s : "0" + s);
+    document.getElementById('nowdate').innerHTML = n;
+    setTimeout("clock()", 1000);
   }
   clock();
-
-  </script>
-
-  </script>
-
 </script>
+
 
 <?php include("template/$OJ_TEMPLATE/footer.php"); ?>

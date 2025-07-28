@@ -86,6 +86,23 @@ function s_cmp($A, $B) {
 if (!isset($_GET['cid'])) die("No Such Contest!");
 $cid = intval($_GET['cid']);
 
+function getRankingUpdateCount($cid) {
+    // 수동으로 PDO 객체 만들기 (ranking_cache용)
+    global $pdo, $DB_HOST, $DB_NAME, $DB_USER, $DB_PASS;
+
+    if (!isset($pdo) || !$pdo) {
+        $pdo = new PDO("mysql:host=$DB_HOST;dbname=$DB_NAME;charset=utf8", $DB_USER, $DB_PASS);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    }
+
+    $stmt = $pdo->prepare("SELECT update_count FROM ranking_cache WHERE contest_id=?");
+    $stmt->execute([$cid]);
+    $row = $stmt->fetch();
+
+    return $row ? intval($row['update_count']) : 0;
+}
+
+
 // 문제별 배점
 $score_map = array();
 $sql = "SELECT num, score FROM contest_problem WHERE contest_id = ?";
@@ -222,6 +239,8 @@ foreach ($fb as $row) {
 }
 
 // 템플릿 출력
+$initial_update_count = getRankingUpdateCount($cid);
+error_log("Initial Ranking Count: $initial_update_count"); // 또는 로그로 출력
 require("template/" . $OJ_TEMPLATE . "/contestrank-oi.php");
 
 if (file_exists('./include/cache_end.php'))
