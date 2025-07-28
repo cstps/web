@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <?php 
 	$url=basename($_SERVER['REQUEST_URI']);
 	$dir=basename(getcwd());
