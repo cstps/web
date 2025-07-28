@@ -130,7 +130,6 @@ echo "</select>";
     } else {
       $filtered_result = $result;
     }
-
     foreach($filtered_result as $row){
       echo "<tr>";
         echo "<td>".$row['problem_id']." <input type=checkbox style='vertical-align:2px;' name='pid[]' value='".$row['problem_id']."'></td>";
@@ -140,7 +139,7 @@ echo "</select>";
         $pid = $row['problem_id'];
         $is_admin = isset($_SESSION[$OJ_NAME.'_administrator']);
         $is_owner = isset($_SESSION[$OJ_NAME.'_p'.$pid]);
-
+        
         // STATUS / DELETE
         if ($is_admin || $is_owner) {
           echo "<td><a href='problem_df_change.php?id=$pid&getkey=".$_SESSION[$OJ_NAME.'_getkey']."'>"

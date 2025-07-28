@@ -2,7 +2,7 @@
 require_once ("admin-header.php");
 require_once("../include/check_post_key.php");
 
-if (!(isset($_SESSION[$OJ_NAME.'_'.'administrator']))) {
+if (!(isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor']))) {
   echo "<a href='../loginpage.php'>Please Login First!</a>";
   exit(1);
 }
@@ -121,7 +121,7 @@ function get_extension($file) {
 }
 
 function import_fps($tempfile) {
-  global $OJ_DATA,$OJ_SAE,$OJ_REDIS,$OJ_REDISSERVER,$OJ_REDISPORT,$OJ_REDISQNAME,$domain,$DOMAIN;
+  global $OJ_NAME,$OJ_DATA,$OJ_SAE,$OJ_REDIS,$OJ_REDISSERVER,$OJ_REDISPORT,$OJ_REDISQNAME,$domain,$DOMAIN;
   $xmlDoc = simplexml_load_file($tempfile, 'SimpleXMLElement', LIBXML_PARSEHUGE);
   $searchNodes = $xmlDoc->xpath("/fps/item");
   $spid = 0;
@@ -153,6 +153,7 @@ function import_fps($tempfile) {
     //$test_output = getValue($searchNode,'test_output');
     $hint = getValue ($searchNode,'hint');
     $source = getValue ($searchNode,'source');				
+    $creator = getValue($searchNode, 'creator'); // ✅ 추가
 
     $front_code = getValue ($searchNode,'front_code');				
     $rear_code = getValue ($searchNode,'rear_code');				
@@ -168,6 +169,12 @@ function import_fps($tempfile) {
     if (!hasProblem($title)) {
       $pid = addproblem($title, $time_limit, $memory_limit, $description, $input, $output, $sample_input, $sample_output, $hint, $source, $spj, $OJ_DATA, $front_code,$rear_code, $ban_code, $pro_point);
 
+      $sql = "INSERT INTO `privilege` (`user_id`,`rightstr`) VALUES(?,?)";
+      if(trim($creator)!=""){
+        pdo_query($sql, trim($creator), "p$pid");
+      }else{
+        pdo_query($sql, $_SESSION[$OJ_NAME.'_'.'user_id'], "p$pid");
+      }
       if ($spid==0)
       	$spid = $pid;
 
@@ -183,14 +190,14 @@ function import_fps($tempfile) {
 
       foreach ($testinputs as $testNode) {
         //if($testNode->nodeValue)
-	$name=$testNode['name'];
-	if($name != ""){
-        		mkdata($pid,$name.".in",$testNode,$OJ_DATA);
+        $name=$testNode['name'];
+        if($name != ""){
+                  mkdata($pid,$name.".in",$testNode,$OJ_DATA);
 
-	}else{
-        		mkdata($pid,"test".$testno.".in",$testNode,$OJ_DATA);
-	}
-	$testno++;
+        }else{
+                  mkdata($pid,"test".$testno.".in",$testNode,$OJ_DATA);
+        }
+        $testno++;
       }
 
       unset($testinputs);
@@ -199,14 +206,14 @@ function import_fps($tempfile) {
   
       foreach ($testinputs as $testNode) {
         //if($testNode->nodeValue)
-	$name=$testNode['name'];
-	if($name != ""){
-        		mkdata($pid,$name.".out",$testNode,$OJ_DATA);
+        $name=$testNode['name'];
+        if($name != ""){
+                  mkdata($pid,$name.".out",$testNode,$OJ_DATA);
 
-	}else{
-        		mkdata($pid,"test".$testno.".out",$testNode,$OJ_DATA);
-	}
-	$testno++;
+        }else{
+                  mkdata($pid,"test".$testno.".out",$testNode,$OJ_DATA);
+        }
+        $testno++;
       }
 
       unset($testinputs);
