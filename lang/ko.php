@@ -155,6 +155,9 @@
 	$CODING_MSG_NEWS = "📺IT-NEWS";
 	$MSG_CONTENTS="내용";
 	$MSG_SAVE="저장";	
+	$MSG_SCHOOL_LIST = "학교 목록";
+	$MSG_SCHOOL_ADD = "학교 추가";
+	$MSG_SCHOOL_MANAGE = "학교 목록 관리";
 	
 	$MSG_TEAMGENERATOR="팀 생성기";
 	$MSG_SETMESSAGE="메시지설정";

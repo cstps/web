@@ -49,7 +49,7 @@ if (!is_valid_user_name($user_id)){
 }
 $nick=trim($_POST['nick']);
 $len=strlen($nick);
-if ($len>100){
+if ($len>50){
 	$err_str=$err_str."별명이 너무 길어요!\\n";
 	$err_cnt++;
 }else if ($len==0) $nick=$user_id;
@@ -62,11 +62,13 @@ if (strlen($_POST['password'])<6){
 	$err_cnt++;
 	$err_str=$err_str."$MSG_WARNING_PASSWORD_SHORT \\n";
 }
-$len=strlen($_POST['school']);
-if ($len>100){
-	$err_str=$err_str."소속/학교 이름이 너무 김!\\n";
-	$err_cnt++;
+
+$allowed_schools = json_decode(file_get_contents(__DIR__ . '/school_list.json'), true);
+if (!in_array($school, $allowed_schools)) {
+  $err_str .= "허용되지 않은 학교입니다!\\n";
+  $err_cnt++;
 }
+
 $len=strlen($_POST['email']);
 if ($len>100){
 	$err_str=$err_str."메일주소가 너무 김!\\n";

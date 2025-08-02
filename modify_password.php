@@ -30,7 +30,7 @@ $result=pdo_query($sql,$user_id);
 if ($row && pwCheck($password,$row['password'])) $rows_cnt = 1;
 else $rows_cnt = 0;
 if ($rows_cnt==0){
-	$err_str=$err_str."旧密码不正确！";
+	$err_str=$err_str."옛날 비밀번호가 틀렸습니다.";
 	$err_cnt++;
 }
 $len=strlen($_POST['new1-password']);

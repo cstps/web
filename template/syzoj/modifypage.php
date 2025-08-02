@@ -1,4 +1,32 @@
 <?php include("template/$OJ_TEMPLATE/header.php");?>
+
+<link rel="stylesheet" href="<?php echo $OJ_CDN_URL.$path_fix."template/$OJ_TEMPLATE/js/"?>/jquery-ui.css">
+<script src="<?php echo $OJ_CDN_URL.$path_fix."template/$OJ_TEMPLATE/js/"?>/jquery-3.6.0.min.js"></script>
+<script src="<?php echo $OJ_CDN_URL.$path_fix."template/$OJ_TEMPLATE/js/"?>/jquery-ui.min.js"></script>
+
+<!-- jQuery UI Autocomplete -->
+<script>
+  $(function () {
+    $.getJSON("/school_list.json", function (data) {
+      // 자동완성 연결
+      $("#school").autocomplete({
+        source: data,
+        minLength: 1,
+        autoFocus: true
+      });
+
+      // 입력값이 유효한지 확인
+      $('#school').on('change', function () {
+        const inputVal = $(this).val().trim();
+        if (!data.includes(inputVal)) {
+          alert("목록에 있는 학교만 선택할 수 있습니다.");
+          $(this).val('');
+        }
+      });
+    });
+  });
+</script>
+
 <div class="padding">
   <h1>사용자 정보수정</h1>
   <div class="ui error message" id="error" data-am-alert hidden>
@@ -11,7 +39,7 @@
                 </div>
                 <?php require_once('./include/set_post_key.php');?>
                 <div class="field">
-                    <label for="username">별명*</label>
+                    <label for="username">별명</label>
                     <input name="nick" placeholder="별명을 입력하세요" type="text" value="<?php echo htmlentities($row['nick'],ENT_QUOTES,"UTF-8")?>">
                 </div>
                 <div class="field">
@@ -29,11 +57,14 @@
                     </div>
                 </div>
                 <div class="field">
-                    <label for="username">소속/학교</label>
-                    <input name="school" placeholder="소속 또는 학교 정보를 입력하세요" type="text" value="<?php echo htmlentities($row['school'],ENT_QUOTES,"UTF-8")?>">
+                  <label for="school">소속/학교</label>
+                  <input type="text" name="school" id="school" class="form-control"
+                        placeholder="학교명을 입력하세요"
+                        value="<?php echo htmlentities($row['school'], ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
+
                 <div class="field">
-                    <label for="email">이메일*</label>
+                    <label for="email">이메일</label>
                     <input name="email" placeholder="이메일을 입력하세요" type="text" value="<?php echo htmlentities($row['email'],ENT_QUOTES,"UTF-8")?>">
                 </div>
                 <?php if($OJ_VCODE){?>

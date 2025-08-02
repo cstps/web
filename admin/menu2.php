@@ -58,12 +58,9 @@
         <div class="dropdown-menu">
           <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])||isset( $_SESSION[$OJ_NAME.'_'.'password_setter'])){?>
                 <a class="dropdown-item btn-sm" href="user_list.php" target="main" title="<?php echo $MSG_HELP_USER_LIST?>"><b><?php echo $MSG_USER."-".$MSG_LIST?></b></a>
-          <?php }?>
-          <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])){?>
                 <a class="dropdown-item btn-sm" href="user_add.php" target="main" title="<?php echo $MSG_HELP_USER_ADD?>"><b><?php echo $MSG_USER."-".$MSG_ADD?></b></a>
-          <?php }?>
-          <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])||isset( $_SESSION[$OJ_NAME.'_'.'password_setter'])){?>
                 <a class="dropdown-item btn-sm" href="changepass.php" target="main" title="<?php echo $MSG_HELP_SETPASSWORD?>"><b><?php echo $MSG_USER."-".$MSG_SETPASSWORD?></b></a>
+                <a class="dropdown-item btn-sm" href="school_admin.php" target="main" title="<?php echo $MSG_SCHOOL_MANAGE?>"><b><?php echo $MSG_USER."-".$MSG_SCHOOL_MANAGE?></b></a>
           <?php }?>
           <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])){?>
                 <a class="dropdown-item btn-sm" href="privilege_list.php" target="main" title="<?php echo $MSG_HELP_PRIVILEGE_LIST?>"><b><?php echo $MSG_USER."-".$MSG_PRIVILEGE."-".$MSG_LIST?></b></a>

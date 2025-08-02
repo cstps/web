@@ -23,7 +23,7 @@ $email=trim($_POST['email']);
 $school=trim($_POST['school']);
 $nick=trim($_POST['nick']);
 $len=strlen($nick);
-if ($len>100){
+if ($len>50){
 	$err_str=$err_str."Nick Name Too Long!";
 	$err_cnt++;
 }else if ($len==0) $nick=$user_id;
@@ -51,6 +51,14 @@ if ($len>100){
 	$err_str=$err_str."School Name Too Long!";
 	$err_cnt++;
 }
+$school = trim($_POST['school']);
+$allowed_schools = json_decode(file_get_contents(__DIR__ . '/school_list.json'), true);
+
+if (!in_array($school, $allowed_schools)) {
+  $err_str .= "허용되지 않은 학교입니다!\\n";
+  $err_cnt++;
+}
+
 $len=strlen($_POST['email']);
 if ($len>100){
 	$err_str=$err_str."Email Too Long!";
