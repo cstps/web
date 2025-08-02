@@ -10,15 +10,6 @@ require_once("./include/my_func.inc.php");
 $view_title = $MSG_CONTEST . $MSG_RANKLIST;
 $title = "";
 
-if (!isset($_SESSION[$OJ_NAME . '_user_id'])) {
-    if (isset($OJ_GUEST) && $OJ_GUEST) {
-        $_SESSION[$OJ_NAME . '_user_id'] = "Guest";
-    } else {
-        $view_errors = "<button><a href=loginpage.php>$MSG_Login</a></button>";
-        require("template/" . $OJ_TEMPLATE . "/error.php");
-        exit(0);
-    }
-}
 
 // class 정의
 class TM {
@@ -85,6 +76,24 @@ function s_cmp($A, $B) {
 // contest id 체크
 if (!isset($_GET['cid'])) die("No Such Contest!");
 $cid = intval($_GET['cid']);
+
+// 참가자 또는 관리자/출제자인지 확인
+$uid = $_SESSION[$OJ_NAME . '_user_id'];
+$is_admin = isset($_SESSION[$OJ_NAME . '_administrator']) || isset($_SESSION[$OJ_NAME . '_contest_creator']) || isset($_SESSION[$OJ_NAME . '_m' . $cid]);
+if (!$is_admin) {
+    // 해당 대회의 참가자인지 확인 (privilege에 c{cid} 권한이 있는가)
+    $rightstr = "c$cid";
+    $sql = "SELECT 1 FROM privilege WHERE user_id=? AND rightstr=?";
+    $rows = pdo_query($sql, $uid, $rightstr);
+    
+
+    if (count($rows) == 0) {
+        $view_errors = "<h3>$MSG_CONTEST_ID : $view_cid - $view_title</h3>";
+        $view_errors .= "<span class='text-warning'>이 대회에 참가한 사용자만 랭킹을 볼 수 있습니다.</span><br><br>";
+        require("template/" . $OJ_TEMPLATE . "/error.php");
+        exit(0);
+    }
+}
 
 function getRankingUpdateCount($cid) {
     // 수동으로 PDO 객체 만들기 (ranking_cache용)
