@@ -122,7 +122,6 @@ $current_school = $is_school_rank ? $_GET['school'] : '';
 </div>
 
 <script>
-  console.log(document.compatMode);
 
   const selectEl = document.getElementById('school_select');
   const formEl = document.getElementById('schoolForm');
