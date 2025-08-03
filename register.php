@@ -63,10 +63,22 @@ if (strlen($_POST['password'])<6){
 	$err_str=$err_str."$MSG_WARNING_PASSWORD_SHORT \\n";
 }
 
-$allowed_schools = json_decode(file_get_contents(__DIR__ . '/school_list.json'), true);
-if (!in_array($school, $allowed_schools)) {
-  $err_str .= "허용되지 않은 학교입니다!\\n";
-  $err_cnt++;
+$school = trim($_POST['school']);
+$len = strlen($school);
+
+// ① 길이 검증
+if ($len > 100) {
+    $err_str .= "소속/학교 이름이 너무 깁니다!\\n";
+    $err_cnt++;
+}
+
+// ② 입력한 경우에만 school_list.json 체크
+if ($len > 0) {
+    $allowed_schools = json_decode(file_get_contents(__DIR__ . '/school_list.json'), true);
+    if (!in_array($school, $allowed_schools)) {
+        $err_str .= "입력한 학교는 허용된 학교 목록에 없습니다.\\n";
+        $err_cnt++;
+    }
 }
 
 $len=strlen($_POST['email']);
