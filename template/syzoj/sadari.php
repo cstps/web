@@ -46,15 +46,33 @@ function drawLadder() {
     // 사다리 데이터 생성
     const cols = names.length, rows = Math.max(22, cols*6); // 선분 충분히
     // 가로선 랜덤 생성(이웃끼리만, 연속X)
+    // 가로선 랜덤 생성(중복/연속 없이, 한 행에 최대 1개만)
     let horizontals = [];
-    for (let r=1; r<rows-1; r++) {
-        for (let c=0; c<cols-1; c++) {
-            // 이전 행에서 이미 가로선이면 연속 불가
-            if (horizontals.some(h=>h.row===r-1 && (h.col===c || h.col===c-1))) continue;
-            // 30% 확률로 생성 (조정 가능)
-            if (Math.random() < 0.32) horizontals.push({row:r, col:c});
+    for (let r = 1; r < rows - 1; r++) {
+        // col 위치를 섞고, col 0~cols-2 중에서 랜덤으로 하나만 선택 (없을 수도 있음)
+        let colArr = [];
+        for (let c = 0; c < cols - 1; c++) colArr.push(c);
+        shuffle(colArr); // 기존의 shuffle 함수 사용
+        // 30% 확률로 가로선 배치 (조절 가능)
+        if (Math.random() < 0.45) {
+            // 인접 행/열에 겹치지 않는 곳만 선택
+            for (let ci = 0; ci < colArr.length; ci++) {
+                let c = colArr[ci];
+                // 이전행, 다음행에 겹치지 않게(더블크로스 방지)
+                if (
+                    !horizontals.some(h =>
+                        (h.row === r - 1 && (h.col === c || h.col === c - 1)) ||
+                        (h.row === r + 1 && (h.col === c || h.col === c - 1)) ||
+                        (h.row === r && (h.col === c - 1 || h.col === c + 1))
+                    )
+                ) {
+                    horizontals.push({ row: r, col: c });
+                    break; // 한 행에 1개만!
+                }
+            }
         }
     }
+
     ladderData = {names, results, cols, rows, horizontals};
     // Canvas 그리기
     renderLadderCanvas();
