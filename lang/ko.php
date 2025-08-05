@@ -144,7 +144,9 @@
 	$MSG_ULTILIST="🔥도구";
 	$MSG_POINTCHECK="🧮평가점수계산";
 	$MSG_CHARCOUNT="🔢글자수계산";
-
+	$MSG_SEATASSIGN="🪑교실자리배치";
+	$MSG_SADARI="🎲사타리타기";
+	
 	//admin menu
 	$MSG_SEEOJ="OJ확인";
 	$MSG_ADD="등록";

@@ -1,0 +1,31 @@
+.cal_container { max-width: 700px; margin: 32px auto 50px auto; background: #fff; border-radius: 16px; padding: 36px 28px 28px 28px; box-shadow: 0 4px 18px #0001; }
+textarea#studentList { width: 100%; min-height: 120px; font-size:1em; resize: vertical; padding: 0.7em; border-radius: 8px; border:1px solid #bbb; margin-top:0.7em; margin-bottom:0.7em; }
+.seat-grid { display: grid; gap: 8px; list-style: none; margin-top: 1em; padding: 0; }
+.seat-anim { background: #fffbe6 !important; transition: background 0.4s; }
+.seat-item { background: #fafaff; border: 1px solid #c6cedb; border-radius: 10px; padding: 10px 4px 4px 4px; text-align: center; min-height: 48px; position: relative; user-select: none; font-size: 1.1em; cursor: pointer; transition: box-shadow 0.2s, background 0.2s; }
+.seat-item.selected { border: 2px solid #1976d2; box-shadow: 0 0 0 2px #1976d277; }
+.seat-item.locked { background: #e0e0e0 !important; color: #888 !important; border-style: dashed; opacity: 0.85; cursor: not-allowed; }
+.seat-item.seat-empty { color: #b0b0b0; background: #f3f3f3; }
+.lock-btn { position: absolute; top: 3px; left: 6px; font-size: 1.2em; cursor: pointer; user-select: none; color: #444; }
+.seat-item.locked .lock-btn { color: #cc2222; }
+.seat-num { position: absolute; bottom: 2px; right: 6px; font-size: 0.9em; color: #b0b0b0; font-family:monospace; }
+.btn-secondary svg, .btn-success svg {
+  margin-right: 2px;
+}
+button[onclick*="saveTableAsImage"] svg {
+  margin-right: 2px;
+}
+button[onclick*="saveTableAsImage"]:hover {
+  background: #ffd5dd !important;
+  color: #a2162e !important;
+  border-color: #e9aabb !important;
+}
+
+@media (max-width:700px) { .cal_container {padding:12px 4vw;} .seat-grid {font-size:0.93em;} }
+.hint, .description {margin-bottom:0.7em;}
+@media print {
+  body * { visibility: hidden !important; }
+  #seatTable, #seatTable * { visibility: visible !important; }
+  #seatTable { position: absolute; left: 0; top: 0; width: 100vw; background: #fff; }
+  .seat-grid { box-shadow:none !important; }
+}

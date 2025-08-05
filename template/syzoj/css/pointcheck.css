@@ -1,101 +1,191 @@
 body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column; /* 상하로 배치 */
-    height: 100vh; /* 화면 전체 높이를 차지 */
-    margin: 0;
-    background-color: #f4f4f9;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  background: #f4f4f9;
+  display: flex;
+  flex-direction: column;
 }
 
+/* 컨테이너 전체 스타일 */
 .cal_container {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    flex-grow: 1; /* 남은 공간을 모두 차지 */
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 0; /* 아래쪽 여유 공간을 제거 */
-    width: 100%; /* 가로로 꽉 차게 설정 */
+  max-width: 420px;
+  margin: 30px auto 0 auto;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(24,50,80,0.09);
+  padding: 2.5rem 1.5rem 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  width: 100%;
+  min-width: 270px;
+  text-align: center;
 }
 
-h1 {
-    font-size: 20px;
-    margin-bottom: 20px;
+/* 제목 */
+.cal_container h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a2254;
+  margin-bottom: 0.7em;
+  letter-spacing: -.03em;
 }
 
-input[type="number"] {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 40px;
-    margin-bottom: 20px;
+/* 힌트 및 설명 */
+.hint {
+  background: linear-gradient(90deg, #f7f9fc 80%, #e6ecfa 100%);
+  border-radius: 9px;
+  margin-bottom: 1.3em;
+  padding: 1em 1.3em 0.7em 1.3em;
+  text-align: left;
+}
+.hint h2 {
+  font-size: 1.07em;
+  color: #4376d6;
+  margin: 0 0 .3em 0;
+}
+.hint .description {
+  color: #39507e;
+  font-size: 0.97em;
+  margin: 0.1em 0 0.1em 0.5em;
 }
 
+/* 입력 필드 */
+input[type="number"], #numberInput {
+  width: 100%;
+  font-size: 1.3em;
+  font-weight: 600;
+  padding: 0.8em 1em;
+  border-radius: 10px;
+  border: 1.5px solid #dee4ee;
+  margin-bottom: 1.2em;
+  margin-top: 0.5em;
+  box-sizing: border-box;
+  outline: none;
+  transition: border 0.2s;
+}
+input[type="number"]:focus, #numberInput:focus {
+  border-color: #4385f4;
+  background: #f6faff;
+}
+
+/* 결과(합계) */
 .result {
-    font-size: 30px;
-    margin-bottom: 20px;
+  font-size: 1.18em;
+  margin-bottom: 1.2em;
+  color: #315690;
+  font-weight: 500;
+  background: #eef3fa;
+  border-radius: 8px;
+  padding: 0.45em 0;
+  transition: background .2s;
 }
-
 .digit-sum {
-    color: red;
-    font-size: 60px;
-    font-weight: bold;
+  font-weight: 700;
+  color: #216d47;
+  font-size: 1.35em;
 }
 
-.history {
-    font-size: 16px;
-    margin-top: 10px;
-    text-align: left;
-    color: #555;
-    max-height: 300px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    padding: 10px;
-    border-radius: 5px;
-}
-
-.sum {
-    color: blue;
-    font-size: 30px;
-}
-
-button {
-    padding: 10px 20px;
-    background-color: #6a109e;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
+/* 버튼 컨테이너 */
 .button-container {
-    display: flex;
-    justify-content: space-between; /* 좌우로 버튼들을 배치 */
-    width: 100%; /* 부모 요소의 너비를 지정 */
-    margin-top: 20px; /* 버튼 상단 여백 */
-  }
-
-button:focus {
-    outline: none;
+  display: flex;
+  gap: 0.7em;
+  justify-content: center;
+  margin-bottom: 1em;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-top: 20px;
 }
 
-button:hover {
-    background-color: #0056b3;
+/* 버튼 스타일 (공통) */
+.button-container button, button {
+  flex: 1 1 28%;
+  font-size: 1.03em;
+  padding: 0.65em 0;
+  border: none;
+  border-radius: 9px;
+  background: #f6f7fa;
+  color: #345;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(85,140,180,.06);
+  transition: background 0.16s, color 0.16s, box-shadow .17s;
 }
 
-.hint{
-    text-align: left;
-    margin-bottom: 1%;
+/* 버튼별 개별 색상 */
+#saveButton { background: #e7f8e2; color: #198645; }
+#saveButton:hover, #saveButton:focus { background: #c6f2c2; }
+
+#copyAllButton { background: #f5f0ff; color: #7d4fd1; }
+#copyAllButton:hover, #copyAllButton:focus { background: #e3dcfa; }
+
+#resetButton { background: #fff4e5; color: #e3912c; }
+#resetButton:hover, #resetButton:focus { background: #f9e0b6; }
+
+button:focus { outline: none; }
+button:hover { filter: brightness(0.95); }
+
+/* 기록/히스토리 */
+.history {
+  background: #f5f6fa;
+  border-radius: 10px;
+  padding: 1em 1.2em 0.6em 1.2em;
+  box-shadow: 0 1px 4px rgba(153,175,210,.06);
+  min-height: 60px;
+  margin-top: 1em;
+  font-size: 16px;
+  text-align: left;
+  color: #555;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+}
+.history strong {
+  display: block;
+  color: #39507e;
+  font-size: 1.09em;
+  margin-bottom: .4em;
+  font-weight: 600;
+}
+#historyList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 160px;
+  overflow-y: auto;
+  font-size: 1.02em;
+}
+#historyList li {
+  margin-bottom: 0.3em;
+  background: #fff;
+  border-radius: 7px;
+  padding: 0.4em 0.9em 0.38em 0.85em;
+  font-weight: 400;
+  color: #3b455d;
+  border-left: 4px solid #b8e5d4;
+  letter-spacing: 0.01em;
+  transition: background .13s;
+}
+#historyList li .sum, .sum {
+  font-weight: 700;
+  color: #246d37;
+  font-size: 1em;
 }
 
+/* 푸터 */
 footer {
-    background-color: #f1f1f1;
-    text-align: center;
-    padding: 10px;
-    width: 100%;
-    margin-top: auto; /* footer를 하단에 고정 */
+  background-color: #f1f1f1;
+  text-align: center;
+  padding: 10px;
+  width: 100%;
+  margin-top: auto;
+}
+
+/* 반응형 */
+@media (max-width: 600px) {
+  .cal_container { max-width: 97vw; padding: 1.3em 1em; }
+  .history, .hint { padding: 0.85em 0.7em 0.5em 0.7em; }
+  input[type="number"], #numberInput { font-size: 1.12em; padding: 0.7em 0.8em; }
+  .result { font-size: 1em; }
 }
