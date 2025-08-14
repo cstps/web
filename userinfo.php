@@ -17,6 +17,17 @@ if (!is_valid_user_name($user)){
 	exit(0);
 }
 
+if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
+	if (isset($OJ_GUEST) && $OJ_GUEST) {
+		$_SESSION[$OJ_NAME.'_'.'user_id'] = "Guest";
+	}
+	else {
+		$view_errors = "<button><a href=loginpage.php>$MSG_Login</a></button>";
+		require("template/".$OJ_TEMPLATE."/error.php");
+		exit(0);
+	}
+}
+
 //检查用户当前是否在参加NOIP模式比赛，如果是则不显示用户信息以防看到提交结果 2020.7.25
 $now = strftime("%Y-%m-%d %H:%M",time());
 $sql = "select 1 from `solution` where  `user_id`=? and  problem_id>0 and `contest_id` IN (select `contest_id` from `contest` where `start_time` < ? and `end_time` > ? and `title` like ?)";
@@ -42,7 +53,11 @@ if ($row_cnt==0){
  $row=$result[0];
 $school=$row['school'];
 $email=$row['email'];
-$nick=$row['nick'];
+$is_admin = isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'source_browser']);
+if ($is_admin || $user == $_SESSION[$OJ_NAME.'_'.'user_id'])
+	$nick=$row['nick'];
+else
+	$nick="비공개";
 
 // count solved
 $sql="SELECT count(DISTINCT problem_id) as `ac` FROM `solution` WHERE `user_id`=? AND `result`=4";
