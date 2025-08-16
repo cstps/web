@@ -32,8 +32,6 @@ if(isset($_POST['startdate'])){
 
   $starttime = $_POST['startdate']." ".intval($_POST['shour']).":".intval($_POST['sminute']).":00";
   $endtime = $_POST['enddate']." ".intval($_POST['ehour']).":".intval($_POST['eminute']).":00";
-  //echo $starttime;
-  //echo $endtime;
 
   $title = $_POST['title'];
   $codevisible = $_POST['codevisible'];
@@ -42,14 +40,13 @@ if(isset($_POST['startdate'])){
   $description = $_POST['description'];
   $exam_mode = isset($_POST['exam_mode']) ? intval($_POST['exam_mode']) : 0;  
 
-  $lang = $_POST['lang'];
+  $lang = isset($_POST['lang']) ? $_POST['lang'] : [];
   $langmask = 0;
   foreach($lang as $t){
     $langmask += 1<<$t;
   } 
 
   $langmask = ((1<<count($language_ext))-1)&(~$langmask);
-  //echo $langmask; 
 
   $sql = "INSERT INTO `contest`(`title`,`start_time`,`end_time`,`codevisible`,`private`,`langmask`,`description`,`password`,`user_id`,`exam_mode`)
         VALUES(?,?,?,?,?,?,?,?,?,?)";
@@ -59,43 +56,40 @@ if(isset($_POST['startdate'])){
   $description = str_replace(",", "&#44; ", $description);
   $user_id=$_SESSION[$OJ_NAME.'_'.'user_id'];
 
-  // echo $sql,$title,$starttime,$endtime,$codevisible,$private,$langmask,$description,$password,$user_id, $exam_mode;
   $cid = pdo_query($sql,$title,$starttime,$endtime,$codevisible,$private,$langmask,$description,$password,$user_id, $exam_mode);
   echo "Add Contest ".$cid;
 
   $sql = "DELETE FROM `contest_problem` WHERE `contest_id`=$cid";
-  $plist = trim($_POST['cproblem']);
-  $pieces = explode(",",$plist );
+  pdo_query($sql);
 
-  if(count($pieces)>0 && intval($pieces[0])>0){
-     
-     
-    $cpoints = $_POST['cpoint']; // 점수 배열 받아오기
+  $plist = trim($_POST['cproblem']);
+  $pieces = array_filter(array_map('trim', explode(",",$plist)), function($x){ return $x!==''; });
+
+  if(count($pieces)>0){
+    $cpoints = isset($_POST['cpoint']) ? $_POST['cpoint'] : [];
 
     $sql_1 = "INSERT INTO `contest_problem`(`contest_id`,`problem_id`,`num`, `score`) VALUES (?,?,?,?)";
-    $plist = "";
+    $plist_join = "";
     $pid = 0;
 
     for($i = 0; $i < count($pieces); $i++){
       $problem_id = intval($pieces[$i]);
-      $score = isset($cpoints[$i])>0 ? intval($cpoints[$i]) : 100; // 점수 없으면 기본 100
+      $score = (isset($cpoints[$i]) && $cpoints[$i] !== '' && is_numeric($cpoints[$i])) ? intval($cpoints[$i]) : 100;
 
       $sql = "SELECT problem_id FROM problem WHERE problem_id=?";
       $has = pdo_query($sql, $problem_id);
 
       if(count($has) > 0) {
-        if($plist) $plist .= ",";
-        $plist .= $problem_id;
-        pdo_query($sql_1, $cid, $problem_id, $pid, $score); // score 포함
+        if($plist_join) $plist_join .= ",";
+        $plist_join .= $problem_id;
+        pdo_query($sql_1, $cid, $problem_id, $pid, $score);
         $pid++;
       } else {
         print("Problem not exists: ".$problem_id."<br>\n");
       }
     }
-
-    //echo $sql_1;
-    // 22.08.24 대회 문제를 등록해도 기본 공개/비공개 정보를 그대로 유지 되도록 수정
-    // $sql = "UPDATE `problem` SET defunct='N' WHERE `problem_id` IN ($plist)";
+    // 기본 공개/비공개 유지 (이전 주석 유지)
+    // $sql = "UPDATE `problem` SET defunct='N' WHERE `problem_id` IN ($plist_join)";
     // pdo_query($sql) ;
   }
 
@@ -111,12 +105,17 @@ if(isset($_POST['startdate'])){
   if(count($pieces)>0 && strlen($pieces[0])>0){
     $sql_1 = "INSERT INTO `privilege`(`user_id`,`rightstr`) VALUES (?,?)";
     for($i=0; $i<count($pieces); $i++){
-      pdo_query($sql_1,trim($pieces[$i]),"c$cid") ;
+      $uid = trim($pieces[$i]);
+      if($uid!==''){
+        pdo_query($sql_1,$uid,"c$cid") ;
+      }
     }
   }
   echo "<script>window.location.href=\"contest_list.php\";</script>";
 }
 else{
+  // ===== 복사(기존 cid로 열기) 또는 기타 모드 =====
+  $score_prefill = []; // pid => score (복사 시 점수 사전채움용)
   if(isset($_GET['cid'])){
     $cid = intval($_GET['cid']);
     $sql = "SELECT * FROM contest WHERE `contest_id`=?";
@@ -132,12 +131,18 @@ else{
     $endtime = $row['end_time'];
     $exam_mode = $row['exam_mode'];
 
+    // 문제ID와 점수를 동시에 로드
     $plist = "";
-    $sql = "SELECT `problem_id` FROM `contest_problem` WHERE `contest_id`=? ORDER BY `num`";
+    $sql = "SELECT `problem_id`, `score` FROM `contest_problem` WHERE `contest_id`=? ORDER BY `num`";
     $result = pdo_query($sql,$cid);
     foreach($result as $row){
-      if($plist) $plist = $plist.',';
-      $plist = $plist.$row[0];
+      $pid = $row['problem_id'];
+      $score = isset($row['score']) ? intval($row['score']) : 100;
+
+      if($plist) $plist .= ',';
+      $plist .= $pid;
+
+      $score_prefill[$pid] = $score;
     }
 
     $ulist = "";
@@ -151,11 +156,10 @@ else{
   }
   else if(isset($_POST['problem2contest'])){
     $plist = "";
-    //echo $_POST['pid'];
     sort($_POST['pid']);
     foreach($_POST['pid'] as $i){       
       if($plist)
-      $plist.=','.intval($i);
+        $plist.=','.intval($i);
       else
         $plist=$i;
     }
@@ -173,8 +177,6 @@ else{
   }
 
   include_once("kindeditor.php") ;
-  
-
 ?>
 
   <div class="container">
@@ -283,23 +285,21 @@ else{
             <p align=left>
               <?php echo $MSG_CONTEST."-".$MSG_Public?>:
               <select name=private style="width:80px;">
-                <option value=0 <?php echo $private=='0'?'selected=selected':''?>><?php echo $MSG_Public?></option>
-                <option value=1 <?php echo $private=='1'?'selected=selected':''?>><?php echo $MSG_Private?></option>
+                <option value=0 <?php echo (isset($private)&&$private=='0')?'selected=selected':''?>><?php echo $MSG_Public?></option>
+                <option value=1 <?php echo (isset($private)&&$private=='1')?'selected=selected':''?>><?php echo $MSG_Private?></option>
               </select>
               <?php echo $MSG_CONTEST."-".$MSG_CodePublic?>:
               <select name=codevisible style="width:80px;">
-                <option value=0 <?php echo $codevisible=='0'?'selected=selected':''?>><?php echo $MSG_CodePublic?></option>
-                <option value=1 <?php echo $codevisible=='1'?'selected=selected':''?>><?php echo $MSG_CodePrivate?></option>
+                <option value=0 <?php echo (isset($codevisible)&&$codevisible=='0')?'selected=selected':''?>><?php echo $MSG_CodePublic?></option>
+                <option value=1 <?php echo (isset($codevisible)&&$codevisible=='1')?'selected=selected':''?>><?php echo $MSG_CodePrivate?></option>
               </select>
               <?php echo $MSG_CONTEST."-".$MSG_EXAMMODE?>:
               <select name="exam_mode" style="width:80px;">
-                <option value=0 <?php echo $exam_mode=='0'?'selected=selected':''?>><?php echo $MSG_EXAMMODEOFF?></option>
-                <option value=1 <?php echo $exam_mode=='1'?'selected=selected':''?>><?php echo $MSG_EXAMMODEON?></option>
+                <option value=0 <?php echo (isset($exam_mode)&&$exam_mode=='0')?'selected=selected':''?>><?php echo $MSG_EXAMMODEOFF?></option>
+                <option value=1 <?php echo (isset($exam_mode)&&$exam_mode=='1')?'selected=selected':''?>><?php echo $MSG_EXAMMODEON?></option>
               </select>
               <?php echo $MSG_CONTEST."-".$MSG_PASSWORD?>:
               <input type=text name=password style="width:80px;" value="">
-            
-
             </p>
           </td>
         </tr>
@@ -325,10 +325,13 @@ else{
 </div>
 
 <script>
+  // 복사 모드일 때, 기존 contest_problem.score 값을 채우기 위함
+  const SCORE_PREFILL = <?php echo json_encode(isset($score_prefill)?$score_prefill:[]); ?>;
 
   async function showTitles(){
       let ts = document.querySelector("#ptitles");
-      let pids = document.querySelector("#plist").value.split(",");
+      let pids_raw = document.querySelector("#plist").value;
+      let pids = pids_raw.split(",").map(s => s.trim()).filter(s => s.length>0);
       let html = "";
 
       for (let v of pids) {
@@ -340,8 +343,9 @@ else{
 
           let title = await response.text();
           if (v.length!==0){
+            const pre = (SCORE_PREFILL && SCORE_PREFILL[v]) ? SCORE_PREFILL[v] : 100;
             html += `${v}:<a href='../problem.php?id=${v}' target='_blank'>${title}</a> -> 점수 : 
-            <input type=text name=cpoint[] style="width:150px;" value="">
+            <input type="number" name="cpoint[]" style="width:150px;" value="${pre}" min="0" step="1">
             `;
             html +=`<br>\n`;
           }
@@ -353,8 +357,6 @@ else{
   document.addEventListener("DOMContentLoaded", function(){
       showTitles();
   });
-
-
 </script>
 <?php }
 require_once("../oj-footer.php");
