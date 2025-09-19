@@ -11,6 +11,15 @@ require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 $view_title = "$MSG_STATUS";
 
+// ===== [FIX] 기본값 초기화 (contest 아님 대비)
+$cid = null;                 // contest 없는 경우 대비
+$start_time = 0;
+$end_time   = 0;
+$exam_mode  = 0;             // 기본: 수행모드 아님
+$codevisible = 0;            // 기본: 코드 비공개 아님
+$is_contest_manager = false; // 기본: 컨테스트 매니저 아님
+
+
 // 로그인 하기 전에는 채점기록 숨기기 
 if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
     if (isset($OJ_GUEST) && $OJ_GUEST) {
@@ -76,7 +85,7 @@ if (!function_exists('__dbg_headers_log')) {
     $lines[] = "[HDR:$tag] count=".count($headers)." set-cookie=".$setcookie_cnt." approx_len=".$len;
     $lines[] = "[HDR:$tag] =====";
     foreach ($lines as $L) error_log($L);
-    // @file_put_contents('/tmp/status_headers.log', implode(PHP_EOL,$lines).PHP_EOL, FILE_APPEND);
+    @file_put_contents('/tmp/status_headers.log', implode(PHP_EOL,$lines).PHP_EOL, FILE_APPEND);
   }
 }
 // 요청 종료 시점에서도 한 번 더 찍기 (템플릿이 헤더 만질 경우 대비)
@@ -96,6 +105,8 @@ $sql = "WHERE problem_id>0 ";
 
 if (isset($_GET['cid'])) {
   $cid = intval($_GET['cid']);
+  $is_contest_manager = isset($_SESSION[$OJ_NAME."_m$cid"]); // ===== [FIX]
+
   $sql = $sql." AND `contest_id`='$cid' and num>=0 ";
   $str2 = $str2."&cid=$cid";
   $sql_lock = "SELECT `start_time`,`title`,`end_time`, `codevisible`,`exam_mode` FROM `contest` WHERE `contest_id`=?";
@@ -259,11 +270,12 @@ for ($i=0; $i<$rows_cnt; $i++) {
     isset($_SESSION[$OJ_NAME.'_'.'administrator']) ||
     isset($_SESSION[$OJ_NAME.'_'.'source_browser']) ||
     isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) ||
-    isset($_SESSION[$OJ_NAME."_m$cid"]) ||(
+    $is_contest_manager || (
       $exam_mode == 0 ||
       (isset($_SESSION[$OJ_NAME.'_'.'user_id']) && $_SESSION[$OJ_NAME.'_'.'user_id'] === $row['user_id'])
     )
   );
+
 
   $cnt = 1-$cnt;
   $view_status[$i][0] = $row['solution_id'];
@@ -271,7 +283,7 @@ for ($i=0; $i<$rows_cnt; $i++) {
   if ($row['contest_id']>0) {
     if (isset($_SESSION[$OJ_NAME.'_'.'administrator']))
       $view_status[$i][1] = "<a href='contestrank.php?cid=".$row['contest_id']."&user_id=".$row['user_id']."#".$row['user_id']."' title='".$row['ip']."'>".$row['user_id']."</a>";
-    else if($exam_mode ==0 || isset($_SESSION[$OJ_NAME.'_'.'source_browser'])){
+    else if ($exam_mode == 0 || isset($_SESSION[$OJ_NAME.'_'.'source_browser']) || $is_contest_manager) {
       $view_status[$i][1] = "<a href='contestrank.php?cid=".$row['contest_id']."&user_id=".$row['user_id']."#".$row['user_id']."'>".$row['user_id']."</a>";
     } else {
       $view_status[$i][1] = "수행모드";
@@ -286,7 +298,7 @@ for ($i=0; $i<$rows_cnt; $i++) {
   else                                               $view_status[$i]['nick']="비공개";
 
   if ($row['contest_id']>0) {
-    if (isset($end_time) && time() < $end_time) {
+    if (time() < $end_time) {
       $view_status[$i][2] = "<div><a href='problem.php?cid=".$row['contest_id']."&pid=".$row['num']."'>";
       if (isset($cid)) $view_status[$i][2] .= $PID[$row['num']];
       else             $view_status[$i][2] .= $row['problem_id'];
@@ -370,22 +382,29 @@ for ($i=0; $i<$rows_cnt; $i++) {
       $view_status[$i][6] = $language_name[$row['language']];
     } else {
       $is_owner = (isset($_SESSION[$OJ_NAME.'_'.'user_id']) && strtolower($row['user_id']) == strtolower($_SESSION[$OJ_NAME.'_'.'user_id']));
-      $is_admin = isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'source_browser']) || isset($_SESSION[$OJ_NAME."_m$cid"]);
+      $is_admin = (
+        isset($_SESSION[$OJ_NAME.'_'.'administrator']) ||
+        isset($_SESSION[$OJ_NAME.'_'.'source_browser']) ||
+        $is_contest_manager
+      );
       if ($flag) $view_status[$i][6] = "<a target=_self href=showsource.php?id=".$row['solution_id']."'>".$language_name[$row['language']]."</a>";
       else       $view_status[$i][6] = $language_name[$row['language']];
       if ($row["problem_id"] > 0) {
         if ($row['contest_id'] > 0) {
-          if ((isset($end_time) && time() < $end_time) || $is_admin) {
+          if ((time() < intval($end_time)) || $is_admin) { // ===== [FIX] isset 대신 정수 비교
             if ($exam_mode == 0 || $is_admin) {
-              if ($codevisible == 0 || $is_admin) $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?cid=".$row['contest_id']."&pid=".$row['num']."&sid=".$row['solution_id']."\">Edit</a>";
-              else                                $view_status[$i][6] .= "/제한";
+              if ($codevisible == 0 || $is_admin) {
+                $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?cid=".$row['contest_id']."&pid=".$row['num']."&sid=".$row['solution_id']."\">Edit</a>";
+              } else {
+                $view_status[$i][6] .= "/제한";
+              }
             } else if ($exam_mode == 1 && $is_owner) {
               $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?cid=".$row['contest_id']."&pid=".$row['num']."&sid=".$row['solution_id']."\">Edit</a>";
             } else {
               $view_status[$i][6] .= "/수행모드";
             }
           }
-        } else {
+        }else {
           if ($is_owner || $is_admin) {
             if ($row['contest_id'] > 0)
               $view_status[$i][6] .= "/<a target=_self href=\"submitpage.php?cid=".$row['contest_id']."&pid=".$row['num']."&sid=".$row['solution_id']."\">Edit</a>";

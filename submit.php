@@ -1,468 +1,336 @@
-<?php session_start();
+<?php
+session_start();
 require_once "include/db_info.inc.php";
 require_once "include/my_func.inc.php";
-
-if(isset($OJ_CSRF) && $OJ_CSRF && $OJ_TEMPLATE=="bs3" && !isset($_SESSION[$OJ_NAME.'_'.'http_judge']))
-  require_once(dirname(__FILE__)."/include/csrf_check.php");
-
-if (!isset($_SESSION[$OJ_NAME . '_' . 'user_id'])) {
- 
-	$view_errors = "<a href=loginpage.php>$MSG_Login</a>";
-	require("template/".$OJ_TEMPLATE."/error.php");
-	exit(0);
-}
-
 require_once "include/memcache.php";
 require_once "include/const.inc.php";
+require_once "include/cookie_helper.php"; // [ADD] lastlang 안전 쿠키용
+
+if (isset($OJ_CSRF) && $OJ_CSRF && $OJ_TEMPLATE=="bs3" && !isset($_SESSION[$OJ_NAME.'_'.'http_judge']))
+  require_once(dirname(__FILE__)."/include/csrf_check.php");
+
+// 로그인 확인
+if (!isset($_SESSION[$OJ_NAME . '_' . 'user_id'])) {
+  $view_errors = "<a href=loginpage.php>$MSG_Login</a>";
+  require("template/".$OJ_TEMPLATE."/error.php");
+  exit(0);
+}
 
 $now = strftime("%Y-%m-%d %H:%M", time());
 $user_id = $_SESSION[$OJ_NAME.'_'.'user_id'];
-$language = intval($_POST['language']);
 
+// 언어 파라미터
+$language = isset($_POST['language']) ? intval($_POST['language']) : 0;
+
+// 벤치마크 아닐 때 캡차 체크 사전 준비
 if (!$OJ_BENCHMARK_MODE) {
   $sql = "SELECT count(1) FROM `solution` WHERE result<4";
   $result = mysql_query_cache($sql);
   $row = $result[0];
+  if ($row[0] > 50) $OJ_VCODE = true;
 
-  if ($row[0] > 50) {
-    $OJ_VCODE = true;
-  }
-
-  if ($OJ_VCODE) {
-    $vcode = $_POST["vcode"];
-  }
-
-  $err_str = "";
-  $err_cnt = 0;
+  if ($OJ_VCODE) $vcode = isset($_POST["vcode"]) ? $_POST["vcode"] : "";
 
   if ($OJ_VCODE && ($_SESSION[$OJ_NAME.'_'."vcode"]==null || $vcode!=$_SESSION[$OJ_NAME.'_'."vcode"] || $vcode=="" || $vcode==null)) {
     $_SESSION[$OJ_NAME.'_'."vcode"] = null;
-    $err_str = $err_str.$MSG_VCODE_WRONG."\\n";
-    $err_cnt++;
-    $view_errors = $err_str;
+    $view_errors = $MSG_VCODE_WRONG."\\n";
     require "template/".$OJ_TEMPLATE."/error.php";
-
     exit(0);
   }
 }
 
-if (isset($_POST['cid'])) {
-  $pid = intval($_POST['pid']);
-  $cid = abs(intval($_POST['cid']));
-    
-  $sql = "SELECT `problem_id`,'N' FROM `contest_problem` WHERE `num`='$pid' AND contest_id=$cid";
-  
-  // 대회 비공개로 변경될 경우 제출 문제에서 제출이 안되도록 코드 시작
-  $now = date('Y/m/d H:i:s D',time());
-  if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor']))
-  $sql = "SELECT langmask,private,defunct FROM `contest` WHERE  `contest_id`=?";
-  else
-    $sql = "SELECT langmask,private,defunct FROM `contest` WHERE `defunct`='N' AND `contest_id`=? AND (`start_time`<='$now' AND '$now'<`end_time`)";
-
-  $result = pdo_query($sql,$cid);
-  $rows_cnt = count($result);
-  if ($rows_cnt==0) {
-    $view_errors = "<title>$MSG_CONTEST</title><h2>No such Contest!</h2>";
-    require("template/".$OJ_TEMPLATE."/error.php");
-    exit(0);
-  }
-  // 대회 비공개로 변경될 경우 제출 문제에서 제출이 안되도록 코드 끝
-  
-}
-else {
-  $id = intval($_POST['id']);
-  $sql = "SELECT `problem_id` FROM `problem` WHERE `problem_id`='$id' ";
-    
-  if(!isset($_SESSION[$OJ_NAME.'_'.'administrator'])) // admin이 아닐경우
-    if(!isset($_SESSION[$OJ_NAME.'_m'.$id]))// 출제가 아닌경우
-      $sql .= " and defunct='N'"; // 비공개는 안보이도록  
-}
-//echo $sql;
-
-$res = mysql_query_cache($sql);
-if (isset($res) && count($res)<1 && !isset($_SESSION[$OJ_NAME.'_'.'administrator']) && !((isset($cid)&&$cid<=0) || (isset($id)&&$id<=0))) {
-  $view_errors = $MSG_LINK_ERROR."<br>";
-  require "template/".$OJ_TEMPLATE."/error.php";
-  exit(0);
-}
-// front, rear, ban 코드와 point정보 가져오기
-$tmpsql = "SELECT * FROM `problem` WHERE `problem_id`='$id' ";
-$tmpresult = pdo_query($tmpsql, $id);
-$problem_db = $tmpresult[0];
-$front_code = $problem_db['front_code'];
-$rear_code = $problem_db['rear_code'];
-$ban_code = $problem_db['ban_code'];
-
-
-if (false&&$res[0][1]!='N' && !isset($_SESSION[$OJ_NAME.'_'.'administrator'])) {
-  //  echo "res:$res,count:".count($res);
-  //  echo "$sql";
-  $view_errors = $MSG_PROBLEM_RESERVED."<br>";
-
-  if (isset($_POST['ajax'])) {
-    echo $view_errors;
-  }
-  else {
-    require "template/".$OJ_TEMPLATE."/error.php";
-  }
-  exit(0);
-}
-
+// ===== 제출 대상 판별 (단일문제 or 대회문제) =====
 $test_run = false;
-
 $title = "";
+$id = 0;         // 문제 ID (확정 후 front/rear 코드 조회에 사용)
+$cid = null;     // 대회 ID
+$pid = null;     // 대회 내 문제 번호
+$langmask = $OJ_LANGMASK;
 
+// (A) 단일 문제 제출
 if (isset($_POST['id'])) {
   $id = intval($_POST['id']);
-  $test_run = $id<=0;
+  $test_run = ($id<=0);
   $langmask = $OJ_LANGMASK;
-}
-else if (isset($_POST['pid']) && isset($_POST['cid']) && $_POST['cid']!=0) {
+
+} else if (isset($_POST['pid']) && isset($_POST['cid']) && $_POST['cid']!=0) {
+  // (B) 대회 문제 제출
   $pid = intval($_POST['pid']);
   $cid = intval($_POST['cid']);
-  $test_run = $cid<0;
+  $test_run = ($cid<0);
+  if ($test_run) $cid = -$cid;
 
-  if ($test_run) {
-    $cid = -$cid;
+  // 대회 유효성/권한/기간 확인
+  $now_time_str = date('Y/m/d H:i:s D', time());
+  // 관리자/출제자/문제편집자는 기간 무시 가능
+  if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor'])) {
+    $sql = "SELECT `private`, langmask, title FROM `contest` WHERE `contest_id`=?";
+    $cres = pdo_query($sql, $cid);
+  } else {
+    $sql = "SELECT `private`, langmask, title FROM `contest`
+            WHERE `contest_id`=? AND `start_time`<=? AND ?<`end_time`";
+    $cres = pdo_query($sql, $cid, $now_time_str, $now_time_str);
   }
-
-  //check user if private
-  $sql = "SELECT `private`,langmask,title FROM `contest` WHERE `contest_id`=$cid AND `start_time`<='$now' AND `end_time`>'$now'";
-  //"SELECT `private`,langmask FROM `contest` WHERE `contest_id`=? AND `start_time`<=? AND `end_time`>?";
-  //$result = pdo_query($sql, $cid, $now, $now);
-
-  $result = mysql_query_cache($sql);
-  $rows_cnt = count($result);
-
-  if ($rows_cnt != 1) {
-    $view_errors .= $MSG_NOT_IN_CONTEST;
-
-    require "template/" . $OJ_TEMPLATE . "/error.php";
+  if (!$cres || count($cres)!=1) {
+    $view_errors = $MSG_NOT_IN_CONTEST;
+    require "template/".$OJ_TEMPLATE."/error.php";
     exit(0);
-  }
-  else {
-    $row = $result[0];
-    $isprivate = intval($row[0]);
-    $langmask = $row[1];
-    $title = $row[2];
+  } else {
+    $row = $cres[0];
+    $isprivate = intval(isset($row['private']) ? $row['private'] : $row[0]);
+    $langmask  =        isset($row['langmask']) ? $row['langmask'] : $row[1];
+    $title     =        isset($row['title'])    ? $row['title']    : $row[2];
 
     if ($isprivate==1 && !isset($_SESSION[$OJ_NAME.'_'.'c'.$cid])) {
       $sql = "SELECT count(*) FROM `privilege` WHERE `user_id`=? AND `rightstr`=?";
-      $result = pdo_query($sql, $user_id, "c$cid");
-
-      $row = $result[0];
-      $ccnt = intval($row[0]);
-
+      $rs = pdo_query($sql, $user_id, "c$cid");
+      $ccnt = intval($rs[0][0]);
       if ($ccnt==0 && !isset($_SESSION[$OJ_NAME.'_'.'administrator'])) {
         $view_errors = $MSG_NOT_INVITED."\n";
-        require "template/" . $OJ_TEMPLATE . "/error.php";
+        require "template/".$OJ_TEMPLATE."/error.php";
         exit(0);
       }
     }
   }
 
+  // 대회 내 문제 → 실제 problem_id 얻기
   $sql = "SELECT `problem_id` FROM `contest_problem` WHERE `contest_id`=? AND `num`=?";
-  $result = pdo_query($sql, $cid, $pid);
-
-  $rows_cnt = count($result);
-
-  if ($rows_cnt != 1) {
+  $pres = pdo_query($sql, $cid, $pid);
+  if (!$pres || count($pres)!=1) {
     $view_errors = $MSG_NO_PROBLEM."\n";
     require "template/".$OJ_TEMPLATE."/error.php";
     exit(0);
+  } else {
+    $id = intval($pres[0]['problem_id']);
+    if ($test_run) $id = -$id;  // 테스트런일 땐 음수 전환
   }
-  else {
-    $row = $result[0];
-    $id = intval($row['problem_id']);
-    
-    if ($test_run) {
-      $id = -$id;
-    }
-  }
-  
-}
-else {
+
+} else {
+  // (C) custom test run (문제 ID 미제공)
   $id = 0;
-  /*
-  $view_errors= "No Such Problem!\n";
-  require("template/".$OJ_TEMPLATE."/error.php");
-  exit(0);
-  */
   $langmask = $OJ_LANGMASK;
   $test_run = true;
 }
 
-if ($language > count($language_name) || $language < 0) {
-  $language = 0;
-}
-
-$language = strval($language);
-
-if ($langmask&(1<<$language)) {
+// 언어 인덱스 보정/검증
+if ($language < 0 || $language >= count($language_name)) $language = 0;
+// 비트마스크 차단 언어
+if ($langmask & (1<<$language)) {
   $view_errors = $MSG_NO_PLS."\n[$language][$langmask][".($langmask&(1<<$language))."]";
   require "template/".$OJ_TEMPLATE."/error.php";
   exit(0);
 }
 
-$source = $_POST['source'];
-$input_text = "";
+// 제출 소스/입력 받기
+$source = isset($_POST['source']) ? $_POST['source'] : "";
+$input_text = isset($_POST['input_text']) ? $_POST['input_text'] : "";
 
-if (isset($_POST['input_text'])) {
-  $input_text = $_POST['input_text'];
+// encoded_submit 지원
+if (isset($_POST['encoded_submit'])) $source = base64_decode($source);
+
+// 줄바꿈 정규화
+$input_text = preg_replace("(\r\n)", "\n", $input_text);
+
+// === 여기까지 오면 $id 확정됨 ===
+
+// (1) problem front/rear/ban 코드 로딩  [MOVE] ← 핵심 수정
+$front_code = "";
+$rear_code  = "";
+$ban_code   = "";
+if ($id !== 0) {
+  // test_run에서 $id가 음수일 수 있으므로 절댓값으로 원래 문제를 찾음
+  $abs_pid = abs($id);
+  $rowp = pdo_query("SELECT `front_code`,`rear_code`,`ban_code` FROM `problem` WHERE `problem_id`=?", $abs_pid);
+  if ($rowp && count($rowp)>0) {
+    $front_code = (string)$rowp[0]['front_code'];
+    $rear_code  = (string)$rowp[0]['rear_code'];
+    $ban_code   = (string)$rowp[0]['ban_code'];
+  }
 }
 
-// 금지어 처리
-if($ban_code){
-  $ban_words = explode('/',$ban_code);
-  $ban_cnt = count($ban_words);
-  for($i=0;$i<$ban_cnt;$i++){
-    if(strpos($source,$ban_words[$i])!==false){
-      $view_errors= $MSG_CODE_USE_BANCODE;
-      require "template/" . $OJ_TEMPLATE . "/error.php";
+// (2) 금지어 검사
+if (!empty($ban_code)) {
+  $ban_words = explode('/', $ban_code);
+  foreach ($ban_words as $bw) {
+    $bw = trim($bw);
+    if ($bw!=='' && strpos($source, $bw)!==false) {
+      $view_errors = $MSG_CODE_USE_BANCODE;
+      require "template/".$OJ_TEMPLATE."/error.php";
       exit(0);
     }
   }
 }
 
-
-// 제출 소스에 앞뒤에 front, rear 코드 추가
-// 언어별로 별도 추가 작업
-
-if($front_code || $rear_code){
+// (3) front/rear 코드 삽입 (언어 구분 토큰: //"언어"//)
+if (!empty($front_code) || !empty($rear_code)) {
   $find_str = "//".$language_name[$language]."//";
-  $lang_name_print=$language_name[$language];
-  $front_code_print ="";
-  $rear_code_print ="";
-  //front code 내용 확인하여 언어별 분리
-  if(strpos($front_code,$find_str)!==false){
-    $split_str = explode($find_str,$front_code);
-    $front_code_print = explode("//",$split_str[1])[0];
+  $front_code_print = "";
+  $rear_code_print  = "";
+
+  if (strpos($front_code, $find_str)!==false) {
+    $split = explode($find_str, $front_code, 2);
+    if (isset($split[1])) $front_code_print = explode("//", $split[1])[0];
   }
-  //rear code 내용 확인하여 언어별 분리
-  if(strpos($rear_code,$find_str)!==false){
-    $split_str = explode($find_str,$rear_code);
-    $rear_code_print = explode("//",$split_str[1])[0];
+  if (strpos($rear_code, $find_str)!==false) {
+    $split = explode($find_str, $rear_code, 2);
+    if (isset($split[1])) $rear_code_print = explode("//", $split[1])[0];
   }
-  $source = $front_code_print."\n".$source."\n".$rear_code_print;
+  $source = trim($front_code_print)."\n".$source."\n".trim($rear_code_print);
 }
 
-
-
-
-/* php7.4 제거
-if (get_magic_quotes_gpc()) {
-  $source = stripslashes($source);
-  $input_text = stripslashes($input_text);
+// (4) 인코딩 주석 (파이썬)
+if ($language == 6) { // Python3
+  if (strpos($source, "# coding=") !== 0 && strpos($source, "# -*- coding:") !== 0) {
+    $source = "# coding=utf-8\n".$source;
+  }
 }
 
-*/
-if (isset($_POST['encoded_submit'])) {
-  $source = base64_decode($source);
-}
-
-$input_text = preg_replace("(\r\n)", "\n", $input_text);
-$source = $source;
-$input_text = $input_text;
+// (5) custom test run에서만 실제 채점ID 0으로 전환
 $source_user = $source;
+if ($test_run) $id = 0;
 
-
-if ($test_run) {
-  $id = -$id;
-}
-
-//use append Main code
+// (6) prepend/append 파일 자동 삽입
 $prepend_file = "$OJ_DATA/$id/prepend.".$language_ext[$language];
-
 if (isset($OJ_APPENDCODE) && $OJ_APPENDCODE && file_exists($prepend_file)) {
   $source = file_get_contents($prepend_file)."\n".$source;
 }
-
 $append_file = "$OJ_DATA/$id/append.".$language_ext[$language];
-//echo $append_file;
-
 if (isset($OJ_APPENDCODE) && $OJ_APPENDCODE && file_exists($append_file)) {
   $source .= "\n".file_get_contents($append_file);
-//echo "$source";
-}
-//end of append
-
-if ($language == 6) {
-  $source = "# coding=utf-8\n".$source;
 }
 
-if ($test_run) {
-  $id = 0;
-}
-
+// (7) 소스 길이 검사
 $len = strlen($source);
-//echo $source;
+if ($len < 2) {
+  $view_errors = $MSG_TOO_SHORT."<br>";
+  require "template/".$OJ_TEMPLATE."/error.php";
+  exit(0);
+}
+if ($len > 65536) {
+  $view_errors = $MSG_TOO_LONG."<br>";
+  require "template/".$OJ_TEMPLATE."/error.php";
+  exit(0);
+}
 
-setcookie('lastlang', $language, time()+360000);
+// (8) lastlang 쿠키 저장 (안전 세터)
+safe_setcookie('lastlang', (string)$language, time()+360000, "/");
 
+// (9) 클라이언트 IP
 $ip = $_SERVER['REMOTE_ADDR'];
-
 if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
   $REMOTE_ADDR = $_SERVER['HTTP_X_FORWARDED_FOR'];
   $tmp_ip = explode(',', $REMOTE_ADDR);
   $ip = htmlentities($tmp_ip[0], ENT_QUOTES, "UTF-8");
 }
 
-if ($len < 2) {
-  $view_errors = $MSG_TOO_SHORT."<br>";
-  require "template/".$OJ_TEMPLATE."/error.php";
-  exit(0);
-}
-
-if ($len > 65536) {
-  $view_errors = $MSG_TOO_LONG."<br>";
-  require "template/" . $OJ_TEMPLATE . "/error.php";
-  exit(0);
-}
-
+// (10) 제출간격 제한
 if (!$OJ_BENCHMARK_MODE) {
-  // last submit
-  $now = strftime("%Y-%m-%d %X", time()-10);
-  $sql = "SELECT `in_date` FROM `solution` WHERE `user_id`=? AND in_date>? ORDER BY `in_date` DESC LIMIT 1";
-  $res = pdo_query($sql, $user_id, $now);
-
-  if (count($res)==1) {
+  $now10 = strftime("%Y-%m-%d %X", time()-10);
+  $res = pdo_query("SELECT `in_date` FROM `solution` WHERE `user_id`=? AND in_date>? ORDER BY `in_date` DESC LIMIT 1", $user_id, $now10);
+  if ($res && count($res)==1) {
     $view_errors = $MSG_BREAK_TIME."<br>";
     require "template/".$OJ_TEMPLATE."/error.php";
     exit(0);
   }
 }
 
-if (~$OJ_LANGMASK&(1<<$language)) {
-  $sql = "SELECT nick FROM users WHERE user_id=?";
-  $nick = pdo_query($sql, $user_id);
-
-  if ($nick) {
-    $nick = $nick[0][0];
-  }
-  else {
-    $nick = "Guest";
-  }
+// (11) 실제 INSERT (언어 마스크 허용 확인)
+if (~$OJ_LANGMASK & (1<<$language)) {
+  $nick = "Guest";
+  $r = pdo_query("SELECT nick FROM users WHERE user_id=?", $user_id);
+  if ($r && isset($r[0][0])) $nick = $r[0][0];
 
   if (!isset($pid)) {
-    $sql = "INSERT INTO solution(problem_id,user_id,nick,in_date,language,ip,code_length,result) VALUES(?,?,?,NOW(),?,?,?,14)";
+    // 단일 문제
+    $sql = "INSERT INTO solution(problem_id,user_id,nick,in_date,language,ip,code_length,result)
+            VALUES(?,?,?,NOW(),?,?,?,14)";
     $insert_id = pdo_query($sql, $id, $user_id, $nick, $language, $ip, $len);
-  }
-  else {
-    $sql = "INSERT INTO solution(problem_id,user_id,nick,in_date,language,ip,code_length,contest_id,num,result) VALUES(?,?,?,NOW(),?,?,?,?,?,14)";
+  } else {
+    // 대회 문제
+    $sql = "INSERT INTO solution(problem_id,user_id,nick,in_date,language,ip,code_length,contest_id,num,result)
+            VALUES(?,?,?,NOW(),?,?,?,?,?,14)";
 
+    // NOIP + 한 번만 허용 옵션 처리
     if ((stripos($title,$OJ_NOIP_KEYWORD)!==false) && isset($OJ_OI_1_SOLUTION_ONLY) && $OJ_OI_1_SOLUTION_ONLY) {
       $delete = pdo_query("DELETE FROM solution WHERE contest_id=? AND user_id=? AND num=?", $cid, $user_id, $pid);
-
       if ($delete>0) {
-        $sql_fix = "UPDATE problem p INNER JOIN (SELECT problem_id pid ,count(1) ac FROM solution WHERE problem_id=? AND result=4) s ON p.problem_id=s.pid SET p.accepted=s.ac;";        
-        $fixed = pdo_query($sql_fix,$id);
-        $sql_fix = "UPDATE problem p INNER JOIN (SELECT problem_id pid ,count(1) submit FROM solution WHERE problem_id=?) s ON p.problem_id=s.pid SET p.submit=s.submit;";
-        $fixed = pdo_query($sql_fix,$id);
+        pdo_query("UPDATE problem p INNER JOIN (SELECT problem_id pid ,count(1) ac FROM solution WHERE problem_id=? AND result=4) s ON p.problem_id=s.pid SET p.accepted=s.ac;", abs($id));
+        pdo_query("UPDATE problem p INNER JOIN (SELECT problem_id pid ,count(1) submit FROM solution WHERE problem_id=?) s ON p.problem_id=s.pid SET p.submit=s.submit;", abs($id));
       }
     }
 
-    $insert_id = pdo_query($sql, $id, $user_id, $nick, $language, $ip, $len, $cid, $pid);
+    $insert_id = pdo_query($sql, abs($id), $user_id, $nick, $language, $ip, $len, $cid, $pid); // test_run때 id 음수였던 것 abs로 정규화
   }
 
-  $sql = "INSERT INTO `source_code_user`(`solution_id`,`source`) VALUES(?,?)";
-  pdo_query($sql, $insert_id, $source_user);
-
-  $sql = "INSERT INTO `source_code`(`solution_id`,`source`) VALUES(?,?)";
-  pdo_query($sql, $insert_id, $source);
+  // 소스 저장
+  pdo_query("INSERT INTO `source_code_user`(`solution_id`,`source`) VALUES(?,?)", $insert_id, $source_user);
+  pdo_query("INSERT INTO `source_code`(`solution_id`,`source`) VALUES(?,?)", $insert_id, $source);
 
   if ($test_run) {
-    $sql = "INSERT INTO `custominput`(`solution_id`,`input_text`) VALUES(?,?)";
-    pdo_query($sql, $insert_id, $input_text);
-  }
-  else {
-    $sql = "UPDATE problem SET submit=submit+1 WHERE problem_id=?";
-    pdo_query($sql,$id);
-
+    pdo_query("INSERT INTO `custominput`(`solution_id`,`input_text`) VALUES(?,?)", $insert_id, $input_text);
+  } else {
+    pdo_query("UPDATE problem SET submit=submit+1 WHERE problem_id=?", abs($id));
     if (isset($cid) && $cid>0) {
-      $sql = "UPDATE contest_problem SET c_submit=c_submit+1 WHERE contest_id=? AND num=?";
-      pdo_query($sql,$cid,$pid);
+      pdo_query("UPDATE contest_problem SET c_submit=c_submit+1 WHERE contest_id=? AND num=?", $cid, $pid);
     }
   }
 
-  $sql = "UPDATE solution SET result=0 WHERE solution_id=?";
-  pdo_query($sql, $insert_id);
+  // 대기열로 상태 대기(0)
+  pdo_query("UPDATE solution SET result=0 WHERE solution_id=?", $insert_id);
 
-  //using redis task queue
+  // Redis 큐
   if ($OJ_REDIS) {
     $redis = new Redis();
     $redis->connect($OJ_REDISSERVER, $OJ_REDISPORT);
-    
-    if (isset($OJ_REDISAUTH)) {
-      $redis->auth($OJ_REDISAUTH);
-    }
-
+    if (isset($OJ_REDISAUTH)) $redis->auth($OJ_REDISAUTH);
     $redis->lpush($OJ_REDISQNAME, $insert_id);
     $redis->close();
   }
 }
 
-if (isset($OJ_UDP) && $OJ_UDP) {      
-           trigger_judge($insert_id);     // moved to my_func.inc.php
+// UDP 트리거
+if (isset($OJ_UDP) && $OJ_UDP) {
+  trigger_judge($insert_id); // my_func.inc.php
 }
 
+// 벤치마크 모드면 바로 출력
 if ($OJ_BENCHMARK_MODE) {
   echo $insert_id;
   exit(0);
 }
 
+// 캐시 무효화
 $statusURI = strstr($_SERVER['REQUEST_URI'], "submit", true)."status.php";
-
-if (isset($cid)) {
-  $statusURI .= "?cid=$cid";
-}
+if (isset($cid)) $statusURI .= "?cid=$cid";
 
 $sid = "";
-if (isset($_SESSION[$OJ_NAME.'_'.'user_id'])) {
-  $sid .= session_id().$_SERVER['REMOTE_ADDR'];
-}
-
-if (isset($_SERVER["REQUEST_URI"])) {
-  $sid .= $statusURI;
-}
-//echo $statusURI."<br>";
-
+if (isset($_SESSION[$OJ_NAME.'_'.'user_id'])) $sid .= session_id().$_SERVER['REMOTE_ADDR'];
+if (isset($_SERVER["REQUEST_URI"])) $sid .= $statusURI;
 $sid = md5($sid);
 $file = "cache/cache_$sid.html";
-//echo $file;
 
 if ($OJ_MEMCACHE) {
   $mem = new Memcache();
-    
-  if ($OJ_SAE) {
-    $mem = memcache_init();
-  }
-  else {
-    $mem->connect($OJ_MEMSERVER, $OJ_MEMPORT);
-  }
-    
+  if ($OJ_SAE) $mem = memcache_init();
+  else $mem->connect($OJ_MEMSERVER, $OJ_MEMPORT);
   $mem->delete($file, 0);
-}
-elseif (file_exists($file)) {
+} elseif (file_exists($file)) {
   unlink($file);
 }
-//echo $file;
 
+// 리다이렉트 / 결과 반환
 $statusURI = "status.php?user_id=".$_SESSION[$OJ_NAME.'_'.'user_id'];
-
-if (isset($cid)) {
-  $statusURI .= "&cid=$cid&fixed=";
-}
+if (isset($cid)) $statusURI .= "&cid=$cid&fixed=";
 
 if (!$test_run) {
   header("Location: $statusURI");
-}
-else {
+} else {
   if (isset($_GET['ajax'])) {
     echo $insert_id;
-  }
-  else {
+  } else {
     ?>
-    <script>window.parent.setTimeout("fresh_result('<?php echo $insert_id; ?>')",1000);</script><?php
+    <script>window.parent.setTimeout("fresh_result('<?php echo $insert_id; ?>')",1000);</script>
+    <?php
   }
 }
 ?>
