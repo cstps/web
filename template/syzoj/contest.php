@@ -33,9 +33,10 @@
                 </div>
                 <div class="ui buttons right floated">
                     <?php
-                        if ($now>$end_time)
+                        $now_ts = time();
+                        if ($now_ts>$end_time)
                             echo "<span class=\"ui small button grey\">종료됨</span>";
-                        else if ($now<$start_time)
+                        else if ($now_ts<$start_time)
                             echo "<span class=\"ui small button red\">시작전</span>";
                         else
                             echo "<span class=\"ui small button green\">진행중</span>";
@@ -46,7 +47,7 @@
                 </div>
             </div>
         </div>
-        <?php if($view_description){ ?>
+        <?php if(!empty($view_description)){ ?>
         <div class="row">
             <div class="column">
                 <h4 class="ui top attached block header">공지사항</h4>
