@@ -292,7 +292,7 @@ for ($i=0; $i<$rows_cnt; $i++) {
     if (isset($_SESSION[$OJ_NAME.'_'.'administrator']))
       $view_status[$i][1] = "<a href='userinfo.php?user=".$row['user_id']."' title='".$row['nick']."[".$row['ip']."]'>".$row['user_id']."</a>";
     else
-      $view_status[$i][1] = "<a href='userinfo.php?user=".$row['user_id']."' title='".$row['nick']."'>".$row['user_id']."</a>";
+      $view_status[$i][1] = "<a href='userinfo.php?user=".$row['user_id']."'>".$row['user_id']."</a>";
   }
   if(isset($_SESSION[$OJ_NAME.'_'.'administrator'])) $view_status[$i]['nick']=$row['nick'];
   else                                               $view_status[$i]['nick']="비공개";
