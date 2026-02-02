@@ -27,6 +27,7 @@
                     target="_blank" rel="noreferrer noopener" href="https://github.com/zhblue/hustoj">HUSTOJ</a>, Theme
                 by <a style="color: inherit !important;" href="https://github.com/syzoj">SYZOJ</a></div>
                 <div>운영자 : <a style="color: inherit !important;" href="mailto:seotos@gmail.com">GTKBS-GNE</a> computer science teacher(경남온라인학교)</div>
+                <div><a style="color: inherit !important;" href="./privacy_policy.php">개인정보처리방침</a> </div>
 	 <!--   <div> Running on <a href='https://debian.org' target='_blank'>Debian11</a> / <a href='https://www.loongson.cn' target='_blank'>Loongson 3A3000</a> </div> -->	
             <?php if ($OJ_BEIAN) { ?>
             <div>

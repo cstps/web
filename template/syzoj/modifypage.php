@@ -63,13 +63,13 @@
                         value="<?php echo htmlentities($row['school'], ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
 
-                <div class="field">
+                <!-- <div class="field">
                     <label for="email">이메일</label>
                     <input name="email" placeholder="이메일을 입력하세요" type="text" value="<?php echo htmlentities($row['email'],ENT_QUOTES,"UTF-8")?>">
-                </div>
+                </div> -->
                 <?php if($OJ_VCODE){?>
                   <div class="field">
-                    <label for="email">확인코드*</label>
+                    <label for="vcode">확인코드*</label>
                     <input name="vcode" class="form-control" placeholder="확인코드를 입력하세요" type="text">
                     <img alt="click to change" src="vcode.php" onclick="this.src='vcode.php?'+Math.random()" height="30px">
                   </div>

@@ -15,6 +15,19 @@ if (isset($OJ_OI_MODE)&&$OJ_OI_MODE) {
   exit();
 }
 
+// 로그인 하기 전에는 기록 숨기기 
+if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
+    if (isset($OJ_GUEST) && $OJ_GUEST) {
+        $_SESSION[$OJ_NAME.'_'.'user_id'] = "Guest";
+    } else {
+        $view_errors = "<button><a href=loginpage.php>$MSG_Login</a></button>";
+        require("template/".$OJ_TEMPLATE."/error.php");
+        exit(0);
+    }
+}
+
+
+
 if (isset($_GET['id']))
   $id = intval($_GET['id']);
 

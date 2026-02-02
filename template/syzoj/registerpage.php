@@ -54,13 +54,14 @@
                 </div>
                 <div class="field">
                   <label for="school">소속/학교</label>
-                  <input name="school" id="school" placeholder="학교명을 입력하세요" type="text" autocomplete="off">
+                  <input name="school" id="school" placeholder="학교명을 입력하세요. 생략가능" type="text" autocomplete="off">
                 </div>
-
+                <!--
                 <div class="field">
                     <label for="email">이메일</label>
                     <input name="email" placeholder="없으면 생략가능" type="text">
-                </div>                
+                </div>    
+                -->            
                   <div class="field">
                     <label for="vcode">확인코드*</label>
                     <input name="vcode" class="form-control" placeholder="" type="text">

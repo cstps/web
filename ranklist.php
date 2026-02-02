@@ -13,6 +13,18 @@
         require_once('./include/setlang.php');
         require_once('./include/memcache.php');
 
+
+        // 로그인 하기 전에는 순위기록 숨기기 
+        if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
+        if (isset($OJ_GUEST) && $OJ_GUEST) {
+                $_SESSION[$OJ_NAME.'_'.'user_id'] = "Guest";
+        } else {
+                $view_errors = "<button><a href=loginpage.php>$MSG_Login</a></button>";
+                require("template/".$OJ_TEMPLATE."/error.php");
+                exit(0);
+        }
+        }
+
                 // 학교 목록 가져오기
                 $sql = "SELECT DISTINCT school FROM users WHERE school != '' AND defunct='N' ORDER BY school ASC";
                 $schools = pdo_query($sql);

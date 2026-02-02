@@ -81,11 +81,11 @@ if ($len > 0) {
     }
 }
 
-$len=strlen($_POST['email']);
-if ($len>100){
-	$err_str=$err_str."메일주소가 너무 김!\\n";
-	$err_cnt++;
-}
+// $len=strlen($_POST['email']);
+// if ($len>100){
+// 	$err_str=$err_str."메일주소가 너무 김!\\n";
+// 	$err_cnt++;
+// }
 if ($err_cnt>0){
 	print "<script language='javascript'>\n";
 	print "alert('";
@@ -111,7 +111,7 @@ if ($domain==$DOMAIN && $OJ_NAME==$user_id){
 }
 $nick=(htmlentities ($nick,ENT_QUOTES,"UTF-8"));
 $school=(htmlentities ($school,ENT_QUOTES,"UTF-8"));
-$email=(htmlentities ($email,ENT_QUOTES,"UTF-8"));
+// $email=(htmlentities ($email,ENT_QUOTES,"UTF-8"));
 $ip = ($_SERVER['REMOTE_ADDR']);
 if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])&&!empty(trim($_SERVER['HTTP_X_FORWARDED_FOR']))) {
     $REMOTE_ADDR = $_SERVER['HTTP_X_FORWARDED_FOR'];
