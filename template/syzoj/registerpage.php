@@ -30,6 +30,11 @@
 
 <div class="padding">
   <h1>회원가입</h1>
+  <h2>
+        <a href="privacy_policy.php" target="_blank" rel="noopener noreferrer">
+          개인정보처리방침
+        </a>
+  </h2>
   <div class="ui error message" id="error" data-am-alert hidden>
     <p id="error_info"></p>
   </div>
@@ -69,6 +74,7 @@
                   </div>
                 
                 <button name="submit" type="submit" class="ui button">가입</button>
+                
                 <button name="submit" type="reset" class="ui button">초기화</button>
             </form>
             

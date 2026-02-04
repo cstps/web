@@ -19,6 +19,7 @@ if (isset($errMap[$err])) {
 <div class="ui middle aligned center aligned grid" style="height: 500px;">
   <div class="row">
     <div class="column" style="max-width: 450px">
+    
       <h2 class="ui image header">
         <div class="content" style="margin-bottom: 10px;">로그인</div>
       </h2>
@@ -55,6 +56,10 @@ if (isset($errMap[$err])) {
 
       <div class="ui message">
         <a href="registerpage.php">회원가입</a>
+        &nbsp;|&nbsp;
+        <a href="privacy_policy.php" target="_blank" rel="noopener noreferrer">
+          개인정보처리방침
+        </a>
         <!-- <a href="lostpassword.php">비밀번호 찾기</a> -->
       </div>
     </div>
