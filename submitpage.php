@@ -58,6 +58,30 @@ else {
 }
 
 $view_src = "";
+// ============================================================
+// 수업용 OJ - 문제 해결 사고과정 기록
+// ============================================================
+
+// 풀이 계획
+$view_plan_text = "";
+
+// AI 사용 여부
+$view_ai_used = 0;
+
+// AI 활용 유형
+// none, understand, idea, syntax, debug, generate, explain
+$view_ai_usage_type = "none";
+
+// AI에게 질문한 내용
+$view_ai_prompt = "";
+
+// 이전 제출 후 수정/회고
+$view_reflection = "";
+
+// 사고과정 기록 기능 활성화 여부
+// 우선 전체 문제에서 활성화하여 테스트
+$view_process_mode = true;
+
 
 if (isset($_GET['sid'])) {
   	$sid = intval($_GET['sid']);
@@ -252,8 +276,218 @@ if ($row[0]>10) {
 	//$OJ_TEST_RUN=false;
 	//echo "$row[0]";
 }
+// ============================================================
+// 수업용 OJ - 첫 제출 / 재제출 판단
+//
+// 핵심:
+// solution 테이블의 과거 제출 여부가 아니라
+// solution_process에 "최초 풀이계획"이 존재하는지를 기준으로 판단
+// ============================================================
+
+$view_is_resubmit = false;
+
+$view_previous_solution_id = 0;
+$view_previous_result = null;
+$view_previous_result_text = "";
+
+$view_previous_plan_text = "";
+$view_previous_reflection = "";
+
+$current_user_id = $_SESSION[$OJ_NAME.'_'.'user_id'];
+
+
+// ============================================================
+// 현재 일반 문제 / 대회 문제 구분
+// ============================================================
+
+$current_contest_id = 0;
+
+if (isset($cid) && intval($cid) > 0) {
+	$current_contest_id = intval($cid);
+}
+
+
+// ============================================================
+// 1. 최초 풀이계획이 이미 존재하는지 확인
+//
+// solution 테이블이 아니라 solution_process를 기준으로 함.
+//
+// 이유:
+// 사고과정 기능 도입 전에 제출했던 기존 solution이 있어도
+// 학생에게 최초 풀이계획을 한 번은 작성하도록 하기 위함.
+// ============================================================
+
+if ($current_contest_id > 0) {
+
+	$first_process = pdo_query(
+		"SELECT id, solution_id, plan_text
+		 FROM solution_process
+		 WHERE user_id=?
+		 AND problem_id=?
+		 AND contest_id=?
+		 AND plan_text IS NOT NULL
+		 AND TRIM(plan_text) <> ''
+		 ORDER BY id ASC
+		 LIMIT 1",
+
+		$current_user_id,
+		$problem_id,
+		$current_contest_id
+	);
+
+}
+else {
+
+	$first_process = pdo_query(
+		"SELECT id, solution_id, plan_text
+		 FROM solution_process
+		 WHERE user_id=?
+		 AND problem_id=?
+		 AND (contest_id=0 OR contest_id IS NULL)
+		 AND plan_text IS NOT NULL
+		 AND TRIM(plan_text) <> ''
+		 ORDER BY id ASC
+		 LIMIT 1",
+
+		$current_user_id,
+		$problem_id
+	);
+
+}
+
+
+// ============================================================
+// 최초 풀이계획이 존재하면 재제출 모드
+// ============================================================
+
+if ($first_process && count($first_process) > 0) {
+
+	$view_is_resubmit = true;
+
+	$view_previous_plan_text =
+		$first_process[0]['plan_text'];
+
+
+	// ========================================================
+	// 2. 가장 최근 제출 찾기
+	// ========================================================
+
+	if ($current_contest_id > 0) {
+
+		$previous_solution = pdo_query(
+			"SELECT solution_id, result
+			 FROM solution
+			 WHERE user_id=?
+			 AND problem_id=?
+			 AND contest_id=?
+			 ORDER BY solution_id DESC
+			 LIMIT 1",
+
+			$current_user_id,
+			$problem_id,
+			$current_contest_id
+		);
+
+	}
+	else {
+
+		$previous_solution = pdo_query(
+			"SELECT solution_id, result
+			 FROM solution
+			 WHERE user_id=?
+			 AND problem_id=?
+			 AND (contest_id=0 OR contest_id IS NULL)
+			 ORDER BY solution_id DESC
+			 LIMIT 1",
+
+			$current_user_id,
+			$problem_id
+		);
+
+	}
+
+
+	// ========================================================
+	// 직전 제출 정보
+	// ========================================================
+
+	if ($previous_solution && count($previous_solution) > 0) {
+
+		$view_previous_solution_id =
+			intval($previous_solution[0]['solution_id']);
+
+		$view_previous_result =
+			intval($previous_solution[0]['result']);
+
+
+		// 결과 문자열
+		if (
+			isset($judge_result) &&
+			isset($judge_result[$view_previous_result])
+		) {
+
+			$view_previous_result_text =
+				$judge_result[$view_previous_result];
+
+		}
+		else {
+
+			$view_previous_result_text =
+				"Result ".$view_previous_result;
+
+		}
+
+
+		// ====================================================
+		// 직전 제출의 수정 내용
+		// ====================================================
+
+		$previous_reflection = pdo_query(
+			"SELECT reflection
+			 FROM solution_process
+			 WHERE solution_id=?
+			 LIMIT 1",
+
+			$view_previous_solution_id
+		);
+
+
+		if (
+			$previous_reflection &&
+			count($previous_reflection) > 0 &&
+			isset($previous_reflection[0]['reflection'])
+		) {
+
+			$view_previous_reflection =
+				$previous_reflection[0]['reflection'];
+
+		}
+
+	}
+
+}
+
+
+// ============================================================
+// 최초 풀이계획이 하나도 없다면
+//
+// 기존 solution 제출 기록이 아무리 많아도
+// 사고과정 기능에서는 "첫 제출"로 취급
+// ============================================================
+
+else {
+
+	$view_is_resubmit = false;
+
+	$view_previous_solution_id = 0;
+	$view_previous_result = null;
+	$view_previous_result_text = "";
+
+	$view_previous_plan_text = "";
+	$view_previous_reflection = "";
+
+}
+
 
 /////////////////////////Template
 require("template/".$OJ_TEMPLATE."/submitpage.php");
-/////////////////////////Common foot
-?>

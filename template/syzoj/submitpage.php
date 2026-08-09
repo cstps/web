@@ -2,7 +2,7 @@
 <?php include("template/$OJ_TEMPLATE/header.php");?>
 <center>
  <script src="<?php echo $OJ_CDN_URL?>include/checksource.js"></script>
-<form id=frmSolution action="submit.php" method="post" onsubmit='do_submit()'>
+<form id="frmSolution" action="submit.php" method="post">
 <?php if (isset($id)){?>
 Problem <span class=blue><b><?php echo $id?></b></span>
 <input id=problem_id type='hidden' value='<?php echo $id?>' name="id" ><br>
@@ -40,8 +40,379 @@ echo"<option value=$i ".( $lastlang==$i?"selected":"").">
 
 <br>
 </span>
+<?php if(isset($view_process_mode) && $view_process_mode){ ?>
+
+<div style="
+	width:80%;
+	max-width:1000px;
+	margin:20px auto;
+	text-align:left;
+	border:1px solid #ddd;
+	border-radius:6px;
+	padding:20px;
+	background:#fafafa;
+">
+
+	<h3 style="margin-top:0;">
+		문제 해결 과정
+	</h3>
+
+
+	<?php if(!isset($view_is_resubmit) || !$view_is_resubmit){ ?>
+
+		<!-- =================================================
+		     첫 제출
+		     ================================================= -->
+
+		<div style="margin-bottom:20px;">
+
+			<label>
+				<strong>1. 풀이 계획</strong>
+			</label>
+
+			<p style="color:#666; margin-top:5px;">
+				코드를 작성하기 전에 문제를 어떻게 해결할지 작성하세요.
+			</p>
+
+			<textarea
+				name="plan_text"
+				id="plan_text"
+				rows="4"
+				style="width:100%;"
+				placeholder="예: 반복문을 이용하여 입력된 값을 하나씩 확인한다."
+				required
+			></textarea>
+
+			<input
+				type="hidden"
+				name="reflection"
+				value=""
+			>
+
+		</div>
+
+
+	<?php }else{ ?>
+
+		<!-- =================================================
+		     재제출
+		     ================================================= -->
+
+		<div style="
+			padding:15px;
+			margin-bottom:15px;
+			background:#fff;
+			border:1px solid #ddd;
+			border-radius:5px;
+		">
+
+			<strong>직전 제출 결과</strong>
+
+			<br><br>
+
+			<?php
+			echo htmlentities(
+				$view_previous_result_text,
+				ENT_QUOTES,
+				"UTF-8"
+			);
+			?>
+
+		</div>
+
+
+		<div style="
+			padding:15px;
+			margin-bottom:20px;
+			background:#fff;
+			border:1px solid #ddd;
+			border-radius:5px;
+		">
+
+			<strong>처음 세운 풀이 계획</strong>
+
+			<br><br>
+
+			<?php
+
+			if(
+				isset($view_previous_plan_text) &&
+				$view_previous_plan_text != ""
+			){
+
+				echo nl2br(
+					htmlentities(
+						$view_previous_plan_text,
+						ENT_QUOTES,
+						"UTF-8"
+					)
+				);
+
+			}
+			else{
+
+				echo "<span style='color:#999;'>기록된 풀이 계획이 없습니다.</span>";
+
+			}
+
+			?>
+
+		</div>
+
+
+		<div style="margin-bottom:20px;">
+
+			<label>
+				<strong>1. 이번에 수정한 부분</strong>
+			</label>
+
+			<p style="color:#666; margin-top:5px;">
+				수정한 부분을 선택하세요. 여러 개 선택할 수 있습니다.
+			</p>
+
+
+			<div style="
+				display:flex;
+				flex-wrap:wrap;
+				gap:10px 20px;
+				margin-top:10px;
+				margin-bottom:15px;
+			">
+
+				<label>
+					<input type="checkbox"
+						name="change_type[]"
+						value="input">
+					입력
+				</label>
+
+				<label>
+					<input type="checkbox"
+						name="change_type[]"
+						value="output">
+					출력
+				</label>
+
+				<label>
+					<input type="checkbox"
+						name="change_type[]"
+						value="condition">
+					조건문
+				</label>
+
+				<label>
+					<input type="checkbox"
+						name="change_type[]"
+						value="loop">
+					반복문
+				</label>
+
+				<label>
+					<input type="checkbox"
+						name="change_type[]"
+						value="variable">
+					변수
+				</label>
+
+				<label>
+					<input type="checkbox"
+						name="change_type[]"
+						value="function">
+					함수
+				</label>
+
+				<label>
+					<input type="checkbox"
+						name="change_type[]"
+						value="data">
+					배열 / 자료구조
+				</label>
+
+				<label>
+					<input type="checkbox"
+						name="change_type[]"
+						value="other">
+					기타
+				</label>
+
+			</div>
+
+
+			<label>
+				<strong>간단한 수정 메모</strong>
+				<span style="color:#888;">
+					(선택)
+				</span>
+			</label>
+
+			<input
+				type="text"
+				name="reflection"
+				id="reflection"
+				style="
+					width:100%;
+					margin-top:8px;
+					padding:8px;
+				"
+				maxlength="100"
+				placeholder="예: 출력 문자열 오타 수정"
+			>
+
+
+			<!-- 재제출에서는 최초 풀이계획을 새로 저장하지 않음 -->
+			<input
+				type="hidden"
+				name="plan_text"
+				value=""
+			>
+
+		</div>
+
+
+	<?php } ?>
+
+
+
+
+		<!-- =====================================================
+		생성형 AI 활용
+		첫 제출 / 재제출 공통
+		===================================================== -->
+
+		<div style="margin-bottom:20px;">
+
+			<label>
+				<strong>
+					<?php
+					echo (isset($view_is_resubmit) && $view_is_resubmit)
+						? "2. 이번 수정에서 생성형 AI를 활용했나요?"
+						: "2. 생성형 AI를 활용했나요?";
+					?>
+				</strong>
+			</label>
+
+			<p style="color:#666; margin-top:5px;">
+				가장 가까운 활용 방법 하나를 선택하세요.
+			</p>
+
+			<div style="
+				display:flex;
+				flex-wrap:wrap;
+				gap:10px 22px;
+				margin-top:10px;
+			">
+
+				<label>
+					<input
+						type="radio"
+						name="ai_usage_choice"
+						value="none"
+						checked
+					>
+					사용하지 않음
+				</label>
+
+				<label>
+					<input
+						type="radio"
+						name="ai_usage_choice"
+						value="idea"
+					>
+					힌트·아이디어
+				</label>
+
+				<label>
+					<input
+						type="radio"
+						name="ai_usage_choice"
+						value="syntax"
+					>
+					문법 도움
+				</label>
+
+				<label>
+					<input
+						type="radio"
+						name="ai_usage_choice"
+						value="debug"
+					>
+					오류 수정
+				</label>
+
+				<label>
+					<input
+						type="radio"
+						name="ai_usage_choice"
+						value="generate"
+					>
+					코드 생성
+				</label>
+
+			</div>
+
+
+			<!-- submit.php의 기존 구조와 호환하기 위한 hidden 값 -->
+
+			<input
+				type="hidden"
+				name="ai_used"
+				id="ai_used"
+				value="0"
+			>
+
+			<input
+				type="hidden"
+				name="ai_usage_type"
+				id="ai_usage_type"
+				value="none"
+			>
+
+		</div>
+
+
+		<!-- =====================================================
+			AI 질문 - 선택사항
+			===================================================== -->
+
+		<div
+			id="ai_prompt_area"
+			style="
+				display:none;
+				margin-bottom:20px;
+			"
+		>
+
+			<label>
+				<strong>AI에게 질문한 내용</strong>
+
+				<span style="color:#888;">
+					(선택)
+				</span>
+			</label>
+
+			<input
+				type="text"
+				name="ai_prompt"
+				id="ai_prompt"
+				maxlength="200"
+				style="
+					width:100%;
+					margin-top:8px;
+					padding:8px;
+				"
+				placeholder="예: 반복문 범위를 어떻게 고쳐야 하는지 질문함"
+			>
+
+		</div>
+
+</div>
+
+<?php } ?>
+
+
 <?php if($OJ_ACE_EDITOR){ ?>
 	<pre style="width:80%;height:300px" id="source"><?php echo htmlentities($view_src,ENT_QUOTES,"UTF-8")?></pre><br>
+
 	<input type=hidden id="hide_source" name="source" value=""/>
 <?php }else{ ?>
 	<textarea style="width:80%;height:300px" id="source" name="source"><?php echo htmlentities($view_src,ENT_QUOTES,"UTF-8")?></textarea><br>
@@ -57,7 +428,13 @@ echo"<option value=$i ".( $lastlang==$i?"selected":"").">
 <?php } ?>
 <!-- <input id="Submit" class="btn btn-info" type=button value="<?php echo $MSG_SUBMIT?>" onclick="do_submit();" > -->
 <div class="ui center aligned vertical segment" style="padding-bottom: 0; ">
-<button type="submit" class="ui labeled icon button"  onclick="do_submit();"><i class="ui edit icon"></i>제출</button>
+<button
+	type="submit"
+	class="ui labeled icon button"
+>
+	<i class="ui edit icon"></i>
+	제출
+</button>
 <!--div onclick="show_custom_test()" class="ui positive button">自定义测试</div-->
 </div>
 <?php if (isset($OJ_ENCODE_SUBMIT)&&$OJ_ENCODE_SUBMIT){?>
@@ -186,21 +563,63 @@ function encoded_submit(){
         document.getElementById("frmSolution").submit();
 }
 
-function do_submit(){
-	if(using_blockly) 
-		 translate();
-	if(typeof(editor) != "undefined"){ 
-		$("#hide_source").val(editor.getValue());
+// ============================================================
+// 일반 제출 처리
+// - ACE Editor 내용을 hidden source에 복사
+// - form.submit()을 다시 호출하지 않음
+// ============================================================
+
+document.getElementById("frmSolution").addEventListener(
+	"submit",
+	function(event){
+
+		// Blockly를 사용하는 경우 먼저 코드로 변환
+		if(using_blockly){
+			translate();
+		}
+
+		// ACE Editor 사용 시 실제 코드를 hidden input에 저장
+		if(typeof(editor) != "undefined"){
+
+			var hideSource =
+				document.getElementById("hide_source");
+
+			if(hideSource){
+				hideSource.value = editor.getValue();
+			}
+		}
+
+		// 문제 ID / 대회 ID 확인
+		var mark =
+			"<?php echo isset($id)?'problem_id':'cid';?>";
+
+		var problem_id =
+			document.getElementById(mark);
+
+		if(problem_id){
+
+			if(mark == "problem_id"){
+
+				problem_id.value =
+					"<?php if(isset($id)) echo $id?>";
+
+			}
+			else{
+
+				problem_id.value =
+					"<?php if(isset($cid)) echo $cid?>";
+
+			}
+		}
+
+		// 일반 제출
+		document.getElementById("frmSolution").target = "_self";
+
+		// 여기서 submit()을 다시 호출하지 않는다.
+		// 브라우저가 원래 submit 동작을 계속 진행함
 	}
-	var mark="<?php echo isset($id)?'problem_id':'cid';?>";
-	var problem_id=document.getElementById(mark);
-	if(mark=='problem_id')
-	problem_id.value='<?php if (isset($id))echo $id?>';
-	else
-	problem_id.value='<?php if (isset($cid))echo $cid?>';
-	document.getElementById("frmSolution").target="_self";
-	document.getElementById("frmSolution").submit();
-}
+);
+
 var handler_interval;
 function do_test_run(){
 	if( handler_interval) window.clearInterval( handler_interval);
@@ -291,6 +710,82 @@ function loadFromBlockly(){
   $("#frame_source").hide();
 //  $("#Submit").prop('disabled', false);
 }
+// ============================================================
+// 생성형 AI 활용 선택
+// ============================================================
+
+function updateAIUsage(){
+
+	var selected =
+		document.querySelector(
+			'input[name="ai_usage_choice"]:checked'
+		);
+
+	var aiUsed =
+		document.getElementById("ai_used");
+
+	var aiUsageType =
+		document.getElementById("ai_usage_type");
+
+	var promptArea =
+		document.getElementById("ai_prompt_area");
+
+	var prompt =
+		document.getElementById("ai_prompt");
+
+
+	if(!selected)
+		return;
+
+
+	if(selected.value === "none"){
+
+		aiUsed.value = "0";
+		aiUsageType.value = "none";
+
+		if(promptArea)
+			promptArea.style.display = "none";
+
+		if(prompt)
+			prompt.value = "";
+
+	}
+	else{
+
+		aiUsed.value = "1";
+		aiUsageType.value = selected.value;
+
+		if(promptArea)
+			promptArea.style.display = "block";
+
+	}
+
+}
+
+
+document.addEventListener(
+	"DOMContentLoaded",
+	function(){
+
+		var choices =
+			document.querySelectorAll(
+				'input[name="ai_usage_choice"]'
+			);
+
+		for(var i=0; i<choices.length; i++){
+
+			choices[i].addEventListener(
+				"change",
+				updateAIUsage
+			);
+
+		}
+
+		updateAIUsage();
+
+	}
+);
+
 </script>
 <script language="Javascript" type="text/javascript" src="<?php echo $OJ_CDN_URL?>include/base64.js"></script>
 <?php if($OJ_ACE_EDITOR){ ?>

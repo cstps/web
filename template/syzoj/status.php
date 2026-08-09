@@ -84,6 +84,7 @@
         <th><?php echo $MSG_LANG?></th>
         <th><?php echo $MSG_CODE_LENGTH?></th>
         <th><?php echo $MSG_SUBMIT_TIME?></th>
+        <th>과정</th>
        <?php	if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])) {
 							echo "<th class='text-left'>";
 								echo $MSG_JUDGER;

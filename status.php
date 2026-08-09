@@ -228,7 +228,76 @@ __dbg_headers_log('after-query');
 
 if ($result) $rows_cnt = count($result); else $rows_cnt = 0;
 
+
+// ============================================================
+// 수업용 OJ - 현재 Status 목록의 사고과정 존재 여부 일괄 조회
+//
+// 기존 Status 메인 SQL은 수정하지 않는다.
+// 화면에 출력할 최대 50개의 solution_id만 모아서
+// solution_process를 한 번의 SQL로 조회한다.
+// ============================================================
+
+$process_solution_map = array();
+
+if ($rows_cnt > 0) {
+
+  $solution_ids = array();
+
+  foreach ($result as $status_row) {
+
+    if (
+      isset($status_row['solution_id']) &&
+      intval($status_row['solution_id']) > 0
+    ) {
+
+      $solution_ids[] =
+        intval($status_row['solution_id']);
+
+    }
+
+  }
+
+
+  // 중복 제거
+  $solution_ids =
+    array_values(array_unique($solution_ids));
+
+
+  if (count($solution_ids) > 0) {
+
+    // solution_id는 모두 intval 처리했으므로
+    // IN 절에 안전하게 사용할 수 있음
+    $solution_id_list =
+      implode(",", $solution_ids);
+
+
+    $process_result = pdo_query(
+      "SELECT DISTINCT solution_id
+       FROM solution_process
+       WHERE solution_id IN ($solution_id_list)"
+    );
+
+
+    if ($process_result) {
+
+      foreach ($process_result as $process_row) {
+
+        $process_sid =
+          intval($process_row['solution_id']);
+
+        $process_solution_map[$process_sid] = true;
+
+      }
+
+    }
+
+  }
+
+}
+
+
 $top = $bottom=-1;
+
 $cnt = 0;
 if ($start_first) { $row_start = 0; $row_add = 1; }
 else              { $row_start = $rows_cnt-1; $row_add = -1; }
@@ -242,6 +311,92 @@ __dbg_headers_log('before-list-loop');
 for ($i=0; $i<$rows_cnt; $i++) {
   $row = $result[$i];
 
+    // ============================================================
+  // 현재 제출에 사고과정 기록이 존재하는지 확인
+  // ============================================================
+
+  $current_solution_id = intval($row['solution_id']);
+
+  $has_process = isset(
+    $process_solution_map[$current_solution_id]
+  );
+
+    // ============================================================
+  // 수업용 OJ - 사고과정 열람 권한
+  //
+  // 기존 Status 권한 체계는 변경하지 않고
+  // 사고과정 기능에서 사용할 권한만 별도로 정의한다.
+  // ============================================================
+
+  $process_is_owner = (
+    isset($_SESSION[$OJ_NAME.'_'.'user_id']) &&
+    strtolower($row['user_id']) ===
+    strtolower($_SESSION[$OJ_NAME.'_'.'user_id'])
+  );
+
+  $process_is_admin =
+    isset($_SESSION[$OJ_NAME.'_'.'administrator']);
+
+  $process_is_source_browser =
+    isset($_SESSION[$OJ_NAME.'_'.'source_browser']);
+
+
+  // ------------------------------------------------------------
+  // 해당 대회 관리자 여부
+  //
+  // 대회 Status에서는 앞에서 이미 계산한
+  // $is_contest_manager 값을 우선 사용한다.
+  //
+  // 일반 Status에서 대회 제출을 다루는 경우에 대비하여
+  // row의 contest_id도 추가 확인한다.
+  // ------------------------------------------------------------
+
+  $process_is_contest_manager = false;
+
+  if (intval($row['contest_id']) > 0) {
+
+    $row_contest_id = intval($row['contest_id']);
+
+    // 현재 대회 Status의 관리자
+    if (
+      isset($cid) &&
+      intval($cid) === $row_contest_id &&
+      $is_contest_manager
+    ) {
+
+      $process_is_contest_manager = true;
+
+    }
+    // 일반 Status 등에서 개별 대회 관리자 세션 확인
+    else if (
+      isset($_SESSION[$OJ_NAME.'_m'.$row_contest_id])
+    ) {
+
+      $process_is_contest_manager = true;
+
+    }
+
+  }
+
+
+  // ------------------------------------------------------------
+  // 사고과정을 볼 수 있는 사용자
+  //
+  // 1. 제출한 학생 본인
+  // 2. 최고 관리자
+  // 3. source_browser
+  // 4. 해당 대회의 관리자
+  //
+  // contest_creator라는 이유만으로
+  // 모든 학생의 사고과정을 볼 수 있도록 하지는 않는다.
+  // ------------------------------------------------------------
+  $can_view_process = (
+    $process_is_owner ||
+    $process_is_admin ||
+    $process_is_source_browser ||
+    $process_is_contest_manager
+  );
+  
   // 수행모드 + 본인 아님 → 전체 정보 숨김
   if (isset($exam_mode) && $exam_mode == 1 &&
       (!isset($_SESSION[$OJ_NAME.'_'.'user_id']) || $_SESSION[$OJ_NAME.'_'.'user_id'] !== $row['user_id']) &&
@@ -259,6 +414,7 @@ for ($i=0; $i<$rows_cnt; $i++) {
     $view_status[$i][6] = "----";
     $view_status[$i][7] = "----";
     $view_status[$i][8] = "수행모드";
+    $view_status[$i][9] = "----";
     continue;
   }
 
@@ -433,6 +589,28 @@ for ($i=0; $i<$rows_cnt; $i++) {
     $view_status[$i][8] = $row['in_date']."[".(strtotime($row['judgetime'])-strtotime($row['in_date']))."]";
   } else {
     $view_status[$i][8]= $row['in_date'];
+  }
+    // ============================================================
+  // 수업용 OJ - 사고과정 보기 버튼
+  //
+  // 조건
+  // 1. 해당 solution에 사고과정 기록이 있어야 함
+  // 2. 현재 사용자가 사고과정을 볼 권한이 있어야 함
+  //
+  // [9]번을 사용하여 기존 0~8 구조는 그대로 유지
+  // ============================================================
+
+  if ($has_process && $can_view_process) {
+
+    $view_status[$i][9] =
+      "<a href='solution_process_view.php?sid=".
+      intval($row['solution_id']).
+      "' class='ui mini basic button'>과정</a>";
+
+  } else {
+
+    $view_status[$i][9] = "-";
+
   }
 }
 

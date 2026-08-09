@@ -125,6 +125,97 @@ if ($langmask & (1<<$language)) {
 $source = isset($_POST['source']) ? $_POST['source'] : "";
 $input_text = isset($_POST['input_text']) ? $_POST['input_text'] : "";
 
+// ============================================================
+// 수업용 OJ - 학생 사고과정 / 생성형 AI 활용 기록
+// ============================================================
+
+$plan_text = isset($_POST['plan_text'])
+    ? trim($_POST['plan_text'])
+    : "";
+
+$ai_used = isset($_POST['ai_used'])
+    ? intval($_POST['ai_used'])
+    : 0;
+
+$ai_usage_type = isset($_POST['ai_usage_type'])
+    ? trim($_POST['ai_usage_type'])
+    : "none";
+
+$ai_prompt = isset($_POST['ai_prompt'])
+    ? trim($_POST['ai_prompt'])
+    : "";
+
+$reflection = isset($_POST['reflection'])
+    ? trim($_POST['reflection'])
+    : "";
+// ============================================================
+// 재제출 수정 영역
+// ============================================================
+
+$change_type = "";
+
+$allowed_change_types = array(
+	'input',
+	'output',
+	'condition',
+	'loop',
+	'variable',
+	'function',
+	'data',
+	'other'
+);
+
+if (
+	isset($_POST['change_type']) &&
+	is_array($_POST['change_type'])
+) {
+
+	$selected_change_types = array();
+
+	foreach ($_POST['change_type'] as $type) {
+
+		$type = trim($type);
+
+		if (in_array($type, $allowed_change_types, true)) {
+			$selected_change_types[] = $type;
+		}
+
+	}
+
+	$change_type = implode(",", $selected_change_types);
+}
+
+// AI 사용 여부는 0 또는 1만 허용
+if ($ai_used != 1) {
+    $ai_used = 0;
+}
+
+
+// 허용되는 AI 활용 유형
+$allowed_ai_usage_types = array(
+    'none',
+    'understand',
+    'idea',
+    'syntax',
+    'debug',
+    'generate',
+    'explain'
+);
+
+
+// 잘못된 값이 POST로 들어오면 none 처리
+if (!in_array($ai_usage_type, $allowed_ai_usage_types, true)) {
+    $ai_usage_type = "none";
+}
+
+
+// AI를 사용하지 않았으면 관련 내용 정리
+if ($ai_used == 0) {
+    $ai_usage_type = "none";
+    $ai_prompt = "";
+}
+
+
 // encoded_submit 지원
 if (isset($_POST['encoded_submit'])) $source = base64_decode($source);
 
@@ -263,8 +354,58 @@ if (~$OJ_LANGMASK & (1<<$language)) {
   }
 
   // 소스 저장
-  pdo_query("INSERT INTO `source_code_user`(`solution_id`,`source`) VALUES(?,?)", $insert_id, $source_user);
-  pdo_query("INSERT INTO `source_code`(`solution_id`,`source`) VALUES(?,?)", $insert_id, $source);
+  pdo_query(
+    "INSERT INTO `source_code_user`(`solution_id`,`source`) VALUES(?,?)", 
+    $insert_id, 
+    $source_user
+  );
+  pdo_query(
+    "INSERT INTO `source_code`(`solution_id`,`source`) VALUES(?,?)", 
+    $insert_id, 
+    $source
+  );
+// ============================================================
+// 학생 사고과정 저장
+//
+// custom test run은 실제 제출이 아니므로 저장하지 않음
+// ============================================================
+
+if (!$test_run) {
+
+    $process_contest_id = 0;
+
+    if (isset($cid) && $cid > 0) {
+        $process_contest_id = $cid;
+    }
+
+    pdo_query(
+        "INSERT INTO `solution_process`
+          (
+              `solution_id`,
+              `user_id`,
+              `problem_id`,
+              `contest_id`,
+              `plan_text`,
+              `ai_used`,
+              `ai_usage_type`,
+              `ai_prompt`,
+              `reflection`,
+              `change_type`
+          )
+          VALUES(?,?,?,?,?,?,?,?,?,?)",
+
+          $insert_id,
+          $user_id,
+          abs($id),
+          $process_contest_id,
+          $plan_text,
+          $ai_used,
+          $ai_usage_type,
+          $ai_prompt,
+          $reflection,
+          $change_type
+    );
+}
 
   if ($test_run) {
     pdo_query("INSERT INTO `custominput`(`solution_id`,`input_text`) VALUES(?,?)", $insert_id, $input_text);
