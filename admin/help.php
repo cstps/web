@@ -101,14 +101,16 @@
       <td><center><a class='btn btn-warning btn-sm' href="user_set_ip.php" target="main"><b><?php echo $MSG_CONTEST."-".$MSG_SET_LOGIN_IP?></b></a></center></td>
       <td><p><?php echo $MSG_HELP_SET_LOGIN_IP?></p></td>
     </tr>
-    <tr>
-      <td><center><a class='btn btn-warning btn-sm' href="team_generate.php" target="main"><b><?php echo $MSG_CONTEST."-".$MSG_TEAMGENERATOR?></b></a></center></td>
-      <td><p><?php echo $MSG_HELP_TEAMGENERATOR?></p></td>
-    </tr>
-    <tr>
-      <td><center><a class='btn btn-warning btn-sm' href="team_generate2.php" target="main"><b><?php echo $MSG_CONTEST."-".$MSG_TEAMGENERATOR?></b></a></center></td>
-      <td><p><?php echo $MSG_HELP_TEAMGENERATOR?></p></td>
-    </tr>
+    <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])){?>
+      <tr>
+        <td><center><a class='btn btn-warning btn-sm' href="team_generate.php" target="main"><b><?php echo $MSG_CONTEST."-".$MSG_TEAMGENERATOR?></b></a></center></td>
+        <td><p><?php echo $MSG_HELP_TEAMGENERATOR?></p></td>
+      </tr>
+      <tr>
+        <td><center><a class='btn btn-warning btn-sm' href="team_generate2.php" target="main"><b><?php echo $MSG_CONTEST."-".$MSG_TEAMGENERATOR?></b></a></center></td>
+        <td><p><?php echo $MSG_HELP_TEAMGENERATOR?></p></td>
+      </tr>
+     <?php }?>
   <?php }?>
 
   <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])){?>
