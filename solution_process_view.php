@@ -7,6 +7,196 @@ require_once('./include/setlang.php');
 
 $view_title = "문제 해결 과정";
 
+// ============================================================
+// 학생 코드 변경 비교 함수
+//
+// 이전 제출 코드와 현재 제출 코드를 줄 단위로 비교한다.
+// LCS(Longest Common Subsequence)를 이용한다.
+//
+// 학생 코드가 지나치게 큰 경우 서버 부하를 막기 위해
+// 최대 500줄까지 상세 비교한다.
+// ============================================================
+
+function build_source_diff($old_source, $new_source) {
+
+    // 줄바꿈 통일
+    $old_source = str_replace(
+        array("\r\n", "\r"),
+        "\n",
+        (string)$old_source
+    );
+
+    $new_source = str_replace(
+        array("\r\n", "\r"),
+        "\n",
+        (string)$new_source
+    );
+
+
+    $old_lines = explode("\n", $old_source);
+    $new_lines = explode("\n", $new_source);
+
+
+    $old_count = count($old_lines);
+    $new_count = count($new_lines);
+
+
+    // --------------------------------------------------------
+    // 너무 큰 코드는 상세 LCS 비교 생략
+    // --------------------------------------------------------
+
+    $max_diff_lines = 500;
+
+    if (
+        $old_count > $max_diff_lines ||
+        $new_count > $max_diff_lines
+    ) {
+
+        return array(
+            'added'       => 0,
+            'deleted'     => 0,
+            'changed'     => ($old_source !== $new_source),
+            'too_large'   => true,
+            'diff_lines'  => array()
+        );
+    }
+
+
+    // --------------------------------------------------------
+    // LCS 테이블
+    // --------------------------------------------------------
+
+    $dp = array();
+
+    for ($i = 0; $i <= $old_count; $i++) {
+
+        $dp[$i] =
+            array_fill(
+                0,
+                $new_count + 1,
+                0
+            );
+    }
+
+
+    for ($i = $old_count - 1; $i >= 0; $i--) {
+
+        for ($j = $new_count - 1; $j >= 0; $j--) {
+
+            if ($old_lines[$i] === $new_lines[$j]) {
+
+                $dp[$i][$j] =
+                    $dp[$i + 1][$j + 1] + 1;
+
+            }
+            else {
+
+                $dp[$i][$j] =
+                    max(
+                        $dp[$i + 1][$j],
+                        $dp[$i][$j + 1]
+                    );
+            }
+        }
+    }
+
+
+    // --------------------------------------------------------
+    // 실제 Diff 생성
+    //
+    // equal  : 동일한 줄
+    // delete : 이전 코드에서 삭제
+    // add    : 새 코드에서 추가
+    // --------------------------------------------------------
+
+    $diff_lines = array();
+
+    $added = 0;
+    $deleted = 0;
+
+    $i = 0;
+    $j = 0;
+
+
+    while (
+        $i < $old_count &&
+        $j < $new_count
+    ) {
+
+        if ($old_lines[$i] === $new_lines[$j]) {
+
+            $diff_lines[] = array(
+                'type' => 'equal',
+                'text' => $old_lines[$i]
+            );
+
+            $i++;
+            $j++;
+
+        }
+        else if (
+            $dp[$i + 1][$j] >=
+            $dp[$i][$j + 1]
+        ) {
+
+            $diff_lines[] = array(
+                'type' => 'delete',
+                'text' => $old_lines[$i]
+            );
+
+            $deleted++;
+
+            $i++;
+
+        }
+        else {
+
+            $diff_lines[] = array(
+                'type' => 'add',
+                'text' => $new_lines[$j]
+            );
+
+            $added++;
+
+            $j++;
+        }
+    }
+
+
+    while ($i < $old_count) {
+
+        $diff_lines[] = array(
+            'type' => 'delete',
+            'text' => $old_lines[$i]
+        );
+
+        $deleted++;
+
+        $i++;
+    }
+
+
+    while ($j < $new_count) {
+
+        $diff_lines[] = array(
+            'type' => 'add',
+            'text' => $new_lines[$j]
+        );
+
+        $added++;
+
+        $j++;
+    }
+
+
+    return array(
+        'added'      => $added,
+        'deleted'    => $deleted,
+        'changed'    => ($added > 0 || $deleted > 0),
+        'too_large'  => false,
+        'diff_lines' => $diff_lines
+    );
+}
 
 // ============================================================
 // 1. 로그인 확인
@@ -290,7 +480,142 @@ else {
 if (!$process_result) {
     $process_result = array();
 }
+// ============================================================
+// 제출별 학생 원본 코드 일괄 조회
+//
+// 제출마다 SQL을 실행하지 않고
+// 현재 과정의 solution_id를 한 번에 조회한다.
+// ============================================================
 
+$source_map = array();
+
+$process_solution_ids = array();
+
+
+foreach ($process_result as $process) {
+
+    $process_sid =
+        isset($process['solution_id'])
+            ? intval($process['solution_id'])
+            : 0;
+
+    if ($process_sid > 0) {
+
+        $process_solution_ids[] =
+            $process_sid;
+    }
+}
+
+
+$process_solution_ids =
+    array_values(
+        array_unique(
+            $process_solution_ids
+        )
+    );
+
+
+if (count($process_solution_ids) > 0) {
+
+    $solution_id_list =
+        implode(
+            ",",
+            $process_solution_ids
+        );
+
+
+    $source_sql = "SELECT
+                        solution_id,
+                        source
+                   FROM source_code_user
+                   WHERE solution_id IN ($solution_id_list)";
+
+
+    $source_result =
+        pdo_query(
+            $source_sql
+        );
+
+
+    if ($source_result) {
+
+        foreach ($source_result as $source_row) {
+
+            $source_sid =
+                isset($source_row['solution_id'])
+                    ? intval($source_row['solution_id'])
+                    : intval($source_row[0]);
+
+
+            $source_text =
+                isset($source_row['source'])
+                    ? $source_row['source']
+                    : $source_row[1];
+
+
+            $source_map[
+                $source_sid
+            ] = $source_text;
+        }
+    }
+}
+// ============================================================
+// 이전 제출 ↔ 현재 제출 코드 변화 계산
+// ============================================================
+
+$process_diff_map = array();
+
+$previous_source = null;
+$previous_sid = 0;
+
+
+foreach ($process_result as $process) {
+
+    $current_sid =
+        isset($process['solution_id'])
+            ? intval($process['solution_id'])
+            : 0;
+
+
+    $current_source =
+        isset($source_map[$current_sid])
+            ? $source_map[$current_sid]
+            : null;
+
+
+    // 첫 제출은 비교 대상 없음
+    if (
+        $previous_source !== null &&
+        $current_source !== null
+    ) {
+
+        $diff =
+            build_source_diff(
+                $previous_source,
+                $current_source
+            );
+
+
+        $diff['previous_solution_id'] =
+            $previous_sid;
+
+
+        $process_diff_map[
+            $current_sid
+        ] = $diff;
+    }
+
+
+    // 현재 코드를 다음 제출 비교 기준으로 사용
+    if ($current_source !== null) {
+
+        $previous_source =
+            $current_source;
+
+        $previous_sid =
+            $current_sid;
+    }
+}
 
 // ============================================================
 // 10. 화면용 기본 정보

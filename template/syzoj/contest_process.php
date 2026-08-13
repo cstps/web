@@ -25,6 +25,469 @@ include(
     <h3 class="ui dividing header">
         학생별 문제 진행 현황
     </h3>
+    <?php
+    // ============================================================
+    // 확인 필요 학생 수 계산
+    //
+    // 한 문제라도
+    // - 5회 이상 제출
+    // - 최종 결과가 AC가 아님
+    // 이면 확인 필요 학생으로 계산
+    // ============================================================
+
+    $attention_student_count = 0;
+
+    foreach ($student_matrix as $student) {
+
+        $needs_attention = false;
+
+        foreach ($contest_problems as $problem_num => $problem) {
+
+            if (
+                isset(
+                    $student['problems'][$problem_num]
+                )
+            ) {
+
+                $problem_data =
+                    $student['problems'][$problem_num];
+
+                $problem_submit_count =
+                    intval(
+                        $problem_data['submit_count']
+                    );
+
+                $problem_result_num =
+                    intval(
+                        $problem_data['latest_result']
+                    );
+
+                if (
+                    $problem_submit_count >= 5 &&
+                    $problem_result_num !== 4
+                ) {
+
+                    $needs_attention = true;
+                    break;
+                }
+            }
+        }
+
+        if ($needs_attention) {
+            $attention_student_count++;
+        }
+        
+    }
+    ?>
+    <?php
+    // ============================================================
+    // 문제별 학급 진행 현황 계산
+    //
+    // solved    : 최종 결과 AC
+    // working   : 1회 이상 제출했지만 아직 AC 아님
+    // nosubmit  : 해당 문제 제출 없음
+    // ============================================================
+
+    $problem_class_summary = array();
+
+    $total_student_count =
+        count($student_matrix);
+
+
+    foreach ($contest_problems as $problem_num => $problem) {
+
+        $solved_count = 0;
+        $working_count = 0;
+        $nosubmit_count = 0;
+
+        $total_submit_count = 0;
+        $ai_student_count = 0;
+
+
+        foreach ($student_matrix as $student) {
+
+            if (
+                !isset(
+                    $student['problems'][$problem_num]
+                )
+            ) {
+
+                // 해당 문제를 한 번도 제출하지 않음
+                $nosubmit_count++;
+
+                continue;
+            }
+
+
+            $problem_data =
+                $student['problems'][$problem_num];
+
+
+            $submit_count =
+                intval(
+                    $problem_data['submit_count']
+                );
+
+
+            $result_num =
+                intval(
+                    $problem_data['latest_result']
+                );
+
+
+            $ai_count =
+                intval(
+                    $problem_data['ai_count']
+                );
+
+
+            // 전체 제출 횟수
+            $total_submit_count +=
+                $submit_count;
+
+
+            // 해당 문제에서 AI를 한 번이라도 사용한 학생
+            if ($ai_count > 0) {
+
+                $ai_student_count++;
+            }
+
+
+            // AC
+            if ($result_num === 4) {
+
+                $solved_count++;
+
+            }
+            // 제출했지만 아직 해결하지 못함
+            else {
+
+                $working_count++;
+            }
+        }
+
+
+        $problem_class_summary[$problem_num] = array(
+
+            'label' =>
+                $problem['label'],
+
+            'problem_id' =>
+                intval(
+                    $problem['problem_id']
+                ),
+
+            'solved' =>
+                $solved_count,
+
+            'working' =>
+                $working_count,
+
+            'nosubmit' =>
+                $nosubmit_count,
+
+            'total_submit' =>
+                $total_submit_count,
+
+            'ai_students' =>
+                $ai_student_count
+        );
+    }
+    ?>
+    <div
+        class="ui small message"
+        style="
+            margin-bottom:15px;
+        "
+    >
+        현재 확인 필요 학생:
+
+        <strong>
+            <?php
+            echo intval(
+                $attention_student_count
+            );
+            ?>명
+        </strong>
+    </div>
+
+        <!-- ======================================================
+        문제별 학급 진행 현황
+        ====================================================== -->
+
+    <div
+        class="ui segment"
+        style="
+            margin-bottom:15px;
+        "
+    >
+
+        <strong>
+            문제별 학급 진행 현황
+        </strong>
+
+
+        <div
+            style="
+                overflow-x:auto;
+                margin-top:12px;
+            "
+        >
+
+            <table
+                class="ui very compact celled table"
+            >
+
+                <thead>
+
+                    <tr>
+
+                        <th class="center aligned">
+                            문제
+                        </th>
+
+                        <th class="center aligned">
+                            해결
+                        </th>
+
+                        <th class="center aligned">
+                            진행 중
+                        </th>
+
+                        <th class="center aligned">
+                            미제출
+                        </th>
+
+                        <th class="center aligned">
+                            전체 제출
+                        </th>
+
+                        <th class="center aligned">
+                            AI 활용 학생
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                <?php
+                foreach (
+                    $problem_class_summary
+                    as
+                    $problem_num => $summary
+                ) {
+                ?>
+
+                    <tr>
+
+                        <td class="center aligned">
+
+                            <strong>
+                                <?php
+                                echo htmlentities(
+                                    $summary['label'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                                ?>
+                            </strong>
+
+                            <br>
+
+                            <span
+                                style="
+                                    font-size:0.8em;
+                                    color:#777;
+                                "
+                            >
+                                <?php
+                                echo intval(
+                                    $summary['problem_id']
+                                );
+                                ?>
+                            </span>
+
+                        </td>
+
+
+                        <!-- 해결 -->
+
+                        <td class="center aligned">
+
+                            <a
+                                href="javascript:void(0);"
+                                class="ui green basic label"
+                                onclick="applySummaryFilter(
+                                    'solved',
+                                    '<?php echo intval($problem_num); ?>'
+                                );"
+                                title="이 문제를 해결한 학생만 표시"
+                            >
+                                <?php
+
+                                    $solved_count =
+                                        intval(
+                                            $summary['solved']
+                                        );
+
+                                    $solved_percent =
+                                        $total_student_count > 0
+                                            ? round(
+                                                $solved_count /
+                                                $total_student_count *
+                                                100
+                                            )
+                                            : 0;
+
+                                    echo $solved_count;
+                                    ?>명
+
+                                    <span style="font-weight:normal;">
+                                        (<?php echo $solved_percent; ?>%)
+                                    </span>
+                            </a>
+
+                        </td>
+
+
+                        <!-- 진행 중 -->
+
+                        <td class="center aligned">
+
+                            <?php
+
+                            $working_count =
+                                intval(
+                                    $summary['working']
+                                );
+
+                            $working_percent =
+                                $total_student_count > 0
+                                    ? round(
+                                        $working_count /
+                                        $total_student_count *
+                                        100
+                                    )
+                                    : 0;
+
+                            ?>
+
+                            <?php if ($working_count > 0) { ?>
+
+                                <a
+                                    href="javascript:void(0);"
+                                    class="ui orange basic label"
+                                    onclick="applySummaryFilter(
+                                        'working',
+                                        '<?php echo intval($problem_num); ?>'
+                                    );"
+                                    title="이 문제를 제출했지만 아직 해결하지 못한 학생만 표시"
+                                >
+                                    <?php echo $working_count; ?>명
+
+                                    <span style="font-weight:normal;">
+                                        (<?php echo $working_percent; ?>%)
+                                    </span>
+                                </a>
+
+                            <?php } else { ?>
+
+                                0명 (0%)
+
+                            <?php } ?>
+
+                        </td>
+
+
+                        <!-- 미제출 -->
+
+                        <td class="center aligned">
+
+                            <?php
+
+                            $nosubmit_count =
+                                intval(
+                                    $summary['nosubmit']
+                                );
+
+                            $nosubmit_percent =
+                                $total_student_count > 0
+                                    ? round(
+                                        $nosubmit_count /
+                                        $total_student_count *
+                                        100
+                                    )
+                                    : 0;
+
+                            ?>
+
+                            <?php if ($nosubmit_count > 0) { ?>
+
+                                <a
+                                    href="javascript:void(0);"
+                                    class="ui grey basic label"
+                                    onclick="applySummaryFilter(
+                                        'nosubmit',
+                                        '<?php echo intval($problem_num); ?>'
+                                    );"
+                                    title="이 문제를 아직 제출하지 않은 학생만 표시"
+                                >
+                                    <?php echo $nosubmit_count; ?>명
+
+                                    <span style="font-weight:normal;">
+                                        (<?php echo $nosubmit_percent; ?>%)
+                                    </span>
+                                </a>
+
+                            <?php } else { ?>
+
+                                0명 (0%)
+
+                            <?php } ?>
+
+                        </td>
+
+
+                        <!-- 전체 제출 -->
+
+                        <td class="center aligned">
+
+                            <?php
+                            echo intval(
+                                $summary['total_submit']
+                            );
+                            ?>회
+
+                        </td>
+
+
+                        <!-- AI 활용 -->
+
+                        <td class="center aligned">
+
+                            <?php
+                            echo intval(
+                                $summary['ai_students']
+                            );
+                            ?>명
+
+                        </td>
+
+                    </tr>
+
+                <?php } ?>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
     <div
         class="ui small buttons"
         style="margin-bottom:15px;"
@@ -73,6 +536,15 @@ include(
             onclick="filterStudents('ai', this)"
         >
             AI 사용
+        </button>
+
+        <button
+            type="button"
+            class="ui button"
+            data-filter="attention"
+            onclick="filterStudents('attention', this)"
+        >
+            확인 필요
         </button>
 
         <button
@@ -129,6 +601,21 @@ include(
         <?php } ?>
 
     </div>
+    <!-- ======================================================
+     현재 적용 중인 필터 표시
+     ====================================================== -->
+
+    <div
+        id="current-filter-info"
+        class="ui tiny message"
+        style="
+            margin-top:10px;
+            margin-bottom:15px;
+            display:none;
+        "
+    >
+    </div>
+
     <div style="overflow-x:auto;">
 
     <table class="ui celled compact table">
@@ -176,58 +663,138 @@ include(
 
         <?php foreach ($student_matrix as $student) { ?>
 
-            <tr
-                class="student-row"
+        <?php
+        // ============================================================
+        // 현재 학생의 "확인 필요" 문제 수 계산
+        //
+        // 기준:
+        // - 해당 문제 5회 이상 제출
+        // - 아직 AC(result=4)가 아님
+        // ============================================================
 
-                data-total-submit="<?php
-                    echo intval($student['total_submit']);
+        $student_attention_count = 0;
+
+        foreach ($contest_problems as $problem_num => $problem) {
+
+            if (
+                isset(
+                    $student['problems'][$problem_num]
+                )
+            ) {
+
+                $problem_data =
+                    $student['problems'][$problem_num];
+
+                $problem_submit_count =
+                    intval(
+                        $problem_data['submit_count']
+                    );
+
+                $problem_result_num =
+                    intval(
+                        $problem_data['latest_result']
+                    );
+
+                if (
+                    $problem_submit_count >= 5 &&
+                    $problem_result_num !== 4
+                ) {
+
+                    $student_attention_count++;
+                }
+            }
+        }
+        ?>
+
+
+        <tr
+            class="student-row"
+
+            data-total-submit="<?php
+                echo intval(
+                    $student['total_submit']
+                );
+            ?>"
+
+            data-total-ai="<?php
+                echo intval(
+                    $student['total_ai']
+                );
+            ?>"
+
+            data-solved-count="<?php
+                echo intval(
+                    $student['solved_count']
+                );
+            ?>"
+
+            data-problem-count="<?php
+                echo count(
+                    $contest_problems
+                );
+            ?>"
+
+            data-attention-count="<?php
+                echo intval(
+                    $student_attention_count
+                );
+            ?>"
+
+
+            <?php
+            // ========================================================
+            // 문제별 필터용 데이터
+            //
+            // data-problem-0-submit
+            // data-problem-0-result
+            // data-problem-1-submit
+            // data-problem-1-result
+            // ...
+            // ========================================================
+
+            foreach (
+                $contest_problems
+                as
+                $problem_num => $problem
+            ) {
+
+                $problem_submit = 0;
+                $problem_result = -1;
+
+
+                if (
+                    isset(
+                        $student['problems'][$problem_num]
+                    )
+                ) {
+
+                    $problem_submit =
+                        intval(
+                            $student['problems'][$problem_num]['submit_count']
+                        );
+
+                    $problem_result =
+                        intval(
+                            $student['problems'][$problem_num]['latest_result']
+                        );
+                }
+            ?>
+
+                data-problem-<?php
+                    echo intval($problem_num);
+                ?>-submit="<?php
+                    echo intval($problem_submit);
                 ?>"
 
-                data-total-ai="<?php
-                    echo intval($student['total_ai']);
+                data-problem-<?php
+                    echo intval($problem_num);
+                ?>-result="<?php
+                    echo intval($problem_result);
                 ?>"
 
-                data-solved-count="<?php
-                    echo intval($student['solved_count']);
-                ?>"
+            <?php } ?>
 
-                data-problem-count="<?php
-                    echo count($contest_problems);
-                ?>"
-
-                <?php foreach ($contest_problems as $problem_num => $problem) {
-
-                    $problem_submit = 0;
-                    $problem_result = -1;
-
-                    if (
-                        isset(
-                            $student['problems'][$problem_num]
-                        )
-                    ) {
-
-                        $problem_submit =
-                            intval(
-                                $student['problems'][$problem_num]['submit_count']
-                            );
-
-                        $problem_result =
-                            intval(
-                                $student['problems'][$problem_num]['latest_result']
-                            );
-                    }
-                ?>
-
-                    data-problem-<?php echo intval($problem_num); ?>-submit="<?php
-                        echo $problem_submit;
-                    ?>"
-
-                    data-problem-<?php echo intval($problem_num); ?>-result="<?php
-                        echo $problem_result;
-                    ?>"
-
-                <?php } ?>
-            >
+        >
 
                 <td>
 
@@ -443,7 +1010,106 @@ include(
                                     intval(
                                         $p['ai_count']
                                     );
+
+                                $problem_submit_count =
+                                    intval(
+                                        $p['submit_count']
+                                    );
+
+                                $is_repeated_attempt =
+                                    (
+                                        $problem_submit_count >= 5 &&
+                                        $result_num !== 4
+                                    );
+                                // ============================================================
+                                // 반복 시도 유형
+                                // ============================================================
+
+                                $repeat_type = "";
+
+                                if ($problem_submit_count >= 5) {
+
+                                    // Wrong Answer
+                                    if ($result_num === 6) {
+                                        $repeat_type = "wa";
+                                    }
+
+                                    // Compile Error
+                                    else if ($result_num === 11) {
+                                        $repeat_type = "ce";
+                                    }
+
+                                    // Runtime Error
+                                    else if ($result_num === 10) {
+                                        $repeat_type = "re";
+                                    }
+
+                                    // 그 외 미해결
+                                    else if ($result_num !== 4) {
+                                        $repeat_type = "other";
+                                    }
+                                }
                                 ?>
+                                    <!-- ★ 반복 시도 표시 추가 -->
+                                    <?php if ($is_repeated_attempt) { ?>
+
+                                    <br>
+
+                                    <?php if ($repeat_type === "ce") { ?>
+
+                                        <span
+                                            class="ui mini orange basic label"
+                                            style="
+                                                margin-top:4px;
+                                                font-size:0.75em;
+                                            "
+                                            title="컴파일 오류 상태로 5회 이상 제출했습니다."
+                                        >
+                                            CE 반복
+                                        </span>
+
+                                    <?php } else if ($repeat_type === "wa") { ?>
+
+                                        <span
+                                            class="ui mini red basic label"
+                                            style="
+                                                margin-top:4px;
+                                                font-size:0.75em;
+                                            "
+                                            title="틀린 답 상태로 5회 이상 제출했습니다."
+                                        >
+                                            WA 반복
+                                        </span>
+
+                                    <?php } else if ($repeat_type === "re") { ?>
+
+                                        <span
+                                            class="ui mini red basic label"
+                                            style="
+                                                margin-top:4px;
+                                                font-size:0.75em;
+                                            "
+                                            title="런타임 오류 상태로 5회 이상 제출했습니다."
+                                        >
+                                            RE 반복
+                                        </span>
+
+                                    <?php } else { ?>
+
+                                        <span
+                                            class="ui mini grey basic label"
+                                            style="
+                                                margin-top:4px;
+                                                font-size:0.75em;
+                                            "
+                                            title="5회 이상 제출했지만 아직 해결되지 않았습니다."
+                                        >
+                                            반복 시도
+                                        </span>
+
+                                    <?php } ?>
+
+                                <?php } ?>
 
                                 <?php if ($problem_ai_count > 0) { ?>
 
@@ -526,12 +1192,22 @@ include(
 
     </table>
     <script>
-        var currentStudentFilter = "all";
-        var currentProblemFilter = "all";
+        var currentStudentFilter =
+            sessionStorage.getItem("contest_process_student_filter")
+            || "all";
+
+        var currentProblemFilter =
+            sessionStorage.getItem("contest_process_problem_filter")
+            || "all";
 
         function filterStudents(type, button){
 
             currentStudentFilter = type;
+
+            sessionStorage.setItem(
+                "contest_process_student_filter",
+                type
+            );
 
             var buttons =
                 document.querySelectorAll(
@@ -547,11 +1223,17 @@ include(
             }
 
             applyStudentFilters();
+            updateCurrentFilterInfo();
         }
 
         function selectProblemFilter(problemNum, button){
 
             currentProblemFilter = problemNum;
+
+            sessionStorage.setItem(
+                "contest_process_problem_filter",
+                problemNum
+            );
 
             var buttons =
                 document.querySelectorAll(
@@ -567,6 +1249,135 @@ include(
             }
 
             applyStudentFilters();
+            updateCurrentFilterInfo();
+        }
+
+        // ============================================================
+        // 문제별 학급 현황 표에서 직접 필터 적용
+        //
+        // 예:
+        // 진행 중 6명 클릭
+        // → 진행 중 + 해당 문제
+        //
+        // 미제출 4명 클릭
+        // → 미제출 + 해당 문제
+        //
+        // 해결 10명 클릭
+        // → solved + 해당 문제
+        // ============================================================
+
+        function applySummaryFilter(studentFilter, problemNum){
+
+            currentStudentFilter =
+                studentFilter;
+
+            currentProblemFilter =
+                problemNum;
+
+
+            // --------------------------------------------------------
+            // 자동 새로고침 후에도 현재 필터 유지
+            // --------------------------------------------------------
+
+            sessionStorage.setItem(
+                "contest_process_student_filter",
+                studentFilter
+            );
+
+            sessionStorage.setItem(
+                "contest_process_problem_filter",
+                problemNum
+            );
+
+
+            // --------------------------------------------------------
+            // 상단 상태 버튼 표시 갱신
+            // --------------------------------------------------------
+
+            var studentButtons =
+                document.querySelectorAll(
+                    "[data-filter]"
+                );
+
+            for(var i=0; i<studentButtons.length; i++){
+
+                studentButtons[i]
+                    .classList
+                    .remove("active");
+
+
+                if(
+                    studentButtons[i]
+                        .getAttribute("data-filter")
+                    === studentFilter
+                ){
+
+                    studentButtons[i]
+                        .classList
+                        .add("active");
+                }
+            }
+
+
+            // --------------------------------------------------------
+            // 문제 버튼 표시 갱신
+            // --------------------------------------------------------
+
+            var problemButtons =
+                document.querySelectorAll(
+                    ".problem-filter"
+                );
+
+            for(var j=0; j<problemButtons.length; j++){
+
+                problemButtons[j]
+                    .classList
+                    .remove("active");
+
+
+                var clickText =
+                    problemButtons[j]
+                        .getAttribute("onclick")
+                    || "";
+
+
+                if(
+                    clickText.indexOf(
+                        "'" + problemNum + "'"
+                    ) !== -1
+                ){
+
+                    problemButtons[j]
+                        .classList
+                        .add("active");
+                }
+            }
+
+
+            // --------------------------------------------------------
+            // 실제 학생 필터 적용
+            // --------------------------------------------------------
+
+            applyStudentFilters();
+            updateCurrentFilterInfo();
+
+
+            // --------------------------------------------------------
+            // 학생별 문제 진행 현황 위치로 이동
+            // --------------------------------------------------------
+
+            var studentTable =
+                document.querySelector(
+                    ".student-row"
+                );
+
+            if(studentTable){
+
+                studentTable.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+            }
         }
 
         function applyStudentFilters(){
@@ -619,7 +1430,13 @@ include(
 
 
                 var show = true;
-
+                
+                var attentionCount =
+                parseInt(
+                    row.getAttribute(
+                        "data-attention-count"
+                    )
+                ) || 0;
 
                 // ====================================================
                 // 특정 문제가 선택된 경우
@@ -661,6 +1478,13 @@ include(
 
                         show =
                             pSubmit > 0;
+                    }
+                    else if(currentStudentFilter === "solved"){
+
+                        // 선택한 문제를 해결한 학생
+                        show =
+                            pSubmit > 0 &&
+                            pResult === 4;
                     }
 
 
@@ -729,6 +1553,14 @@ include(
                         show =
                             totalAI > 0;
                     }
+                    else if(currentStudentFilter === "attention"){
+
+                        // 선택한 문제를 5회 이상 제출했고
+                        // 아직 AC가 아닌 학생
+                        show =
+                            pSubmit >= 5 &&
+                            pResult !== 4;
+                    }
 
                 }
 
@@ -776,6 +1608,12 @@ include(
                             totalAI > 0;
 
                     }
+                    else if(currentStudentFilter === "attention"){
+
+                        show =
+                            attentionCount > 0;
+
+                    }
 
                     else if(currentStudentFilter === "nosubmit"){
 
@@ -784,6 +1622,7 @@ include(
                             totalSubmit === 0;
 
                     }
+                    
 
                     else {
 
@@ -801,6 +1640,194 @@ include(
                     show ? "" : "none";
             }
         }
+        // ============================================================
+        // 저장된 필터 복원
+        // ============================================================
+
+        document.addEventListener("DOMContentLoaded", function(){
+
+            // 학생 상태 필터 버튼 복원
+            var studentButtons =
+                document.querySelectorAll(
+                    "[data-filter]"
+                );
+
+            for(var i=0; i<studentButtons.length; i++){
+
+                var btn =
+                    studentButtons[i];
+
+                btn.classList.remove("active");
+
+                if(
+                    btn.getAttribute("data-filter")
+                    === currentStudentFilter
+                ){
+                    btn.classList.add("active");
+                }
+            }
+
+
+            // 문제 선택 버튼 복원
+            var problemButtons =
+                document.querySelectorAll(
+                    ".problem-filter"
+                );
+
+            for(var j=0; j<problemButtons.length; j++){
+
+                problemButtons[j].classList.remove(
+                    "active"
+                );
+            }
+
+
+            if(currentProblemFilter === "all"){
+
+                // 첫 번째 문제 필터가 전체 버튼
+                if(problemButtons.length > 0){
+                    problemButtons[0].classList.add(
+                        "active"
+                    );
+                }
+
+            }
+            else {
+
+                // onclick 내용에서 해당 문제 번호를 찾아 활성화
+                for(var k=0; k<problemButtons.length; k++){
+
+                    var clickText =
+                        problemButtons[k]
+                            .getAttribute("onclick")
+                            || "";
+
+                    if(
+                        clickText.indexOf(
+                            "'" +
+                            currentProblemFilter +
+                            "'"
+                        ) !== -1
+                    ){
+                        problemButtons[k]
+                            .classList.add("active");
+                    }
+                }
+            }
+
+
+            // 저장된 조건 실제 적용
+            applyStudentFilters();
+            updateCurrentFilterInfo();
+
+        });
+        
+        function updateCurrentFilterInfo(){
+
+            var info =
+                document.getElementById(
+                    "current-filter-info"
+                );
+
+            if(!info){
+                return;
+            }
+
+
+            var studentText = "";
+
+            if(currentStudentFilter === "all"){
+                studentText = "전체";
+            }
+            else if(currentStudentFilter === "working"){
+                studentText = "진행 중";
+            }
+            else if(currentStudentFilter === "partial"){
+                studentText = "일부 해결";
+            }
+            else if(currentStudentFilter === "complete"){
+                studentText = "전체 해결";
+            }
+            else if(currentStudentFilter === "ai"){
+                studentText = "AI 사용";
+            }
+            else if(currentStudentFilter === "attention"){
+                studentText = "확인 필요";
+            }
+            else if(currentStudentFilter === "nosubmit"){
+                studentText = "미제출";
+            }
+            else if(currentStudentFilter === "solved"){
+                studentText = "해결";
+            }
+
+
+            var problemText = "전체 문제";
+
+            if(currentProblemFilter !== "all"){
+
+                var problemButtons =
+                    document.querySelectorAll(
+                        ".problem-filter"
+                    );
+
+                for(var i=0; i<problemButtons.length; i++){
+
+                    var clickText =
+                        problemButtons[i]
+                            .getAttribute("onclick")
+                        || "";
+
+                    if(
+                        clickText.indexOf(
+                            "'" +
+                            currentProblemFilter +
+                            "'"
+                        ) !== -1
+                    ){
+
+                        problemText =
+                            problemButtons[i]
+                                .innerText
+                                .trim();
+
+                        break;
+                    }
+                }
+            }
+
+
+            // 기본 상태는 숨김
+            if(
+                currentStudentFilter === "all" &&
+                currentProblemFilter === "all"
+            ){
+
+                info.style.display =
+                    "none";
+
+                info.innerHTML =
+                    "";
+
+                return;
+            }
+
+
+            info.style.display =
+                "block";
+
+
+            info.innerHTML =
+                "<strong>현재 필터:</strong> " +
+                problemText +
+                " / " +
+                studentText;
+        }
+        setInterval(function(){
+
+            window.location.reload();
+
+        }, 30000);
         </script>
 
     </div>

@@ -21,16 +21,93 @@
         <div class="row">
             <div class="column">
                 <div class="ui buttons">
+
                     <?php
-                        if ($exam_mode == 0 || isset($_SESSION[$OJ_NAME.'_administrator']) || isset($_SESSION[$OJ_NAME.'_contest_creator']) || isset($_SESSION[$OJ_NAME.'_source_browser']) || isset($_SESSION[$OJ_NAME.'_m'.$view_cid])) {
+                    // ============================================================
+                    // 기존 대회 정보 버튼
+                    //
+                    // 일반 대회에서는 학생도 사용 가능
+                    // 수행모드에서는 관리자 계열만 사용 가능
+                    // ============================================================
+
+                    if (
+                        $exam_mode == 0 ||
+                        isset($_SESSION[$OJ_NAME.'_administrator']) ||
+                        isset($_SESSION[$OJ_NAME.'_contest_creator']) ||
+                        isset($_SESSION[$OJ_NAME.'_source_browser']) ||
+                        isset($_SESSION[$OJ_NAME.'_m'.$view_cid])
+                    ) {
                     ?>
-                    <a class="ui small blue button" href="contestrank.php?cid=<?php echo $view_cid?>">순위</a>
-                    <a class="ui small yellow button" href="contestrank-oi.php?cid=<?php echo $view_cid?>">순위(점수반영)</a>
-                    <a class="ui small positive button" href="status.php?cid=<?php echo $view_cid?>">제출정보</a>
-                    <?php } else { ?>
-                    <a class='ui small blue button'>수행평가 모드입니다. 세부적인 정보를 볼 수 없습니다.</a>
-                    <?php } ?>
+
+                        <a
+                            class="ui small blue button"
+                            href="contestrank.php?cid=<?php echo intval($view_cid); ?>"
+                        >
+                            순위
+                        </a>
+
+                        <a
+                            class="ui small yellow button"
+                            href="contestrank-oi.php?cid=<?php echo intval($view_cid); ?>"
+                        >
+                            순위(점수반영)
+                        </a>
+
+                        <a
+                            class="ui small positive button"
+                            href="status.php?cid=<?php echo intval($view_cid); ?>"
+                        >
+                            제출정보
+                        </a>
+
+
+                        <?php
+                        // ========================================================
+                        // 교사용 문제 해결과정 현황
+                        //
+                        // contest.php에서 계산된 별도 권한을 사용한다.
+                        //
+                        // 허용:
+                        // administrator
+                        // source_browser
+                        // 해당 대회의 m{cid} 관리자
+                        //
+                        // contest_creator 권한만으로는 표시하지 않는다.
+                        // ========================================================
+
+                        if (
+                            isset($can_view_contest_process) &&
+                            $can_view_contest_process
+                        ) {
+                        ?>
+
+                            <a
+                                class="ui small teal button"
+                                href="contest_process.php?cid=<?php echo intval($view_cid); ?>"
+                            >
+                                문제 해결과정 현황
+                            </a>
+
+                        <?php
+                        }
+                        ?>
+
+
+                    <?php
+                    }
+                    else {
+                    ?>
+
+                        <a class="ui small blue button">
+                            수행평가 모드입니다. 세부적인 정보를 볼 수 없습니다.
+                        </a>
+
+                    <?php
+                    }
+                    ?>
+
                 </div>
+
                 <div class="ui buttons right floated">
                     <?php
                         $now_ts = time();

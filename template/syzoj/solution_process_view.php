@@ -137,6 +137,17 @@ include(
                 intval(
                     $process['solution_id']
                 );
+            
+            $source_diff =
+                isset(
+                    $process_diff_map[
+                        $process_sid
+                    ]
+                )
+                    ? $process_diff_map[
+                        $process_sid
+                    ]
+                    : null;
 
             $result_num =
                 intval(
@@ -363,7 +374,161 @@ include(
 
 
             <?php } ?>
+            
+            <!-- ======================================================
+                실제 코드 변화
+                ====================================================== -->
 
+            <?php if ($source_diff !== null) { ?>
+
+                <div
+                    class="ui segment"
+                    style="
+                        margin-top:15px;
+                        margin-bottom:15px;
+                    "
+                >
+
+                    <strong>
+                        실제 코드 변화
+                    </strong>
+
+
+                    <?php if ($source_diff['too_large']) { ?>
+
+                        <div style="margin-top:8px; color:#777;">
+
+                            코드가 커서 상세 변경 비교는 생략했습니다.
+
+                        </div>
+
+                    <?php } else { ?>
+
+
+                        <div style="margin-top:8px;">
+
+                            이전 제출
+
+                            <strong>
+                                #<?php
+                                echo intval(
+                                    $source_diff[
+                                        'previous_solution_id'
+                                    ]
+                                );
+                                ?>
+                            </strong>
+
+                            대비
+
+                            &nbsp;&nbsp;
+
+
+                            <span class="ui tiny green basic label">
+
+                                +<?php
+                                echo intval(
+                                    $source_diff['added']
+                                );
+                                ?>줄
+
+                            </span>
+
+
+                            <span class="ui tiny red basic label">
+
+                                -<?php
+                                echo intval(
+                                    $source_diff['deleted']
+                                );
+                                ?>줄
+
+                            </span>
+
+                        </div>
+
+
+                        <?php if (!$source_diff['changed']) { ?>
+
+                            <div style="margin-top:8px; color:#777;">
+
+                                실제 코드 변경 없음
+
+                            </div>
+
+                        <?php } else { ?>
+
+
+                            <details style="margin-top:12px;">
+
+                                <summary
+                                    style="
+                                        cursor:pointer;
+                                        font-weight:bold;
+                                    "
+                                >
+                                    변경 코드 보기
+                                </summary>
+
+
+                                <pre
+                                    style="
+                                        margin-top:10px;
+                                        padding:12px;
+                                        background:#f8f8f8;
+                                        overflow-x:auto;
+                                        line-height:1.5;
+                                    "
+                                ><?php
+
+                                foreach (
+                                    $source_diff['diff_lines']
+                                    as
+                                    $diff_line
+                                ) {
+
+                                    $type =
+                                        $diff_line['type'];
+
+                                    $text =
+                                        htmlentities(
+                                            $diff_line['text'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        );
+
+
+                                    if ($type === 'add') {
+
+                                        echo '<span style="color:#167d35;">+ '.
+                                            $text.
+                                            "</span>\n";
+
+                                    }
+                                    else if ($type === 'delete') {
+
+                                        echo '<span style="color:#b21e2b;">- '.
+                                            $text.
+                                            "</span>\n";
+
+                                    }
+                                    else {
+
+                                        echo '  '.$text."\n";
+                                    }
+                                }
+
+                                ?></pre>
+
+                            </details>
+
+                        <?php } ?>
+
+                    <?php } ?>
+
+                </div>
+
+            <?php } ?>
 
             <!-- ==============================================
                  AI 활용

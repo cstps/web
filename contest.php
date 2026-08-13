@@ -99,6 +99,32 @@ if (isset($_GET['cid'])) {
 	$view_cid = $cid;
 	//print $cid;
 
+	// ============================================================
+	// 교사용 문제 해결과정 현황 열람 권한
+	//
+	// 허용:
+	// - administrator
+	// - source_browser
+	// - 해당 대회의 실제 관리자 m{cid}
+	//
+	// contest_creator 권한만으로는 허용하지 않음
+	// ============================================================
+
+	$is_process_admin =
+		isset($_SESSION[$OJ_NAME.'_administrator']);
+
+	$is_process_source_browser =
+		isset($_SESSION[$OJ_NAME.'_source_browser']);
+
+	$is_process_contest_manager =
+		isset($_SESSION[$OJ_NAME.'_m'.$cid]);
+
+	$can_view_contest_process = (
+		$is_process_admin ||
+		$is_process_source_browser ||
+		$is_process_contest_manager
+	);
+
 	$sql = "SELECT * FROM `contest` WHERE `contest_id`=?";
 	$result = pdo_query($sql,$cid);
 	$rows_cnt = count($result);

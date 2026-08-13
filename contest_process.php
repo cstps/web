@@ -7,6 +7,196 @@ require_once('./include/setlang.php');
 
 $view_title = "학생 문제 해결 과정 현황";
 
+// ============================================================
+// 학생 코드 변경 비교 함수
+//
+// 이전 제출 코드와 현재 제출 코드를 줄 단위로 비교한다.
+// LCS(Longest Common Subsequence)를 이용한다.
+//
+// 학생 코드가 지나치게 큰 경우 서버 부하를 막기 위해
+// 최대 500줄까지 상세 비교한다.
+// ============================================================
+
+function build_source_diff($old_source, $new_source) {
+
+    // 줄바꿈 통일
+    $old_source = str_replace(
+        array("\r\n", "\r"),
+        "\n",
+        (string)$old_source
+    );
+
+    $new_source = str_replace(
+        array("\r\n", "\r"),
+        "\n",
+        (string)$new_source
+    );
+
+
+    $old_lines = explode("\n", $old_source);
+    $new_lines = explode("\n", $new_source);
+
+
+    $old_count = count($old_lines);
+    $new_count = count($new_lines);
+
+
+    // --------------------------------------------------------
+    // 너무 큰 코드는 상세 LCS 비교 생략
+    // --------------------------------------------------------
+
+    $max_diff_lines = 500;
+
+    if (
+        $old_count > $max_diff_lines ||
+        $new_count > $max_diff_lines
+    ) {
+
+        return array(
+            'added'       => 0,
+            'deleted'     => 0,
+            'changed'     => ($old_source !== $new_source),
+            'too_large'   => true,
+            'diff_lines'  => array()
+        );
+    }
+
+
+    // --------------------------------------------------------
+    // LCS 테이블
+    // --------------------------------------------------------
+
+    $dp = array();
+
+    for ($i = 0; $i <= $old_count; $i++) {
+
+        $dp[$i] =
+            array_fill(
+                0,
+                $new_count + 1,
+                0
+            );
+    }
+
+
+    for ($i = $old_count - 1; $i >= 0; $i--) {
+
+        for ($j = $new_count - 1; $j >= 0; $j--) {
+
+            if ($old_lines[$i] === $new_lines[$j]) {
+
+                $dp[$i][$j] =
+                    $dp[$i + 1][$j + 1] + 1;
+
+            }
+            else {
+
+                $dp[$i][$j] =
+                    max(
+                        $dp[$i + 1][$j],
+                        $dp[$i][$j + 1]
+                    );
+            }
+        }
+    }
+
+
+    // --------------------------------------------------------
+    // 실제 Diff 생성
+    //
+    // equal  : 동일한 줄
+    // delete : 이전 코드에서 삭제
+    // add    : 새 코드에서 추가
+    // --------------------------------------------------------
+
+    $diff_lines = array();
+
+    $added = 0;
+    $deleted = 0;
+
+    $i = 0;
+    $j = 0;
+
+
+    while (
+        $i < $old_count &&
+        $j < $new_count
+    ) {
+
+        if ($old_lines[$i] === $new_lines[$j]) {
+
+            $diff_lines[] = array(
+                'type' => 'equal',
+                'text' => $old_lines[$i]
+            );
+
+            $i++;
+            $j++;
+
+        }
+        else if (
+            $dp[$i + 1][$j] >=
+            $dp[$i][$j + 1]
+        ) {
+
+            $diff_lines[] = array(
+                'type' => 'delete',
+                'text' => $old_lines[$i]
+            );
+
+            $deleted++;
+
+            $i++;
+
+        }
+        else {
+
+            $diff_lines[] = array(
+                'type' => 'add',
+                'text' => $new_lines[$j]
+            );
+
+            $added++;
+
+            $j++;
+        }
+    }
+
+
+    while ($i < $old_count) {
+
+        $diff_lines[] = array(
+            'type' => 'delete',
+            'text' => $old_lines[$i]
+        );
+
+        $deleted++;
+
+        $i++;
+    }
+
+
+    while ($j < $new_count) {
+
+        $diff_lines[] = array(
+            'type' => 'add',
+            'text' => $new_lines[$j]
+        );
+
+        $added++;
+
+        $j++;
+    }
+
+
+    return array(
+        'added'      => $added,
+        'deleted'    => $deleted,
+        'changed'    => ($added > 0 || $deleted > 0),
+        'too_large'  => false,
+        'diff_lines' => $diff_lines
+    );
+}
 
 // ============================================================
 // 1. 로그인 확인
@@ -432,6 +622,29 @@ foreach ($summary_result as $row) {
             ? $row['user_id']
             : $row[0];
 
+    // ========================================================
+    // 관리자 / 교사 계정 제외
+    //
+    // 학생별 요약 현황뿐 아니라
+    // 아래 상세 "학생 문제 해결 과정 현황"에서도
+    // 운영 권한 계정을 제외한다.
+    // ========================================================
+
+    $normalized_user_id =
+        strtolower(
+            trim($user_id)
+        );
+
+    if (
+        isset(
+            $excluded_users[
+                $normalized_user_id
+            ]
+        )
+    ) {
+        continue;
+    }
+
     $problem_id =
         isset($row['problem_id'])
             ? intval($row['problem_id'])
@@ -532,6 +745,23 @@ foreach ($view_process_list as $item) {
             $item['problem_num']
         );
 
+    // ========================================================
+    // 관리자 / 교사 계정 제외
+    //
+    // 참가자 목록에서 제외했더라도
+    // 실제 제출 기록이 있으면 view_process_list에서
+    // 다시 추가될 수 있으므로 여기서 한 번 더 차단
+    // ========================================================
+
+    if (
+        isset(
+            $excluded_users[
+                strtolower(trim($uid))
+            ]
+        )
+    ) {
+        continue;
+    }
 
     // 학생 기본 정보
     if (!isset($student_matrix[$uid])) {
