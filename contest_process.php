@@ -242,7 +242,6 @@ $is_contest_manager =
 
 $can_view_contest_process = (
     $is_admin ||
-    $is_source_browser ||
     $is_contest_manager
 );
 
@@ -804,6 +803,57 @@ foreach ($view_process_list as $item) {
 
 // 학생 ID순 정렬
 ksort($student_matrix);
+
+// ============================================================
+// 교사 관찰 메모 개수
+//
+// 학생 + 문제 기준으로 집계
+// ============================================================
+
+$teacher_note_count_map = array();
+
+$note_sql = "SELECT
+                user_id,
+                problem_id,
+                COUNT(*) AS note_count
+             FROM teacher_process_note
+             WHERE contest_id=?
+             GROUP BY user_id, problem_id";
+
+$note_result =
+    pdo_query(
+        $note_sql,
+        $cid
+    );
+
+if ($note_result) {
+
+    foreach ($note_result as $row) {
+
+        $note_user_id =
+            isset($row['user_id'])
+                ? trim($row['user_id'])
+                : trim($row[0]);
+
+        $note_problem_id =
+            isset($row['problem_id'])
+                ? intval($row['problem_id'])
+                : intval($row[1]);
+
+        $note_count =
+            isset($row['note_count'])
+                ? intval($row['note_count'])
+                : intval($row[2]);
+
+
+        $teacher_note_count_map[
+            $note_user_id
+        ][
+            $note_problem_id
+        ] =
+            $note_count;
+    }
+}
 
 // ============================================================
 // 8. Template

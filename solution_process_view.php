@@ -369,6 +369,71 @@ if (!$check_result || count($check_result) == 0) {
     exit(0);
 }
 
+// ============================================================
+// 교사 관찰 메모 권한
+//
+// 허용:
+// - administrator
+// - 해당 대회의 m{cid}
+//
+// 학생 / 다른 대회 교사 / source_browser / contest_creator는 불가
+// ============================================================
+
+$is_note_admin =
+    isset(
+        $_SESSION[
+            $OJ_NAME.'_administrator'
+        ]
+    );
+
+$is_note_contest_manager =
+    (
+        $contest_id > 0 &&
+        isset(
+            $_SESSION[
+                $OJ_NAME.'_m'.$contest_id
+            ]
+        )
+    );
+
+$can_manage_teacher_note =
+    (
+        $is_note_admin ||
+        $is_note_contest_manager
+    );
+// ============================================================
+// 교사 관찰 메모 조회
+// ============================================================
+
+$teacher_notes = array();
+
+if ($can_manage_teacher_note) {
+
+    $note_sql = "SELECT
+                    note_id,
+                    teacher_id,
+                    note_text,
+                    created_at,
+                    updated_at
+                 FROM teacher_process_note
+                 WHERE contest_id=?
+                   AND user_id=?
+                   AND problem_id=?
+                 ORDER BY created_at DESC,
+                          note_id DESC";
+
+    $note_result =
+        pdo_query(
+            $note_sql,
+            $contest_id,
+            $solution_user_id,
+            $problem_id
+        );
+
+    if ($note_result) {
+        $teacher_notes = $note_result;
+    }
+}    
 
 // ============================================================
 // 9. 같은 학생 + 같은 문제의 전체 과정 조회

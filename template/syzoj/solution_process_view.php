@@ -697,29 +697,620 @@ include(
 
     <?php } ?>
 
+<?php if (
+    isset($can_manage_teacher_note) &&
+    $can_manage_teacher_note
+) { ?>
+
+    <h3
+        class="ui dividing header"
+        style="margin-top:30px;"
+    >
+        교사 관찰 메모
+    </h3>
+
 
     <!-- ======================================================
-         하단 버튼
+         신규 관찰 메모 작성
          ====================================================== -->
 
-    <div
-        style="
-            text-align:center;
-            margin-top:25px;
-        "
-    >
+    <div class="ui segment">
 
-        <button
-            type="button"
-            class="ui button"
-            onclick="history.back();"
+        <form
+            id="teacher-note-create-form"
+            class="ui form"
+            method="post"
+            action="teacher_process_note_save.php"
         >
 
-            돌아가기
+            <input
+                type="hidden"
+                name="cid"
+                value="<?php echo intval($contest_id); ?>"
+            >
 
-        </button>
+            <input
+                type="hidden"
+                name="user_id"
+                value="<?php
+                    echo htmlentities(
+                        $solution_user_id,
+                        ENT_QUOTES,
+                        'UTF-8'
+                    );
+                ?>"
+            >
+
+            <input
+                type="hidden"
+                name="problem_id"
+                value="<?php
+                    echo intval(
+                        $problem_id
+                    );
+                ?>"
+            >
+
+            <input
+                type="hidden"
+                name="sid"
+                value="<?php
+                    echo intval(
+                        $sid
+                    );
+                ?>"
+            >
+
+
+            <div class="field">
+
+                <label>
+                    관찰 내용
+                </label>
+
+                <textarea
+                    name="note_text"
+                    rows="4"
+                    maxlength="2000"
+                    placeholder="학생의 문제 해결 과정에서 관찰한 내용을 기록하세요."
+                    required
+                ></textarea>
+
+            </div>
+
+
+            <?php
+            // ====================================================
+            // POST 보안키는 이 페이지에서 한 번만 생성
+            //
+            // 수정/삭제 폼에서는 JavaScript로 이 값을 복사한다.
+            // ====================================================
+
+            require_once(
+                "./include/set_post_key.php"
+            );
+            ?>
+
+
+            <button
+                type="submit"
+                class="ui primary button"
+            >
+                메모 저장
+            </button>
+
+        </form>
 
     </div>
+
+
+    <!-- ======================================================
+         기존 관찰 메모 목록
+         ====================================================== -->
+
+    <?php if (
+        isset($teacher_notes) &&
+        count($teacher_notes) > 0
+    ) { ?>
+
+        <div class="ui relaxed divided list">
+
+            <?php foreach ($teacher_notes as $note) { ?>
+
+                <?php
+
+                // =================================================
+                // 현재 로그인 교사
+                // =================================================
+
+                $current_teacher_id =
+                    isset(
+                        $_SESSION[
+                            $OJ_NAME.'_user_id'
+                        ]
+                    )
+                        ? $_SESSION[
+                            $OJ_NAME.'_user_id'
+                        ]
+                        : "";
+
+
+                // =================================================
+                // 이 메모를 작성한 교사인지 확인
+                // =================================================
+
+                $is_note_owner =
+                    (
+                        strcasecmp(
+                            $current_teacher_id,
+                            $note['teacher_id']
+                        ) === 0
+                    );
+
+
+                // =================================================
+                // 수정 / 삭제 권한
+                //
+                // administrator
+                // 또는
+                // 실제 작성자
+                // =================================================
+
+                $can_edit_this_note =
+                    (
+                        $is_note_admin ||
+                        $is_note_owner
+                    );
+
+                ?>
+
+
+                <div class="item">
+
+                    <div class="content">
+
+
+                        <!-- =========================================
+                             작성자 / 작성시간
+                             ========================================= -->
+
+                        <div class="header">
+
+                            <?php
+                            echo htmlentities(
+                                $note['teacher_id'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+
+                            &nbsp;
+
+                            <span
+                                style="
+                                    font-weight:normal;
+                                    color:#888;
+                                    font-size:0.85em;
+                                "
+                            >
+
+                                <?php
+                                echo htmlentities(
+                                    $note['created_at'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                                ?>
+
+                            </span>
+
+
+                            <?php
+                            // =====================================
+                            // 수정된 메모 표시
+                            // =====================================
+
+                            if (
+                                isset(
+                                    $note['updated_at']
+                                ) &&
+                                $note['updated_at'] != ""
+                            ) {
+                            ?>
+
+                                <span
+                                    style="
+                                        margin-left:6px;
+                                        color:#999;
+                                        font-size:0.8em;
+                                        font-weight:normal;
+                                    "
+                                >
+                                    (수정됨)
+                                </span>
+
+                            <?php } ?>
+
+                        </div>
+
+
+                        <!-- =========================================
+                             메모 내용
+                             ========================================= -->
+
+                        <div
+                            class="description"
+                            style="
+                                margin-top:6px;
+                                white-space:pre-wrap;
+                                line-height:1.6;
+                            "
+                        >
+                            <?php
+                            echo htmlentities(
+                                $note['note_text'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+                        </div>
+
+
+                        <!-- =========================================
+                             수정
+                             ========================================= -->
+
+                        <?php if ($can_edit_this_note) { ?>
+
+                            <div style="margin-top:10px;">
+
+                                <details>
+
+                                    <summary
+                                        style="
+                                            cursor:pointer;
+                                            display:inline-block;
+                                            color:#2185d0;
+                                        "
+                                    >
+                                        수정
+                                    </summary>
+
+
+                                    <form
+                                        class="ui form teacher-note-action-form"
+                                        method="post"
+                                        action="teacher_process_note_action.php"
+                                        style="
+                                            margin-top:10px;
+                                            max-width:800px;
+                                        "
+                                    >
+
+                                        <input
+                                            type="hidden"
+                                            name="action"
+                                            value="update"
+                                        >
+
+
+                                        <input
+                                            type="hidden"
+                                            name="note_id"
+                                            value="<?php
+                                                echo intval(
+                                                    $note['note_id']
+                                                );
+                                            ?>"
+                                        >
+
+
+                                        <input
+                                            type="hidden"
+                                            name="sid"
+                                            value="<?php
+                                                echo intval(
+                                                    $sid
+                                                );
+                                            ?>"
+                                        >
+
+
+                                        <div class="field">
+
+                                            <textarea
+                                                name="note_text"
+                                                rows="3"
+                                                maxlength="2000"
+                                                required
+                                            ><?php
+                                                echo htmlentities(
+                                                    $note['note_text'],
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                );
+                                            ?></textarea>
+
+                                        </div>
+
+
+                                        <!--
+                                            중요:
+                                            여기서는
+                                            set_post_key.php를
+                                            다시 호출하지 않는다.
+
+                                            페이지 하단 JavaScript가
+                                            신규 메모 폼의 POST 키를
+                                            이 폼으로 복사한다.
+                                        -->
+
+
+                                        <button
+                                            type="submit"
+                                            class="ui mini blue button"
+                                        >
+                                            수정 저장
+                                        </button>
+
+                                    </form>
+
+                                </details>
+
+                            </div>
+
+                        <?php } ?>
+
+
+                        <!-- =========================================
+                             삭제
+                             ========================================= -->
+
+                        <?php if ($can_edit_this_note) { ?>
+
+                            <form
+                                class="teacher-note-action-form"
+                                method="post"
+                                action="teacher_process_note_action.php"
+                                style="
+                                    display:inline-block;
+                                    margin-top:8px;
+                                "
+                                onsubmit="
+                                    return confirm(
+                                        '이 관찰 메모를 삭제하시겠습니까?'
+                                    );
+                                "
+                            >
+
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="delete"
+                                >
+
+
+                                <input
+                                    type="hidden"
+                                    name="note_id"
+                                    value="<?php
+                                        echo intval(
+                                            $note['note_id']
+                                        );
+                                    ?>"
+                                >
+
+
+                                <input
+                                    type="hidden"
+                                    name="sid"
+                                    value="<?php
+                                        echo intval(
+                                            $sid
+                                        );
+                                    ?>"
+                                >
+
+
+                                <!--
+                                    중요:
+                                    삭제 폼에서도
+                                    set_post_key.php를
+                                    다시 호출하지 않는다.
+                                -->
+
+
+                                <button
+                                    type="submit"
+                                    class="ui mini red basic button"
+                                >
+                                    삭제
+                                </button>
+
+                            </form>
+
+                        <?php } ?>
+
+
+                    </div>
+
+                </div>
+
+            <?php } ?>
+
+        </div>
+
+
+    <?php } else { ?>
+
+        <div class="ui small message">
+
+            작성된 관찰 메모가 없습니다.
+
+        </div>
+
+    <?php } ?>
+
+
+<?php } ?>
+
+
+<!-- ============================================================
+     관찰 메모 수정/삭제 폼에 POST 보안키 복사
+     
+     set_post_key.php는 위 신규 메모 폼에서 한 번만 실행한다.
+     그 결과 생성된 hidden input을 수정/삭제 폼에 복사한다.
+     ============================================================ -->
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function(){
+
+        // ====================================================
+        // POST 키가 생성된 신규 메모 폼
+        // ====================================================
+
+        var sourceForm =
+            document.getElementById(
+                "teacher-note-create-form"
+            );
+
+
+        if(!sourceForm){
+
+            return;
+        }
+
+
+        // ====================================================
+        // 신규 메모 폼의 hidden input 전체 조회
+        // ====================================================
+
+        var hiddenInputs =
+            sourceForm.querySelectorAll(
+                'input[type="hidden"]'
+            );
+
+
+        // ====================================================
+        // 아래 값은 우리가 직접 만든 데이터이므로
+        // 수정/삭제 폼으로 복사하면 안 된다.
+        // ====================================================
+
+        var skipNames = {
+
+            cid: true,
+            user_id: true,
+            problem_id: true,
+            sid: true
+
+        };
+
+
+        // ====================================================
+        // 수정/삭제 폼
+        // ====================================================
+
+        var actionForms =
+            document.querySelectorAll(
+                ".teacher-note-action-form"
+            );
+
+
+        // ====================================================
+        // set_post_key.php가 만든 hidden 값을 찾아
+        // 모든 수정/삭제 폼에 복사
+        // ====================================================
+
+        for(
+            var i = 0;
+            i < hiddenInputs.length;
+            i++
+        ){
+
+            var input =
+                hiddenInputs[i];
+
+
+            var name =
+                input.getAttribute(
+                    "name"
+                );
+
+
+            if(
+                !name ||
+                skipNames[name]
+            ){
+
+                continue;
+            }
+
+
+            for(
+                var j = 0;
+                j < actionForms.length;
+                j++
+            ){
+
+                // 이미 같은 필드가 있으면 중복 생성 방지
+                var existingInput =
+                    actionForms[j]
+                        .querySelector(
+                            'input[name="' +
+                            name +
+                            '"]'
+                        );
+
+
+                if(existingInput){
+
+                    continue;
+                }
+
+
+                var clonedInput =
+                    input.cloneNode(
+                        true
+                    );
+
+
+                actionForms[j]
+                    .appendChild(
+                        clonedInput
+                    );
+            }
+        }
+    }
+);
+
+</script>
+
+
+<!-- ======================================================
+     하단 버튼
+     ====================================================== -->
+
+<div
+    style="
+        text-align:center;
+        margin-top:25px;
+    "
+>
+
+    <button
+        type="button"
+        class="ui button"
+        onclick="history.back();"
+    >
+
+        돌아가기
+
+    </button>
+
+</div>
 
 
 </div>
