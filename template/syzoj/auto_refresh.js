@@ -9,10 +9,13 @@ function auto_refresh() {
 		var result = $(rows[i].cells[4].children[0]).attr("result");
 		result=$(rows[i].cells[4]).find("span").attr("result");
 		rows[i].cells[4].className = "td_result";
-		var sid = rows[i].cells[0].innerHTML;
-		
+		var sid = parseInt(rows[i].cells[0].textContent.trim(), 10);
+
 		if (result<4) {
-			window.setTimeout("fresh_result("+sid+")",interval);
+			window.setTimeout(function() {
+				fresh_result(sid);
+			}, interval);
+
 			console.log("auto_refresh "+sid+" actived!");
 			break;
 		}
@@ -22,11 +25,22 @@ function auto_refresh() {
 function findRow(solution_id) {
 	var tb = window.document.getElementById('result-tab');
 	var rows = tb.rows;
+
 	for (var i=1; i<rows.length; i++) {
+
 		var cell = rows[i].cells[0];
-		if (cell.innerHTML==solution_id)
+
+		var sid = parseInt(
+			cell.textContent.trim(),
+			10
+		);
+
+		if (sid === parseInt(solution_id, 10)) {
 			return rows[i];
+		}
 	}
+
+	return null;
 }
 
 function fresh_result(solution_id) {
@@ -42,8 +56,20 @@ function fresh_result(solution_id) {
 		if (xmlhttp.readyState==4 && xmlhttp.status==200) {
 			var tb = window.document.getElementById('result-tab');
 			var row = findRow(solution_id);
-			//alert(row);
+
+
+			// 행을 찾지 못한 경우 JavaScript 오류 방지
+			if (!row) {
+
+				console.log(
+					"fresh_result: row not found",
+					solution_id
+				);
+
+				return;
+			}
 			var r = xmlhttp.responseText;
+
 			var ra = r.split(",");
 			ra[0] = parseInt(ra[0]);
 			// alert(r);
@@ -52,9 +78,14 @@ function fresh_result(solution_id) {
 			row.cells[5].innerHTML = ra[1];
 			row.cells[6].innerHTML = ra[2];
 
-			if(ra[3]!="none")
+			if (
+				ra[3] != "none" &&
+				row.cells.length > 10 &&
+				row.cells[10]
+			) {
 				row.cells[10].innerHTML = ra[3];
-			
+			}
+
 			if (ra[0]<4) {
 				//console.log(loader);
 				if (-1==row.cells[4].innerHTML.indexOf("loader")) {
@@ -62,30 +93,16 @@ function fresh_result(solution_id) {
 			 		row.cells[4].innerHTML += loader;
 				}
 				interval *= 1.5;
-				window.setTimeout("fresh_result("+solution_id+")",interval);
+
+				window.setTimeout(function() {
+					fresh_result(solution_id);
+				}, interval);
 			}
 			else {
-				//console.log(ra[0]);
-				switch (ra[0]) {
-					case 4:
-						row.cells[4].innerHTML = "<a href=reinfo.php?sid="+solution_id+" class='"+judge_color[ra[0]]+"'>"+judge_result[ra[0]]+"</a>";
-						break;
-					case 5:
-					case 6:
-				  case 7:
-				  case 8:
-				  case 9:
-				  case 10:
-						row.cells[4].innerHTML = "<a href=reinfo.php?sid="+solution_id+" class='"+judge_color[ra[0]]+"'>"+judge_result[ra[0]]+" AC:"+ra[4].trim()+"%</a>";
-						break;
-				 	case 11:
-						row.cells[4].innerHTML = "<a href=ceinfo.php?sid="+solution_id+" class='"+judge_color[ra[0]]+"'>"+judge_result[ra[0]]+"</a>";
-						break;
-				  default:
-//						row.cells[4].innerHTML = "<span class='"+judge_color[ra[0]]+"'>"+judge_result[ra[0]]+" AC:"+ra[4].trim()+"%</span>";
-				}
-			
-				auto_refresh();
+				console.log("JUDGE FINISHED - RELOAD", solution_id, ra[0]);
+
+				window.location.reload();
+				return;
 			}
 		}
 	}

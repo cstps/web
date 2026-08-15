@@ -217,6 +217,21 @@ if (isset($_GET['sid'])) {
 if (isset($id))
 	$problem_id = $id;
 
+// ============================================================
+// Edit 모드에서는 기존 제출 언어를 기본 선택 언어로 사용
+// ============================================================
+
+if (
+	isset($_GET['sid']) &&
+	isset($language_num)
+) {
+	$lastlang = intval($language_num);
+}
+else {
+	$lastlang = 0;
+}
+
+
 $view_sample_input = "1 2";
 $view_sample_output = "3";
 
@@ -242,8 +257,29 @@ if (isset($sample_sql)) {
 	$problem_id = $row[2];
 }
 
-$lastlang = 0;
+// ============================================================
+// 기본 선택 언어
+//
+// Edit 모드:
+//   기존 제출의 language 사용
+//
+// 새 제출:
+//   기존처럼 cookie 또는 최근 사용 언어 사용
+// ============================================================
+
+if (
+	isset($_GET['sid']) &&
+	isset($language_num)
+) {
+	$lastlang = intval($language_num);
+}
+else {
+	$lastlang = 0;
+}
+
+
 if (!$view_src) {
+
 	if (isset($_COOKIE['lastlang']) && $_COOKIE['lastlang']!="undefined") {
 		$lastlang = intval($_COOKIE['lastlang']);
 	}

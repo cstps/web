@@ -182,23 +182,72 @@ $end_time = isset($end_time) ? $end_time : "";
   <?php } ?>
 </div>
 
-<!-- 5초 간격으로 랭킹 정보 갱신 -->
+<!-- SSE 기반 랭킹 실시간 갱신 -->
 <script type="text/javascript">
-  let currentCount = <?php echo isset($initial_update_count) ? $initial_update_count : 0 ?>;
 
-  function checkRankingUpdate() {
-    fetch(`check_ranking_update.php?cid=<?= $cid ?>&last_count=${currentCount}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.has_update && data.update_count > currentCount) {
-          console.log("🏁 랭킹 업데이트 감지됨, 새로고침");
-          location.reload();
+  // ============================================================
+  // SSE - 제출/채점 결과 변경 시 랭킹 갱신
+  // ============================================================
+
+  if (typeof(EventSource) !== "undefined") {
+
+    const rankingEventSource =
+      new EventSource(
+        "contest_process_stream.php?cid=<?php echo intval($cid); ?>"
+      );
+
+
+    rankingEventSource.addEventListener(
+      "connected",
+      function(event) {
+
+        console.log(
+          "Ranking SSE connected:",
+          event.data
+        );
+
+      }
+    );
+
+
+    let rankingReloadTimer = null;
+
+    rankingEventSource.addEventListener(
+      "ranking_update",
+      function(event) {
+
+        console.log(
+          "Ranking update:",
+          event.data
+        );
+
+        // 짧은 시간 안에 여러 이벤트가 들어오면
+        // 마지막 이벤트 기준으로 한 번만 새로고침
+        if (rankingReloadTimer) {
+          clearTimeout(rankingReloadTimer);
         }
-      })
-      .catch(err => console.error('업데이트 체크 실패', err));
+
+        rankingReloadTimer = setTimeout(
+          function() {
+            location.reload();
+          },
+          1500
+        );
+
+      }
+    );
+
+
+    rankingEventSource.onerror =
+      function() {
+
+        console.log(
+          "Ranking SSE reconnecting..."
+        );
+
+      };
   }
 
-  setInterval(checkRankingUpdate, 5000);
 
   var diff = new Date("<?= date("Y/m/d H:i:s") ?>").getTime() - new Date().getTime();
   function clock() {

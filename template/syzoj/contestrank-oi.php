@@ -176,21 +176,69 @@ $formatted_end_time = is_numeric($end_time)
 
 
 <script>
-  let currentCount = <?php echo isset($initial_update_count) ? $initial_update_count : 0 ?>;
 
-  function checkRankingUpdate() {
-    fetch(`check_ranking_update.php?cid=<?= $cid ?>&last_count=${currentCount}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.has_update && data.update_count > currentCount) {
-          console.log("🏁 랭킹 업데이트 감지됨, 새로고침");
-          location.reload();
+  // ============================================================
+  // SSE - 제출/채점 결과 변경 시 OI 랭킹 갱신
+  // ============================================================
+
+  if (typeof(EventSource) !== "undefined") {
+
+    const rankingEventSource =
+      new EventSource(
+        "contest_process_stream.php?cid=<?php echo intval($cid); ?>"
+      );
+
+
+    rankingEventSource.addEventListener(
+      "connected",
+      function(event) {
+
+        console.log(
+          "OI Ranking SSE connected:",
+          event.data
+        );
+
+      }
+    );
+
+
+    let rankingReloadTimer = null;
+
+    rankingEventSource.addEventListener(
+      "ranking_update",
+      function(event) {
+
+        console.log(
+          "OI Ranking update:",
+          event.data
+        );
+
+        if (rankingReloadTimer) {
+          clearTimeout(rankingReloadTimer);
         }
-      })
-      .catch(err => console.error('업데이트 체크 실패', err));
+
+        rankingReloadTimer = setTimeout(
+          function() {
+            location.reload();
+          },
+          1500
+        );
+
+      }
+    );
+
+
+    rankingEventSource.onerror =
+      function() {
+
+        console.log(
+          "OI Ranking SSE reconnecting..."
+        );
+
+      };
+
   }
 
-  setInterval(checkRankingUpdate, 5000);
 </script>
 
 <script type="text/javascript">

@@ -1859,47 +1859,6 @@ else {
 __dbg_headers_log('after-list-loop');
 
 
-// ============================================================
-// 랭킹 캐시 갱신
-// ============================================================
-
-function updateRankingCache($contest_id) {
-
-    try {
-
-        $sql =
-            "INSERT INTO ranking_cache
-             (contest_id, update_count)
-             VALUES (?, 1)
-             ON DUPLICATE KEY UPDATE
-             last_update = CURRENT_TIMESTAMP,
-             update_count = update_count + 1";
-
-
-        pdo_query(
-            $sql,
-            $contest_id
-        );
-
-    }
-    catch (Exception $e) {
-
-        echo
-            "<pre>랭킹 갱신 중 오류: ".
-            $e->getMessage().
-            "</pre>";
-    }
-}
-
-
-if (
-    $rows_cnt > 0 &&
-    isset($cid) &&
-    intval($cid) > 0
-) {
-
-    updateRankingCache($cid);
-}
 
 
 // ============================================================

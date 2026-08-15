@@ -150,6 +150,6 @@
 	} ?>
 	''];
 </script>
-	<script src="template/bs3/auto_refresh.js?v=0.42" ></script>
+	<script src="template/<?php echo $OJ_TEMPLATE; ?>/auto_refresh.js?v=0.44"></script>
 
 <?php include("template/$OJ_TEMPLATE/footer.php");

@@ -2523,12 +2523,65 @@ include(
         refreshStudentProcessTable();
     }
 
-
+    // 기존 30초 → 5분으로 변경
+    // 정상 갱신은 SSE가 담당하고,
+    // 이 부분은 SSE 장애 시 비상 갱신용
     setInterval(
         refreshContestProcessAll,
-        30000
+        300000
     );
 
+    // ============================================================
+    // SSE - 제출/채점 결과 변경 즉시 갱신
+    // ============================================================
+
+    if (
+        typeof(EventSource) !== "undefined"
+    ) {
+
+        var contestProcessEventSource =
+            new EventSource(
+                "contest_process_stream.php?cid=" +
+                encodeURIComponent(
+                    <?php echo intval($cid); ?>
+                )
+            );
+
+
+        let contestProcessRefreshTimer = null;
+
+        contestProcessEventSource.addEventListener(
+        "solution_update",
+        function(event){
+
+            console.log(
+            "contest process update:",
+            event.data
+            );
+
+            if (contestProcessRefreshTimer) {
+            clearTimeout(contestProcessRefreshTimer);
+            }
+
+            contestProcessRefreshTimer =
+            setTimeout(
+                function() {
+                refreshContestProcessAll();
+                },
+                1000
+            );
+        }
+        );
+
+
+        contestProcessEventSource.onerror =
+            function(){
+
+                console.log(
+                    "contest process SSE reconnecting..."
+                );
+            };
+    }
     </script>
 
 

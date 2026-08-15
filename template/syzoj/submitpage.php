@@ -23,8 +23,22 @@ $langmask=$_GET['langmask'];
 else
 $langmask=$OJ_LANGMASK;
 $lang=(~((int)$langmask))&((1<<($lang_count))-1);
-if(isset($_COOKIE['lastlang'])) $lastlang=$_COOKIE['lastlang'];
-else $lastlang=0;
+
+// $lastlang은 submitpage.php 본체에서 결정된 값을 우선 사용
+// 값이 없는 경우에만 cookie 또는 기본값 사용
+if (!isset($lastlang)) {
+
+	if (isset($_COOKIE['lastlang'])) {
+		$lastlang = intval($_COOKIE['lastlang']);
+	}
+	else {
+		$lastlang = 0;
+	}
+}
+else {
+	$lastlang = intval($lastlang);
+}
+
 for($i=0;$i<$lang_count;$i++){
 if($lang&(1<<$i))
 echo"<option value=$i ".( $lastlang==$i?"selected":"").">
@@ -670,8 +684,7 @@ function switchLang(lang){
 }
 function reloadtemplate(lang){
    //console.log("lang="+lang);
-   document.cookie="lastlang="+lang.value;
-   //alert(document.cookie);
+   document.cookie = "lastlang=" + lang + "; path=/";
    var url=window.location.href;
    var i=url.indexOf("sid=");
    if(i!=-1) url=url.substring(0,i-1);
@@ -824,19 +837,23 @@ document.addEventListener(
 		// 저장 시간 표시
 		const lastSaved = localStorage.getItem(localKey + "_time");
 		if (lastSaved) {
-		const savedDate = new Date(parseInt(lastSaved));
-		const now = new Date();
-		const diffSec = Math.floor((now - savedDate) / 1000);
-		let timeStr = "";
-		if (diffSec < 60) timeStr = `${diffSec}초 전`;
-		else if (diffSec < 3600) timeStr = `${Math.floor(diffSec / 60)}분 전`;
-		else timeStr = savedDate.toLocaleString();
+			const savedDate = new Date(parseInt(lastSaved));
+			const now = new Date();
+			const diffSec = Math.floor((now - savedDate) / 1000);
+			let timeStr = "";
+			if (diffSec < 60) timeStr = `${diffSec}초 전`;
+			else if (diffSec < 3600) timeStr = `${Math.floor(diffSec / 60)}분 전`;
+			else timeStr = savedDate.toLocaleString();
 
-		const notice = document.createElement("div");
-		notice.innerText = `💾 저장된 코드가 ${timeStr}에 저장되었습니다.`;
-		notice.style.color = "#666";
-		notice.style.marginBottom = "10px";
-		document.getElementById("editor").before(notice);
+			const notice = document.createElement("div");
+			notice.innerText = `💾 저장된 코드가 ${timeStr}에 저장되었습니다.`;
+			notice.style.color = "#666";
+			notice.style.marginBottom = "10px";
+			const editorElement = document.getElementById("editor");
+
+			if (editorElement) {
+				editorElement.before(notice);
+			}
 		}
 	} else {
 		localStorage.removeItem(localKey);
@@ -854,10 +871,14 @@ document.addEventListener(
 	}, 5000);
 
 	// 제출 시 삭제
-	document.getElementById("frmSolution").addEventListener("submit", () => {
-	localStorage.removeItem(localKey);
-	localStorage.removeItem(localKey + "_time");
-	});
+	const solutionForm = document.getElementById("frmSolution");
+
+	if (solutionForm) {
+		solutionForm.addEventListener("submit", () => { 
+			localStorage.removeItem(localKey); 
+			localStorage.removeItem(localKey + "_time"); 
+		});
+	}
 
 </script>
 
