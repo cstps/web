@@ -77,6 +77,18 @@ function s_cmp($A, $B) {
 if (!isset($_GET['cid'])) die("No Such Contest!");
 $cid = intval($_GET['cid']);
 
+// ============================================================
+// 랭킹 상세정보 확인 권한
+// - 일반 페이지와 AJAX 페이지에서 공통으로 사용
+// ============================================================
+
+$can_see_all = (
+    isset($_SESSION[$OJ_NAME.'_administrator']) ||
+    isset($_SESSION[$OJ_NAME."_m$cid"]) ||
+    isset($_SESSION[$OJ_NAME.'_source_browser']) ||
+    isset($_SESSION[$OJ_NAME.'_contest_creator'])
+);
+
 // 참가자 또는 관리자/출제자인지 확인
 $uid = $_SESSION[$OJ_NAME . '_user_id'];
 $is_admin = isset($_SESSION[$OJ_NAME . '_administrator']) || isset($_SESSION[$OJ_NAME . '_contest_creator']) || isset($_SESSION[$OJ_NAME . '_m' . $cid]);
@@ -231,10 +243,45 @@ foreach ($fb as $row) {
     $first_blood[$row['num']] = $row['user_id'];
 }
 
-// 템플릿 출력
+    // ============================================================
+    // AJAX OI 랭킹 갱신
+    // ============================================================
 
-require("template/" . $OJ_TEMPLATE . "/contestrank-oi.php");
+    if (
+        isset($_GET['ajax']) &&
+        intval($_GET['ajax']) === 1
+    ) {
 
-if (file_exists('./include/cache_end.php'))
-    require_once('./include/cache_end.php');
+        header(
+            'Cache-Control: no-store, no-cache, must-revalidate, max-age=0'
+        );
+
+        header(
+            'Pragma: no-cache'
+        );
+
+
+        require(
+            "template/" .
+            $OJ_TEMPLATE .
+            "/contestrank_oi_table.php"
+        );
+
+        exit;
+    }
+
+
+    // ============================================================
+    // 일반 OI 랭킹 페이지 출력
+    // ============================================================
+
+    require(
+        "template/" .
+        $OJ_TEMPLATE .
+        "/contestrank-oi.php"
+    );
+
+
+    if (file_exists('./include/cache_end.php'))
+        require_once('./include/cache_end.php');
 ?>
