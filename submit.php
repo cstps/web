@@ -6,6 +6,9 @@ require_once "include/memcache.php";
 require_once "include/const.inc.php";
 require_once "include/cookie_helper.php"; // [ADD] lastlang 안전 쿠키용
 
+require_once "include/course_functions.inc.php";
+require_once "include/contest_access.inc.php";
+
 if (isset($OJ_CSRF) && $OJ_CSRF && $OJ_TEMPLATE=="bs3" && !isset($_SESSION[$OJ_NAME.'_'.'http_judge']))
   require_once(dirname(__FILE__)."/include/csrf_check.php");
 
@@ -60,17 +63,59 @@ if (isset($_POST['id'])) {
   $test_run = ($cid<0);
   if ($test_run) $cid = -$cid;
 
-  // 대회 유효성/권한/기간 확인
-  $now_time_str = date('Y/m/d H:i:s D', time());
-  // 관리자/출제자/문제편집자는 기간 무시 가능
-  if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor'])) {
-    $sql = "SELECT `private`, langmask, title FROM `contest` WHERE `contest_id`=?";
-    $cres = pdo_query($sql, $cid);
-  } else {
-    $sql = "SELECT `private`, langmask, title FROM `contest`
-            WHERE `contest_id`=? AND `start_time`<=? AND ?<`end_time`";
-    $cres = pdo_query($sql, $cid, $now_time_str, $now_time_str);
+  // ==========================================================
+  // Contest 공통 접근 권한 확인
+  //
+  // test run은 기존 구조를 유지하고,
+  // 실제 Contest 제출만 검사한다.
+  // ==========================================================
+
+  if (!$test_run && !contest_can_access($cid)) {
+
+    $view_errors = $MSG_NOT_INVITED."\n";
+
+    require "template/".$OJ_TEMPLATE."/error.php";
+    exit(0);
   }
+
+    // 대회 유효성 / 기간 확인
+  $now_time_str = date('Y/m/d H:i:s D', time());
+
+  if (
+    isset($_SESSION[$OJ_NAME.'_administrator']) ||
+    isset($_SESSION[$OJ_NAME.'_m'.$cid])
+  ) {
+
+    $sql =
+      "SELECT private, langmask, title
+       FROM contest
+       WHERE contest_id=?";
+
+    $cres =
+      pdo_query(
+        $sql,
+        $cid
+      );
+
+  }
+  else {
+
+    $sql =
+      "SELECT private, langmask, title
+       FROM contest
+       WHERE contest_id=?
+         AND start_time<=?
+         AND ?<end_time";
+
+    $cres =
+      pdo_query(
+        $sql,
+        $cid,
+        $now_time_str,
+        $now_time_str
+      );
+  }
+
   if (!$cres || count($cres)!=1) {
     $view_errors = $MSG_NOT_IN_CONTEST;
     require "template/".$OJ_TEMPLATE."/error.php";
@@ -81,16 +126,6 @@ if (isset($_POST['id'])) {
     $langmask  =        isset($row['langmask']) ? $row['langmask'] : $row[1];
     $title     =        isset($row['title'])    ? $row['title']    : $row[2];
 
-    if ($isprivate==1 && !isset($_SESSION[$OJ_NAME.'_'.'c'.$cid])) {
-      $sql = "SELECT count(*) FROM `privilege` WHERE `user_id`=? AND `rightstr`=?";
-      $rs = pdo_query($sql, $user_id, "c$cid");
-      $ccnt = intval($rs[0][0]);
-      if ($ccnt==0 && !isset($_SESSION[$OJ_NAME.'_'.'administrator'])) {
-        $view_errors = $MSG_NOT_INVITED."\n";
-        require "template/".$OJ_TEMPLATE."/error.php";
-        exit(0);
-      }
-    }
   }
 
   // 대회 내 문제 → 실제 problem_id 얻기

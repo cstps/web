@@ -7,6 +7,11 @@ require_once('./include/db_info.inc.php');
 require_once('./include/const.inc.php');
 require_once('./include/my_func.inc.php');
 require_once('./include/setlang.php');
+
+require_once('./include/course_functions.inc.php');
+require_once('./include/contest_access.inc.php');
+
+
 if(isset($OJ_LANG)){
 	require_once("./lang/$OJ_LANG.php");
 }
@@ -57,10 +62,42 @@ else if (isset($_GET['cid']) && isset($_GET['pid'])) {
 	$cid = intval($_GET['cid']);
 	$pid = intval($_GET['pid']);
 
-	if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor']))
-		$sql = "SELECT langmask,private,defunct FROM `contest` WHERE `contest_id`=?";
-	else
-		$sql = "SELECT langmask,private,defunct FROM `contest` WHERE `defunct`='N' AND `contest_id`=? AND (`start_time`<='$now' AND '$now'<`end_time`)";
+	// ============================================================
+	// Contest 공통 접근 권한 확인
+	//
+	// - DB의 현재 c{cid} privilege 확인
+	// - defunct 상태 확인
+	// - Course visible/status 확인
+	// - 오래된 세션 c{cid}에 의존하지 않음
+	// ============================================================
+
+	if (!contest_can_access($cid)) {
+
+		$view_errors = "Not Invited!";
+
+		require("template/".$OJ_TEMPLATE."/error.php");
+		exit(0);
+	}
+
+
+	if (
+		isset($_SESSION[$OJ_NAME.'_administrator']) ||
+		isset($_SESSION[$OJ_NAME.'_m'.$cid])
+	){
+		$sql =
+			"SELECT langmask, private, defunct
+			FROM contest
+			WHERE contest_id=?";
+	}
+	else {
+		$sql =
+		"SELECT langmask, private, defunct
+		 FROM contest
+		 WHERE defunct='N'
+		   AND contest_id=?
+		   AND start_time<='$now'
+		   AND '$now'<end_time";
+	}
 
 	$result = pdo_query($sql,$cid);
 	$rows_cnt = count($result);
@@ -70,20 +107,14 @@ else if (isset($_GET['cid']) && isset($_GET['pid'])) {
 		exit(0);
 	}
 
-	$row = ($result[0]);
-	$contest_ok = true;
+	$row = $result[0];
 
-	if ($row[1] && !isset($_SESSION[$OJ_NAME.'_'.'c'.$cid]))
-		$contest_ok = false;
+	$ok_cnt = ($rows_cnt == 1);
 
-	if ($row[2]=='Y')
-		$contest_ok = false;
-
-	if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor']))
-		$contest_ok = true;
-	
-	$ok_cnt = $rows_cnt==1;              
-	$langmask = $row[0];
+	$langmask =
+		isset($row['langmask'])
+			? $row['langmask']
+			: $row[0];
 
 	if ($ok_cnt!=1) {
 		//not started
@@ -99,16 +130,29 @@ else if (isset($_GET['cid']) && isset($_GET['pid'])) {
 			SELECT `problem_id` FROM `contest_problem` WHERE `contest_id`=? AND `num`=?
 		)";
 		
-		$result = pdo_query($sql,$cid,$pid);
-		$id = $result[0]['problem_id'];
+		$result = pdo_query(
+			$sql,
+			$cid,
+			$pid
+		);
+
+		if (
+			!$result ||
+			count($result) != 1 ||
+			!isset($result[0]['problem_id'])
+		) {
+
+			$view_errors =
+				"<h2>$MSG_NO_SUCH_PROBLEM</h2>";
+
+			require("template/".$OJ_TEMPLATE."/error.php");
+			exit(0);
+		}
+
+		$id =
+			intval($result[0]['problem_id']);
 	}
 
-	//public
-	if (!$contest_ok) {
-		$view_errors = "Not Invited!";
-		require("template/".$OJ_TEMPLATE."/error.php");
-		exit(0);
-	}
 
 	$co_flag = true;
 }

@@ -1,0 +1,193 @@
+.course-page {
+    padding: 2rem;
+}
+
+.course-page-header {
+    margin-bottom: 2rem;
+}
+
+.course-page-header h1 {
+    margin-bottom: 0.4rem;
+}
+
+.course-page-description {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.course-list {
+    margin-top: 1.5rem;
+}
+
+.course-card {
+    margin-bottom: 1.2rem !important;
+}
+
+.course-card.inactive {
+    opacity: 0.7;
+}
+
+.course-meta {
+    margin-top: 0.8rem;
+}
+
+.course-meta-item {
+    margin-right: 1.2rem;
+    display: inline-block;
+}
+
+.course-actions {
+    margin-top: 1rem;
+}
+
+.course-student-inactive td {
+    opacity: 0.6;
+}
+
+.course-student-inactive td:last-child {
+    opacity: 1;
+}
+
+/* 학생 목록 관리 버튼 줄바꿈 방지 */
+.course-action-button {
+    white-space: nowrap !important;
+}
+
+/* ============================================================
+   학생 목록 표
+   - 열이 많을 경우 Course 전체 화면 폭을 넘어가지 않도록 처리
+   ============================================================ */
+
+.course-table-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.course-table-scroll table {
+    width: 100%;
+    min-width: 1050px;
+    margin-bottom: 0;
+}
+
+.course-table-scroll th,
+.course-table-scroll td {
+    white-space: nowrap;
+}
+
+/* ============================================================
+   Course 차시 목록 표
+   ============================================================ */
+
+.course-page table th,
+.course-page table td {
+    vertical-align: middle;
+}
+
+.course-page table th {
+    white-space: nowrap;
+}
+
+/* 차시 */
+.course-page table th:nth-child(2),
+.course-page table td:nth-child(2) {
+    min-width: 60px;
+    white-space: nowrap;
+}
+
+/* 대회 번호 */
+.course-page table th:nth-child(3),
+.course-page table td:nth-child(3) {
+    min-width: 70px;
+    white-space: nowrap;
+}
+
+/* 수업 내용 */
+.course-page table th:nth-child(4),
+.course-page table td:nth-child(4) {
+    min-width: 150px;
+}
+
+/* 시작 / 종료 */
+.course-page table th:nth-child(5),
+.course-page table td:nth-child(5),
+.course-page table th:nth-child(6),
+.course-page table td:nth-child(6) {
+    min-width: 135px;
+    white-space: nowrap;
+}
+
+/* 공개 */
+.course-page table th:nth-child(7),
+.course-page table td:nth-child(7) {
+    min-width: 75px;
+    white-space: nowrap;
+}
+
+/* 관리 버튼 */
+.course-page table th:nth-child(8),
+.course-page table td:nth-child(8) {
+    min-width: 300px;
+    white-space: nowrap;
+}
+
+.course-page table td .button {
+    white-space: nowrap;
+    margin-bottom: 0;
+}
+
+.course-contest-table th,
+.course-contest-table td {
+    vertical-align: middle;
+}
+
+.course-contest-table th {
+    white-space: nowrap;
+}
+
+.course-contest-table th:nth-child(2),
+.course-contest-table td:nth-child(2) {
+    min-width: 60px;
+    white-space: nowrap;
+}
+
+.course-contest-table th:nth-child(3),
+.course-contest-table td:nth-child(3) {
+    min-width: 70px;
+    white-space: nowrap;
+}
+
+.course-contest-table th:nth-child(4),
+.course-contest-table td:nth-child(4) {
+    min-width: 150px;
+}
+
+.course-contest-table th:nth-child(5),
+.course-contest-table td:nth-child(5),
+.course-contest-table th:nth-child(6),
+.course-contest-table td:nth-child(6) {
+    min-width: 135px;
+    white-space: nowrap;
+}
+
+.course-contest-table th:nth-child(7),
+.course-contest-table td:nth-child(7) {
+    min-width: 75px;
+    white-space: nowrap;
+}
+
+.course-contest-table th:nth-child(8),
+.course-contest-table td:nth-child(8) {
+    min-width: 300px;
+    white-space: nowrap;
+}
+
+.course-contest-table .button {
+    white-space: nowrap;
+    margin-bottom: 0;
+}
+
+.course-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+}

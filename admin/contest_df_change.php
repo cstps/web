@@ -1,7 +1,14 @@
 <?php require_once("admin-header.php");
 require_once("../include/check_get_key.php");
 $cid=intval($_GET['cid']);
-if(!(isset($_SESSION[$OJ_NAME.'_'."m$cid"]) || isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']))) exit();
+
+if (!(
+    isset($_SESSION[$OJ_NAME.'_m'.$cid]) ||
+    isset($_SESSION[$OJ_NAME.'_administrator'])
+)) {
+    exit();
+}
+
 $sql="select `defunct` FROM `contest` WHERE `contest_id`=?";
 $result=pdo_query($sql,$cid);
 $num=count($result);

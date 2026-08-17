@@ -4,6 +4,9 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 
+require_once('./include/course_functions.inc.php');
+require_once('./include/contest_access.inc.php');
+
 $view_title = $MSG_SUBMIT;
 
 
@@ -26,13 +29,44 @@ if (isset($_GET['id'])) {
 else if (isset($_GET['cid']) && isset($_GET['pid'])) {
 	$cid = intval($_GET['cid']);
 	$pid = intval($_GET['pid']);
+
+		// ============================================================
+	// Contest 공통 접근 권한 확인
+	// ============================================================
+
+	if (!contest_can_access($cid)) {
+
+		$view_errors = "Not Invited!";
+
+		require("template/".$OJ_TEMPLATE."/error.php");
+		exit(0);
+	}
+
+
 	// 대회 비공개로 변경될 경우 제출 문제에서 제출이 안되도록 코드 시작
-	$now = date('Y/m/d H:i:s D',time());
-	if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor']))
-		$sql = "SELECT langmask,private,defunct FROM `contest` WHERE `contest_id`=?";
-		
-	else
-		$sql = "SELECT langmask,private,defunct FROM `contest` WHERE `defunct`='N' AND `contest_id`=? AND (`start_time`<='$now' AND '$now'<`end_time`)";
+	$now = date('Y/m/d H:i:s D', time());
+
+	if (
+		isset($_SESSION[$OJ_NAME.'_administrator']) ||
+		isset($_SESSION[$OJ_NAME.'_m'.$cid])
+	) {
+
+		$sql =
+			"SELECT langmask, private, defunct
+			 FROM contest
+			 WHERE contest_id=?";
+
+	}
+	else {
+
+		$sql =
+			"SELECT langmask, private, defunct
+			 FROM contest
+			 WHERE defunct='N'
+			   AND contest_id=?
+			   AND start_time<='$now'
+			   AND '$now'<end_time";
+	}
 
 	$result = pdo_query($sql,$cid);
 	$rows_cnt = count($result);
@@ -41,14 +75,40 @@ else if (isset($_GET['cid']) && isset($_GET['pid'])) {
 		require("template/".$OJ_TEMPLATE."/error.php");
 		exit(0);
 	}
+
 	// 대회 비공개로 변경될 경우 제출 문제에서 제출이 안되도록 코드 끝
-	
+	$psql =
+		"SELECT problem_id
+		FROM contest_problem
+		WHERE contest_id=?
+		AND num=?";
 
-	$psql = "SELECT problem_id FROM contest_problem WHERE contest_id=? AND num=?";
-	$data = pdo_query($psql,$cid,$pid);
+	$data =
+		pdo_query(
+			$psql,
+			$cid,
+			$pid
+		);
 
-	$row = $data[0];
-	$problem_id = $row[0];
+	if (
+		!$data ||
+		count($data) != 1
+	) {
+
+		$view_errors =
+			"<h2>No Such Problem!</h2>";
+
+		require("template/".$OJ_TEMPLATE."/error.php");
+		exit(0);
+	}
+
+	$problem_id =
+		intval(
+			isset($data[0]['problem_id'])
+				? $data[0]['problem_id']
+				: $data[0][0]
+		);
+
 	$sample_sql = "SELECT p.sample_input, p.sample_output, p.problem_id FROM problem p WHERE problem_id = ? ";
 }
 else {

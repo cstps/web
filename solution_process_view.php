@@ -4,6 +4,8 @@ require_once('./include/db_info.inc.php');
 require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
+// Course 권한 확인용
+require_once('./include/course_functions.inc.php');
 
 $view_title = "문제 해결 과정";
 
@@ -311,6 +313,114 @@ if ($contest_id > 0) {
         );
 }
 
+// ============================================================
+// Course를 통한 학생 해결과정 조회 권한
+//
+// URL 예:
+// solution_process_view.php?sid=151043&course_id=1
+//
+// 다음 조건을 모두 만족해야 한다.
+//
+// 1. 실제 존재하는 course_id
+// 2. 현재 사용자가 해당 Course에 접근 가능
+// 3. 이 제출 학생이 해당 Course 학생
+// 4. 이 제출의 contest가 해당 Course에 연결됨
+//
+// 단순히 course_id만 URL에 추가해서 다른 학생의 제출을
+// 열람하는 것을 방지한다.
+// ============================================================
+
+$is_course_process_viewer = false;
+
+$process_course_id =
+    isset($_GET['course_id'])
+        ? intval($_GET['course_id'])
+        : 0;
+
+
+if (
+    $process_course_id > 0 &&
+    $contest_id > 0 &&
+    $solution_user_id !== ''
+) {
+
+    // --------------------------------------------------------
+    // 먼저 현재 사용자가 해당 Course에 접근 가능한지 확인
+    // administrator / owner / teacher / assistant
+    // --------------------------------------------------------
+
+    if (course_can_access($process_course_id)) {
+
+        // ----------------------------------------------------
+        // 제출 학생 + Course + Contest 관계를 동시에 검증
+        // ----------------------------------------------------
+
+        $course_process_rows = pdo_query(
+            "SELECT 1
+
+               FROM course_student cs
+
+               INNER JOIN course_contest cc
+                 ON cc.course_id = cs.course_id
+
+              WHERE cs.course_id = ?
+                AND cs.user_id = ?
+                AND cc.contest_id = ?
+
+              LIMIT 1",
+            $process_course_id,
+            $solution_user_id,
+            $contest_id
+        );
+
+
+        if (
+            $course_process_rows &&
+            isset($course_process_rows[0])
+        ) {
+
+            $is_course_process_viewer = true;
+        }
+    }
+}
+
+// ============================================================
+// Course 교사 관찰 메모 관리 권한
+//
+// Course를 통한 정상적인 해결과정 접근인 경우에만 확인한다.
+//
+// 허용:
+// - administrator
+// - owner
+// - teacher
+//
+// 조회만 가능:
+// - assistant
+// ============================================================
+
+$can_manage_course_teacher_note = false;
+
+
+if (
+    $is_course_process_viewer &&
+    $process_course_id > 0
+) {
+
+    $course_role =
+        course_get_role(
+            $process_course_id
+        );
+
+
+    if (
+        $course_role === 'administrator' ||
+        $course_role === 'owner' ||
+        $course_role === 'teacher'
+    ) {
+
+        $can_manage_course_teacher_note = true;
+    }
+}
 
 // ============================================================
 // 7. 사고과정 열람 권한
@@ -331,7 +441,10 @@ $can_view_process = (
     $is_owner ||
     $is_admin ||
     $is_source_browser ||
-    $is_contest_manager
+    $is_contest_manager ||
+
+    // Course owner / teacher / assistant
+    $is_course_process_viewer
 );
 
 if (!$can_view_process) {
@@ -399,7 +512,8 @@ $is_note_contest_manager =
 $can_manage_teacher_note =
     (
         $is_note_admin ||
-        $is_note_contest_manager
+        $is_note_contest_manager ||
+        $can_manage_course_teacher_note
     );
 // ============================================================
 // 교사 관찰 메모 조회

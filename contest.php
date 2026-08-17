@@ -11,6 +11,10 @@ require_once('./include/memcache.php');
 require_once('./include/my_func.inc.php');
 require_once('./include/const.inc.php');
 require_once('./include/setlang.php');
+
+require_once('./include/course_functions.inc.php');
+require_once('./include/contest_access.inc.php');
+
 $view_title= $MSG_CONTEST;
 // 로그인 하기 전에는 대회정보가 안보이게
 if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
@@ -157,17 +161,22 @@ if (isset($_GET['cid'])) {
 		
 		$view_private = $row['private'];
 
-		if ($password!="" && $password==$row['password'])
-			$_SESSION[$OJ_NAME.'_'.'c'.$cid] = true;
+		if (
+			$password != "" &&
+			$password == $row['password']
+		) {
 
-		if ($row['private'] && !isset($_SESSION[$OJ_NAME.'_'.'c'.$cid]))
-			$contest_ok = false;
+			$_SESSION[
+				$OJ_NAME.'_contest_password_'.$cid
+			] = true;
+		}
 
-//		if($row['defunct']=='Y')  //defunct problem not in contest/exam list
-//			$contest_ok = false;
+		// ============================================================
+		// 공통 Contest 접근 권한 확인
+		// ============================================================
 
-		if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']))
-			$contest_ok = true;
+		$contest_ok =
+			contest_can_access($cid);
 		
 		// admin과  대회 생성자일 경우 대회시작전이라도 대회 정보 볼수 있게 수정
 		if ((!isset($_SESSION[$OJ_NAME.'_'.'administrator']) && !isset($_SESSION[$OJ_NAME.'_'."m$cid"]))&& $now<$start_time) {
