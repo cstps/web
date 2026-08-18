@@ -274,10 +274,41 @@ if (
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);
 }
+// ============================================================
+// 10. lesson_no 중복 확인
+//
+// 같은 Course 안에서는 동일한 차시 번호를 사용할 수 없다.
+// 현재 수정 중인 Contest 자신은 중복 검사에서 제외한다.
+// ============================================================
 
+$duplicate_lesson_rows = pdo_query(
+    "SELECT
+        contest_id
+     FROM course_contest
+     WHERE course_id = ?
+       AND lesson_no = ?
+       AND contest_id <> ?
+     LIMIT 1",
+    $course_id,
+    $lesson_no,
+    $contest_id
+);
+
+
+if (
+    $duplicate_lesson_rows &&
+    isset($duplicate_lesson_rows[0]['contest_id'])
+) {
+
+    $view_errors =
+        "<h2>".$lesson_no."차시는 이미 등록되어 있습니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
 
 // ============================================================
-// 10. Contest 기본 정보 수정
+// 11. Contest 기본 정보 수정
 // ============================================================
 
 pdo_query(
@@ -295,7 +326,7 @@ pdo_query(
 
 
 // ============================================================
-// 11. Course 차시 정보 수정
+// 12. Course 차시 정보 수정
 // ============================================================
 
 pdo_query(
@@ -313,7 +344,7 @@ pdo_query(
 
 
 // ============================================================
-// 12. Course 화면으로 복귀
+// 13. Course 화면으로 복귀
 // ============================================================
 
 header(

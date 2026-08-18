@@ -56,12 +56,10 @@
           <?php echo $MSG_USER."-".$MSG_ADMIN ?> <span class="caret"></span>
         </button>
         <div class="dropdown-menu">
-          <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])||isset( $_SESSION[$OJ_NAME.'_'.'password_setter'])){?>
                 <a class="dropdown-item btn-sm" href="user_list.php" target="main" title="<?php echo $MSG_HELP_USER_LIST?>"><b><?php echo $MSG_USER."-".$MSG_LIST?></b></a>
                 <a class="dropdown-item btn-sm" href="user_add.php" target="main" title="<?php echo $MSG_HELP_USER_ADD?>"><b><?php echo $MSG_USER."-".$MSG_ADD?></b></a>
                 <a class="dropdown-item btn-sm" href="changepass.php" target="main" title="<?php echo $MSG_HELP_SETPASSWORD?>"><b><?php echo $MSG_USER."-".$MSG_SETPASSWORD?></b></a>
                 <a class="dropdown-item btn-sm" href="school_admin.php" target="main" title="<?php echo $MSG_SCHOOL_MANAGE?>"><b><?php echo $MSG_USER."-".$MSG_SCHOOL_MANAGE?></b></a>
-          <?php }?>
           <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])){?>
                 <a class="dropdown-item btn-sm" href="privilege_list.php" target="main" title="<?php echo $MSG_HELP_PRIVILEGE_LIST?>"><b><?php echo $MSG_USER."-".$MSG_PRIVILEGE."-".$MSG_LIST?></b></a>
                 <a class="dropdown-item btn-sm" href="privilege_add.php" target="main" title="<?php echo $MSG_HELP_ADD_PRIVILEGE?>"><b><?php echo $MSG_USER."-".$MSG_PRIVILEGE."-".$MSG_ADD?></b></a>
@@ -112,6 +110,46 @@
         </div>
       </div>
     <?php }?>
+
+        <!-- 수업 관리 -->
+    <?php
+    if (
+        isset($_SESSION[$OJ_NAME.'_administrator']) ||
+        isset($_SESSION[$OJ_NAME.'_contest_creator'])
+    ) {
+    ?>
+
+      <div class="btn-group" role="menu">
+
+        <button
+          type="button"
+          class="btn btn-secondary dropdown-toggle btn-sm"
+          data-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          수업 관리
+          <span class="caret"></span>
+        </button>
+
+        <div class="dropdown-menu">
+
+          <a
+            class="dropdown-item btn-sm"
+            href="../course_list.php"
+            target="_top"
+            title="수업 관리"
+          >
+            <b>수업 목록</b>
+          </a>
+
+        </div>
+
+      </div>
+
+    <?php
+    }
+    ?>
 
     <!-- 시스템 관리 -->
     <?php if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'vip'])){?>

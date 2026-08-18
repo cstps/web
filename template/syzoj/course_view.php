@@ -114,11 +114,119 @@ include("template/$OJ_TEMPLATE/header.php");
             ?>
         </a>
 
+
+
+        <?php
+        if ($view_can_manage_teachers) {
+        ?>
+
+            <a
+                class="ui teal basic button"
+                href="course_teachers.php?course_id=<?php echo intval($course_id); ?>"
+            >
+                <i class="user tie icon"></i>
+                교사 관리
+            </a>
+
+        <?php
+        }
+        ?>
+        <?php
+        if ($view_can_edit) {
+        ?>
+
+            <a
+                class="ui basic button"
+                href="course_edit.php?course_id=<?php echo intval($course_id); ?>"
+            >
+                <i class="edit icon"></i>
+                수업 정보 수정
+            </a>
+
+        <?php
+        }
+        ?>
+        <?php
+        if ($view_can_edit) {
+        ?>
+
+            <form
+                method="post"
+                action="course_status.php"
+                style="display:inline;"
+                onsubmit="return confirm(
+                    '<?php
+                    if (intval($view_course['status']) === 1) {
+                        echo '이 수업을 종료하시겠습니까?';
+                    }
+                    else {
+                        echo '이 수업을 다시 시작하시겠습니까?';
+                    }
+                    ?>'
+                );"
+            >
+
+                <?php include("./csrf.php"); ?>
+
+                <input
+                    type="hidden"
+                    name="course_id"
+                    value="<?php echo intval($course_id); ?>"
+                >
+
+                <?php
+                if (intval($view_course['status']) === 1) {
+                ?>
+
+                    <input
+                        type="hidden"
+                        name="status"
+                        value="0"
+                    >
+
+                    <button
+                        type="submit"
+                        class="ui red basic button"
+                    >
+                        <i class="stop icon"></i>
+                        수업 종료
+                    </button>
+
+                <?php
+                }
+                else {
+                ?>
+
+                    <input
+                        type="hidden"
+                        name="status"
+                        value="1"
+                    >
+
+                    <button
+                        type="submit"
+                        class="ui green basic button"
+                    >
+                        <i class="play icon"></i>
+                        수업 재개
+                    </button>
+
+                <?php
+                }
+                ?>
+
+            </form>
+
+        <?php
+        }
+        ?>
     </div>
 
+    
+
     <!-- ======================================================
-         요약
-         ====================================================== -->
+    요약
+    ====================================================== -->
 
     <div class="ui three statistics">
 
@@ -347,7 +455,7 @@ include("template/$OJ_TEMPLATE/header.php");
                     <td>
                         <?php
                         echo intval($contest['lesson_no']);
-                        ?>차시
+                        ?>
                     </td>
 
                     <td>

@@ -32,6 +32,16 @@ $user_id = $_SESSION[$OJ_NAME.'_user_id'];
 $is_admin =
     isset($_SESSION[$OJ_NAME.'_administrator']);
 
+
+// ============================================================
+// Course 생성 권한
+// ============================================================
+
+$view_can_create_course =
+    isset($_SESSION[$OJ_NAME.'_administrator']) ||
+    isset($_SESSION[$OJ_NAME.'_contest_creator']);
+
+    
 // ============================================================
 // 3. 접근 가능한 Course 목록 조회
 // ============================================================

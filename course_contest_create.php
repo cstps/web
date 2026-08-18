@@ -416,9 +416,40 @@ if (empty($problems_to_copy)) {
     exit(0);
 }
 
+// ============================================================
+// 14. lesson_no 중복 확인
+//
+// 같은 Course 안에서는 동일한 차시 번호를 사용할 수 없다.
+// status=0인 제거된 차시도 복원 가능하므로 중복으로 본다.
+// ============================================================
+
+$duplicate_lesson_rows = pdo_query(
+    "SELECT
+        contest_id
+     FROM course_contest
+     WHERE course_id = ?
+       AND lesson_no = ?
+     LIMIT 1",
+    $course_id,
+    $lesson_no
+);
+
+
+if (
+    $duplicate_lesson_rows &&
+    isset($duplicate_lesson_rows[0]['contest_id'])
+) {
+
+    $view_errors =
+        "<h2>".$lesson_no."차시는 이미 등록되어 있습니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
+
 
 // ============================================================
-// 14. 표시 순서 계산
+// 15. 표시 순서 계산
 //
 // 기존 차시:
 // 10, 20, 30 ...
@@ -448,7 +479,7 @@ if ($sort_order <= 0) {
 
 
 // ============================================================
-// 15. 새 Contest 기본 설정
+// 16. 새 Contest 기본 설정
 // ============================================================
 
 $codevisible =
@@ -479,7 +510,7 @@ $password = '';
 
 
 // ============================================================
-// 16. Contest 생성
+// 17. Contest 생성
 // ============================================================
 
 $new_contest_id = 0;
@@ -535,7 +566,7 @@ try {
 
 
     // ========================================================
-    // 17. 선택 문제 복사
+    // 18. 선택 문제 복사
     //
     // 새 Contest에서는 선택된 문제 순서대로
     // num = 0, 1, 2 ... 재부여
@@ -567,7 +598,7 @@ try {
 
 
     // ========================================================
-    // 18. 생성 교사에게 Contest 관리 권한 부여
+    // 19. 생성 교사에게 Contest 관리 권한 부여
     // ========================================================
 
     pdo_query(
@@ -587,7 +618,73 @@ try {
     ] = true;
 
     // ========================================================
-    // 19. Course 학생에게 Contest 참가 권한 부여
+    // Course 담당 교사에게 Contest 관리 권한 부여
+    //
+    // 활성 상태의 teacher 계정에게
+    // 새 Course Contest의 m{cid} 권한을 부여한다.
+    // ========================================================
+
+    $course_teacher_rows = pdo_query(
+        "SELECT
+            user_id,
+            role
+        FROM course_teacher
+        WHERE course_id = ?
+        AND status = 1
+        ORDER BY user_id",
+        $course_id
+    );
+
+
+    if (!is_array($course_teacher_rows)) {
+        $course_teacher_rows = array();
+    }
+
+
+    foreach ($course_teacher_rows as $teacher) {
+
+        if (
+            !isset($teacher['user_id']) ||
+            trim($teacher['user_id']) === ''
+        ) {
+            continue;
+        }
+
+
+        $teacher_user_id =
+            trim($teacher['user_id']);
+
+
+        // 생성자는 위에서 이미 권한을 부여했으므로 제외
+        if ($teacher_user_id === $user_id) {
+            continue;
+        }
+
+
+        pdo_query(
+            "INSERT INTO privilege
+            (
+                user_id,
+                rightstr
+            )
+            SELECT ?, ?
+            WHERE NOT EXISTS
+            (
+                SELECT 1
+                FROM privilege
+                WHERE user_id = ?
+                AND rightstr = ?
+            )",
+            $teacher_user_id,
+            "m".$new_contest_id,
+            $teacher_user_id,
+            "m".$new_contest_id
+        );
+    }
+
+
+    // ========================================================
+    // 20. Course 학생에게 Contest 참가 권한 부여
     // ========================================================
 
     $course_student_rows = pdo_query(
@@ -629,7 +726,7 @@ try {
     }
 
     // ========================================================
-    // 20. Course ↔ Contest 연결
+    // 21. Course ↔ Contest 연결
     // ========================================================
 
     pdo_query(
@@ -711,7 +808,7 @@ catch (Exception $e) {
 
 
 // ============================================================
-// 21. 생성 완료
+// 22. 생성 완료
 // ============================================================
 
 header(

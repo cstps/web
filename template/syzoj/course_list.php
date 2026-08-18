@@ -21,6 +21,25 @@ include("template/$OJ_TEMPLATE/header.php");
 
     </div>
 
+    <?php
+    if ($view_can_create_course) {
+    ?>
+
+        <div class="course-actions">
+
+            <a
+                class="ui teal button"
+                href="course_add.php"
+            >
+                <i class="plus icon"></i>
+                새 수업 만들기
+            </a>
+
+        </div>
+
+    <?php
+    }
+    ?>
 
     <?php
     // ========================================================
