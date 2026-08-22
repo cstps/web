@@ -77,47 +77,25 @@ include("template/$OJ_TEMPLATE/header.php");
 
             </div>
 
-
-            <div class="field">
-
-                <label>
-                    차시 제목
-                </label>
-
-                <input
-                    type="text"
-                    name="contest_title"
-                    maxlength="100"
-                    value="<?php
-                        echo htmlspecialchars(
-                            $view_contest['title'],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
-                    ?>"
-                    required
-                >
-
-            </div>
-
-
-            <div class="two fields">
+            <?php
+            if ($view_link_type === 'created') {
+            ?>
 
                 <div class="field">
 
                     <label>
-                        시작 시간
+                        차시 제목
                     </label>
 
                     <input
-                        type="datetime-local"
-                        name="start_time"
+                        type="text"
+                        name="contest_title"
+                        maxlength="100"
                         value="<?php
-                            echo date(
-                                'Y-m-d\TH:i',
-                                strtotime(
-                                    $view_contest['start_time']
-                                )
+                            echo htmlspecialchars(
+                                $view_contest['title'],
+                                ENT_QUOTES,
+                                'UTF-8'
                             );
                         ?>"
                         required
@@ -126,71 +104,170 @@ include("template/$OJ_TEMPLATE/header.php");
                 </div>
 
 
+                <div class="two fields">
+
+                    <div class="field">
+
+                        <label>
+                            시작 시간
+                        </label>
+
+                        <input
+                            type="datetime-local"
+                            name="start_time"
+                            value="<?php
+                                echo date(
+                                    'Y-m-d\TH:i',
+                                    strtotime(
+                                        $view_contest['start_time']
+                                    )
+                                );
+                            ?>"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label>
+                            종료 시간
+                        </label>
+
+                        <input
+                            type="datetime-local"
+                            name="end_time"
+                            value="<?php
+                                echo date(
+                                    'Y-m-d\TH:i',
+                                    strtotime(
+                                        $view_contest['end_time']
+                                    )
+                                );
+                            ?>"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+            <?php
+            }
+            else {
+            ?>
+
+                <div class="ui warning message">
+
+                    <div class="header">
+                        기존 대회 연결 차시
+                    </div>
+
+                    기존 대회 번호
+                    <strong>
+                        <?php echo intval($view_contest['contest_id']); ?>
+                    </strong>
+                    의 제목과 진행 시간은 Course에서 변경하지 않습니다.
+
+                </div>
+
+
                 <div class="field">
 
                     <label>
-                        종료 시간
+                        기존 대회 제목
                     </label>
 
                     <input
-                        type="datetime-local"
-                        name="end_time"
+                        type="text"
                         value="<?php
-                            echo date(
-                                'Y-m-d\TH:i',
-                                strtotime(
-                                    $view_contest['end_time']
-                                )
+                            echo htmlspecialchars(
+                                $view_contest['title'],
+                                ENT_QUOTES,
+                                'UTF-8'
                             );
                         ?>"
-                        required
+                        readonly
                     >
 
                 </div>
 
-            </div>
+
+                <div class="two fields">
+
+                    <div class="field">
+
+                        <label>
+                            시작 시간
+                        </label>
+
+                        <input
+                            type="text"
+                            value="<?php
+                                echo htmlspecialchars(
+                                    $view_contest['start_time'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                            ?>"
+                            readonly
+                        >
+
+                    </div>
 
 
-            <div class="field">
+                    <div class="field">
 
-                <label>
-                    공개 상태
-                </label>
+                        <label>
+                            종료 시간
+                        </label>
 
-                <select
-                    name="visible"
-                    class="ui dropdown"
-                >
+                        <input
+                            type="text"
+                            value="<?php
+                                echo htmlspecialchars(
+                                    $view_contest['end_time'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                            ?>"
+                            readonly
+                        >
 
-                    <option
-                        value="1"
-                        <?php
-                        echo intval($view_contest['visible']) === 1
-                            ? 'selected'
-                            : '';
-                        ?>
-                    >
-                        공개
-                    </option>
+                    </div>
 
-                    <option
-                        value="0"
-                        <?php
-                        echo intval($view_contest['visible']) === 0
-                            ? 'selected'
-                            : '';
-                        ?>
-                    >
-                        숨김
-                    </option>
+                </div>
 
-                </select>
+            <?php
+            }
+            ?>
 
-            </div>
+
+            <div class="ui info message">
+
+            현재 공개 상태:
+            <strong>
+                <?php
+                echo intval($view_contest['visible']) === 1
+                    ? '공개'
+                    : '숨김';
+                ?>
+            </strong>
+
+            <br>
+
+            공개·숨김 변경은 수업 화면의 공개 상태 버튼에서
+            처리합니다.
+
+        </div>
 
 
             <?php
-            if (!empty($view_contest['source_contest_id'])) {
+            if (
+                $view_link_type === 'created' &&
+                !empty($view_contest['source_contest_id'])
+            ) {
             ?>
 
                 <div class="ui info message">

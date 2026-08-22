@@ -70,15 +70,16 @@ if (
 // ============================================================
 // 4. Course ↔ Contest 연결 확인
 // ============================================================
-
 $link_rows = pdo_query(
     "SELECT
         cc.id,
         cc.course_id,
         cc.contest_id,
         cc.source_contest_id,
+        cc.link_type,
         cc.lesson_no,
         cc.visible,
+        cc.status,
 
         c.title
 
@@ -112,8 +113,58 @@ if (
 $view_contest = $link_rows[0];
 
 
+$view_contest = $link_rows[0];
+
+
 // ============================================================
-// 5. Course 정보
+// 5. 차시 활성 상태 및 연결 유형 확인
+// ============================================================
+
+if (intval($view_contest['status']) !== 1) {
+
+    $view_errors =
+        "<h2>제거된 차시의 문제 구성은 수정할 수 없습니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
+
+
+$link_type =
+    isset($view_contest['link_type'])
+        ? $view_contest['link_type']
+        : '';
+
+
+if (
+    !in_array(
+        $link_type,
+        array('created', 'linked'),
+        true
+    )
+) {
+
+    $view_errors =
+        "<h2>차시 연결 유형이 올바르지 않습니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
+
+
+if ($link_type !== 'created') {
+
+    $view_errors =
+        "<h2>기존 대회로 연결된 차시는 문제 구성을 변경할 수 없습니다.</h2>".
+        "<p>원본 대회의 문제 구성은 그대로 유지됩니다.</p>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
+
+
+// ============================================================
+// 6. Course 정보
 // ============================================================
 
 $course_rows = pdo_query(
@@ -155,7 +206,7 @@ if (intval($view_course['status']) !== 1) {
 
 
 // ============================================================
-// 6. 현재 Course Contest 문제 구성
+// 7. 현재 Course Contest 문제 구성
 // ============================================================
 
 $view_current_problems = pdo_query(
@@ -189,7 +240,7 @@ if (!is_array($view_current_problems)) {
 
 
 // ============================================================
-// 7. 현재 문제 ID Map
+// 8. 현재 문제 ID Map
 // ============================================================
 
 $view_current_problem_map = array();
@@ -210,7 +261,7 @@ foreach ($view_current_problems as $problem) {
 
 
 // ============================================================
-// 8. 원본 Contest 문제 목록
+// 9. 원본 Contest 문제 목록
 //
 // source_contest_id가 있는 경우:
 // 원본 Contest의 문제들을 추가 후보로 표시한다.
@@ -258,7 +309,7 @@ if ($source_contest_id > 0) {
 
 
 // ============================================================
-// 9. 화면 출력
+// 10. 화면 출력
 // ============================================================
 
 require(

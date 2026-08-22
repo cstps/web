@@ -154,7 +154,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
             <table
                 id="course-student-table"
-                class="ui celled striped table"
+                class="ui compact celled striped table"
             >
 
                 <thead>
@@ -163,11 +163,15 @@ include("template/$OJ_TEMPLATE/header.php");
                         <th>아이디</th>
                         <th>이름</th>
                         <th>학교</th>
-                        <th class="center aligned">수업 해결</th>
-                        <th class="center aligned">수업 제출</th>
+                        <th class="center aligned course-student-action-column">수업 해결</th>
+                        <th class="center aligned course-student-action-column">수업 제출</th>
                         <th class="center aligned">상태</th>
-                        <th class="two wide center aligned">학습현황</th>
-                        <th class="two wide center aligned">관리</th>
+                        <th class="center aligned course-student-action-column">
+                            학습현황
+                        </th>
+                        <th class="center aligned course-student-action-column">
+                            관리
+                        </th>
                         <th>등록일</th>
                         <th>종료일</th>
                         
@@ -215,7 +219,7 @@ include("template/$OJ_TEMPLATE/header.php");
                                 style="margin:0;"
                             >
 
-                                <?php include("./csrf.php"); ?>
+                                <?php echo $view_csrf_input; ?>
 
                                 <input
                                     type="hidden"
@@ -342,7 +346,7 @@ include("template/$OJ_TEMPLATE/header.php");
                         </td>
 
 
-                        <td class="center aligned">
+                        <td class="center aligned course-student-action-column">
                             <?php
                             echo isset($student['course_solved_count'])
                                 ? intval($student['course_solved_count'])
@@ -351,7 +355,7 @@ include("template/$OJ_TEMPLATE/header.php");
                         </td>
 
 
-                        <td class="center aligned">
+                        <td class="center aligned course-student-action-column">
                             <?php
                             echo isset($student['course_submit_count'])
                                 ? intval($student['course_submit_count'])
@@ -389,7 +393,7 @@ include("template/$OJ_TEMPLATE/header.php");
                         추가: 학생 학습현황
                         ======================================================== -->
 
-                        <td class="center aligned">
+                        <td class="center aligned course-student-action-column">
 
                             <a
                                 class="ui tiny teal basic button course-action-button"
@@ -403,7 +407,7 @@ include("template/$OJ_TEMPLATE/header.php");
                             </a>
 
                         </td>
-                        <td class="center aligned">
+                        <td class="center aligned course-student-action-column">
 
                             <?php
                             if (
@@ -423,7 +427,7 @@ include("template/$OJ_TEMPLATE/header.php");
                                         onsubmit="return confirm('이 학생의 수강을 종료하시겠습니까?');"
                                     >
 
-                                        <?php include("./csrf.php"); ?>
+                                        <?php echo $view_csrf_input; ?>
 
                                         <input
                                             type="hidden"
@@ -464,7 +468,7 @@ include("template/$OJ_TEMPLATE/header.php");
                                         onsubmit="return confirm('이 학생을 다시 수강 등록하시겠습니까?');"
                                     >
 
-                                        <?php include("./csrf.php"); ?>
+                                        <?php echo $view_csrf_input; ?>
 
                                         <input
                                             type="hidden"
@@ -572,7 +576,7 @@ include("template/$OJ_TEMPLATE/header.php");
                     action="course_students.php?course_id=<?php echo intval($course_id); ?>"
                 >
 
-                    <?php include("./csrf.php"); ?>
+                    <?php echo $view_csrf_input; ?>
 
                     <input
                         type="hidden"
@@ -840,7 +844,7 @@ student03	3
                 action="course_students.php?course_id=<?php echo intval($course_id); ?>"
             >
 
-                <?php include("./csrf.php"); ?>
+                <?php echo $view_csrf_input; ?>
 
                 <input
                     type="hidden"

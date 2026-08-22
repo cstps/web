@@ -7,44 +7,27 @@ include("template/$OJ_TEMPLATE/header.php");
     href="template/<?php echo $OJ_TEMPLATE; ?>/css/course.css"
 >
 
+
 <div class="course-page">
 
     <div class="course-page-header">
 
         <h1 class="ui header">
-            수업 관리
+            내 수업
         </h1>
 
         <div class="course-page-description">
-            담당하고 있는 수업과 학생, 수업 차시를 확인할 수 있습니다.
+            수강 중인 수업과 학습 진행 상황을 확인할 수 있습니다.
         </div>
 
     </div>
 
-    <?php
-    if ($view_can_create_course) {
-    ?>
-
-        <div class="course-actions">
-
-            <a
-                class="ui teal button"
-                href="course_add.php"
-            >
-                <i class="plus icon"></i>
-                새 수업 만들기
-            </a>
-
-        </div>
-
-    <?php
-    }
-    ?>
 
     <?php
     // ========================================================
-    // 수업이 없는 경우
+    // 수강 중인 Course가 없는 경우
     // ========================================================
+
     if (empty($view_courses)) {
     ?>
 
@@ -55,7 +38,7 @@ include("template/$OJ_TEMPLATE/header.php");
             </div>
 
             <p>
-                현재 접근할 수 있는 수업이 없습니다.
+                현재 수강 중인 수업이 없습니다.
             </p>
 
         </div>
@@ -64,7 +47,6 @@ include("template/$OJ_TEMPLATE/header.php");
     }
     else {
     ?>
-
 
         <div class="course-list">
 
@@ -77,55 +59,20 @@ include("template/$OJ_TEMPLATE/header.php");
                 $course_status =
                     intval($course['status']);
 
-                $course_role =
-                    isset($course['course_role'])
-                        ? $course['course_role']
-                        : '';
+                $lesson_count =
+                    intval($course['lesson_count']);
 
-                $student_count =
-                    intval($course['student_count']);
+                $ongoing_lesson_count =
+                    intval($course['ongoing_lesson_count']);
 
-                $contest_count =
-                    intval($course['contest_count']);
+                $problem_count =
+                    intval($course['problem_count']);
 
-                $visible_contest_count =
-                    isset($course['visible_contest_count'])
-                        ? intval($course['visible_contest_count'])
-                        : 0;
+                $submission_count =
+                    intval($course['submission_count']);
 
-                $hidden_contest_count =
-                    max(
-                        0,
-                        $contest_count - $visible_contest_count
-                    );
-
-
-                // ------------------------------------------------
-                // 역할 표시명
-                // ------------------------------------------------
-
-                switch ($course_role) {
-
-                    case 'administrator':
-                        $role_label = '관리자';
-                        break;
-
-                    case 'owner':
-                        $role_label = '책임교사';
-                        break;
-
-                    case 'teacher':
-                        $role_label = '담당교사';
-                        break;
-
-                    case 'assistant':
-                        $role_label = '보조교사';
-                        break;
-
-                    default:
-                        $role_label = '-';
-                        break;
-                }
+                $solved_count =
+                    intval($course['solved_count']);
 
 
                 // ------------------------------------------------
@@ -135,26 +82,58 @@ include("template/$OJ_TEMPLATE/header.php");
                 $semester =
                     intval($course['semester']);
 
-                if ($semester == 1) {
-                    $semester_label = '1학기';
+                if ($semester === 1) {
+
+                    $semester_label =
+                        '1학기';
+
                 }
-                elseif ($semester == 2) {
-                    $semester_label = '2학기';
+                elseif ($semester === 2) {
+
+                    $semester_label =
+                        '2학기';
+
                 }
                 elseif ($semester > 0) {
-                    $semester_label = $semester.'학기';
+
+                    $semester_label =
+                        $semester.'학기';
+
                 }
                 else {
-                    $semester_label = '학기 구분 없음';
+
+                    $semester_label =
+                        '학기 구분 없음';
                 }
 
 
                 // ------------------------------------------------
-                // Course 상태
+                // 해결률 계산
+                // ------------------------------------------------
+
+                $progress_percent = 0;
+
+                if ($problem_count > 0) {
+
+                    $progress_percent =
+                        intval(
+                            round(
+                                ($solved_count / $problem_count) * 100
+                            )
+                        );
+
+                    if ($progress_percent > 100) {
+                        $progress_percent = 100;
+                    }
+                }
+
+
+                // ------------------------------------------------
+                // 종료된 Course 카드 표시
                 // ------------------------------------------------
 
                 $card_class =
-                    ($course_status == 1)
+                    ($course_status === 1)
                         ? ''
                         : ' inactive';
             ?>
@@ -179,15 +158,22 @@ include("template/$OJ_TEMPLATE/header.php");
 
                         <div class="meta">
 
-                            <?php echo intval($course['school_year']); ?>학년도
+                            <?php
+                            echo intval(
+                                $course['school_year']
+                            );
+                            ?>학년도
 
                             ·
 
-                            <?php echo htmlspecialchars(
+                            <?php
+                            echo htmlspecialchars(
                                 $semester_label,
                                 ENT_QUOTES,
                                 'UTF-8'
-                            ); ?>
+                            );
+                            ?>
+
 
                             <?php
                             if (!empty($course['school'])) {
@@ -237,39 +223,11 @@ include("template/$OJ_TEMPLATE/header.php");
 
                             <span class="course-meta-item">
 
-                                <i class="user icon"></i>
-
-                                역할:
-                                <strong>
-                                    <?php echo htmlspecialchars(
-                                        $role_label,
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    ); ?>
-                                </strong>
-
-                            </span>
-
-
-                            <span class="course-meta-item">
-
-                                <i class="users icon"></i>
-
-                                학생:
-                                <strong>
-                                    <?php echo $student_count; ?>
-                                </strong>명
-
-                            </span>
-
-
-                            <span class="course-meta-item">
-
                                 <i class="list alternate icon"></i>
 
-                                전체 차시:
+                                공개 차시:
                                 <strong>
-                                    <?php echo $contest_count; ?>
+                                    <?php echo $lesson_count; ?>
                                 </strong>개
 
                             </span>
@@ -277,24 +235,26 @@ include("template/$OJ_TEMPLATE/header.php");
 
                             <span class="course-meta-item">
 
-                                <i class="eye icon"></i>
+                                <i class="check circle icon"></i>
 
-                                공개:
+                                문제 해결:
                                 <strong>
-                                    <?php echo $visible_contest_count; ?>
-                                </strong>개
+                                    <?php echo $solved_count; ?>
+                                </strong>
+                                /
+                                <?php echo $problem_count; ?>
 
                             </span>
 
 
                             <span class="course-meta-item">
 
-                                <i class="eye slash icon"></i>
+                                <i class="paper plane icon"></i>
 
-                                숨김:
+                                제출:
                                 <strong>
-                                    <?php echo $hidden_contest_count; ?>
-                                </strong>개
+                                    <?php echo $submission_count; ?>
+                                </strong>회
 
                             </span>
 
@@ -304,7 +264,7 @@ include("template/$OJ_TEMPLATE/header.php");
                                 상태:
 
                                 <?php
-                                if ($course_status == 1) {
+                                if ($course_status === 1) {
                                 ?>
 
                                     <span class="ui tiny green label">
@@ -329,13 +289,72 @@ include("template/$OJ_TEMPLATE/header.php");
                         </div>
 
 
+                        <?php
+                        if (
+                            $course_status === 1 &&
+                            $ongoing_lesson_count > 0
+                        ) {
+                        ?>
+
+                            <div class="ui small teal message">
+
+                                <i class="play circle icon"></i>
+
+                                현재 진행 중인 차시가
+
+                                <strong>
+                                    <?php echo $ongoing_lesson_count; ?>
+                                </strong>개 있습니다.
+
+                            </div>
+
+                        <?php
+                        }
+                        ?>
+
+
+                        <div class="ui tiny progress">
+
+                            <div
+                                class="bar"
+                                style="width: <?php echo $progress_percent; ?>%;"
+                            ></div>
+
+                            <div class="label">
+
+                                문제 해결률
+
+                                <?php echo $progress_percent; ?>%
+
+                            </div>
+
+                        </div>
+
+
                         <div class="course-actions">
 
                             <a
                                 class="ui small blue button"
-                                href="course_view.php?course_id=<?php echo $course_id; ?>"
+                                href="my_course_view.php?course_id=<?php echo $course_id; ?>"
                             >
-                                수업 보기
+
+                                <?php
+                                if ($course_status === 1) {
+                                ?>
+
+                                    수업 들어가기
+
+                                <?php
+                                }
+                                else {
+                                ?>
+
+                                    지난 수업 보기
+
+                                <?php
+                                }
+                                ?>
+
                             </a>
 
                         </div>
@@ -344,13 +363,11 @@ include("template/$OJ_TEMPLATE/header.php");
 
                 </div>
 
-
             <?php
             }
             ?>
 
         </div>
-
 
     <?php
     }

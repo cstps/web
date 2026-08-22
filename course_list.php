@@ -80,7 +80,15 @@ if ($is_admin) {
                 FROM course_contest cc
                 WHERE cc.course_id = c.course_id
                   AND cc.status = 1
-            ) AS contest_count
+            ) AS contest_count,
+
+            (
+                SELECT COUNT(*)
+                FROM course_contest cc
+                WHERE cc.course_id = c.course_id
+                  AND cc.status = 1
+                  AND cc.visible = 1
+            ) AS visible_contest_count
 
         FROM course c
 
@@ -127,7 +135,15 @@ if ($is_admin) {
                 FROM course_contest cc
                 WHERE cc.course_id = c.course_id
                   AND cc.status = 1
-            ) AS contest_count
+            ) AS contest_count,
+
+            (
+                SELECT COUNT(*)
+                FROM course_contest cc
+                WHERE cc.course_id = c.course_id
+                  AND cc.status = 1
+                  AND cc.visible = 1
+            ) AS visible_contest_count
 
         FROM course c
 

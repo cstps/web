@@ -113,7 +113,21 @@ include_once("kindeditor.php") ;
           <pre style="width:80%;height:20%" cols=180 rows=3 id="front_code" ><?php echo htmlentities($row['front_code'],ENT_QUOTES,"UTF-8")?></pre><br>
           <input type=hidden id="front_code_source" name=front_code value=""/>
         <?php }else{ ?>
-          <textarea style="width:80%;height:20%" cols=180 rows=4 id="front_code" name=front_code></textarea><br>
+          <textarea
+              style="width:80%;height:20%"
+              cols="180"
+              rows="4"
+              id="front_code"
+              name="front_code"
+          ><?php
+              echo htmlspecialchars(
+                  isset($row['front_code'])
+                      ? $row['front_code']
+                      : '',
+                  ENT_QUOTES,
+                  'UTF-8'
+              );
+          ?></textarea><br>
         <?php }?>
       </p>
         <p align=left> 
@@ -122,7 +136,21 @@ include_once("kindeditor.php") ;
           <pre style="width:80%;height:20%" cols=180 rows=5 id="rear_code"><?php echo htmlentities($row['rear_code'],ENT_QUOTES,"UTF-8")?></pre><br>
           <input type=hidden id="rear_code_source" name=rear_code value=""/>
         <?php }else{ ?>
-          <textarea style="width:80%;height:20%" cols=180 rows=4 id="rear_code" name=rear_code></textarea><br>
+          <textarea
+              style="width:80%;height:20%"
+              cols="180"
+              rows="4"
+              id="rear_code"
+              name="rear_code"
+          ><?php
+              echo htmlspecialchars(
+                  isset($row['rear_code'])
+                      ? $row['rear_code']
+                      : '',
+                  ENT_QUOTES,
+                  'UTF-8'
+              );
+          ?></textarea><br>
         <?php }?>
         </p>
         <p align=left> 
@@ -186,15 +214,40 @@ include_once("kindeditor.php") ;
       $creator = $_POST['creator'];
       $spj = $_POST['spj'];
 
-      // 앞뒤, 금지어, 포인트 추가
-      // 빈줄 제거
-      $front_code= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $_POST['front_code']);
-      $rear_code= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $_POST['rear_code']);
-      //$front_code = str_replace(",", "&#44;", $front_code);
-      //$rear_code = str_replace(",", "&#44;", $rear_code);
+     // 앞뒤 코드는 원문을 보존하고 줄바꿈 방식만 LF로 통일한다.
+      $front_code =
+          isset($_POST['front_code'])
+              ? $_POST['front_code']
+              : '';
 
-      $ban_code = $_POST['ban_code'];
-      $pro_point = $_POST['pro_point'];
+      $rear_code =
+          isset($_POST['rear_code'])
+              ? $_POST['rear_code']
+              : '';
+
+      $front_code =
+          str_replace(
+              array("\r\n", "\r"),
+              "\n",
+              $front_code
+          );
+
+      $rear_code =
+          str_replace(
+              array("\r\n", "\r"),
+              "\n",
+              $rear_code
+          );
+
+      $ban_code =
+          isset($_POST['ban_code'])
+              ? $_POST['ban_code']
+              : '';
+
+      $pro_point =
+          isset($_POST['pro_point'])
+              ? intval($_POST['pro_point'])
+              : 1;
 
       /* php 7.4 버전부터  get_magic_quotes_gpc() 삭제되어 false가 되어 더 이상 실행되지 않는다. 
       // DB작업을 하기 위해 쿼리를 작성할 때 따옴표가 문자열에 있으면 오류가 발생한다. 

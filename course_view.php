@@ -184,6 +184,7 @@ $view_contests = pdo_query(
         cc.id,
         cc.contest_id,
         cc.source_contest_id,
+        cc.link_type,
         cc.lesson_no,
         cc.sort_order,
         cc.visible,
@@ -223,6 +224,7 @@ $view_removed_contests = pdo_query(
         cc.id,
         cc.contest_id,
         cc.source_contest_id,
+        cc.link_type,
         cc.lesson_no,
         cc.sort_order,
         cc.visible,
@@ -258,6 +260,9 @@ if (!is_array($view_removed_contests)) {
 // 10. 화면 출력
 // ============================================================
 
-
+// 이 페이지의 모든 관리 폼이 공유할 CSRF 필드 1개 생성
+ob_start();
+include("./csrf.php");
+$view_csrf_input = ob_get_clean();
 
 require("template/".$OJ_TEMPLATE."/course_view.php");

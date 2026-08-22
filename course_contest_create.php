@@ -631,6 +631,7 @@ try {
         FROM course_teacher
         WHERE course_id = ?
         AND status = 1
+        AND role IN ('owner', 'teacher')
         ORDER BY user_id",
         $course_id
     );
@@ -735,6 +736,7 @@ try {
             course_id,
             contest_id,
             source_contest_id,
+            link_type,
             lesson_no,
             sort_order,
             visible,
@@ -742,7 +744,7 @@ try {
         )
         VALUES
         (
-            ?, ?, ?, ?, ?, 1, ?
+            ?, ?, ?, 'created', ?, ?, 1, ?
         )",
         $course_id,
         $new_contest_id,

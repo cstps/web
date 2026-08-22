@@ -245,9 +245,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $contest_rows = pdo_query(
                     "SELECT contest_id
-                     FROM course_contest
-                     WHERE course_id = ?
-                       AND status = 1",
+                    FROM course_contest
+                    WHERE course_id = ?
+                    AND status = 1
+                    AND link_type = 'created'",
                     $course_id
                 );
 
@@ -266,6 +267,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         $rightstr = "m".$cid;
 
+                        $right_rows = pdo_query(
+                            "SELECT 1
+                            FROM privilege
+                            WHERE user_id = ?
+                            AND rightstr = ?
+                            LIMIT 1",
+                            $teacher_user_id,
+                            $rightstr
+                        );
+
 
                         if (
                             !$right_rows ||
@@ -283,21 +294,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $rightstr
                             );
                         }
-
-
-                        if (!$right_rows) {
-
-                            pdo_query(
-                                "INSERT INTO privilege
-                                (
-                                    user_id,
-                                    rightstr
-                                )
-                                VALUES (?, ?)",
-                                $teacher_user_id,
-                                $rightstr
-                            );
-                        }
+                        
                     }
                 }
             }
@@ -318,6 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         contest_id
                     FROM course_contest
                     WHERE course_id = ?
+                    AND link_type = 'created'
                     ORDER BY contest_id",
                     $course_id
                 );

@@ -149,16 +149,23 @@ if (
 
 $link_rows = pdo_query(
     "SELECT
-        id,
-        source_contest_id
-     FROM course_contest
-     WHERE course_id = ?
-       AND contest_id = ?
+        cc.id,
+        cc.source_contest_id,
+        cc.link_type,
+        cc.status
+
+     FROM course_contest cc
+
+     INNER JOIN contest c
+       ON c.contest_id = cc.contest_id
+
+     WHERE cc.course_id = ?
+       AND cc.contest_id = ?
+
      LIMIT 1",
     $course_id,
     $contest_id
 );
-
 
 if (
     !$link_rows ||
@@ -166,7 +173,64 @@ if (
 ) {
 
     $view_errors =
-        "<h2>이 수업에 등록되지 않은 차시입니다.</h2>";
+        "<h2>이 수업에 등록되지 않았거나 실제 대회가 존재하지 않는 차시입니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
+
+
+// ============================================================
+// 8. 차시 활성 상태 확인
+// ============================================================
+
+if (intval($link_rows[0]['status']) !== 1) {
+
+    $view_errors =
+        "<h2>제거된 차시의 문제 구성은 수정할 수 없습니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
+
+
+// ============================================================
+// 9. 연결 유형 확인
+//
+// created:
+// Course에서 생성한 Contest이므로 문제 구성 수정 가능
+//
+// linked:
+// 기존 Contest 원본이므로 문제 구성 수정 금지
+// ============================================================
+
+$link_type =
+    isset($link_rows[0]['link_type'])
+        ? $link_rows[0]['link_type']
+        : '';
+
+
+if (
+    !in_array(
+        $link_type,
+        array('created', 'linked'),
+        true
+    )
+) {
+
+    $view_errors =
+        "<h2>차시 연결 유형이 올바르지 않습니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
+
+
+if ($link_type !== 'created') {
+
+    $view_errors =
+        "<h2>기존 대회로 연결된 차시는 문제 구성을 변경할 수 없습니다.</h2>".
+        "<p>원본 대회의 문제 구성과 제출 기록은 그대로 유지됩니다.</p>";
 
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);

@@ -83,13 +83,52 @@ if (
     exit(0);
 }
 
+// ============================================================
+// Course 존재 및 진행 상태 확인
+// ============================================================
+
+$course_rows = pdo_query(
+    "SELECT
+        course_id,
+        status
+     FROM course
+     WHERE course_id = ?
+     LIMIT 1",
+    $course_id
+);
+
+
+if (
+    !$course_rows ||
+    !isset($course_rows[0]['course_id'])
+) {
+
+    $view_errors =
+        "<h2>존재하지 않는 수업입니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
+
+
+if (intval($course_rows[0]['status']) !== 1) {
+
+    $view_errors =
+        "<h2>종료된 수업의 차시 공개 상태는 변경할 수 없습니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
 
 // ============================================================
 // 5. 해당 Contest가 실제 Course 소속인지 확인
 // ============================================================
 
 $rows = pdo_query(
-    "SELECT id
+    "SELECT
+        id,
+        status,
+        link_type
      FROM course_contest
      WHERE course_id = ?
        AND contest_id = ?
@@ -111,6 +150,21 @@ if (
     exit(0);
 }
 
+if (intval($rows[0]['status']) !== 1) {
+
+    $view_errors =
+        "<h2>제거된 차시의 공개 상태는 변경할 수 없습니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
+
+
+$link_type =
+    isset($rows[0]['link_type'])
+        ? trim($rows[0]['link_type'])
+        : 'created';
+
 
 // ============================================================
 // 6. 공개 상태 변경
@@ -120,7 +174,8 @@ pdo_query(
     "UPDATE course_contest
      SET visible = ?
      WHERE course_id = ?
-       AND contest_id = ?",
+       AND contest_id = ?
+       AND status = 1",
     $visible,
     $course_id,
     $contest_id
@@ -128,15 +183,24 @@ pdo_query(
 
 // ============================================================
 // 7. 학생 Contest 참가 권한 동기화
+//
+// created:
+// 기존 Course 전용 Contest 권한 처리 유지
+//
+// linked:
+// 공개 시 Course가 권한을 추가하고 추적
+// 숨김 시 Course가 추가했던 권한만 회수
 // ============================================================
 
 $student_rows = pdo_query(
     "SELECT user_id
      FROM course_student
      WHERE course_id = ?
-       AND status = 1",
+       AND status = 1
+     ORDER BY user_id",
     $course_id
 );
+
 
 if (!is_array($student_rows)) {
     $student_rows = array();
@@ -152,58 +216,106 @@ foreach ($student_rows as $student) {
         continue;
     }
 
+
     $student_user_id =
         trim($student['user_id']);
 
-    $rightstr =
-        "c".$contest_id;
-
 
     // --------------------------------------------------------
-    // 공개
-    // → 참가 권한 부여
+    // 기존 Contest 연결
     // --------------------------------------------------------
 
-    if ($visible === 1) {
+    if ($link_type === 'linked') {
 
-        $exists = pdo_query(
-            "SELECT 1
-             FROM privilege
-             WHERE user_id = ?
-               AND rightstr = ?
-             LIMIT 1",
-            $student_user_id,
-            $rightstr
-        );
+        if ($visible === 1) {
 
+            /*
+             * visible UPDATE가 먼저 실행되었으므로
+             * 공통 함수의 활성·공개 조건 검사를 통과한다.
+             */
+            course_grant_linked_student_right(
+                $course_id,
+                $contest_id,
+                $student_user_id
+            );
 
-        if (!$exists) {
+        } else {
 
-            pdo_query(
-                "INSERT INTO privilege
-                    (user_id, rightstr)
-                 VALUES (?, ?)",
-                $student_user_id,
-                $rightstr
+            /*
+             * Course가 실제 추가하고 추적 중인 권한만 회수한다.
+             * 학생이 원래 가지고 있던 권한은 삭제하지 않는다.
+             */
+            course_revoke_linked_student_right(
+                $course_id,
+                $contest_id,
+                $student_user_id
             );
         }
+
+
+        continue;
     }
 
 
     // --------------------------------------------------------
-    // 숨김
-    // → 참가 권한 제거
+    // Course에서 생성한 Contest
     // --------------------------------------------------------
 
-    else {
+    if ($link_type === 'created') {
 
-        pdo_query(
-            "DELETE FROM privilege
-             WHERE user_id = ?
-               AND rightstr = ?",
-            $student_user_id,
-            $rightstr
-        );
+        $rightstr =
+            "c".$contest_id;
+
+
+        // ----------------------------------------------------
+        // 공개
+        // ----------------------------------------------------
+
+        if ($visible === 1) {
+
+            $exists = pdo_query(
+                "SELECT 1
+                 FROM privilege
+                 WHERE user_id = ?
+                   AND rightstr = ?
+                   AND valuestr = 'true'
+                   AND defunct = 'N'
+                 LIMIT 1",
+                $student_user_id,
+                $rightstr
+            );
+
+
+            if (!$exists) {
+
+                pdo_query(
+                    "INSERT INTO privilege
+                    (
+                        user_id,
+                        rightstr,
+                        valuestr,
+                        defunct
+                    )
+                    VALUES (?, ?, 'true', 'N')",
+                    $student_user_id,
+                    $rightstr
+                );
+            }
+
+        } else {
+
+            // ------------------------------------------------
+            // 숨김
+            // ------------------------------------------------
+
+            pdo_query(
+                "DELETE FROM privilege
+                 WHERE user_id = ?
+                   AND rightstr = ?",
+                $student_user_id,
+                $rightstr
+            );
+        }
     }
 }
 

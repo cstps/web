@@ -86,7 +86,8 @@ if (
 $link_rows = pdo_query(
     "SELECT
         id,
-        status
+        status,
+        link_type
      FROM course_contest
      WHERE course_id = ?
        AND contest_id = ?
@@ -118,6 +119,26 @@ if (intval($link_rows[0]['status']) !== 0) {
     exit(0);
 }
 
+$link_type =
+    isset($link_rows[0]['link_type'])
+        ? trim($link_rows[0]['link_type'])
+        : '';
+
+
+if (
+    !in_array(
+        $link_type,
+        array('created', 'linked'),
+        true
+    )
+) {
+
+    $view_errors =
+        "<h2>차시 연결 유형이 올바르지 않습니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
 
 // ============================================================
 // 6. 차시 복원
@@ -132,7 +153,8 @@ pdo_query(
         status = 1,
         visible = 0
      WHERE course_id = ?
-       AND contest_id = ?",
+       AND contest_id = ?
+       AND status = 0",
     $course_id,
     $contest_id
 );
@@ -140,18 +162,37 @@ pdo_query(
 
 // ============================================================
 // 7. 현재 수강 중인 학생에게 Contest 참가권한 복원
+//
+// created:
+// - 현재 수강생에게 c{cid} 권한을 다시 부여한다.
+//
+// linked:
+// - 기존 Contest 참가권한을 변경하지 않는다.
 // ============================================================
 
-$student_rows = pdo_query(
-    "SELECT user_id
-     FROM course_student
-     WHERE course_id = ?
-       AND status = 1",
-    $course_id
-);
+// ============================================================
+// 7. created Contest 학생 참가권한 복원
+//
+// linked는 visible=0으로 복원되므로 권한을 부여하지 않는다.
+// 이후 공개할 때 추적형 권한을 부여한다.
+// ============================================================
+
+if ($link_type === 'created') {
+
+    $student_rows = pdo_query(
+        "SELECT user_id
+         FROM course_student
+         WHERE course_id = ?
+           AND status = 1
+         ORDER BY user_id",
+        $course_id
+    );
 
 
-if (is_array($student_rows)) {
+    if (!is_array($student_rows)) {
+        $student_rows = array();
+    }
+
 
     foreach ($student_rows as $student) {
 
@@ -161,6 +202,7 @@ if (is_array($student_rows)) {
         ) {
             continue;
         }
+
 
         $student_user_id =
             trim($student['user_id']);
@@ -174,6 +216,8 @@ if (is_array($student_rows)) {
              FROM privilege
              WHERE user_id = ?
                AND rightstr = ?
+               AND valuestr = 'true'
+               AND defunct = 'N'
              LIMIT 1",
             $student_user_id,
             $rightstr
@@ -184,15 +228,19 @@ if (is_array($student_rows)) {
 
             pdo_query(
                 "INSERT INTO privilege
-                    (user_id, rightstr)
-                 VALUES (?, ?)",
+                (
+                    user_id,
+                    rightstr,
+                    valuestr,
+                    defunct
+                )
+                VALUES (?, ?, 'true', 'N')",
                 $student_user_id,
                 $rightstr
             );
         }
     }
 }
-
 
 // ============================================================
 // 8. Course 화면으로 복귀

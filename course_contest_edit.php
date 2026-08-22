@@ -77,6 +77,7 @@ $rows = pdo_query(
         cc.course_id,
         cc.contest_id,
         cc.source_contest_id,
+        cc.link_type,
         cc.lesson_no,
         cc.sort_order,
         cc.visible,
@@ -92,6 +93,7 @@ $rows = pdo_query(
 
      WHERE cc.course_id = ?
        AND cc.contest_id = ?
+       AND cc.status = 1
 
      LIMIT 1",
     $course_id,
@@ -114,6 +116,26 @@ if (
 
 $view_contest = $rows[0];
 
+$view_link_type =
+    isset($view_contest['link_type'])
+        ? trim($view_contest['link_type'])
+        : 'created';
+
+
+if (
+    !in_array(
+        $view_link_type,
+        array('created', 'linked'),
+        true
+    )
+) {
+
+    $view_errors =
+        "<h2>차시 연결 유형이 올바르지 않습니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
 
 // ============================================================
 // 5. Course 정보 조회
@@ -143,8 +165,17 @@ if (
     exit(0);
 }
 
-
 $view_course = $course_rows[0];
+
+
+if (intval($view_course['status']) !== 1) {
+
+    $view_errors =
+        "<h2>종료된 수업의 차시는 수정할 수 없습니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
 
 
 // ============================================================

@@ -4,8 +4,11 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 
+require_once('./include/code_template_functions.inc.php');
+
 require_once('./include/course_functions.inc.php');
 require_once('./include/contest_access.inc.php');
+
 
 $view_title = $MSG_SUBMIT;
 
@@ -30,11 +33,11 @@ else if (isset($_GET['cid']) && isset($_GET['pid'])) {
 	$cid = intval($_GET['cid']);
 	$pid = intval($_GET['pid']);
 
-		// ============================================================
-	// Contest 공통 접근 권한 확인
+	// ============================================================
+	// Contest 신규 제출 권한 확인
 	// ============================================================
 
-	if (!contest_can_access($cid)) {
+	if (!contest_can_submit($cid)) {
 
 		$view_errors = "Not Invited!";
 
@@ -43,30 +46,11 @@ else if (isset($_GET['cid']) && isset($_GET['pid'])) {
 	}
 
 
-	// 대회 비공개로 변경될 경우 제출 문제에서 제출이 안되도록 코드 시작
-	$now = date('Y/m/d H:i:s D', time());
-
-	if (
-		isset($_SESSION[$OJ_NAME.'_administrator']) ||
-		isset($_SESSION[$OJ_NAME.'_m'.$cid])
-	) {
-
-		$sql =
-			"SELECT langmask, private, defunct
-			 FROM contest
-			 WHERE contest_id=?";
-
-	}
-	else {
-
-		$sql =
-			"SELECT langmask, private, defunct
-			 FROM contest
-			 WHERE defunct='N'
-			   AND contest_id=?
-			   AND start_time<='$now'
-			   AND '$now'<end_time";
-	}
+	$sql =
+		"SELECT langmask, private, defunct
+		 FROM contest
+		 WHERE contest_id = ?
+		 LIMIT 1";
 
 	$result = pdo_query($sql,$cid);
 	$rows_cnt = count($result);
@@ -76,7 +60,6 @@ else if (isset($_GET['cid']) && isset($_GET['pid'])) {
 		exit(0);
 	}
 
-	// 대회 비공개로 변경될 경우 제출 문제에서 제출이 안되도록 코드 끝
 	$psql =
 		"SELECT problem_id
 		FROM contest_problem
@@ -144,19 +127,158 @@ $view_process_mode = true;
 
 
 if (isset($_GET['sid'])) {
-  	$sid = intval($_GET['sid']);
-	$sql = "SELECT * FROM `solution` WHERE `solution_id`=?";
-	$result = pdo_query($sql,$sid);
 
-	$row = $result[0];
-	$cid = intval($row['contest_id']);
-	$sproblem_id= intval($row['problem_id']);
-	$language_num = intval($row['language']);
-	$contest_id=$cid;
-	if ($row && $row['user_id']==$_SESSION[$OJ_NAME.'_'.'user_id'])
-		$ok = true;
+    $sid =
+        intval($_GET['sid']);
 
-		$need_check_using=true;
+    $ok = false;
+
+
+    if ($sid <= 0) {
+
+        $view_errors =
+            "<h2>잘못된 제출 번호입니다.</h2>";
+
+        require(
+            "template/".
+            $OJ_TEMPLATE.
+            "/error.php"
+        );
+        exit(0);
+    }
+
+
+    // URL이 가리키는 문제와 Contest를 먼저 기록한다.
+    $requested_problem_id =
+        isset($id)
+            ? intval($id)
+            : intval($problem_id);
+
+    $requested_contest_id =
+        isset($cid)
+            ? intval($cid)
+            : 0;
+
+
+    $solution_rows =
+        pdo_query(
+            "SELECT
+                solution_id,
+                user_id,
+                problem_id,
+                COALESCE(contest_id, 0) AS contest_id,
+                language
+
+             FROM solution
+
+             WHERE solution_id = ?
+
+             LIMIT 1",
+            $sid
+        );
+
+
+    if (
+        !$solution_rows ||
+        !isset($solution_rows[0]['solution_id'])
+    ) {
+
+        $view_errors =
+            "<h2>존재하지 않는 제출입니다.</h2>";
+
+        require(
+            "template/".
+            $OJ_TEMPLATE.
+            "/error.php"
+        );
+        exit(0);
+    }
+
+
+    $solution_row =
+        $solution_rows[0];
+
+    $sproblem_id =
+        intval($solution_row['problem_id']);
+
+    $solution_contest_id =
+        intval($solution_row['contest_id']);
+
+    $language_num =
+        intval($solution_row['language']);
+
+
+    // --------------------------------------------------------
+    // URL 문제와 sid의 실제 문제가 일치하는지 확인
+    // --------------------------------------------------------
+
+    if (
+        $requested_problem_id !== $sproblem_id ||
+        $requested_contest_id !== $solution_contest_id
+    ) {
+
+        $view_errors =
+            "<h2>제출 정보와 문제 정보가 일치하지 않습니다.</h2>";
+
+        require(
+            "template/".
+            $OJ_TEMPLATE.
+            "/error.php"
+        );
+        exit(0);
+    }
+
+
+    // --------------------------------------------------------
+    // 본인 제출 또는 source_browser 권한만 허용
+    // --------------------------------------------------------
+
+    $session_user_id =
+        $_SESSION[$OJ_NAME.'_user_id'];
+
+    $is_source_owner =
+        (
+            isset($solution_row['user_id']) &&
+            $solution_row['user_id'] === $session_user_id
+        );
+
+    $has_source_browser =
+        isset(
+            $_SESSION[
+                $OJ_NAME.'_source_browser'
+            ]
+        );
+
+
+    if (
+        !$is_source_owner &&
+        !$has_source_browser
+    ) {
+
+        $view_errors =
+            "<h2>이 제출을 편집할 권한이 없습니다.</h2>";
+
+        require(
+            "template/".
+            $OJ_TEMPLATE.
+            "/error.php"
+        );
+        exit(0);
+    }
+
+
+    $ok = true;
+
+    // 검증된 Contest 번호만 이후 코드에서 사용
+    $cid =
+        $solution_contest_id;
+
+    $contest_id =
+        $solution_contest_id;
+
+
+    $need_check_using = true;
+
 		if ( $contest_id > 0 ){
 			$sql="select start_time,end_time from contest where contest_id=?";
 			$result=pdo_query($sql,$contest_id);
@@ -222,55 +344,123 @@ if (isset($_GET['sid'])) {
 		}
 	}
 
-	if ($ok == true) {
-		$sql = "SELECT `source` FROM `source_code_user` WHERE `solution_id`=?";
-		$result = pdo_query($sql,$sid);
+	if ($ok) {
+		$sql =
+			"SELECT
+				source,
+				source_version
+			FROM source_code_user
+			WHERE solution_id = ?
+			LIMIT 1";
 
-		$row = $result[0];
+		$source_rows =
+			pdo_query(
+				$sql,
+				$sid
+			);
 
-		if ($row){
-			$view_src = $row['source'];
-			// front_code와 rear_code는 삭제해서 보여주기	
-			// 언어별로 추가된 코드 제거하기
-			$sqltmp = "SELECT * from `problem` where `problem_id`='$id'";
-			$resulttmp = pdo_query($sqltmp,$id);
-		
-			$front_code = $resulttmp[0]['front_code'];
-			$rear_code = $resulttmp[0]['rear_code'];
-			
-			if($front_code || $rear_code){
-				// 미리작성된 코드는 제거 
-				// 언어별로 추가된 모드 코드 제거하기
-				$cnt_language = count($language_name);
-                for($i=0;$i<$cnt_language;$i++){
-                  $find_str = "//".$language_name[$i]."//";
-                  $front_code_print ="";
-                  $rear_code_print ="";
-                  //front code 내용 확인하여 언어별 분리
-                  if(strpos($front_code,$find_str)!==false){
-                    $split_str = explode($find_str,$front_code);
-                    $front_code_print = explode("//",$split_str[1])[0];
-					$view_src = str_replace($front_code_print,"", $view_src);
-                  }
-                  //rear code 내용 확인하여 언어별 분리
-                  if(strpos($rear_code,$find_str)!==false){
-                    $split_str = explode($find_str,$rear_code);
-                    $rear_code_print = explode("//",$split_str[1])[0];
-					$view_src = str_replace($rear_code_print,"", $view_src);
-                  }
-				}
-				//빈줄 제거
-				$view_src= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $view_src);
+
+		if (
+			$source_rows &&
+			isset($source_rows[0]['source'])
+		) {
+
+			$view_src =
+				(string)$source_rows[0]['source'];
+
+			$source_version =
+				isset($source_rows[0]['source_version'])
+					? intval($source_rows[0]['source_version'])
+					: 0;
+
+
+			// --------------------------------------------------------
+			// 신규 제출
+			// source_code_user에 학생 원본만 저장되어 있으므로 그대로 표시
+			// --------------------------------------------------------
+
+			if ($source_version >= 1) {
+
+				$view_src =
+					oj_normalize_source_newlines(
+						$view_src
+					);
+
 			}
-			
+
+			// --------------------------------------------------------
+			// 기존 제출
+			// front/rear가 결합되어 있으므로 호환용 분리 처리
+			// --------------------------------------------------------
+
+			else {
+
+				$template_rows =
+					pdo_query(
+						"SELECT
+							front_code,
+							rear_code
+						FROM problem
+						WHERE problem_id = ?
+						LIMIT 1",
+						$sproblem_id
+					);
+
+
+				$front_code = '';
+				$rear_code = '';
+
+
+				if (
+					$template_rows &&
+					isset($template_rows[0])
+				) {
+
+					$front_code =
+						isset($template_rows[0]['front_code'])
+							? $template_rows[0]['front_code']
+							: '';
+
+					$rear_code =
+						isset($template_rows[0]['rear_code'])
+							? $template_rows[0]['rear_code']
+							: '';
+				}
+
+
+				$view_src =
+					oj_strip_legacy_source_templates(
+						$view_src,
+						$front_code,
+						$rear_code,
+						$language_num,
+						$language_name
+					);
+			}
 		}
-		$sql = "SELECT langmask FROM contest WHERE contest_id=?";
 
-		$result = pdo_query($sql,$cid);
-		$row = $result[0];
+		// Contest 제출일 때만 Contest 언어 제한을 적용한다.
+		if ($cid > 0) {
 
-		if ($row)
-			$_GET['langmask'] = $row['langmask'];
+			$langmask_rows =
+				pdo_query(
+					"SELECT langmask
+					FROM contest
+					WHERE contest_id = ?
+					LIMIT 1",
+					$cid
+				);
+
+
+			if (
+				$langmask_rows &&
+				isset($langmask_rows[0]['langmask'])
+			) {
+
+				$_GET['langmask'] =
+					$langmask_rows[0]['langmask'];
+			}
+		}
 	}
 }
 

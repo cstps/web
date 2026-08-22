@@ -221,6 +221,7 @@ $contest_rows = pdo_query(
         contest_id
      FROM course_contest
      WHERE course_id = ?
+       AND link_type = 'created'
      ORDER BY contest_id",
     $course_id
 );

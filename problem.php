@@ -93,10 +93,8 @@ else if (isset($_GET['cid']) && isset($_GET['pid'])) {
 		$sql =
 		"SELECT langmask, private, defunct
 		 FROM contest
-		 WHERE defunct='N'
-		   AND contest_id=?
-		   AND start_time<='$now'
-		   AND '$now'<end_time";
+		 WHERE contest_id=?
+		   AND start_time<=NOW()";
 	}
 
 	$result = pdo_query($sql,$cid);

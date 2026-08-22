@@ -191,3 +191,16 @@
     width: 100%;
     overflow-x: auto;
 }
+
+/* 학생 목록의 학습현황·관리 열 */
+#course-student-table .course-student-action-column {
+    width: 105px !important;
+    min-width: 105px;
+    max-width: 105px;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+#course-student-table .course-action-button {
+    white-space: nowrap;
+}

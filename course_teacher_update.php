@@ -281,10 +281,11 @@ if ($new_role === 'teacher') {
     $contest_rows = pdo_query(
         "SELECT
             contest_id
-         FROM course_contest
-         WHERE course_id = ?
-           AND status = 1
-         ORDER BY contest_id",
+        FROM course_contest
+        WHERE course_id = ?
+        AND status = 1
+        AND link_type = 'created'
+        ORDER BY contest_id",
         $course_id
     );
 
@@ -363,9 +364,10 @@ elseif ($new_role === 'assistant') {
     $contest_rows = pdo_query(
         "SELECT
             contest_id
-         FROM course_contest
-         WHERE course_id = ?
-         ORDER BY contest_id",
+        FROM course_contest
+        WHERE course_id = ?
+        AND link_type = 'created'
+        ORDER BY contest_id",
         $course_id
     );
 

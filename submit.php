@@ -5,6 +5,7 @@ require_once "include/my_func.inc.php";
 require_once "include/memcache.php";
 require_once "include/const.inc.php";
 require_once "include/cookie_helper.php"; // [ADD] lastlang 안전 쿠키용
+require_once "include/code_template_functions.inc.php";
 
 require_once "include/course_functions.inc.php";
 require_once "include/contest_access.inc.php";
@@ -64,13 +65,13 @@ if (isset($_POST['id'])) {
   if ($test_run) $cid = -$cid;
 
   // ==========================================================
-  // Contest 공통 접근 권한 확인
+  // Contest 신규 제출 권한 확인
   //
   // test run은 기존 구조를 유지하고,
   // 실제 Contest 제출만 검사한다.
   // ==========================================================
 
-  if (!$test_run && !contest_can_access($cid)) {
+  if (!$test_run && !contest_can_submit($cid)) {
 
     $view_errors = $MSG_NOT_INVITED."\n";
 
@@ -252,10 +253,27 @@ if ($ai_used == 0) {
 
 
 // encoded_submit 지원
-if (isset($_POST['encoded_submit'])) $source = base64_decode($source);
+if (isset($_POST['encoded_submit'])) {
+    $source = base64_decode($source);
+}
 
-// 줄바꿈 정규화
-$input_text = preg_replace("(\r\n)", "\n", $input_text);
+
+// 학생 코드와 입력 데이터의 줄바꿈을 LF로 통일
+$source =
+    oj_normalize_source_newlines(
+        $source
+    );
+
+$input_text =
+    oj_normalize_source_newlines(
+        $input_text
+    );
+
+
+// front/rear 등을 결합하기 전의 학생 원본 코드
+$source_user =
+    $source;
+
 
 // === 여기까지 오면 $id 확정됨 ===
 
@@ -287,22 +305,29 @@ if (!empty($ban_code)) {
   }
 }
 
-// (3) front/rear 코드 삽입 (언어 구분 토큰: //"언어"//)
-if (!empty($front_code) || !empty($rear_code)) {
-  $find_str = "//".$language_name[$language]."//";
-  $front_code_print = "";
-  $rear_code_print  = "";
+// (3) 제출 언어에 해당하는 front/rear 코드 추출
+$front_code_print =
+    oj_extract_language_template(
+        $front_code,
+        $language,
+        $language_name
+    );
 
-  if (strpos($front_code, $find_str)!==false) {
-    $split = explode($find_str, $front_code, 2);
-    if (isset($split[1])) $front_code_print = explode("//", $split[1])[0];
-  }
-  if (strpos($rear_code, $find_str)!==false) {
-    $split = explode($find_str, $rear_code, 2);
-    if (isset($split[1])) $rear_code_print = explode("//", $split[1])[0];
-  }
-  $source = trim($front_code_print)."\n".$source."\n".trim($rear_code_print);
-}
+$rear_code_print =
+    oj_extract_language_template(
+        $rear_code,
+        $language,
+        $language_name
+    );
+
+
+// 학생 원본은 변경하지 않고 채점용 코드만 결합
+$source =
+    oj_build_judge_source(
+        $front_code_print,
+        $source_user,
+        $rear_code_print
+    );
 
 // (4) 인코딩 주석 (파이썬)
 if ($language == 6) { // Python3
@@ -312,8 +337,9 @@ if ($language == 6) { // Python3
 }
 
 // (5) custom test run에서만 실제 채점ID 0으로 전환
-$source_user = $source;
-if ($test_run) $id = 0;
+if ($test_run) {
+    $id = 0;
+}
 
 // (6) prepend/append 파일 자동 삽입
 $prepend_file = "$OJ_DATA/$id/prepend.".$language_ext[$language];
@@ -326,16 +352,41 @@ if (isset($OJ_APPENDCODE) && $OJ_APPENDCODE && file_exists($append_file)) {
 }
 
 // (7) 소스 길이 검사
-$len = strlen($source);
-if ($len < 2) {
-  $view_errors = $MSG_TOO_SHORT."<br>";
-  require "template/".$OJ_TEMPLATE."/error.php";
-  exit(0);
+//
+// solution.code_length에는 학생이 실제 작성한 코드 길이를 저장한다.
+// source_code의 TEXT 최대 크기를 고려해 채점용 코드도 검사한다.
+$user_source_length =
+    strlen($source_user);
+
+$judge_source_length =
+    strlen($source);
+
+
+// 기존 INSERT에서 사용하는 변수
+$len =
+    $user_source_length;
+
+
+if ($user_source_length < 2) {
+
+    $view_errors =
+        $MSG_TOO_SHORT."<br>";
+
+    require "template/".$OJ_TEMPLATE."/error.php";
+    exit(0);
 }
-if ($len > 65536) {
-  $view_errors = $MSG_TOO_LONG."<br>";
-  require "template/".$OJ_TEMPLATE."/error.php";
-  exit(0);
+
+
+if (
+    $user_source_length > 65535 ||
+    $judge_source_length > 65535
+) {
+
+    $view_errors =
+        $MSG_TOO_LONG."<br>";
+
+    require "template/".$OJ_TEMPLATE."/error.php";
+    exit(0);
 }
 
 // (8) lastlang 쿠키 저장 (안전 세터)
@@ -389,11 +440,21 @@ if (~$OJ_LANGMASK & (1<<$language)) {
   }
 
   // 소스 저장
-  pdo_query(
-    "INSERT INTO `source_code_user`(`solution_id`,`source`) VALUES(?,?)", 
-    $insert_id, 
+pdo_query(
+    "INSERT INTO source_code_user
+    (
+        solution_id,
+        source,
+        source_version
+    )
+    VALUES
+    (
+        ?, ?, 1
+    )",
+    $insert_id,
     $source_user
-  );
+);
+
   pdo_query(
     "INSERT INTO `source_code`(`solution_id`,`source`) VALUES(?,?)", 
     $insert_id, 

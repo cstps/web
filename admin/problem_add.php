@@ -52,15 +52,41 @@ $creator = $_POST['creator'];
 $spj = $_POST['spj'];
 
 
-// 앞뒤, 금지어, 포인트 추가
-//빈줄 제거
-$front_code= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $_POST['front_code']);
-$rear_code= preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $_POST['rear_code']);
+// 앞뒤 코드, 금지어, 포인트
+// 코드는 내용과 빈 줄을 보존하고 줄바꿈 방식만 LF로 통일한다.
+$front_code =
+    isset($_POST['front_code'])
+        ? $_POST['front_code']
+        : '';
 
-$front_code = htmlentities($front_code,ENT_QUOTES,"UTF-8");
-$rear_code = htmlentities($rear_code,ENT_QUOTES,"UTF-8");
-$ban_code = $_POST['ban_code'];
-$pro_point = $_POST['pro_point'];
+$rear_code =
+    isset($_POST['rear_code'])
+        ? $_POST['rear_code']
+        : '';
+
+$front_code =
+    str_replace(
+        array("\r\n", "\r"),
+        "\n",
+        $front_code
+    );
+
+$rear_code =
+    str_replace(
+        array("\r\n", "\r"),
+        "\n",
+        $rear_code
+    );
+
+$ban_code =
+    isset($_POST['ban_code'])
+        ? $_POST['ban_code']
+        : '';
+
+$pro_point =
+    isset($_POST['pro_point'])
+        ? intval($_POST['pro_point'])
+        : 1;
 
 //php7.4에서 해당 기능 삭제됨
 // if (get_magic_quotes_gpc()) {

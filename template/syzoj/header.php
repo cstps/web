@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <?php 
-	$url=basename($_SERVER['REQUEST_URI']);
+	$request_path=parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+	$url=basename($request_path);
 	$dir=basename(getcwd());
 	if($dir=="discuss3") $path_fix="../";
 	else $path_fix="";
@@ -19,6 +20,51 @@
 		require_once($path_fix.'include/online.php');
 		$on = new online();
 	}
+
+	// ---------------------------------------------------------
+	// 수업·대회 메뉴 표시 정보
+	// ---------------------------------------------------------
+
+	$header_logged_in =
+		isset($_SESSION[$OJ_NAME.'_user_id']);
+
+	$header_can_manage_course = false;
+
+	if ($header_logged_in) {
+
+		if (isset($_SESSION[$OJ_NAME.'_administrator'])) {
+
+			$header_can_manage_course = true;
+
+		} else {
+
+			$header_course_teacher_rows = pdo_query(
+				"SELECT course_id
+				 FROM course_teacher
+				 WHERE user_id = ?
+				   AND status = 1
+				 LIMIT 1",
+				$_SESSION[$OJ_NAME.'_user_id']
+			);
+
+			$header_can_manage_course = (
+				$header_course_teacher_rows &&
+				isset($header_course_teacher_rows[0]['course_id'])
+			);
+		}
+	}
+
+	$header_is_my_course_page =
+		strpos($url, 'my_course_') === 0;
+
+	$header_is_course_manage_page =
+		strpos($url, 'course_') === 0;
+
+	$header_is_course_contest_menu = (
+		$url === 'contest.php' ||
+		$header_is_my_course_page ||
+		$header_is_course_manage_page
+	);
 ?>
 
 <html lang="ko" style="position: fixed; width: 100%; overflow: hidden; ">
@@ -96,9 +142,78 @@
                 href="<?php echo $path_fix?>drawproblemset.php"><?php echo $MSG_DRAWPROBLEMS?> </a>
             <a class="item <?php if ($url=="category.php") echo "active";?>"
                 href="<?php echo $path_fix?>category.php"><?php echo $MSG_SOURCE?></a>
-            <a class="item <?php if ($url=="contest.php") echo "active";?>" href="<?php echo $path_fix?>contest.php<?php if(isset($_SESSION[$OJ_NAME."_user_id"])) echo "?my" ?>" >
-                <?php echo $MSG_CONTEST?>
-            </a>
+            <div class="ui simple dropdown item <?php
+                if ($header_is_course_contest_menu) {
+                    echo 'active';
+                }
+            ?>">
+
+                수업·대회
+                <i class="dropdown icon"></i>
+
+                <div class="menu">
+
+                    <?php
+                    if ($header_logged_in) {
+                    ?>
+
+                        <a
+                            class="item <?php
+                                if ($header_is_my_course_page) {
+                                    echo 'active';
+                                }
+                            ?>"
+                            href="<?php echo $path_fix; ?>my_course_list.php"
+                        >
+                            <i class="book icon"></i>
+                            내 수업
+                        </a>
+
+                    <?php
+                    }
+                    ?>
+
+                    <a
+                        class="item <?php
+                            if ($url === 'contest.php') {
+                                echo 'active';
+                            }
+                        ?>"
+                        href="<?php echo $path_fix; ?>contest.php<?php
+                            if ($header_logged_in) {
+                                echo '?my';
+                            }
+                        ?>"
+                    >
+                        <i class="trophy icon"></i>
+                        대회 목록
+                    </a>
+
+                    <?php
+                    if ($header_can_manage_course) {
+                    ?>
+
+                        <div class="divider"></div>
+
+                        <a
+                            class="item <?php
+                                if ($header_is_course_manage_page) {
+                                    echo 'active';
+                                }
+                            ?>"
+                            href="<?php echo $path_fix; ?>course_list.php"
+                        >
+                            <i class="settings icon"></i>
+                            수업 관리
+                        </a>
+
+                    <?php
+                    }
+                    ?>
+
+                </div>
+
+            </div>
             <a class="item <?php if ($url=="status.php") echo "active";?>" href="<?php echo $path_fix?>status.php"><?php echo $MSG_STATUS?></a>
             <a class="item <?php if ($url=="ranklist.php") echo "active";?>"
                 href="<?php echo $path_fix?>ranklist.php"><?php echo $MSG_RANKLIST?></a>    

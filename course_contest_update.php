@@ -68,11 +68,6 @@ $end_time_raw =
         ? trim($_POST['end_time'])
         : '';
 
-$visible =
-    isset($_POST['visible'])
-        ? intval($_POST['visible'])
-        : -1;
-
 
 // ============================================================
 // 4. 기본값 검증
@@ -101,72 +96,10 @@ if ($lesson_no <= 0) {
 }
 
 
-if (
-    $contest_title === '' ||
-    mb_strlen($contest_title, 'UTF-8') > 100
-) {
-
-    $view_errors =
-        "<h2>차시 제목은 1자 이상 100자 이내로 입력하세요.</h2>";
-
-    require("template/".$OJ_TEMPLATE."/error.php");
-    exit(0);
-}
-
-
-if (!in_array($visible, array(0, 1), true)) {
-
-    $view_errors =
-        "<h2>공개 상태 값이 올바르지 않습니다.</h2>";
-
-    require("template/".$OJ_TEMPLATE."/error.php");
-    exit(0);
-}
 
 
 // ============================================================
-// 5. 시간 검증
-// ============================================================
-
-$start_timestamp =
-    strtotime($start_time_raw);
-
-$end_timestamp =
-    strtotime($end_time_raw);
-
-
-if (
-    $start_timestamp === false ||
-    $end_timestamp === false
-) {
-
-    $view_errors =
-        "<h2>시작 시간 또는 종료 시간이 올바르지 않습니다.</h2>";
-
-    require("template/".$OJ_TEMPLATE."/error.php");
-    exit(0);
-}
-
-
-if ($end_timestamp <= $start_timestamp) {
-
-    $view_errors =
-        "<h2>종료 시간은 시작 시간보다 늦어야 합니다.</h2>";
-
-    require("template/".$OJ_TEMPLATE."/error.php");
-    exit(0);
-}
-
-
-$start_time =
-    date('Y-m-d H:i:s', $start_timestamp);
-
-$end_time =
-    date('Y-m-d H:i:s', $end_timestamp);
-
-
-// ============================================================
-// 6. Course 존재 및 상태 확인
+// 5. Course 존재 및 상태 확인
 // ============================================================
 
 $course_rows = pdo_query(
@@ -227,10 +160,12 @@ if (
 $link_rows = pdo_query(
     "SELECT
         id,
-        contest_id
+        contest_id,
+        link_type
      FROM course_contest
      WHERE course_id = ?
        AND contest_id = ?
+       AND status = 1
      LIMIT 1",
     $course_id,
     $contest_id
@@ -244,6 +179,27 @@ if (
 
     $view_errors =
         "<h2>이 수업에 등록되지 않은 차시입니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
+
+$link_type =
+    isset($link_rows[0]['link_type'])
+        ? trim($link_rows[0]['link_type'])
+        : 'created';
+
+
+if (
+    !in_array(
+        $link_type,
+        array('created', 'linked'),
+        true
+    )
+) {
+
+    $view_errors =
+        "<h2>차시 연결 유형이 올바르지 않습니다.</h2>";
 
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);
@@ -274,6 +230,66 @@ if (
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);
 }
+
+// ============================================================
+// created Contest 입력값 검증
+//
+// linked는 기존 Contest의 제목과 시간을 변경하지 않는다.
+// ============================================================
+
+if ($link_type === 'created') {
+
+    if (
+        $contest_title === '' ||
+        mb_strlen($contest_title, 'UTF-8') > 100
+    ) {
+
+        $view_errors =
+            "<h2>차시 제목은 1자 이상 100자 이내로 입력하세요.</h2>";
+
+        require("template/".$OJ_TEMPLATE."/error.php");
+        exit(0);
+    }
+
+
+    $start_timestamp =
+        strtotime($start_time_raw);
+
+    $end_timestamp =
+        strtotime($end_time_raw);
+
+
+    if (
+        $start_timestamp === false ||
+        $end_timestamp === false
+    ) {
+
+        $view_errors =
+            "<h2>시작 시간 또는 종료 시간이 올바르지 않습니다.</h2>";
+
+        require("template/".$OJ_TEMPLATE."/error.php");
+        exit(0);
+    }
+
+
+    if ($end_timestamp <= $start_timestamp) {
+
+        $view_errors =
+            "<h2>종료 시간은 시작 시간보다 늦어야 합니다.</h2>";
+
+        require("template/".$OJ_TEMPLATE."/error.php");
+        exit(0);
+    }
+
+
+    $start_time =
+        date('Y-m-d H:i:s', $start_timestamp);
+
+    $end_time =
+        date('Y-m-d H:i:s', $end_timestamp);
+}
+
+
 // ============================================================
 // 10. lesson_no 중복 확인
 //
@@ -308,22 +324,27 @@ if (
 }
 
 // ============================================================
-// 11. Contest 기본 정보 수정
+// Contest 기본 정보 수정
+//
+// Course에서 생성한 created Contest만 수정한다.
+// linked Contest의 원본 정보는 변경하지 않는다.
 // ============================================================
 
-pdo_query(
-    "UPDATE contest
-     SET
-        title = ?,
-        start_time = ?,
-        end_time = ?
-     WHERE contest_id = ?",
-    $contest_title,
-    $start_time,
-    $end_time,
-    $contest_id
-);
+if ($link_type === 'created') {
 
+    pdo_query(
+        "UPDATE contest
+         SET
+            title = ?,
+            start_time = ?,
+            end_time = ?
+         WHERE contest_id = ?",
+        $contest_title,
+        $start_time,
+        $end_time,
+        $contest_id
+    );
+}
 
 // ============================================================
 // 12. Course 차시 정보 수정
@@ -332,12 +353,11 @@ pdo_query(
 pdo_query(
     "UPDATE course_contest
      SET
-        lesson_no = ?,
-        visible = ?
+        lesson_no = ?
      WHERE course_id = ?
-       AND contest_id = ?",
+       AND contest_id = ?
+       AND status = 1",
     $lesson_no,
-    $visible,
     $course_id,
     $contest_id
 );

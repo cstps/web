@@ -114,7 +114,8 @@ if (
 $link_rows = pdo_query(
     "SELECT
         id,
-        status
+        status,
+        link_type
      FROM course_contest
      WHERE course_id = ?
        AND contest_id = ?
@@ -147,6 +148,27 @@ if (intval($link_rows[0]['status']) !== 1) {
 }
 
 
+$link_type =
+    isset($link_rows[0]['link_type'])
+        ? trim($link_rows[0]['link_type'])
+        : '';
+
+
+if (
+    !in_array(
+        $link_type,
+        array('created', 'linked'),
+        true
+    )
+) {
+
+    $view_errors =
+        "<h2>차시 연결 유형이 올바르지 않습니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
+
 // ============================================================
 // 7. Course에서 차시 제거
 //
@@ -159,45 +181,84 @@ pdo_query(
         status = 0,
         visible = 0
      WHERE course_id = ?
-       AND contest_id = ?",
+       AND contest_id = ?
+       AND status = 1",
     $course_id,
     $contest_id
 );
 
 
-// ============================================================
+/// ============================================================
 // 8. Course 학생들의 Contest 참가권한 제거
 //
-// m{cid} 관리권한은 유지한다.
-// c{cid} 학생 참가권한만 제거한다.
+// created:
+// Course 전용 Contest이므로 기존 방식대로 권한 삭제
+//
+// linked:
+// Course가 추가하고 추적한 권한만 회수
+// 학생이 원래 가지고 있던 권한은 유지
+//
+// 수강 종료 학생도 포함하여 조회한다.
+// 이전 처리 실패 등으로 남은 추적 권한까지 정리하기 위함이다.
 // ============================================================
 
 $student_rows = pdo_query(
     "SELECT user_id
      FROM course_student
-     WHERE course_id = ?",
+     WHERE course_id = ?
+     ORDER BY user_id",
     $course_id
 );
 
 
-if (is_array($student_rows)) {
+if (!is_array($student_rows)) {
+    $student_rows = array();
+}
 
-    foreach ($student_rows as $student) {
 
-        if (
-            !isset($student['user_id']) ||
-            trim($student['user_id']) === ''
-        ) {
-            continue;
-        }
+foreach ($student_rows as $student) {
 
+    if (
+        !isset($student['user_id']) ||
+        trim($student['user_id']) === ''
+    ) {
+        continue;
+    }
+
+
+    $student_user_id =
+        trim($student['user_id']);
+
+
+    // --------------------------------------------------------
+    // Course에서 생성한 Contest
+    // --------------------------------------------------------
+
+    if ($link_type === 'created') {
 
         pdo_query(
             "DELETE FROM privilege
              WHERE user_id = ?
                AND rightstr = ?",
-            $student['user_id'],
+            $student_user_id,
             "c".$contest_id
+        );
+
+
+        continue;
+    }
+
+
+    // --------------------------------------------------------
+    // 기존 Contest 연결
+    // --------------------------------------------------------
+
+    if ($link_type === 'linked') {
+
+        course_revoke_linked_student_right(
+            $course_id,
+            $contest_id,
+            $student_user_id
         );
     }
 }

@@ -166,7 +166,7 @@ include("template/$OJ_TEMPLATE/header.php");
                 );"
             >
 
-                <?php include("./csrf.php"); ?>
+                <?php echo $view_csrf_input; ?>
 
                 <input
                     type="hidden"
@@ -441,7 +441,7 @@ include("template/$OJ_TEMPLATE/header.php");
                     <th>시작</th>
                     <th>종료</th>
                     <th>공개</th>
-                    <th></th>
+                    <th>확인/변경</th>
                 </tr>
             </thead>
 
@@ -449,8 +449,13 @@ include("template/$OJ_TEMPLATE/header.php");
 
             <?php
             foreach ($view_contests as $contest) {
+
+                $link_type =
+                    isset($contest['link_type'])
+                        ? $contest['link_type']
+                        : 'created';
             ?>
-                
+                            
                 <tr>
                     <td>
                         <?php
@@ -465,16 +470,41 @@ include("template/$OJ_TEMPLATE/header.php");
                     </td>
 
                     <td>
+                    <?php
+                    echo htmlspecialchars(
+                        isset($contest['title'])
+                            ? $contest['title']
+                            : '',
+                        ENT_QUOTES,
+                        'UTF-8'
+                    );
+                    ?>
+
+                    <div style="margin-top:0.4rem;">
+
                         <?php
-                        echo htmlspecialchars(
-                            isset($contest['title'])
-                                ? $contest['title']
-                                : '',
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
+                        if ($link_type === 'linked') {
                         ?>
-                    </td>
+
+                            <span class="ui tiny blue basic label">
+                                기존 대회 연결
+                            </span>
+
+                        <?php
+                        }
+                        else {
+                        ?>
+
+                            <span class="ui tiny teal basic label">
+                                Course 생성
+                            </span>
+
+                        <?php
+                        }
+                        ?>
+
+                    </div>
+                </td>
 
                     <td>
                         <?php
@@ -502,7 +532,10 @@ include("template/$OJ_TEMPLATE/header.php");
                     <td class="center aligned">
 
                         <?php
-                        if ($view_can_manage_contests) {
+                        if (
+                            $view_can_manage_contests &&
+                            intval($view_course['status']) === 1
+                        ) {
                         ?>
 
                             <form
@@ -511,7 +544,7 @@ include("template/$OJ_TEMPLATE/header.php");
                                 style="display:inline;"
                             >
 
-                                <?php include("./csrf.php"); ?>
+                                <?php echo $view_csrf_input; ?>
 
                                 <input
                                     type="hidden"
@@ -596,7 +629,10 @@ include("template/$OJ_TEMPLATE/header.php");
                             대회 보기
                         </a>
                         <?php
-                        if ($view_can_manage_contests) {
+                        if (
+                            $view_can_manage_contests &&
+                            intval($view_course['status']) === 1
+                        ) {
                         ?>
 
                             <a
@@ -610,16 +646,24 @@ include("template/$OJ_TEMPLATE/header.php");
                                 수정
                             </a>
 
-                            <a
-                                class="ui tiny orange basic button"
-                                href="course_contest_problem_edit.php?course_id=<?php
-                                    echo intval($course_id);
-                                ?>&contest_id=<?php
-                                    echo intval($contest['contest_id']);
-                                ?>"
-                            >
-                                문제 구성
-                            </a>
+                            <?php
+                            if ($link_type === 'created') {
+                            ?>
+
+                                <a
+                                    class="ui tiny orange basic button"
+                                    href="course_contest_problem_edit.php?course_id=<?php
+                                        echo intval($course_id);
+                                    ?>&contest_id=<?php
+                                        echo intval($contest['contest_id']);
+                                    ?>"
+                                >
+                                    문제 구성
+                                </a>
+
+                            <?php
+                            }
+                            ?>
 
                             <form
                                 method="post"
@@ -630,7 +674,7 @@ include("template/$OJ_TEMPLATE/header.php");
                                 );"
                             >
 
-                                <?php include("./csrf.php"); ?>
+                                <?php echo $view_csrf_input; ?>
 
                                 <input
                                     type="hidden"
@@ -702,6 +746,11 @@ include("template/$OJ_TEMPLATE/header.php");
 
             <?php
             foreach ($view_removed_contests as $contest) {
+
+                $link_type =
+                    isset($contest['link_type'])
+                        ? $contest['link_type']
+                        : 'created';
             ?>
 
                 <tr>
@@ -719,16 +768,41 @@ include("template/$OJ_TEMPLATE/header.php");
                     </td>
 
                     <td>
+                    <?php
+                    echo htmlspecialchars(
+                        isset($contest['title'])
+                            ? $contest['title']
+                            : '',
+                        ENT_QUOTES,
+                        'UTF-8'
+                    );
+                    ?>
+
+                    <div style="margin-top:0.4rem;">
+
                         <?php
-                        echo htmlspecialchars(
-                            isset($contest['title'])
-                                ? $contest['title']
-                                : '',
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
+                        if ($link_type === 'linked') {
                         ?>
-                    </td>
+
+                            <span class="ui tiny blue basic label">
+                                기존 대회 연결
+                            </span>
+
+                        <?php
+                        }
+                        else {
+                        ?>
+
+                            <span class="ui tiny teal basic label">
+                                Course 생성
+                            </span>
+
+                        <?php
+                        }
+                        ?>
+
+                    </div>
+                </td>
 
                     <td>
                         <span class="ui tiny grey label">
@@ -738,14 +812,18 @@ include("template/$OJ_TEMPLATE/header.php");
 
                     <td class="center aligned">
 
-                        <form
-                            method="post"
-                            action="course_contest_restore.php"
-                            style="display:inline;"
-                            onsubmit="return confirm('이 차시를 다시 복원하시겠습니까?');"
-                        >
+                        <?php
+                        if (intval($view_course['status']) === 1) {
+                        ?>
 
-                            <?php include("./csrf.php"); ?>
+                            <form
+                                method="post"
+                                action="course_contest_restore.php"
+                                style="display:inline;"
+                                onsubmit="return confirm('이 차시를 다시 복원하시겠습니까?');"
+                            >
+
+                            <?php echo $view_csrf_input; ?>
 
                             <input
                                 type="hidden"
@@ -767,6 +845,12 @@ include("template/$OJ_TEMPLATE/header.php");
                             </button>
 
                         </form>
+                        <?php
+                        }
+                        else {
+                            echo '-';
+                        }
+                        ?>
 
                     </td>
 
