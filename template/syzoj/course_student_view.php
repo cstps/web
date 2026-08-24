@@ -175,7 +175,13 @@ include("template/$OJ_TEMPLATE/header.php");
         <div class="statistic">
 
             <div class="value">
+
                 <?php echo intval($view_course_solved_count); ?>
+
+                /
+
+                <?php echo intval($view_course_problem_count); ?>
+
             </div>
 
             <div class="label">
@@ -201,11 +207,21 @@ include("template/$OJ_TEMPLATE/header.php");
         <div class="statistic">
 
             <div class="value">
+
                 <?php
                 echo intval(
                     $view_participated_contest_count
                 );
                 ?>
+
+                /
+
+                <?php
+                echo intval(
+                    $view_course_contest_count
+                );
+                ?>
+
             </div>
 
             <div class="label">
@@ -296,7 +312,7 @@ include("template/$OJ_TEMPLATE/header.php");
                         echo intval(
                             $contest['lesson_no']
                         );
-                        ?>차시
+                        ?>
 
                     </td>
 
@@ -328,9 +344,15 @@ include("template/$OJ_TEMPLATE/header.php");
                     <td class="center aligned">
 
                         <?php
-                        echo intval(
-                            $contest['solved_count']
-                        );
+                            echo intval(
+                                $contest['solved_count']
+                            );
+
+                            echo '/';
+
+                            echo intval(
+                                $contest['problem_count']
+                            );
                         ?>
 
                     </td>

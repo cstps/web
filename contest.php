@@ -314,7 +314,34 @@ else {
 	$page_cnt = 50;
 	$pstart = $page_cnt*$page-$page_cnt;
 	$pend = $page_cnt;
-	$rows = pdo_query("select count(1) from contest where defunct='N'");
+
+
+	/*
+	* Course에서 새로 생성한 Contest는
+	* 일반 대회 목록에서 제외한다.
+	*
+	* status 조건을 넣지 않는 이유:
+	* Course에서 제거된 차시도 일반 목록에 나타나면 안 된다.
+	*
+	* linked Contest는 제외하지 않는다.
+	*/
+	$exclude_course_created_sql = "
+		AND NOT EXISTS
+		(
+			SELECT 1
+			FROM course_contest cc
+			WHERE cc.contest_id = contest.contest_id
+			AND cc.link_type = 'created'
+		)
+	";
+
+
+	$rows = pdo_query(
+		"SELECT COUNT(1)
+		FROM contest
+		WHERE contest.defunct = 'N'
+		$exclude_course_created_sql"
+	);
 
 	if ($rows)
 		$total = $rows[0][0];
@@ -354,10 +381,22 @@ else {
 		}
 	}
 
-  $sql = "SELECT * FROM `contest` WHERE `defunct`='N' ORDER BY `contest_id` DESC LIMIT 1000";
-
+  $sql = "SELECT *
+			FROM contest
+			WHERE contest.defunct = 'N'
+			$exclude_course_created_sql
+			ORDER BY contest.contest_id DESC
+			LIMIT 1000";
+		
 	if ($keyword) {
-		$sql = "SELECT *  FROM contest WHERE contest.defunct='N' AND contest.title LIKE ? $wheremy  ORDER BY contest_id ASC";
+		$sql = "SELECT *
+				FROM contest
+				WHERE contest.defunct = 'N'
+				AND contest.title LIKE ?
+				$wheremy
+				$exclude_course_created_sql
+				ORDER BY contest.contest_id ASC";
+		
 		$sql .= " limit ".strval($pstart).",".strval($pend); 
 
 		$result = pdo_query($sql,$keyword);
@@ -371,12 +410,21 @@ else {
 			$result = [];
 		
 		} else if ($wheremy != "") {
-			$sql = "SELECT *  FROM contest WHERE contest.defunct='N' $wheremy  ORDER BY contest_id ASC";
+			$sql = "SELECT *
+					FROM contest
+					WHERE contest.defunct = 'N'
+					$wheremy
+					$exclude_course_created_sql
+					ORDER BY contest.contest_id ASC";
 			$sql .= " limit ".strval($pstart).",".strval($pend); 
 			$result = mysql_query_cache($sql);
 		} else {
 			// fallback: 전체 보기
-			$sql = "SELECT * FROM contest WHERE contest.defunct='N' ORDER BY contest_id ASC";
+			$sql = "SELECT *
+					FROM contest
+					WHERE contest.defunct = 'N'
+					$exclude_course_created_sql
+					ORDER BY contest.contest_id ASC";
 			$sql .= " limit ".strval($pstart).",".strval($pend); 
 			$result = mysql_query_cache($sql);
 		}

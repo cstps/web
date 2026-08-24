@@ -160,20 +160,24 @@ include("template/$OJ_TEMPLATE/header.php");
                 <thead>
                     <tr>
                         <th class="center aligned">번호</th>
-                        <th>아이디</th>
-                        <th>이름</th>
-                        <th>학교</th>
+                        <th>학생</th>
                         <th class="center aligned course-student-action-column">수업 해결</th>
                         <th class="center aligned course-student-action-column">수업 제출</th>
-                        <th class="center aligned">상태</th>
+                        <th>최근 활동</th>
+                        <th
+                            class="center aligned"
+                            style="width:60px; white-space:nowrap;"
+                        >
+                            상태
+                        </th>
                         <th class="center aligned course-student-action-column">
                             학습현황
                         </th>
+                        
                         <th class="center aligned course-student-action-column">
                             관리
                         </th>
-                        <th>등록일</th>
-                        <th>종료일</th>
+                        
                         
                     </tr>
                 </thead>
@@ -293,65 +297,76 @@ include("template/$OJ_TEMPLATE/header.php");
 
                         <td>
 
-                            <?php
-                            echo htmlspecialchars(
-                                $student['user_id'],
-                                ENT_QUOTES,
-                                'UTF-8'
-                            );
-                            ?>
+                            <strong>
+                                <?php
+                                echo htmlspecialchars(
+                                    isset($student['nick'])
+                                        ? $student['nick']
+                                        : $student['user_id'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                                ?>
+                            </strong>
 
-                            <?php
-                            if (!$account_exists) {
-                            ?>
+                            <div style="font-size:0.85em; color:#777;">
 
-                                <span class="ui tiny red label">
-                                    계정 없음
-                                </span>
+                                <?php
+                                echo htmlspecialchars(
+                                    $student['user_id'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                                ?>
 
-                            <?php
-                            }
-                            ?>
+                                <?php
+                                if (!$account_exists) {
+                                ?>
 
-                        </td>
+                                    <span class="ui tiny red label">
+                                        계정 없음
+                                    </span>
 
+                                <?php
+                                }
+                                ?>
 
-                        <td>
+                            </div>
+                            <div style="font-size:0.85em; color:#777;">
 
-                            <?php
-                            echo htmlspecialchars(
-                                isset($student['nick'])
-                                    ? $student['nick']
-                                    : '',
-                                ENT_QUOTES,
-                                'UTF-8'
-                            );
-                            ?>
+                                <?php
+                                echo htmlspecialchars(
+                                    $student['school'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                                ?>
 
-                        </td>
-
-
-                        <td>
-
-                            <?php
-                            echo htmlspecialchars(
-                                isset($student['school'])
-                                    ? $student['school']
-                                    : '',
-                                ENT_QUOTES,
-                                'UTF-8'
-                            );
-                            ?>
+                            </div>
 
                         </td>
 
 
-                        <td class="center aligned course-student-action-column">
+
+
+                        <td class="center aligned">
+
+                            <strong>
+                                <?php
+                                echo intval(
+                                    $student['course_solved_count']
+                                );
+                                ?>
+                            </strong>
+
+                            /
+
                             <?php
-                            echo isset($student['course_solved_count'])
-                                ? intval($student['course_solved_count'])
-                                : 0;
+                            echo intval(
+                                $view_course_problem_count
+                            );
                             ?>
+
                         </td>
 
 
@@ -363,8 +378,27 @@ include("template/$OJ_TEMPLATE/header.php");
                             ?>
                         </td>
 
+                        <td>
+                            <?php
+                            if (!empty($student['course_last_activity'])) {
 
-                        <td class="center aligned">
+                                echo htmlspecialchars(
+                                    $student['course_last_activity'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+
+                            } else {
+
+                                echo '활동 없음';
+                            }
+                            ?>
+                        </td>
+
+                        <td
+                            class="center aligned"
+                            style="width:60px; white-space:nowrap;"
+                        >
 
                             <?php
                             if ($student_status === 1) {
@@ -514,30 +548,8 @@ include("template/$OJ_TEMPLATE/header.php");
 
                         </td>
                         
-                        <td>
 
-                            <?php
-                            echo htmlspecialchars(
-                                $student['joined_at'],
-                                ENT_QUOTES,
-                                'UTF-8'
-                            );
-                            ?>
-
-                        </td>
-                        <td>
-
-                            <?php
-                            echo !empty($student['left_at'])
-                                ? htmlspecialchars(
-                                    $student['left_at'],
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                )
-                                : '-';
-                            ?>
-
-                        </td>
+                        
                     </tr>
                 <?php
                 }

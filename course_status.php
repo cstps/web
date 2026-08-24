@@ -304,9 +304,18 @@ elseif ($new_status === 1) {
             link_type
          FROM course_contest
          WHERE course_id = ?
-           AND status = 1
-           AND visible = 1
-           AND link_type IN ('created', 'linked')
+            AND status = 1
+            AND
+            (
+                link_type = 'created'
+
+                OR
+
+                (
+                    link_type = 'linked'
+                    AND visible = 1
+                )
+            )
          ORDER BY
             lesson_no,
             contest_id",

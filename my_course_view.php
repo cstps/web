@@ -132,6 +132,10 @@ $view_contests = pdo_query(
         c.defunct,
 
         CASE
+            WHEN c.start_time IS NULL
+            OR c.end_time IS NULL
+                THEN 'unscheduled'
+
             WHEN NOW() < c.start_time
                 THEN 'upcoming'
 

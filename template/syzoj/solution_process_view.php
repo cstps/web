@@ -333,7 +333,72 @@ include(
                             'UTF-8'
                         );
 
-                    ?></div>
+                                        ?></div>
+
+
+                    <?php if ($submit_number === 1) { ?>
+
+                        <?php
+
+                        $first_source =
+                            isset($source_map[$process_sid])
+                                ? (string)$source_map[$process_sid]
+                                : "";
+
+                        ?>
+
+
+                        <div
+                            style="
+                                margin-top:18px;
+                                padding-top:15px;
+                                border-top:1px solid #ddd;
+                            "
+                        >
+
+                            <strong>
+                                1차 제출 코드
+                            </strong>
+
+
+                            <?php if ($first_source !== "") { ?>
+
+                                <pre
+                                    style="
+                                        margin-top:10px;
+                                        padding:12px;
+                                        background:#f8f8f8;
+                                        overflow-x:auto;
+                                        line-height:1.5;
+                                        white-space:pre;
+                                    "
+                                ><code><?php
+
+                                echo htmlentities(
+                                    $first_source,
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+
+                                ?></code></pre>
+
+                            <?php } else { ?>
+
+                                <div
+                                    style="
+                                        margin-top:8px;
+                                        color:#999;
+                                    "
+                                >
+                                    기록된 원본 코드가 없습니다.
+                                </div>
+
+                            <?php } ?>
+
+                        </div>
+
+
+                    <?php } ?>
 
                 </div>
 

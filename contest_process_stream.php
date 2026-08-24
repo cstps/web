@@ -1,6 +1,7 @@
 <?php
 
 require_once('./include/db_info.inc.php');
+require_once('./include/course_functions.inc.php');
 
 // 로그인 확인
 if (
@@ -26,12 +27,23 @@ $is_admin =
     isset($_SESSION[$OJ_NAME.'_administrator']);
 
 $is_contest_manager =
-    isset($_SESSION[$OJ_NAME.'_m'.$cid]);
+    isset(
+        $_SESSION[
+            $OJ_NAME.'_m'.$cid
+        ]
+    );
+
+
+$is_course_teacher =
+    course_can_view_contest_process($cid);
+
 
 if (
     !$is_admin &&
-    !$is_contest_manager
+    !$is_contest_manager &&
+    !$is_course_teacher
 ) {
+
     http_response_code(403);
     exit;
 }

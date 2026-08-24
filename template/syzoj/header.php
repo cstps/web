@@ -60,11 +60,11 @@
 	$header_is_course_manage_page =
 		strpos($url, 'course_') === 0;
 
-	$header_is_course_contest_menu = (
-		$url === 'contest.php' ||
-		$header_is_my_course_page ||
-		$header_is_course_manage_page
-	);
+	// $header_is_course_contest_menu = (
+	// 	$url === 'contest.php' ||
+	// 	$header_is_my_course_page ||
+	// 	$header_is_course_manage_page
+	// );
 ?>
 
 <html lang="ko" style="position: fixed; width: 100%; overflow: hidden; ">
@@ -95,7 +95,10 @@
                     <?php if(isset($_SESSION[$OJ_NAME.'_'.'user_id'])) { ?>
                     <a href="<?php echo $path_fix?>/userinfo.php?user=<?php echo $_SESSION[$OJ_NAME.'_'.'user_id']?>"
                         style="color: inherit; ">
-                        <div class="ui simple dropdown item">
+                        <div
+                            id="user-account-dropdown"
+                            class="ui dropdown item"
+                        >
                             <?php echo $_SESSION[$OJ_NAME.'_'.'user_id']; ?>
                             <i class="dropdown icon"></i>
                             <div class="menu">
@@ -142,13 +145,12 @@
                 href="<?php echo $path_fix?>drawproblemset.php"><?php echo $MSG_DRAWPROBLEMS?> </a>
             <a class="item <?php if ($url=="category.php") echo "active";?>"
                 href="<?php echo $path_fix?>category.php"><?php echo $MSG_SOURCE?></a>
-            <div class="ui simple dropdown item <?php
-                if ($header_is_course_contest_menu) {
-                    echo 'active';
-                }
-            ?>">
-
-                수업·대회
+            
+            <div
+                id="course-contest-dropdown"
+                class="ui dropdown item"
+            >
+                🧑‍🏫수업·대회
                 <i class="dropdown icon"></i>
 
                 <div class="menu">
@@ -220,14 +222,18 @@
             <!-- 유틸리티 추가 -->
                 
             
-            <div class="ui simple dropdown item"><a class="item <?php if ($url=="pc.php") echo "active";?>" href="<?php echo $path_fix?>pc.php"><?php echo $MSG_ULTILIST?></a><i class="dropdown icon"></i>
-            <ul class="menu">
-                <a class="item" href="<?php echo $path_fix?>pc.php"><?php echo $MSG_POINTCHECK?></a>
-                <a class="item" href="<?php echo $path_fix?>charcount.php"><?php echo $MSG_CHARCOUNT?></a>
-                <a class="item" href="<?php echo $path_fix?>seat_assign.php"><?php echo $MSG_SEATASSIGN?></a>
-                <a class="item" href="<?php echo $path_fix?>sadari.php"><?php echo $MSG_SADARI?></a>
-                <a class="item" href="<?php echo $path_fix?>"><i class="edit icon"></i>개발중</a>
-            </ul>
+            <div
+                id="user-dev-dropdown"
+                class="ui dropdown item"
+            >
+                <a class="item <?php if ($url=="pc.php") echo "active";?>" href="<?php echo $path_fix?>pc.php"><?php echo $MSG_ULTILIST?></a><i class="dropdown icon"></i>
+                <ul class="menu">
+                    <a class="item" href="<?php echo $path_fix?>pc.php"><?php echo $MSG_POINTCHECK?></a>
+                    <a class="item" href="<?php echo $path_fix?>charcount.php"><?php echo $MSG_CHARCOUNT?></a>
+                    <a class="item" href="<?php echo $path_fix?>seat_assign.php"><?php echo $MSG_SEATASSIGN?></a>
+                    <a class="item" href="<?php echo $path_fix?>sadari.php"><?php echo $MSG_SADARI?></a>
+                    <a class="item" href="<?php echo $path_fix?>"><i class="edit icon"></i>개발중</a>
+                </ul>
             </div>
             
             <!--<a class="item <?php //if ($url=="contest.php") echo "active";?>" href="/discussion/global"><i class="comments icon"></i> 讨论</a>-->
@@ -244,6 +250,23 @@
             <?php }?>
             
         </div>
+        <script>
+        $(function () {
+
+            $('#course-contest-dropdown').dropdown({
+                on: 'click'
+            });
+            $('#user-account-dropdown').dropdown({
+                on: 'click'
+            });
+            $('#user-dev-dropdown').dropdown({
+                on: 'click'
+            });
+
+        });
+        </script>
     </div>
     <div style="margin-top: 28px; ">
         <div class="ui main container">
+
+

@@ -2,7 +2,7 @@
 
 require_once("./include/db_info.inc.php");
 require_once("./include/my_func.inc.php");
-
+require_once("./include/course_functions.inc.php");
 
 // ============================================================
 // 기본값
@@ -65,10 +65,12 @@ if (
 //
 // 허용:
 // - administrator
-// - source_browser
 // - 해당 대회의 m{cid}
+// - Course에 연결된 Contest인 경우
+//   해당 Course의 owner / teacher
 //
-// contest_creator만으로는 허용하지 않음
+// 단, Course 권한으로 조회할 때는
+// 해당 Course에 등록된 학생만 조회 가능
 // ============================================================
 
 $is_admin =
@@ -87,10 +89,88 @@ $is_contest_manager =
     );
 
 
+// ============================================================
+// 이 Contest가 Course 차시인지 확인
+// ============================================================
+
+$course_id = 0;
+
+$course_contest_rows =
+    pdo_query(
+        "SELECT
+            course_id
+         FROM course_contest
+         WHERE contest_id = ?
+           AND status = 1
+         LIMIT 1",
+        $cid
+    );
+
+
+if (
+    $course_contest_rows &&
+    isset(
+        $course_contest_rows[0]['course_id']
+    )
+) {
+
+    $course_id =
+        intval(
+            $course_contest_rows[0]['course_id']
+        );
+}
+
+
+// ============================================================
+// Course 교사의 학생 기록 열람 권한
+//
+// owner / teacher만 허용
+// assistant는 현재 학생관리 권한 정책상 제외
+// ============================================================
+
+$is_course_teacher = false;
+
+
+if (
+    $course_id > 0 &&
+    course_can_manage_students($course_id)
+) {
+
+    // --------------------------------------------------------
+    // URL의 user_id를 임의로 변경하여
+    // Course 외부 학생을 조회하는 것을 방지
+    // --------------------------------------------------------
+
+    $course_student_rows =
+        pdo_query(
+            "SELECT
+                user_id
+             FROM course_student
+             WHERE course_id = ?
+               AND user_id = ?
+             LIMIT 1",
+            $course_id,
+            $student_user_id
+        );
+
+
+    if (
+        $course_student_rows &&
+        isset(
+            $course_student_rows[0]['user_id']
+        )
+    ) {
+
+        $is_course_teacher = true;
+    }
+}
+
+
 $can_view_student_summary =
     (
         $is_admin ||
-        $is_contest_manager
+        $is_contest_manager ||
+        $is_course_teacher
     );
 
 

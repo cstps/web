@@ -4,7 +4,7 @@ require_once('./include/db_info.inc.php');
 require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
-
+require_once('./include/course_functions.inc.php');
 
 // ============================================================
 // 1. 로그인 확인
@@ -63,15 +63,19 @@ $is_contest_manager =
     );
 
 
+$is_course_teacher =
+    course_can_view_contest_process($cid);
+
+
 if (
     !$is_admin &&
-    !$is_contest_manager
+    !$is_contest_manager &&
+    !$is_course_teacher
 ) {
 
     http_response_code(403);
     exit;
 }
-
 
 // ============================================================
 // 4. 대회 존재 확인

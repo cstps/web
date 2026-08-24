@@ -218,6 +218,32 @@ $view_course_solved_count =
         ? intval($solved_rows[0]['cnt'])
         : 0;
 
+// ============================================================
+// 8-1. 수업 전체 문제 수
+//
+// 활성 차시(status=1)의 전체 문제 수
+// ============================================================
+
+$problem_count_rows = pdo_query(
+    "SELECT COUNT(*) AS cnt
+
+     FROM course_contest cc
+
+     INNER JOIN contest_problem cp
+       ON cp.contest_id = cc.contest_id
+
+     WHERE cc.course_id = ?
+       AND cc.status = 1",
+    $course_id
+);
+
+
+$view_course_problem_count =
+    isset($problem_count_rows[0]['cnt'])
+        ? intval($problem_count_rows[0]['cnt'])
+        : 0;
+
+
 
 // ============================================================
 // 9. 참여한 대회 수
@@ -249,6 +275,26 @@ $view_participated_contest_count =
 
 
 // ============================================================
+// 9-1. 전체 활성 차시 수
+// ============================================================
+
+$contest_count_rows = pdo_query(
+    "SELECT COUNT(*) AS cnt
+
+     FROM course_contest
+
+     WHERE course_id = ?
+       AND status = 1",
+    $course_id
+);
+
+
+$view_course_contest_count =
+    isset($contest_count_rows[0]['cnt'])
+        ? intval($contest_count_rows[0]['cnt'])
+        : 0;
+
+// ============================================================
 // 10. Course 연결 대회별 학생 현황
 // ============================================================
 
@@ -263,6 +309,12 @@ $view_contests = pdo_query(
         c.title,
         c.start_time,
         c.end_time,
+
+        (
+            SELECT COUNT(*)
+            FROM contest_problem cp
+            WHERE cp.contest_id = cc.contest_id
+        ) AS problem_count,
 
         COUNT(s.solution_id) AS submit_count,
 
@@ -299,8 +351,8 @@ $view_contests = pdo_query(
         c.end_time
 
      ORDER BY
-        cc.sort_order,
-        cc.contest_id",
+        cc.lesson_no ASC,
+        cc.contest_id ASC",
     $student_user_id,
     $course_id
 );

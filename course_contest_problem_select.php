@@ -163,7 +163,9 @@ $contest_rows = pdo_query(
         title,
         start_time,
         end_time,
-        defunct
+        defunct,
+        user_id,
+        allow_copy
      FROM contest
      WHERE contest_id = ?
      LIMIT 1",
@@ -185,18 +187,46 @@ if (
 $view_source_contest = $contest_rows[0];
 
 // ============================================================
-// 10. 원본 Contest 사용 권한 확인
+// 10. 원본 Contest 문제 구성 사용 권한 확인
+//
+// 관리자
+// → 항상 가능
+//
+// 원본 Contest 생성자
+// → allow_copy와 관계없이 자신의 대회 사용 가능
+//
+// 다른 사용자
+// → allow_copy = 1인 경우에만 사용 가능
+//
+// 중요:
+// contest_creator 또는 m{cid}만으로
+// allow_copy=0을 우회하지 않는다.
 // ============================================================
 
+$is_admin =
+    isset($_SESSION[$OJ_NAME.'_administrator']);
+
+$is_source_owner =
+    isset($view_source_contest['user_id']) &&
+    trim($view_source_contest['user_id']) ===
+    $user_id;
+
+$source_allow_copy =
+    isset($view_source_contest['allow_copy'])
+        ? intval($view_source_contest['allow_copy'])
+        : 1;
+
+
 $can_use_source_contest =
-    isset($_SESSION[$OJ_NAME.'_administrator']) ||
-    isset($_SESSION[$OJ_NAME.'_contest_creator']) ||
-    isset($_SESSION[$OJ_NAME.'_m'.$source_contest_id]);
+    $is_admin ||
+    $is_source_owner ||
+    $source_allow_copy === 1;
+
 
 if (!$can_use_source_contest) {
 
     $view_errors =
-        "<h2>이 대회의 문제 구성을 가져올 권한이 없습니다.</h2>";
+        "<h2>이 대회는 생성자가 문제 구성 복사를 허용하지 않았습니다.</h2>";
 
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);

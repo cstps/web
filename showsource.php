@@ -45,22 +45,22 @@ if(!isset($_SESSION[$OJ_NAME."_source_browser"])){
 			$start_time = strtotime($row['start_time']);
 			$end_time = strtotime($row['end_time']);
 			$now=time();
-			if( $end_time < $now ){ // 当前提交，属于已经结束的比赛，考察是否有进行中的比赛在使用。
-				echo $now."-".$end_time;
+			if( $end_time < $now ){ 
+				
 				$need_check_using=true;
 				
-			}else{			// 属于进行中的比赛，可以看
+			}else{			
 						
 				$need_check_using=false;
 			
 			}
 		}
 
-	}else{ //非比赛提交.考察是否有进行中的比赛在使用
+	}else{ 
 
 				$need_check_using=true;
 	}
-	// 检查是否使用中
+	
 	$now = strftime("%Y-%m-%d %H:%M", time());
 	$sql="select contest_id from contest where contest_id in (select contest_id from contest_problem where problem_id=?) 
 								and start_time < '$now' and end_time > '$now' ";

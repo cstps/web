@@ -4,6 +4,7 @@ require_once('./include/db_info.inc.php');
 require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
+require_once('./include/course_functions.inc.php');
 
 $view_title = "학생 문제 해결 과정 현황";
 
@@ -49,9 +50,18 @@ $is_contest_manager =
     isset($_SESSION[$OJ_NAME.'_m'.$cid]);
 
 
+/*
+ * Course의 활성 owner/teacher인지 DB에서 직접 확인한다.
+ * 담당교사 등록 직후 세션에 m{cid}가 반영되지 않은 경우도 허용한다.
+ */
+$is_course_teacher =
+    course_can_view_contest_process($cid);
+
+
 $can_view_contest_process = (
     $is_admin ||
-    $is_contest_manager
+    $is_contest_manager ||
+    $is_course_teacher
 );
 
 

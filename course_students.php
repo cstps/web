@@ -164,10 +164,6 @@ function course_add_student_contest_privileges(
 
 // ============================================================
 // Course 학생 Contest 참가 권한 제거
-// ============================================================
-
-// ============================================================
-// Course 학생 Contest 참가 권한 제거
 //
 // created:
 // Course 전용 Contest이므로 기존 방식대로 권한 삭제
@@ -1129,6 +1125,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ============================================================
+// Course 전체 활성 차시 문제 수
+// ============================================================
+
+$course_problem_count_rows = pdo_query(
+    "SELECT COUNT(*) AS problem_count
+
+     FROM course_contest cc
+
+     INNER JOIN contest_problem cp
+       ON cp.contest_id = cc.contest_id
+
+     WHERE cc.course_id = ?
+       AND cc.status = 1",
+    $course_id
+);
+
+$view_course_problem_count =
+    isset($course_problem_count_rows[0]['problem_count'])
+        ? intval($course_problem_count_rows[0]['problem_count'])
+        : 0;
+
+
+// ============================================================
 // 7. 학생 목록 조회
 //
 // LEFT JOIN:
@@ -1159,7 +1178,7 @@ $view_students = pdo_query(
               AND s.user_id = cs.user_id
         ) AS course_submit_count,
 
-        (
+                (
             SELECT COUNT(
                 DISTINCT CONCAT(
                     s.contest_id,
@@ -1170,11 +1189,24 @@ $view_students = pdo_query(
             FROM solution s
             INNER JOIN course_contest cc
                 ON cc.contest_id = s.contest_id
-            AND cc.status = 1
+               AND cc.status = 1
             WHERE cc.course_id = cs.course_id
-            AND s.user_id = cs.user_id
-            AND s.result = 4
-        ) AS course_solved_count
+              AND s.user_id = cs.user_id
+              AND s.result = 4
+        ) AS course_solved_count,
+
+        (
+            SELECT MAX(s.in_date)
+
+            FROM solution s
+
+            INNER JOIN course_contest cc
+                ON cc.contest_id = s.contest_id
+               AND cc.status = 1
+
+            WHERE cc.course_id = cs.course_id
+              AND s.user_id = cs.user_id
+        ) AS course_last_activity
 
      FROM course_student cs
 

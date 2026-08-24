@@ -38,7 +38,7 @@ include("template/$OJ_TEMPLATE/header.php");
     </div>
 
 
-    <div class="ui stackable two column grid">
+    <div class="ui stackable three column grid">
 
         <!-- ======================================================
         1. 문제 구성을 가져와 새 Contest 생성
@@ -49,13 +49,13 @@ include("template/$OJ_TEMPLATE/header.php");
             <div class="ui segment">
 
                 <h3 class="ui teal header">
-                    새 차시 만들기
+                    대회에서 문제 가져오기
                 </h3>
 
                 <p>
-                    기존 대회의 문제 구성을 가져와
-                    Course 전용 Contest를 새로 생성합니다.
-                    기존 제출 기록은 가져오지 않습니다.
+                    기존 대회를 검색한 뒤 필요한 문제를 선택하여
+                    새로운 Course 전용 차시를 생성합니다.
+                    기존 제출 기록은 가져오지 않습니다
                 </p>
 
                 <form
@@ -79,6 +79,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
                         <input
                             type="number"
+                            id="copy-lesson-no"
                             name="lesson_no"
                             min="1"
                             value="<?php
@@ -90,29 +91,76 @@ include("template/$OJ_TEMPLATE/header.php");
                     </div>
 
 
+
+                    <button
+                        type="button"
+                        class="ui basic orange button"
+                        onclick="openContestSelector('copy');"
+                    >
+                        <i class="search icon"></i>
+                        대회 찾기
+                    </button>
+
+
+                </form>
+
+            </div>
+
+        </div>
+
+        <!-- ======================================================
+        2. 문제은행에서 직접 선택
+        ======================================================= -->
+
+        <div class="column">
+
+            <div class="ui segment">
+
+                <h3 class="ui blue header">
+                    문제 직접 선택
+                </h3>
+
+                <p>
+                    특정 대회에 포함되지 않은 문제도 문제은행에서 직접 골라
+                    Course 전용 차시를 생성합니다.
+                </p>
+
+                <form
+                    class="ui form"
+                    method="get"
+                    action="course_problem_select.php"
+                >
+
+                    <input
+                        type="hidden"
+                        name="course_id"
+                        value="<?php echo intval($course_id); ?>"
+                    >
+
                     <div class="field">
 
                         <label>
-                            문제 구성을 가져올 원본 대회 번호
+                            차시 번호
                         </label>
 
                         <input
                             type="number"
-                            name="source_contest_id"
+                            name="lesson_no"
                             min="1"
-                            placeholder="예: 2916"
+                            value="<?php
+                                echo intval($view_next_lesson_no);
+                            ?>"
                             required
                         >
 
                     </div>
 
-
                     <button
                         type="submit"
-                        class="ui teal button"
+                        class="ui blue button"
                     >
-                        <i class="arrow right icon"></i>
-                        문제 선택으로 이동
+                        <i class="list icon"></i>
+                        문제은행에서 선택
                     </button>
 
                 </form>
@@ -121,9 +169,8 @@ include("template/$OJ_TEMPLATE/header.php");
 
         </div>
 
-
         <!-- ======================================================
-        2. 기존 Contest와 채점기록 연결
+        3. 기존 Contest와 채점기록 연결
         ======================================================= -->
 
         <div class="column">
@@ -135,10 +182,10 @@ include("template/$OJ_TEMPLATE/header.php");
                 </h3>
 
                 <p>
-                    <p>
+                    
                         대회 진행 상태와 관계없이 기존 Contest를 그대로 연결합니다.
                         기존 기록을 원본에서 직접 참조해 Course 학습현황에 반영합니다.
-                    </p>
+                    
                 </p>
 
                 <form
@@ -168,6 +215,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
                         <input
                             type="number"
+                            id="link-lesson-no"
                             name="link_lesson_no"
                             min="1"
                             value="<?php
@@ -179,34 +227,14 @@ include("template/$OJ_TEMPLATE/header.php");
                     </div>
 
 
-                    <div class="field">
-
-                        <label>
-                            연결할 기존 대회 번호
-                        </label>
-
-                        <input
-                            type="number"
-                            name="existing_contest_id"
-                            min="1"
-                            value="<?php
-                                echo $view_existing_contest_id > 0
-                                    ? intval($view_existing_contest_id)
-                                    : '';
-                            ?>"
-                            placeholder="예: 2500"
-                            required
-                        >
-
-                    </div>
-
 
                     <button
-                        type="submit"
-                        class="ui orange button"
+                        type="button"
+                        class="ui basic orange button"
+                        onclick="openContestSelector('link');"
                     >
                         <i class="search icon"></i>
-                        연결 전 확인
+                        대회 찾기
                     </button>
 
                 </form>
@@ -535,6 +563,55 @@ include("template/$OJ_TEMPLATE/header.php");
 
 </div>
 
+<script>
+function openContestSelector(mode) {
+
+    var lessonInput = null;
+
+    if (mode === 'copy') {
+        lessonInput =
+            document.getElementById('copy-lesson-no');
+    }
+    else {
+        lessonInput =
+            document.getElementById('link-lesson-no');
+    }
+
+
+    if (!lessonInput) {
+        return;
+    }
+
+
+    var lessonNo =
+        parseInt(
+            lessonInput.value,
+            10
+        );
+
+
+    if (
+        isNaN(lessonNo) ||
+        lessonNo <= 0
+    ) {
+
+        alert('차시 번호를 먼저 입력하세요.');
+
+        lessonInput.focus();
+
+        return;
+    }
+
+
+    window.location.href =
+        'course_contest_select.php' +
+        '?course_id=<?php echo intval($course_id); ?>' +
+        '&lesson_no=' +
+        encodeURIComponent(lessonNo) +
+        '&mode=' +
+        encodeURIComponent(mode);
+}
+</script>
 
 <?php
 include("template/$OJ_TEMPLATE/footer.php");
