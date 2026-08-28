@@ -7,6 +7,55 @@ include("template/$OJ_TEMPLATE/header.php");
     href="template/<?php echo $OJ_TEMPLATE; ?>/css/course.css"
 >
 
+<style>
+
+.course-lang-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.course-lang-option {
+    position: relative;
+    cursor: pointer;
+}
+
+.course-lang-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.course-lang-option span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 38px;
+    padding: 0 14px;
+
+    border: 1px solid #d4d4d5;
+    border-radius: 4px;
+
+    background: #ffffff;
+
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.course-lang-option input:checked + span {
+    background: #00b5ad;
+    border-color: #00b5ad;
+    color: #ffffff;
+}
+
+.course-lang-option input:focus + span {
+    outline: 2px solid rgba(0, 181, 173, 0.25);
+}
+
+</style>
+
 <div class="course-page">
 
     <div class="course-page-header">
@@ -152,6 +201,150 @@ include("template/$OJ_TEMPLATE/header.php");
                     </div>
 
                 </div>
+
+
+                <!-- =========================================
+                제출 가능 언어
+                ========================================== -->
+
+                <div class="field">
+
+                    <label>
+                        제출 가능 언어
+                    </label>
+
+                    <?php
+
+                    $current_langmask =
+                        intval($view_contest['langmask']);
+
+
+                    // --------------------------------------------------------
+                    // Course에서 표시할 언어
+                    // Python3이 있으면 Python보다 우선 사용
+                    // --------------------------------------------------------
+
+                    $course_language_specs = array(
+
+                        array(
+                            'label' => 'C++',
+                            'aliases' => array('C++')
+                        ),
+
+                        array(
+                            'label' => 'Python',
+                            'aliases' => array('Python3', 'Python')
+                        ),
+
+                        array(
+                            'label' => 'JavaScript',
+                            'aliases' => array('JavaScript')
+                        ),
+
+                        array(
+                            'label' => 'Java',
+                            'aliases' => array('Java')
+                        )
+
+                    );
+
+
+                    $course_language_options =
+                        array();
+
+
+                    foreach (
+                        $course_language_specs
+                        as $language_spec
+                    ) {
+
+                        foreach (
+                            $language_spec['aliases']
+                            as $language_alias
+                        ) {
+
+                            $language_id =
+                                array_search(
+                                    $language_alias,
+                                    $language_name,
+                                    true
+                                );
+
+
+                            if ($language_id !== false) {
+
+                                $course_language_options[
+                                    intval($language_id)
+                                ] =
+                                    $language_spec['label'];
+
+                                break;
+                            }
+                        }
+                    }
+
+                    ?>
+
+
+                    <div class="course-lang-options">
+
+                        <?php
+                        foreach (
+                            $course_language_options
+                            as $language_id => $display_name
+                        ) {
+
+                            // HUSTOJ
+                            // bit = 0 : 허용
+                            // bit = 1 : 금지
+                            $is_allowed =
+                                (
+                                    $current_langmask &
+                                    (1 << $language_id)
+                                ) === 0;
+                        ?>
+
+                            <label class="course-lang-option">
+
+                                <input
+                                    type="checkbox"
+                                    name="lang[]"
+                                    value="<?php echo intval($language_id); ?>"
+                                    <?php
+                                    echo $is_allowed
+                                        ? 'checked'
+                                        : '';
+                                    ?>
+                                >
+
+                                <span>
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $display_name,
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    );
+                                    ?>
+                                </span>
+
+                            </label>
+
+                        <?php
+                        }
+                        ?>
+
+                    </div>
+
+
+                    <div
+                        class="ui pointing basic label"
+                        style="margin-top:8px;"
+                    >
+                        하나 이상의 언어를 선택하세요.
+                    </div>
+
+                </div>
+
 
             <?php
             }
@@ -301,6 +494,7 @@ include("template/$OJ_TEMPLATE/header.php");
     </div>
 
 </div>
+
 
 
 <?php

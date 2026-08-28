@@ -1,11 +1,48 @@
+<?php
+require_once("admin-header.php");
+?>
+
+<!DOCTYPE html>
 <html>
+
 <head>
-  <title>JudgeOnline Administration</title>
+
+    <title>1024.kr 관리자</title>
+
 </head>
-<frameset cols="20%,*">
-  <frame name="menu" src="menu2.php">
-  <frame name="main" src="help.php">
-  <noframes>
-  </noframes>
-</frameset>
+
+<body class="admin-layout-page">
+
+
+<?php
+require_once("admin-bar.php");
+?>
+
+
+<div class="admin-layout">
+
+    <aside class="admin-sidebar">
+
+        <?php
+        require("menu2.php");
+        ?>
+
+    </aside>
+
+
+    <main class="admin-main">
+
+        <iframe
+            name="main"
+            src="help.php"
+            class="admin-main-frame"
+            title="관리자 작업 영역"
+        ></iframe>
+
+    </main>
+
+</div>
+
+
+</body>
 </html>

@@ -1,355 +1,1516 @@
-<html>
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>Edit Problem</title>
-</head>
-<hr>
-
 <?php
 require_once("../include/db_info.inc.php");
 require_once("../include/const.inc.php");
 require_once("admin-header.php");
 require_once("../include/my_func.inc.php");
 
-if (!(isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor']))) {
+if (
+  !(
+    isset($_SESSION[$OJ_NAME . '_administrator']) ||
+    isset($_SESSION[$OJ_NAME . '_problem_editor'])
+  )
+) {
   echo "<a href='../loginpage.php'>Please Login First!</a>";
   exit(1);
 }
 
-echo "<center><h3>"."Edit-".$MSG_PROBLEM."</h3></center>";
-include_once("kindeditor.php") ;
+include_once("kindeditor.php");
 ?>
 
-<body leftmargin="30" >
-  <div class="container">
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>문제 수정</title>
+</head>
+
+<body>
+
+  <div class="admin-page">
+
     <?php
     if (isset($_GET['id'])) {
-      ;//require_once("../include/check_get_key.php");
-    ?>
-    <form id=problemEdit action="problem_edit.php" method="post" onsubmit='do_submit()'>
-      <?php
-      $sql = "SELECT * FROM `problem` WHERE `problem_id`=?";
-      $result = pdo_query($sql,intval($_GET['id']));
+
+      $id = intval($_GET['id']);
+
+      $sql = "
+        SELECT *
+        FROM `problem`
+        WHERE `problem_id` = ?
+    ";
+
+      $result = pdo_query(
+        $sql,
+        $id
+      );
+
+      if (
+        !is_array($result) ||
+        count($result) === 0
+      ) {
+        echo "
+            <div class='admin-card'>
+                존재하지 않는 문제입니다.
+            </div>
+        ";
+        exit;
+      }
+
       $row = $result[0];
-      ?>
 
-      <input type=hidden name=problem_id value='<?php echo $row['problem_id']?>'>
-      <p align=left>
-  
-          <h3>
-          <?php echo $row['problem_id']?>: <input class="input input-xxlarge" style='width:75%' type=text name=title value='<?php echo htmlentities($row['title'],ENT_QUOTES,"UTF-8")?>'>
-          </h3>
-        
-      </p>
-        <p align=left>
-          <?php echo $MSG_Time_Limit?><br>
-          <input class="input input-mini" type=number min="0.001" max="300" step="0.001" name=time_limit size=20 value="<?php echo $row['time_limit']?>"> sec<br><br>
-          <?php echo $MSG_Memory_Limit?><br>
-          <input class="input input-mini" type=number min="1" max="1024" step="1" name=memory_limit size=20 value="<?php echo $row['memory_limit']?>"> MB<br><br>
-        </p>
-      <p align=left>
-        <?php echo "<h4>".$MSG_Description."</h4>"?>
-        <textarea class="kindeditor" rows=13 name=description cols=60><?php echo htmlentities($row['description'],ENT_QUOTES,"UTF-8")?></textarea><br>
-      </p>
+      $sqltmp = "
+        SELECT `user_id`
+        FROM `privilege`
+        WHERE `rightstr` = ?
+          AND `defunct` = 'N'
+        LIMIT 1
+    ";
 
-      <p align=left>
-        <?php echo "<h4>".$MSG_Input."</h4>"?>
-        <textarea class="kindeditor" rows=13 name=input cols=60><?php echo htmlentities($row['input'],ENT_QUOTES,"UTF-8")?></textarea><br>
-      </p>
+      $resulttmp = pdo_query(
+        $sqltmp,
+        "p" . $id
+      );
 
-      <p align=left>
-        <?php echo "<h4>".$MSG_Output."</h4>"?>
-        <textarea  class="kindeditor" rows=13 name=output cols=60><?php echo htmlentities($row['output'],ENT_QUOTES,"UTF-8")?></textarea><br>
-      </p>
+      $creator_value =
+        (
+          is_array($resulttmp) &&
+          count($resulttmp) > 0
+        )
+        ? $resulttmp[0]['user_id']
+        : '';
 
-      <p align=left>
-        <?php echo "<h4>".$MSG_Sample_Input."</h4>"?>
-        <textarea  class="input input-large" style="width:80%;" rows=13 name=sample_input><?php echo htmlentities($row['sample_input'],ENT_QUOTES,"UTF-8")?></textarea><br><br>
-      </p>
+      $allow_reuse =
+        isset($row['allow_reuse'])
+        ? intval($row['allow_reuse'])
+        : 1;
 
-      <p align=left>
-        <?php echo "<h4>".$MSG_Sample_Output."</h4>"?>
-        <textarea  class="input input-large" style="width:80%;" rows=13 name=sample_output><?php echo htmlentities($row['sample_output'],ENT_QUOTES,"UTF-8")?></textarea><br><br>
-      </p>
+      // front / rear / ban 코드가 하나라도 있으면 수정 화면에서 자동 펼침
+      $has_code_template =
+        trim(
+          isset($row['front_code'])
+            ? (string)$row['front_code']
+            : ''
+        ) !== ''
+        ||
+        trim(
+          isset($row['rear_code'])
+            ? (string)$row['rear_code']
+            : ''
+        ) !== ''
+        ||
+        trim(
+          isset($row['ban_code'])
+            ? (string)$row['ban_code']
+            : ''
+        ) !== '';
+    ?>
 
-      <p align=left>
-        <?php echo "<h4>".$MSG_HINT."</h4>"?>
-        <textarea class="kindeditor" rows=13 name=hint cols=30><?php echo htmlentities($row['hint'],ENT_QUOTES,"UTF-8")?></textarea><br>
-      </p>
+      <div class="admin-page-header">
 
-      <p>
-        <?php echo "<h4>".$MSG_SPJ."</h4>"?>
-        <?php echo "(".$MSG_HELP_SPJ.")"?><br>
-        <?php echo "No "?><input type=radio name=spj value='0' <?php echo $row['spj']=="0"?"checked":""?>>
-        <?php echo "/ Yes "?><input type=radio name=spj value='1' <?php echo $row['spj']=="1"?"checked":""?>><br><br>
-      </p>
+        <div>
+          <h1 class="admin-page-title">
+            문제 수정
+          </h1>
 
-      <p align=left>
-        <?php echo "<h4>".$MSG_SOURCE."(//로구분)</h4>"?>
-        <textarea name=source style="width:80%;" rows=1><?php echo htmlentities($row['source'],ENT_QUOTES,"UTF-8")?></textarea>
-      </p>
-        <!-- 출제자 정보 얻고 수정할 수 있도록 -->
-      <p align=left>
-          <?php echo "<h4>".$MSG_Creator."</h4>"?>
-          <?php // creator 정보 가져오기 
-            $sqltmp = "select `user_id` from `privilege` where `rightstr`=?";
-            $resulttmp = pdo_query($sqltmp,"p".(trim($_GET['id'])));
-            $rowtmp = $resulttmp[0];
-          ?>
-          <textarea name=creator style="width:80%;" rows=1><?php echo htmlentities($rowtmp['user_id'],ENT_QUOTES,"UTF-8")?></textarea>
-      </p>
+          <div class="admin-page-description">
+            문제 #<?php echo $id; ?>의 내용과 채점 조건, 문제 재사용 정책을 수정합니다.
+          </div>
+        </div>
 
-      <!-- ace editor front_code , rear_code accept -->
-      <p align=left>  
-          <?php echo "<h4>".$MSG_FRONT_CODE."(언어별  //C// 코드 //Python// 코드 *대소문자 유의*)</h4>"?>
-          <?php 
-            
-            for($i=0;$i<count($language_name);$i++){
-              echo "<span>".$language_name[$i]."//</span>";
-            }
-            
-          ?>
-          <?php if($OJ_ACE_EDITOR){ ?>
-          <pre style="width:80%;height:20%" cols=180 rows=3 id="front_code" ><?php echo htmlentities($row['front_code'],ENT_QUOTES,"UTF-8")?></pre><br>
-          <input type=hidden id="front_code_source" name=front_code value=""/>
-        <?php }else{ ?>
-          <textarea
-              style="width:80%;height:20%"
-              cols="180"
-              rows="4"
-              id="front_code"
-              name="front_code"
-          ><?php
-              echo htmlspecialchars(
-                  isset($row['front_code'])
-                      ? $row['front_code']
-                      : '',
-                  ENT_QUOTES,
-                  'UTF-8'
-              );
-          ?></textarea><br>
-        <?php }?>
-      </p>
-        <p align=left> 
-          <?php echo "<h4> ".$MSG_REAR_CODE."</h4>"?>
-          <?php if($OJ_ACE_EDITOR){ ?>
-          <pre style="width:80%;height:20%" cols=180 rows=5 id="rear_code"><?php echo htmlentities($row['rear_code'],ENT_QUOTES,"UTF-8")?></pre><br>
-          <input type=hidden id="rear_code_source" name=rear_code value=""/>
-        <?php }else{ ?>
-          <textarea
-              style="width:80%;height:20%"
-              cols="180"
-              rows="4"
-              id="rear_code"
-              name="rear_code"
-          ><?php
-              echo htmlspecialchars(
-                  isset($row['rear_code'])
-                      ? $row['rear_code']
-                      : '',
-                  ENT_QUOTES,
-                  'UTF-8'
-              );
-          ?></textarea><br>
-        <?php }?>
-        </p>
-        <p align=left> 
-          <?php echo "<h4>".$MSG_BAN_CODE."(/로 구분해서 입력 ex: for/if )</h4>"?>
-          <input name=ban_code style="width:80%;" value =<?php echo htmlentities($row['ban_code'],ENT_QUOTES,"UTF-8")?> ></input>
-        </p>
-        <p align=left> 
-          <?php echo "<h4>".$MSG_PRO_POINT."(정수로 입력)</h4>"?>
-          <input class="input input-mini" type=number min="1" max="300" step="1" name=pro_point size=20 value="<?php echo $row['pro_point'] ?>">점<br><br>
-        </p>
+        <div class="admin-page-header-actions">
 
-      
-      <div align=center>
-        <?php require_once("../include/set_post_key.php");?>
-        <input type=submit value='<?php echo $MSG_SAVE?>' name=submit>
+          <a
+            href="../problem.php?id=<?php echo $id; ?>"
+            class="admin-btn admin-btn-secondary"
+            target="_blank">
+            문제 보기
+          </a>
+
+          <a
+            href="problem_list.php"
+            class="admin-btn admin-btn-secondary">
+            문제 목록
+          </a>
+
+        </div>
+
       </div>
-    </form>
+
+
+      <form
+        id="problemEdit"
+        action="problem_edit.php"
+        method="post"
+        onsubmit="do_submit()">
+
+        <input
+          type="hidden"
+          name="problem_id"
+          value="<?php echo $id; ?>">
+
+
+        <!-- =====================================================
+             1. 기본 정보
+             ===================================================== -->
+
+        <div class="admin-form-card">
+
+          <div class="admin-form-card-header">
+
+            <span class="admin-form-step">
+              1
+            </span>
+
+            <div>
+              <div class="admin-form-card-title">
+                기본 정보
+              </div>
+
+              <div class="admin-form-card-desc">
+                문제 제목과 실행 제한을 수정합니다.
+              </div>
+            </div>
+
+          </div>
+
+
+          <div class="admin-form-field">
+
+            <label class="admin-form-label">
+              <?php echo $MSG_TITLE; ?>
+            </label>
+
+            <div class="admin-form-id-title">
+
+              <span class="admin-problem-id-label">
+                #<?php echo $id; ?>
+              </span>
+
+              <input
+                class="admin-form-input"
+                type="text"
+                name="title"
+                value="<?php
+                        echo htmlspecialchars(
+                          $row['title'],
+                          ENT_QUOTES,
+                          'UTF-8'
+                        );
+                        ?>"
+                required>
+
+            </div>
+
+          </div>
+
+
+          <div class="admin-form-grid-2">
+
+            <div class="admin-form-field">
+
+              <label class="admin-form-label">
+                <?php echo $MSG_Time_Limit; ?>
+              </label>
+
+              <div class="admin-form-unit">
+
+                <input
+                  class="admin-form-input"
+                  type="number"
+                  min="0.001"
+                  max="300"
+                  step="0.001"
+                  name="time_limit"
+                  value="<?php
+                          echo htmlspecialchars(
+                            $row['time_limit'],
+                            ENT_QUOTES,
+                            'UTF-8'
+                          );
+                          ?>"
+                  required>
+
+                <span class="admin-form-unit-label">
+                  sec
+                </span>
+
+              </div>
+
+            </div>
+
+
+            <div class="admin-form-field">
+
+              <label class="admin-form-label">
+                <?php echo $MSG_Memory_Limit; ?>
+              </label>
+
+              <div class="admin-form-unit">
+
+                <input
+                  class="admin-form-input"
+                  type="number"
+                  min="1"
+                  max="1024"
+                  step="1"
+                  name="memory_limit"
+                  value="<?php
+                          echo htmlspecialchars(
+                            $row['memory_limit'],
+                            ENT_QUOTES,
+                            'UTF-8'
+                          );
+                          ?>"
+                  required>
+
+                <span class="admin-form-unit-label">
+                  MB
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             2. 문제 내용
+             ===================================================== -->
+
+        <div class="admin-form-card">
+
+          <div class="admin-form-card-header">
+
+            <span class="admin-form-step">
+              2
+            </span>
+
+            <div>
+              <div class="admin-form-card-title">
+                문제 내용
+              </div>
+
+              <div class="admin-form-card-desc">
+                학생에게 표시되는 문제 설명과 입출력 예제를 수정합니다.
+              </div>
+            </div>
+
+          </div>
+
+
+          <div class="admin-form-field">
+
+            <label class="admin-form-label">
+              <?php echo $MSG_Description; ?>
+            </label>
+
+            <textarea
+              class="kindeditor"
+              rows="13"
+              name="description"
+              cols="80"><?php
+                        echo htmlspecialchars(
+                          $row['description'],
+                          ENT_QUOTES,
+                          'UTF-8'
+                        );
+                        ?></textarea>
+
+          </div>
+
+
+          <div class="admin-form-field">
+
+            <label class="admin-form-label">
+              <?php echo $MSG_Input; ?>
+            </label>
+
+            <textarea
+              class="kindeditor"
+              rows="13"
+              name="input"
+              cols="80"><?php
+                        echo htmlspecialchars(
+                          $row['input'],
+                          ENT_QUOTES,
+                          'UTF-8'
+                        );
+                        ?></textarea>
+
+          </div>
+
+
+          <div class="admin-form-field">
+
+            <label class="admin-form-label">
+              <?php echo $MSG_Output; ?>
+            </label>
+
+            <textarea
+              class="kindeditor"
+              rows="13"
+              name="output"
+              cols="80"><?php
+                        echo htmlspecialchars(
+                          $row['output'],
+                          ENT_QUOTES,
+                          'UTF-8'
+                        );
+                        ?></textarea>
+
+          </div>
+
+
+          <div class="admin-form-grid-2">
+
+            <div class="admin-form-field">
+
+              <label class="admin-form-label">
+                <?php echo $MSG_Sample_Input; ?>
+              </label>
+
+              <textarea
+                class="admin-form-textarea admin-code-textarea"
+                rows="9"
+                name="sample_input"><?php
+                                    echo htmlspecialchars(
+                                      $row['sample_input'],
+                                      ENT_QUOTES,
+                                      'UTF-8'
+                                    );
+                                    ?></textarea>
+
+            </div>
+
+
+            <div class="admin-form-field">
+
+              <label class="admin-form-label">
+                <?php echo $MSG_Sample_Output; ?>
+              </label>
+
+              <textarea
+                class="admin-form-textarea admin-code-textarea"
+                rows="9"
+                name="sample_output"><?php
+                                      echo htmlspecialchars(
+                                        $row['sample_output'],
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                      );
+                                      ?></textarea>
+
+            </div>
+
+          </div>
+
+
+          <div class="admin-form-field">
+
+            <label class="admin-form-label">
+              <?php echo $MSG_HINT; ?>
+            </label>
+
+            <textarea
+              class="kindeditor"
+              rows="13"
+              name="hint"
+              cols="80"><?php
+                        echo htmlspecialchars(
+                          $row['hint'],
+                          ENT_QUOTES,
+                          'UTF-8'
+                        );
+                        ?></textarea>
+
+          </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             3. 채점 및 문제 관리
+             ===================================================== -->
+
+        <div class="admin-form-card">
+
+          <div class="admin-form-card-header">
+
+            <span class="admin-form-step">
+              3
+            </span>
+
+            <div>
+              <div class="admin-form-card-title">
+                채점 및 문제 관리
+              </div>
+
+              <div class="admin-form-card-desc">
+                채점 방식과 문제의 사용 정책을 수정합니다.
+              </div>
+            </div>
+
+          </div>
+
+
+          <div class="admin-form-grid-2">
+
+            <div class="admin-form-field">
+
+              <label class="admin-form-label">
+                <?php echo $MSG_SPJ; ?>
+              </label>
+
+              <div class="admin-choice-group">
+
+                <label class="admin-choice">
+
+                  <input
+                    type="radio"
+                    name="spj"
+                    value="0"
+                    <?php
+                    echo intval($row['spj']) === 0
+                      ? 'checked'
+                      : '';
+                    ?>>
+
+                  <span>
+                    사용 안 함
+                  </span>
+
+                </label>
+
+
+                <label class="admin-choice">
+
+                  <input
+                    type="radio"
+                    name="spj"
+                    value="1"
+                    <?php
+                    echo intval($row['spj']) === 1
+                      ? 'checked'
+                      : '';
+                    ?>>
+
+                  <span>
+                    사용
+                  </span>
+
+                </label>
+
+              </div>
+
+              <div class="admin-form-help">
+                <?php echo $MSG_HELP_SPJ; ?>
+              </div>
+
+            </div>
+
+
+            <div class="admin-form-field">
+
+              <label class="admin-form-label">
+                다른 대회에서 문제 사용
+              </label>
+
+              <div class="admin-choice-group">
+
+                <label class="admin-choice">
+
+                  <input
+                    type="radio"
+                    name="allow_reuse"
+                    value="1"
+                    <?php
+                    echo $allow_reuse === 1
+                      ? 'checked'
+                      : '';
+                    ?>>
+
+                  <span>
+                    재사용 허용
+                  </span>
+
+                </label>
+
+
+                <label class="admin-choice">
+
+                  <input
+                    type="radio"
+                    name="allow_reuse"
+                    value="0"
+                    <?php
+                    echo $allow_reuse === 0
+                      ? 'checked'
+                      : '';
+                    ?>>
+
+                  <span>
+                    재사용 제한
+                  </span>
+
+                </label>
+
+              </div>
+
+              <div class="admin-form-help">
+                재사용 제한 시 다른 사용자가 이 문제를 새로운 대회나
+                수업 차시에 추가할 수 없습니다.
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div class="admin-form-grid-2">
+
+            <div class="admin-form-field">
+
+              <label class="admin-form-label">
+                <?php echo $MSG_SOURCE; ?>
+              </label>
+
+              <input
+                class="admin-form-input"
+                type="text"
+                name="source"
+                value="<?php
+                        echo htmlspecialchars(
+                          $row['source'],
+                          ENT_QUOTES,
+                          'UTF-8'
+                        );
+                        ?>"
+                placeholder="예: 정보올림피아드//수행평가">
+
+              <div class="admin-form-help">
+                여러 출처는 // 로 구분합니다.
+              </div>
+
+            </div>
+
+
+            <div class="admin-form-field">
+
+              <label class="admin-form-label">
+                <?php echo $MSG_Creator; ?>
+              </label>
+
+              <textarea
+                class="admin-form-textarea"
+                name="creator"
+                rows="2"><?php
+                          echo htmlspecialchars(
+                            $creator_value,
+                            ENT_QUOTES,
+                            'UTF-8'
+                          );
+                          ?></textarea>
+
+            </div>
+
+          </div>
+
+
+          <div class="admin-form-field admin-form-field-small">
+
+            <label class="admin-form-label">
+              <?php echo $MSG_PRO_POINT; ?>
+            </label>
+
+            <div class="admin-form-unit admin-form-unit-small">
+
+              <input
+                class="admin-form-input"
+                type="number"
+                min="1"
+                max="300"
+                step="1"
+                name="pro_point"
+                value="<?php
+                        echo intval(
+                          $row['pro_point']
+                        );
+                        ?>">
+
+              <span class="admin-form-unit-label">
+                점
+              </span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             4. 코드 템플릿 및 제한
+             ===================================================== -->
+
+        <div class="admin-form-card">
+
+          <div class="admin-form-card-header">
+
+            <span class="admin-form-step">
+              4
+            </span>
+
+            <div>
+              <div class="admin-form-card-title">
+                코드 템플릿 및 제한
+              </div>
+
+              <div class="admin-form-card-desc">
+                함수 작성형 문제 또는 특정 코드 사용 제한이 필요한 경우 설정합니다.
+              </div>
+            </div>
+
+          </div>
+
+
+          <button
+            type="button"
+            class="admin-code-toggle"
+            id="codeTemplateToggle"
+            onclick="toggleCodeTemplate()"
+            aria-expanded="<?php
+                            echo $has_code_template
+                              ? 'true'
+                              : 'false';
+                            ?>"
+            aria-controls="codeTemplateContent">
+            <span id="codeTemplateToggleText">
+              <?php
+              echo $has_code_template
+                ? '코드 템플릿 설정 접기'
+                : '코드 템플릿 설정 펼치기';
+              ?>
+            </span>
+
+            <span id="codeTemplateArrow">
+              <?php
+              echo $has_code_template
+                ? '▲'
+                : '▼';
+              ?>
+            </span>
+          </button>
+
+
+          <div
+            id="codeTemplateContent"
+            class="admin-code-template-content <?php
+                                                echo $has_code_template
+                                                  ? 'open'
+                                                  : '';
+                                                ?>">
+
+            <div class="admin-form-field">
+
+              <label class="admin-form-label">
+                앞 코드 (Front Code)
+              </label>
+
+              <div class="admin-form-help">
+                학생이 작성한 코드 앞에 자동으로 추가되는 코드입니다.
+                언어별 구분은 기존 HUSTOJ 형식인
+                <code>//언어명//</code>을 사용합니다.
+              </div>
+
+              <?php
+              if ($OJ_ACE_EDITOR) {
+              ?>
+
+                <pre
+                  class="admin-code-editor"
+                  id="front_code"><?php
+                                  echo htmlspecialchars(
+                                    isset($row['front_code'])
+                                      ? $row['front_code']
+                                      : '',
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                  );
+                                  ?></pre>
+
+                <input
+                  type="hidden"
+                  id="front_code_source"
+                  name="front_code"
+                  value="">
+
+              <?php
+              } else {
+              ?>
+
+                <textarea
+                  class="admin-form-textarea admin-code-textarea"
+                  rows="10"
+                  id="front_code"
+                  name="front_code"><?php
+                                    echo htmlspecialchars(
+                                      isset($row['front_code'])
+                                        ? $row['front_code']
+                                        : '',
+                                      ENT_QUOTES,
+                                      'UTF-8'
+                                    );
+                                    ?></textarea>
+
+              <?php
+              }
+              ?>
+
+            </div>
+
+
+            <div class="admin-form-field">
+
+              <label class="admin-form-label">
+                뒤 코드 (Rear Code)
+              </label>
+
+              <div class="admin-form-help">
+                학생이 작성한 코드 뒤에 자동으로 추가되는 코드입니다.
+              </div>
+
+              <?php
+              if ($OJ_ACE_EDITOR) {
+              ?>
+
+                <pre
+                  class="admin-code-editor"
+                  id="rear_code"><?php
+                                  echo htmlspecialchars(
+                                    isset($row['rear_code'])
+                                      ? $row['rear_code']
+                                      : '',
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                  );
+                                  ?></pre>
+
+                <input
+                  type="hidden"
+                  id="rear_code_source"
+                  name="rear_code"
+                  value="">
+
+              <?php
+              } else {
+              ?>
+
+                <textarea
+                  class="admin-form-textarea admin-code-textarea"
+                  rows="10"
+                  id="rear_code"
+                  name="rear_code"><?php
+                                    echo htmlspecialchars(
+                                      isset($row['rear_code'])
+                                        ? $row['rear_code']
+                                        : '',
+                                      ENT_QUOTES,
+                                      'UTF-8'
+                                    );
+                                    ?></textarea>
+
+              <?php
+              }
+              ?>
+
+            </div>
+
+
+            <div class="admin-form-field">
+
+              <label class="admin-form-label">
+                <?php echo $MSG_BAN_CODE; ?>
+              </label>
+
+              <input
+                class="admin-form-input"
+                type="text"
+                name="ban_code"
+                value="<?php
+                        echo htmlspecialchars(
+                          isset($row['ban_code'])
+                            ? $row['ban_code']
+                            : '',
+                          ENT_QUOTES,
+                          'UTF-8'
+                        );
+                        ?>"
+                placeholder="예: for/if">
+
+              <div class="admin-form-help">
+                여러 금지 코드는 / 로 구분해서 입력합니다.
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="admin-form-actions">
+
+          <a
+            href="problem_list.php"
+            class="admin-btn admin-btn-secondary">
+            취소
+          </a>
+
+          <?php
+          require_once("../include/set_post_key.php");
+          ?>
+
+          <button
+            type="submit"
+            name="submit"
+            class="admin-btn admin-btn-primary">
+            <?php echo $MSG_SAVE; ?>
+          </button>
+
+        </div>
+
+      </form>
+
 
     <?php
-    }
-    else {
+    } else {
+
       require_once("../include/check_post_key.php");
-      
-      $id = intval($_POST['problem_id']);
 
-      if (!(isset($_SESSION[$OJ_NAME.'_'."p$id"]) || isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor']) )) exit();  
+      $id = intval(
+        $_POST['problem_id']
+      );
 
-      $title = $_POST['title'];
-      $title = str_replace(",", "&#44;", $title);
+      if (
+        !(
+          isset(
+            $_SESSION[$OJ_NAME . "_p$id"]
+          ) ||
+          isset(
+            $_SESSION[$OJ_NAME . '_administrator']
+          ) ||
+          isset(
+            $_SESSION[$OJ_NAME . '_problem_editor']
+          )
+        )
+      ) {
+        exit();
+      }
 
-      $time_limit = $_POST['time_limit'];
 
-      $memory_limit = $_POST['memory_limit'];
+      $title = isset($_POST['title'])
+        ? $_POST['title']
+        : '';
 
-      $description = $_POST['description'];
-      $description = str_replace("<p>", "", $description); 
-      $description = str_replace("</p>", "<br />", $description);
-      $description = str_replace(",", "&#44;", $description);
+      $title = str_replace(
+        ",",
+        "&#44;",
+        $title
+      );
 
-      $input = $_POST['input'];
-      $input = str_replace("<p>", "", $input); 
-      $input = str_replace("</p>", "<br />", $input);
-      $input = str_replace(",", "&#44;", $input);
 
-      $output = $_POST['output'];
-      $output = str_replace("<p>", "", $output); 
-      $output = str_replace("</p>", "<br />", $output); 
-      $output = str_replace(",", "&#44;", $output);
+      $time_limit =
+        isset($_POST['time_limit'])
+        ? $_POST['time_limit']
+        : 1;
 
-      $sample_input = $_POST['sample_input'];
-      $sample_output = $_POST['sample_output'];
-      if ($sample_input=="") $sample_input="\n";
-      if ($sample_output=="") $sample_output="\n";
+      $memory_limit =
+        isset($_POST['memory_limit'])
+        ? $_POST['memory_limit']
+        : 128;
 
-      $hint = $_POST['hint'];
-      $hint = str_replace("<p>", "", $hint); 
-      $hint = str_replace("</p>", "<br />", $hint);
-      $hint = str_replace(",", "&#44;", $hint);
 
-      $source = $_POST['source'];
-      $creator = $_POST['creator'];
-      $spj = $_POST['spj'];
+      $description =
+        isset($_POST['description'])
+        ? $_POST['description']
+        : '';
 
-     // 앞뒤 코드는 원문을 보존하고 줄바꿈 방식만 LF로 통일한다.
+      $description =
+        str_replace(
+          "<p>",
+          "",
+          $description
+        );
+
+      $description =
+        str_replace(
+          "</p>",
+          "<br />",
+          $description
+        );
+
+      $description =
+        str_replace(
+          ",",
+          "&#44;",
+          $description
+        );
+
+
+      $input =
+        isset($_POST['input'])
+        ? $_POST['input']
+        : '';
+
+      $input =
+        str_replace(
+          "<p>",
+          "",
+          $input
+        );
+
+      $input =
+        str_replace(
+          "</p>",
+          "<br />",
+          $input
+        );
+
+      $input =
+        str_replace(
+          ",",
+          "&#44;",
+          $input
+        );
+
+
+      $output =
+        isset($_POST['output'])
+        ? $_POST['output']
+        : '';
+
+      $output =
+        str_replace(
+          "<p>",
+          "",
+          $output
+        );
+
+      $output =
+        str_replace(
+          "</p>",
+          "<br />",
+          $output
+        );
+
+      $output =
+        str_replace(
+          ",",
+          "&#44;",
+          $output
+        );
+
+
+      $sample_input =
+        isset($_POST['sample_input'])
+        ? $_POST['sample_input']
+        : '';
+
+      $sample_output =
+        isset($_POST['sample_output'])
+        ? $_POST['sample_output']
+        : '';
+
+      if ($sample_input === '') {
+        $sample_input = "\n";
+      }
+
+      if ($sample_output === '') {
+        $sample_output = "\n";
+      }
+
+
+      $hint =
+        isset($_POST['hint'])
+        ? $_POST['hint']
+        : '';
+
+      $hint =
+        str_replace(
+          "<p>",
+          "",
+          $hint
+        );
+
+      $hint =
+        str_replace(
+          "</p>",
+          "<br />",
+          $hint
+        );
+
+      $hint =
+        str_replace(
+          ",",
+          "&#44;",
+          $hint
+        );
+
+
+      $source =
+        isset($_POST['source'])
+        ? $_POST['source']
+        : '';
+
+      $creator =
+        isset($_POST['creator'])
+        ? trim($_POST['creator'])
+        : '';
+
+      $spj =
+        isset($_POST['spj'])
+        ? intval($_POST['spj'])
+        : 0;
+
+
+      // 앞뒤 코드는 원문을 보존하고 줄바꿈 방식만 LF로 통일한다.
       $front_code =
-          isset($_POST['front_code'])
-              ? $_POST['front_code']
-              : '';
+        isset($_POST['front_code'])
+        ? $_POST['front_code']
+        : '';
 
       $rear_code =
-          isset($_POST['rear_code'])
-              ? $_POST['rear_code']
-              : '';
+        isset($_POST['rear_code'])
+        ? $_POST['rear_code']
+        : '';
 
       $front_code =
-          str_replace(
-              array("\r\n", "\r"),
-              "\n",
-              $front_code
-          );
+        str_replace(
+          array("\r\n", "\r"),
+          "\n",
+          $front_code
+        );
 
       $rear_code =
-          str_replace(
-              array("\r\n", "\r"),
-              "\n",
-              $rear_code
-          );
+        str_replace(
+          array("\r\n", "\r"),
+          "\n",
+          $rear_code
+        );
+
 
       $ban_code =
-          isset($_POST['ban_code'])
-              ? $_POST['ban_code']
-              : '';
+        isset($_POST['ban_code'])
+        ? $_POST['ban_code']
+        : '';
 
       $pro_point =
-          isset($_POST['pro_point'])
-              ? intval($_POST['pro_point'])
-              : 1;
-
-      /* php 7.4 버전부터  get_magic_quotes_gpc() 삭제되어 false가 되어 더 이상 실행되지 않는다. 
-      // DB작업을 하기 위해 쿼리를 작성할 때 따옴표가 문자열에 있으면 오류가 발생한다. 
-      // 이럴때 addslashes()- 쿼리안의 따옴표를 예외문자로 \'로 처리, stripslashes() - 쿼리안에 예외문자 백슬래시 제거
-      // 이럴 한번에 하는 함수가 magic_quotes_gpc() 이고 get_magic_quotes_gpc()은 설정값을 확인
-      if (get_magic_quotes_gpc()) {
-        $title = stripslashes($title);
-        $time_limit = stripslashes($time_limit);
-        $memory_limit = stripslashes($memory_limit);
-        $description = stripslashes($description);
-        $input = stripslashes($input);
-        $output = stripslashes($output);
-        $sample_input = stripslashes($sample_input);
-        $sample_output = stripslashes($sample_output);
-        //$test_input = stripslashes($test_input);
-        //$test_output = stripslashes($test_output);
-        $hint = stripslashes($hint);
-        $source = stripslashes($source); 
-        $spj = stripslashes($spj);
-        $front_code = stripslashes($front_code);
-        $rear_code = stripslashes($rear_code);
-        $ban_code = stripslashes($ban_code);
-        $pro_point = stripslashes($pro_point);  
-      }
-      */
-      $title = ($title);
-      $description = RemoveXSS($description);
-      $input = RemoveXSS($input);
-      $output = RemoveXSS($output);
-      $hint = RemoveXSS($hint);
-      $basedir = $OJ_DATA."/$id";
-
-      // code에서 콤마가 자동으로 제거 되어 이를 적용하지 않음
-      //$front_code = RemoveXSS($front_code);
-      //$rear_code = RemoveXSS($rear_code);
-      $ban_code = RemoveXSS($ban_code);
+        isset($_POST['pro_point'])
+        ? intval($_POST['pro_point'])
+        : 1;
 
 
-      echo "Problem Updated!<br>";
+      // ----------------------------------------------------------
+      // 문제 재사용 정책
+      // ----------------------------------------------------------
 
-      if ($sample_input && file_exists($basedir."/sample.in")) {
-        //mkdir($basedir);
-        $fp = fopen($basedir."/sample.in","w");
-        fputs($fp,preg_replace("(\r\n)","\n",$sample_input));
-        fclose($fp);
+      $allow_reuse_raw =
+        isset($_POST['allow_reuse'])
+        ? (string)$_POST['allow_reuse']
+        : '';
 
-        $fp = fopen($basedir."/sample.out","w");
-        fputs($fp,preg_replace("(\r\n)","\n",$sample_output));
-        fclose($fp);
+      if (
+        !in_array(
+          $allow_reuse_raw,
+          array('0', '1'),
+          true
+        )
+      ) {
+        echo "Invalid allow_reuse value.";
+        exit(1);
       }
 
-      $spj = intval($spj);
+      $allow_reuse =
+        intval($allow_reuse_raw);
 
-      $sql = "UPDATE `problem` SET `title`=?,`time_limit`=?,`memory_limit`=?, `description`=?,`input`=?,`output`=?,`sample_input`=?,`sample_output`=?,`hint`=?,`source`=?,`spj`=?,`in_date`=NOW(),`front_code`=?,`rear_code`=?,`ban_code`=?,`pro_point`=? WHERE `problem_id`=?";
 
-      @pdo_query($sql,$title,$time_limit,$memory_limit,$description,$input,$output,$sample_input,$sample_output,$hint,$source,$spj,$front_code, $rear_code, $ban_code, $pro_point,$id);
+      $description =
+        RemoveXSS(
+          $description
+        );
 
-      // creator update
-      $sql_creator = "UPDATE `privilege` SET `user_id`=? where `rightstr`=?";
-      @pdo_query($sql_creator,$creator,"p".$id);
+      $input =
+        RemoveXSS(
+          $input
+        );
 
-      echo "Edit OK!<br>";
-      echo "<a href='../problem.php?id=$id'>See The Problem!</a>";
+      $output =
+        RemoveXSS(
+          $output
+        );
+
+      $hint =
+        RemoveXSS(
+          $hint
+        );
+
+      $ban_code =
+        RemoveXSS(
+          $ban_code
+        );
+
+
+      $basedir =
+        $OJ_DATA . "/" . $id;
+
+
+      if (
+        $sample_input &&
+        file_exists(
+          $basedir . "/sample.in"
+        )
+      ) {
+
+        $fp =
+          fopen(
+            $basedir . "/sample.in",
+            "w"
+          );
+
+        fputs(
+          $fp,
+          preg_replace(
+            "(\r\n)",
+            "\n",
+            $sample_input
+          )
+        );
+
+        fclose(
+          $fp
+        );
+
+
+        $fp =
+          fopen(
+            $basedir . "/sample.out",
+            "w"
+          );
+
+        fputs(
+          $fp,
+          preg_replace(
+            "(\r\n)",
+            "\n",
+            $sample_output
+          )
+        );
+
+        fclose(
+          $fp
+        );
+      }
+
+
+      $sql = "
+        UPDATE `problem`
+        SET
+            `title` = ?,
+            `time_limit` = ?,
+            `memory_limit` = ?,
+            `description` = ?,
+            `input` = ?,
+            `output` = ?,
+            `sample_input` = ?,
+            `sample_output` = ?,
+            `hint` = ?,
+            `source` = ?,
+            `spj` = ?,
+            `in_date` = NOW(),
+            `front_code` = ?,
+            `rear_code` = ?,
+            `ban_code` = ?,
+            `pro_point` = ?,
+            `allow_reuse` = ?
+        WHERE `problem_id` = ?
+    ";
+
+      @pdo_query(
+        $sql,
+        $title,
+        $time_limit,
+        $memory_limit,
+        $description,
+        $input,
+        $output,
+        $sample_input,
+        $sample_output,
+        $hint,
+        $source,
+        $spj,
+        $front_code,
+        $rear_code,
+        $ban_code,
+        $pro_point,
+        $allow_reuse,
+        $id
+      );
+
+
+      // 출제자 정보 수정
+      if ($creator !== '') {
+
+        $sql_creator = "
+            UPDATE `privilege`
+            SET `user_id` = ?
+            WHERE `rightstr` = ?
+        ";
+
+        @pdo_query(
+          $sql_creator,
+          $creator,
+          "p" . $id
+        );
+      }
+
+
+      echo "
+        <div class='admin-card'>
+
+            <h3 style='margin-top:0;'>
+                문제 수정 완료
+            </h3>
+
+            <p>
+                문제 #"
+        . intval($id) .
+        " 수정이 완료되었습니다.
+            </p>
+
+            <div class='admin-form-actions'>
+
+                <a
+                    class='admin-btn admin-btn-primary'
+                    href='../problem.php?id="
+        . intval($id) .
+        "'
+                    target='_blank'
+                >
+                    문제 보기
+                </a>
+
+                <a
+                    class='admin-btn admin-btn-secondary'
+                    href='problem_list.php'
+                >
+                    문제 목록
+                </a>
+
+            </div>
+
+        </div>
+    ";
     }
     ?>
+
   </div>
+
+
   <script>
-    
-  function do_submit(){
-    if(typeof(editorFrontCode) != "undefined"){ 
-      $("#front_code_source").val(editorFrontCode.getValue());
+    function toggleCodeTemplate() {
+
+      var content =
+        document.getElementById(
+          "codeTemplateContent"
+        );
+
+      var button =
+        document.getElementById(
+          "codeTemplateToggle"
+        );
+
+      var text =
+        document.getElementById(
+          "codeTemplateToggleText"
+        );
+
+      var arrow =
+        document.getElementById(
+          "codeTemplateArrow"
+        );
+
+      if (!content) {
+        return;
+      }
+
+      var isOpen =
+        content.classList.contains(
+          "open"
+        );
+
+      if (isOpen) {
+
+        content.classList.remove(
+          "open"
+        );
+
+        if (text) {
+          text.textContent =
+            "코드 템플릿 설정 펼치기";
+        }
+
+        if (arrow) {
+          arrow.textContent = "▼";
+        }
+
+        if (button) {
+          button.setAttribute(
+            "aria-expanded",
+            "false"
+          );
+        }
+
+      } else {
+
+        content.classList.add(
+          "open"
+        );
+
+        if (text) {
+          text.textContent =
+            "코드 템플릿 설정 접기";
+        }
+
+        if (arrow) {
+          arrow.textContent = "▲";
+        }
+
+        if (button) {
+          button.setAttribute(
+            "aria-expanded",
+            "true"
+          );
+        }
+
+        // display:none 상태에서 초기화된 ACE 편집기의 폭 재계산
+        window.setTimeout(
+          function() {
+
+            if (
+              typeof(editorFrontCode) !==
+              "undefined"
+            ) {
+              editorFrontCode.resize();
+            }
+
+            if (
+              typeof(editorRearCode) !==
+              "undefined"
+            ) {
+              editorRearCode.resize();
+            }
+          },
+          0
+        );
+      }
     }
-    if(typeof(editorRearCode) != "undefined"){ 
-      $("#rear_code_source").val(editorRearCode.getValue());
+
+
+    function do_submit() {
+
+      if (
+        typeof(editorFrontCode) !== "undefined"
+      ) {
+        $("#front_code_source").val(
+          editorFrontCode.getValue()
+        );
+      }
+
+      if (
+        typeof(editorRearCode) !== "undefined"
+      ) {
+        $("#rear_code_source").val(
+          editorRearCode.getValue()
+        );
+      }
+
+      document.getElementById("problemEdit").target = "_self";
     }
-    document.getElementById("problemEdit").target="_self";
-    document.getElementById("problemEdit").submit();
-  }
   </script>
-  
-  <?php if($OJ_ACE_EDITOR){ // ACE 에디터를 적용하여 front , rear 코드 형태가 잘 보이도록 21.12.23 ?>
-  <script src="../ace/ace.js"></script>
-  <script src="../ace/ext-language_tools.js"></script>
-  <script>
+
+
+  <?php
+  if (
+    isset($OJ_ACE_EDITOR) &&
+    $OJ_ACE_EDITOR &&
+    isset($_GET['id'])
+  ) {
+  ?>
+    <script src="../ace/ace.js"></script>
+    <script src="../ace/ext-language_tools.js"></script>
+
+    <script>
       ace.require("../ace/ext/language_tools");
-      var editorFrontCode = ace.edit("front_code");
-      editorFrontCode.setTheme("ace/theme/chrome");
-      editorFrontCode.session.setMode("ace/mode/c_cpp");
+
+      var editorFrontCode =
+        ace.edit("front_code");
+
+      editorFrontCode.setTheme(
+        "ace/theme/chrome"
+      );
+
+      editorFrontCode.session.setMode(
+        "ace/mode/c_cpp"
+      );
+
       editorFrontCode.setOptions({
         enableSnippets: true,
-        enableLiveAutocompletion: false,
+        enableLiveAutocompletion: false
       });
-      var editorRearCode = ace.edit("rear_code");
-      editorRearCode.setTheme("ace/theme/chrome");
-      editorRearCode.session.setMode("ace/mode/c_cpp");
+
+
+      var editorRearCode =
+        ace.edit("rear_code");
+
+      editorRearCode.setTheme(
+        "ace/theme/chrome"
+      );
+
+      editorRearCode.session.setMode(
+        "ace/mode/c_cpp"
+      );
+
       editorRearCode.setOptions({
         enableSnippets: true,
-        enableLiveAutocompletion: false,
+        enableLiveAutocompletion: false
       });
 
+      if (
+        document
+        .getElementById(
+          "codeTemplateContent"
+        )
+        .classList.contains(
+          "open"
+        )
+      ) {
 
-  </script>
-  <?php }?>
+        window.setTimeout(
+          function() {
+            editorFrontCode.resize();
+            editorRearCode.resize();
+          },
+          0
+        );
+      }
+    </script>
+  <?php
+  }
+  ?>
+
 </body>
+
 </html>

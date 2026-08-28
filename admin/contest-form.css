@@ -1,0 +1,691 @@
+.contest-add-wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 12px 8px 28px;
+    box-sizing: border-box;
+}
+
+.contest-add-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    box-sizing: border-box;
+}
+
+.contest-add-card h4 {
+    margin: 0 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.contest-add-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 18px;
+}
+
+.contest-add-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px 18px;
+}
+
+.contest-add-field label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.contest-add-field input[type="text"],
+.contest-add-field input[type="date"],
+.contest-add-field input[type="number"],
+.contest-add-field select,
+.contest-add-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 34px;
+}
+
+.contest-add-inline-time {
+    display: grid;
+    grid-template-columns: minmax(150px, 2fr) 80px 80px;
+    gap: 8px;
+    align-items: end;
+}
+
+.contest-add-help {
+    color: #666;
+    font-size: 0.92em;
+    margin-top: 6px;
+    line-height: 1.5;
+}
+
+.contest-add-problem-row {
+    padding: 8px 10px;
+    margin-top: 6px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background: #fafafa;
+}
+
+/* ========================================================
+   문제 선택기
+   ======================================================== */
+
+.contest-problem-selector {
+    margin-top: 4px;
+}
+
+
+.contest-problem-search {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+
+.contest-problem-search input {
+    flex: 1;
+
+    box-sizing: border-box;
+    min-height: 38px;
+
+    padding: 8px 10px;
+
+    border: 1px solid #d6dde7;
+    border-radius: 7px;
+}
+
+
+.contest-problem-search button {
+    min-height: 38px;
+
+    padding: 0 18px;
+
+    border: 1px solid #2563eb;
+    border-radius: 7px;
+
+    background: #2563eb;
+    color: #fff;
+
+    cursor: pointer;
+}
+
+
+.contest-problem-tabs {
+    display: flex;
+    gap: 6px;
+
+    margin-top: 12px;
+    margin-bottom: 8px;
+}
+
+
+.contest-problem-tab {
+    padding: 7px 12px;
+
+    border: 1px solid #d6dde7;
+    border-radius: 7px;
+
+    background: #fff;
+    color: #526174;
+
+    cursor: pointer;
+}
+
+
+.contest-problem-tab.active {
+    border-color: #8db2eb;
+
+    background: #eaf2fd;
+    color: #1d4ed8;
+
+    font-weight: 600;
+}
+
+
+.contest-problem-results {
+    max-height: 360px;
+
+    margin-top: 12px;
+
+    overflow-y: auto;
+
+    border: 1px solid #e1e6ed;
+    border-radius: 8px;
+
+    background: #fbfcfe;
+}
+
+
+.contest-problem-result {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 9px 12px;
+
+    border-bottom: 1px solid #edf0f4;
+}
+
+
+.contest-problem-result:last-child {
+    border-bottom: 0;
+}
+
+
+.contest-problem-result:hover {
+    background: #f3f6fa;
+}
+
+
+.contest-problem-result-title {
+    flex: 1;
+
+    min-width: 0;
+}
+
+
+.contest-problem-result-title a {
+    color: #334155;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+
+.contest-problem-result-title a:hover {
+    color: #2563eb;
+}
+
+
+.contest-problem-meta {
+    margin-top: 3px;
+
+    color: #7b8797;
+    font-size: 12px;
+}
+
+
+.contest-problem-reuse {
+    flex-shrink: 0;
+
+    padding: 3px 7px;
+
+    border-radius: 999px;
+
+    background: #eef2f6;
+    color: #64748b;
+
+    font-size: 11px;
+}
+
+
+.contest-selected-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-top: 20px;
+    padding-bottom: 8px;
+
+    border-bottom: 1px solid #e1e6ed;
+}
+
+
+.contest-selected-list {
+    margin-top: 8px;
+}
+
+
+.contest-selected-row {
+    display: grid;
+
+    grid-template-columns:
+        42px minmax(200px, 1fr) 150px 70px;
+
+    gap: 10px;
+
+    align-items: center;
+
+    padding: 9px 10px;
+
+    margin-bottom: 6px;
+
+    border: 1px solid #e1e6ed;
+    border-radius: 7px;
+
+    background: #f9fbfd;
+}
+
+
+.contest-selected-order {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 30px;
+    height: 30px;
+
+    border-radius: 6px;
+
+    background: #e6eef9;
+    color: #2563eb;
+
+    font-weight: 700;
+}
+
+
+.contest-selected-title a {
+    color: #334155;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+
+.contest-selected-score {
+    display: flex;
+    align-items: center;
+
+    gap: 5px;
+}
+
+
+.contest-selected-score input {
+    width: 90px;
+
+    box-sizing: border-box;
+
+    padding: 6px 7px;
+}
+
+
+.contest-selected-remove {
+    padding: 6px 8px;
+
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+
+    background: #fff;
+    color: #b91c1c;
+
+    cursor: pointer;
+}
+
+
+.contest-problem-empty {
+    padding: 24px 15px;
+
+    color: #7b8797;
+
+    text-align: center;
+}
+
+/* ========================================================
+대회 운영 설정
+======================================================== */
+
+.contest-setting-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+
+.contest-setting-box {
+    padding: 16px;
+
+    border: 1px solid #e1e6ed;
+    border-radius: 10px;
+
+    background: #fbfcfe;
+}
+
+
+.contest-setting-title {
+    color: #1e293b;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+
+.contest-setting-description {
+    min-height: 38px;
+
+    margin-top: 5px;
+    margin-bottom: 12px;
+
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+
+.contest-choice-group {
+    display: flex;
+    gap: 6px;
+
+    padding: 4px;
+
+    border-radius: 8px;
+
+    background: #eef2f6;
+}
+
+
+.contest-choice-group input[type="radio"] {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    opacity: 0;
+}
+
+
+.contest-choice-group label {
+    flex: 1;
+
+    margin: 0;
+    padding: 8px 10px;
+
+    border: 1px solid transparent;
+    border-radius: 6px;
+
+    background: transparent;
+    color: #64748b;
+
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+
+.contest-choice-group input[type="radio"]:checked+label {
+    border-color: #b7cff4;
+
+    background: #ffffff;
+    color: #2563eb;
+
+    box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+
+.contest-choice-group input[type="radio"]:focus+label {
+    outline: 2px solid #bfdbfe;
+    outline-offset: 1px;
+}
+
+
+.contest-setting-password {
+    padding: 16px;
+
+    border: 1px solid #e1e6ed;
+    border-radius: 10px;
+
+    background: #fbfcfe;
+}
+
+
+.contest-setting-password label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #1e293b;
+    font-weight: 700;
+}
+
+
+.contest-setting-password input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 9px 10px;
+
+    border: 1px solid #d6dde7;
+    border-radius: 7px;
+
+    background: #fff;
+}
+
+
+/* ========================================================
+제출 언어
+======================================================== */
+
+.contest-language-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding-bottom: 10px;
+    margin-bottom: 4px;
+
+    border-bottom: 1px solid #eee;
+}
+
+
+.contest-language-header h4 {
+    margin: 0;
+    padding: 0;
+
+    border: 0;
+}
+
+
+.contest-language-count {
+    padding: 5px 9px;
+
+    border-radius: 999px;
+
+    background: #eef2f6;
+    color: #64748b;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+.contest-language-options {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+    margin-top: 15px;
+}
+
+
+.contest-language-item input {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    opacity: 0;
+}
+
+
+.contest-language-item label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 36px;
+
+    margin: 0;
+    padding: 0 14px;
+
+    border: 1px solid #d6dde7;
+    border-radius: 8px;
+
+    background: #fff;
+    color: #475569;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+
+.contest-language-item label:hover {
+    border-color: #9dbce9;
+
+    background: #f8fbff;
+}
+
+
+.contest-language-item input:checked+label {
+    border-color: #8db2eb;
+
+    background: #eaf2fd;
+    color: #1d4ed8;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(37, 99, 235, 0.06);
+}
+
+
+.contest-language-item input:focus+label {
+    outline: 2px solid #bfdbfe;
+    outline-offset: 2px;
+}
+
+
+.contest-language-error {
+    margin-top: 10px;
+
+    color: #b91c1c;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.contest-add-save {
+    text-align: center;
+    margin-top: 22px;
+}
+
+.contest-add-save input[type="submit"] {
+    min-width: 160px;
+    padding: 10px 18px;
+    font-size: 1.05em;
+}
+
+@media (max-width: 800px) {
+
+    .contest-add-grid,
+    .contest-add-grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .contest-add-inline-time {
+        grid-template-columns: 1fr 70px 70px;
+    }
+
+    .contest-add-card {
+        padding: 14px;
+    }
+
+    .contest-selected-row {
+        grid-template-columns:
+            36px minmax(0, 1fr);
+    }
+
+    .contest-selected-score,
+    .contest-selected-remove {
+        grid-column: 2;
+    }
+
+    .contest-setting-grid {
+        grid-template-columns: 1fr;
+    }
+
+
+    .contest-language-options {
+        gap: 6px;
+    }
+
+
+    .contest-language-item label {
+        min-height: 34px;
+        padding: 0 11px;
+    }
+
+}
+
+
+/* ========================================================
+Contest 수정 화면 공통 보조 스타일
+======================================================== */
+
+.contest-edit-header {
+    margin: 10px 0 20px;
+    text-align: center;
+}
+
+.contest-edit-header h3 {
+    margin: 0 0 6px;
+}
+
+.contest-edit-header>div {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.contest-edit-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.contest-edit-actions input {
+    min-width: 140px;
+    padding: 9px 16px;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.contest-edit-actions input[type="submit"] {
+    border: 1px solid #2563eb;
+    background: #2563eb;
+    color: #fff;
+}
+
+.contest-edit-actions input[type="reset"] {
+    border: 1px solid #d6dde7;
+    background: #fff;
+    color: #475569;
+}
+
+@media (max-width: 800px) {
+    .contest-edit-actions {
+        flex-direction: column;
+    }
+
+    .contest-edit-actions input {
+        width: 100%;
+    }
+}

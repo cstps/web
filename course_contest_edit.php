@@ -84,7 +84,8 @@ $rows = pdo_query(
 
         c.title,
         c.start_time,
-        c.end_time
+        c.end_time,
+        c.langmask
 
      FROM course_contest cc
 

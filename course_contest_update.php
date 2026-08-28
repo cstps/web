@@ -69,6 +69,13 @@ $end_time_raw =
         : '';
 
 
+$selected_languages =
+    isset($_POST['lang']) &&
+    is_array($_POST['lang'])
+        ? $_POST['lang']
+        : array();
+
+
 // ============================================================
 // 4. 기본값 검증
 // ============================================================
@@ -287,6 +294,164 @@ if ($link_type === 'created') {
 
     $end_time =
         date('Y-m-d H:i:s', $end_timestamp);
+
+
+    // ========================================================
+    // Course 제출 가능 언어
+    // ========================================================
+
+    $course_language_specs = array(
+
+        array(
+            'aliases' => array('C++')
+        ),
+
+        array(
+            'aliases' => array('Python3', 'Python')
+        ),
+
+        array(
+            'aliases' => array('JavaScript')
+        ),
+
+        array(
+            'aliases' => array('Java')
+        )
+
+    );
+
+
+    $course_allowed_language_ids =
+        array();
+
+
+    foreach (
+        $course_language_specs
+        as $language_spec
+    ) {
+
+        foreach (
+            $language_spec['aliases']
+            as $language_alias
+        ) {
+
+            $language_id =
+                array_search(
+                    $language_alias,
+                    $language_name,
+                    true
+                );
+
+
+            if ($language_id !== false) {
+
+                $course_allowed_language_ids[] =
+                    intval($language_id);
+
+                break;
+            }
+        }
+    }
+
+
+    // ========================================================
+    // POST 언어 검증
+    // ========================================================
+
+    $selected_language_ids =
+        array();
+
+
+    foreach (
+        $selected_languages
+        as $language_id_raw
+    ) {
+
+        if (
+            !is_scalar($language_id_raw) ||
+            filter_var(
+                $language_id_raw,
+                FILTER_VALIDATE_INT
+            ) === false
+        ) {
+
+            $view_errors =
+                "<h2>제출 언어 정보가 올바르지 않습니다.</h2>";
+
+            require(
+                "template/".$OJ_TEMPLATE."/error.php"
+            );
+            exit(0);
+        }
+
+
+        $language_id =
+            intval($language_id_raw);
+
+
+        if (
+            !in_array(
+                $language_id,
+                $course_allowed_language_ids,
+                true
+            )
+        ) {
+
+            $view_errors =
+                "<h2>Course에서 사용할 수 없는 제출 언어입니다.</h2>";
+
+            require(
+                "template/".$OJ_TEMPLATE."/error.php"
+            );
+            exit(0);
+        }
+
+
+        $selected_language_ids[
+            $language_id
+        ] = true;
+    }
+
+
+    if (empty($selected_language_ids)) {
+
+        $view_errors =
+            "<h2>제출 가능 언어를 하나 이상 선택해야 합니다.</h2>";
+
+        require(
+            "template/".$OJ_TEMPLATE."/error.php"
+        );
+        exit(0);
+    }
+
+
+    // ========================================================
+    // HUSTOJ langmask 계산
+    // ========================================================
+
+    $allowed_language_mask = 0;
+
+
+    foreach (
+        array_keys($selected_language_ids)
+        as $language_id
+    ) {
+
+        $allowed_language_mask |=
+            (1 << $language_id);
+    }
+
+
+    $lang_count =
+        count($language_ext);
+
+
+    $langmask =
+        (
+            (1 << $lang_count) - 1
+        )
+        &
+        (~$allowed_language_mask);
 }
 
 
@@ -337,11 +502,13 @@ if ($link_type === 'created') {
          SET
             title = ?,
             start_time = ?,
-            end_time = ?
+            end_time = ?,
+            langmask = ?
          WHERE contest_id = ?",
         $contest_title,
         $start_time,
         $end_time,
+        $langmask,
         $contest_id
     );
 }

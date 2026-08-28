@@ -147,11 +147,70 @@ $view_selected_ids_text =
         array_keys($view_selected_problem_ids)
     );
 
-$can_view_all_problems = (
-    isset($_SESSION[$OJ_NAME.'_administrator']) ||
-    isset($_SESSION[$OJ_NAME.'_contest_creator']) ||
-    isset($_SESSION[$OJ_NAME.'_problem_editor'])
-);
+$is_admin =
+    isset(
+        $_SESSION[$OJ_NAME . '_administrator']
+    );
+
+
+// ============================================================
+// 내가 생성한 문제 ID
+//
+// problem 전체 행마다 EXISTS를 실행하지 않고
+// 현재 사용자의 문제 권한을 먼저 한 번 조회한다.
+// ============================================================
+
+$owned_problem_ids =
+    array();
+
+
+if (!$is_admin) {
+
+    $owned_rows =
+        pdo_query(
+            "SELECT rightstr
+         FROM privilege
+         WHERE user_id = ?
+           AND defunct = 'N'
+           AND rightstr LIKE 'p%'",
+            $user_id
+        );
+
+
+    if (is_array($owned_rows)) {
+
+        foreach ($owned_rows as $owned_row) {
+
+            $rightstr =
+                isset($owned_row['rightstr'])
+                ? trim($owned_row['rightstr'])
+                : '';
+
+
+            if (
+                preg_match(
+                    '/^p([0-9]+)$/',
+                    $rightstr,
+                    $matches
+                )
+            ) {
+
+                $problem_id =
+                    intval($matches[1]);
+
+
+                if ($problem_id > 0) {
+
+                    $owned_problem_ids[$problem_id] = true;
+                }
+            }
+        }
+    }
+}
+
+
+$params =
+    array();
 
 
 $sql =
@@ -161,78 +220,120 @@ $sql =
         p.source,
         p.defunct,
         p.accepted,
-        p.submit
-     FROM problem p";
+        p.submit,
+        p.allow_reuse
 
-$params = array();
+     FROM problem p
+
+     WHERE ";
+
+$permission_sql =
+    "";
 
 
-if ($can_view_all_problems) {
+if ($is_admin) {
 
-    $sql .= " WHERE 1 = 1";
+    $permission_sql =
+        "1 = 1";
+} elseif (
+    !empty($owned_problem_ids)
+) {
 
-} else {
+    $owned_placeholders =
+        implode(
+            ',',
+            array_fill(
+                0,
+                count($owned_problem_ids),
+                '?'
+            )
+        );
 
-    /*
-     * 일반 사용자는 공개 문제 또는 자신이 생성한 문제만 선택할 수 있다.
-     */
-    $sql .=
-        " WHERE
-        (
-            p.defunct = 'N'
 
-            OR EXISTS
+    $permission_sql =
+        "(
             (
-                SELECT 1
-                FROM privilege pv
-                WHERE pv.user_id = ?
-                  AND pv.rightstr =
-                      CONCAT('p', p.problem_id)
-                  AND pv.defunct = 'N'
+                p.defunct = 'N'
+                AND p.allow_reuse = 1
+            )
+
+            OR
+
+            p.problem_id IN (
+                " . $owned_placeholders . "
             )
         )";
 
-    $params[] = $user_id;
-}
 
+    foreach (
+        array_keys($owned_problem_ids)
+        as $owned_problem_id
+    ) {
 
-if ($view_search !== '') {
-
-    $search_like =
-        "%".$view_search."%";
-
-    if (ctype_digit($view_search)) {
-
-        $sql .=
-            " AND
-            (
-                p.problem_id = ?
-                OR p.title LIKE ?
-                OR p.source LIKE ?
-            )";
-
-        $params[] = intval($view_search);
-        $params[] = $search_like;
-        $params[] = $search_like;
-
-    } else {
-
-        $sql .=
-            " AND
-            (
-                p.title LIKE ?
-                OR p.source LIKE ?
-            )";
-
-        $params[] = $search_like;
-        $params[] = $search_like;
+        $params[] =
+            intval($owned_problem_id);
     }
+} else {
+
+    $permission_sql =
+        "(
+            p.defunct = 'N'
+            AND p.allow_reuse = 1
+        )";
 }
 
 
 $sql .=
-    " ORDER BY p.problem_id DESC
-      LIMIT 50";
+    $permission_sql;
+
+
+if ($view_search !== '') {
+
+    if (ctype_digit($view_search)) {
+
+        // 숫자만 입력하면 문제번호 정확검색
+        // problem_id는 PK이므로 가장 빠르게 조회 가능
+        $sql .=
+            " AND p.problem_id = ?";
+
+
+        $params[] =
+            intval($view_search);
+    } else {
+
+        $search_like =
+            "%" . $view_search . "%";
+
+
+        $sql .=
+            " AND
+                (
+                    p.title LIKE ?
+                    OR p.source LIKE ?
+                )";
+
+
+        $params[] =
+            $search_like;
+
+        $params[] =
+            $search_like;
+    }
+}
+
+if ($view_search === '') {
+
+    // 검색어가 없을 때는 최근 문제만 빠르게 표시
+    $sql .=
+        " ORDER BY p.problem_id DESC
+          LIMIT 50";
+} else {
+
+    // 실제 검색 시에는 검색 결과 범위를 확대
+    $sql .=
+        " ORDER BY p.problem_id DESC
+          LIMIT 300";
+}
 
 
 $view_problem_rows =
@@ -240,7 +341,6 @@ $view_problem_rows =
         $sql,
         ...$params
     );
-
 
 if (!is_array($view_problem_rows)) {
     $view_problem_rows = array();

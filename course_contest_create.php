@@ -259,10 +259,15 @@ $source_rows = pdo_query(
     "SELECT
         contest_id,
         title,
+        user_id,
         codevisible,
-        langmask
+        langmask,
+        allow_copy
+
      FROM contest
+
      WHERE contest_id = ?
+
      LIMIT 1",
     $source_contest_id
 );
@@ -287,22 +292,61 @@ $source_contest = $source_rows[0];
 // ============================================================
 // 10. 원본 Contest 사용 권한 재확인
 //
-// 화면 단계에서 검사했더라도
-// 실제 생성 처리에서도 반드시 다시 검사한다.
+// administrator
+// → 항상 가능
+//
+// 원본 Contest 생성자
+// → allow_copy와 관계없이 가능
+//
+// Course 차시 관리 권한이 있는 다른 사용자
+// → allow_copy=1인 경우에만 가능
+//
+// contest_creator / m{cid}만으로 allow_copy=0을
+// 우회하지 못하게 한다.
 // ============================================================
 
+$is_admin =
+    isset(
+        $_SESSION[$OJ_NAME . '_administrator']
+    );
+
+
+$is_source_owner =
+    isset(
+        $source_contest['user_id']
+    ) &&
+    trim(
+        $source_contest['user_id']
+    ) === $user_id;
+
+
+$source_allow_copy =
+    isset(
+        $source_contest['allow_copy']
+    )
+    ? intval(
+        $source_contest['allow_copy']
+    )
+    : 1;
+
+
 $can_use_source_contest =
-    isset($_SESSION[$OJ_NAME.'_administrator']) ||
-    isset($_SESSION[$OJ_NAME.'_contest_creator']) ||
-    isset($_SESSION[$OJ_NAME.'_m'.$source_contest_id]);
+    $is_admin ||
+    $is_source_owner ||
+    $source_allow_copy === 1;
 
 
 if (!$can_use_source_contest) {
 
     $view_errors =
-        "<h2>이 대회의 문제 구성을 가져올 권한이 없습니다.</h2>";
+        "<h2>이 대회는 생성자가 문제 구성 복사를 허용하지 않았습니다.</h2>";
 
-    require("template/".$OJ_TEMPLATE."/error.php");
+    require(
+        "template/" .
+        $OJ_TEMPLATE .
+        "/error.php"
+    );
+
     exit(0);
 }
 
@@ -415,6 +459,149 @@ if (empty($problems_to_copy)) {
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);
 }
+
+
+// ============================================================
+// 13-1. Problem allow_reuse 최종 검증
+//
+// 원본 Contest에 이미 포함된 문제라도
+// 새 Course Contest에 추가되는 것은 새로운 사용관계이다.
+//
+// administrator
+// → 항상 가능
+//
+// 문제 생성자 본인
+// → 항상 가능
+//
+// 다른 사용자
+// → 공개 + allow_reuse=1만 가능
+// ============================================================
+
+foreach (
+    $problems_to_copy
+    as $problem
+) {
+
+    $problem_id =
+        intval(
+            $problem['problem_id']
+        );
+
+
+    $problem_rows =
+        pdo_query(
+            "SELECT
+                p.problem_id,
+                p.defunct,
+                p.allow_reuse,
+
+                EXISTS
+                (
+                    SELECT 1
+                    FROM privilege pr
+
+                    WHERE pr.user_id = ?
+                      AND pr.rightstr =
+                          CONCAT(
+                              'p',
+                              p.problem_id
+                          )
+                      AND pr.defunct = 'N'
+                ) AS is_owner
+
+             FROM problem p
+
+             WHERE p.problem_id = ?
+
+             LIMIT 1",
+            $user_id,
+            $problem_id
+        );
+
+
+    if (
+        !$problem_rows ||
+        !isset(
+            $problem_rows[0]['problem_id']
+        )
+    ) {
+
+        $view_errors =
+            "<h2>존재하지 않는 문제 " .
+            intval($problem_id) .
+            "번이 포함되어 있습니다.</h2>";
+
+        require(
+            "template/" .
+            $OJ_TEMPLATE .
+            "/error.php"
+        );
+
+        exit(0);
+    }
+
+
+    $problem_info =
+        $problem_rows[0];
+
+
+    $is_problem_owner =
+        intval(
+            $problem_info['is_owner']
+        ) === 1;
+
+
+    $is_public =
+        strtoupper(
+            trim(
+                $problem_info['defunct']
+            )
+        ) === 'N';
+
+
+    $allow_reuse =
+        intval(
+            $problem_info['allow_reuse']
+        ) === 1;
+
+
+    $can_reuse_problem =
+        $is_admin ||
+        $is_problem_owner ||
+        (
+            $is_public &&
+            $allow_reuse
+        );
+
+
+    if (!$can_reuse_problem) {
+
+        if (!$allow_reuse) {
+
+            $view_errors =
+                "<h2>문제 " .
+                intval($problem_id) .
+                "번은 문제 생성자가 다른 대회에서의 " .
+                "사용을 허용하지 않았습니다.</h2>";
+        } else {
+
+            $view_errors =
+                "<h2>문제 " .
+                intval($problem_id) .
+                "번을 이 차시에 가져올 권한이 없습니다.</h2>";
+        }
+
+
+        require(
+            "template/" .
+            $OJ_TEMPLATE .
+            "/error.php"
+        );
+
+        exit(0);
+    }
+}
+
 
 // ============================================================
 // 14. lesson_no 중복 확인

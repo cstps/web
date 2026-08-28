@@ -46,6 +46,70 @@ include("template/$OJ_TEMPLATE/header.php");
     </div>
 
 
+    <div class="ui segment">
+
+        <h3 class="ui header">
+            문제은행에서 문제 찾기
+        </h3>
+
+        <form
+            class="ui form"
+            method="get"
+            action="course_contest_problem_edit.php"
+        >
+
+            <input
+                type="hidden"
+                name="course_id"
+                value="<?php echo intval($course_id); ?>"
+            >
+
+            <input
+                type="hidden"
+                name="contest_id"
+                value="<?php echo intval($contest_id); ?>"
+            >
+
+
+            <div class="fields">
+
+                <div class="twelve wide field">
+
+                    <input
+                        type="text"
+                        name="search"
+                        value="<?php
+                            echo htmlspecialchars(
+                                $view_search,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                        ?>"
+                        placeholder="문제 번호, 제목 또는 출처"
+                    >
+
+                </div>
+
+
+                <div class="four wide field">
+
+                    <button
+                        type="submit"
+                        class="ui blue button"
+                    >
+                        <i class="search icon"></i>
+                        검색
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
     <form
         class="ui form"
         method="post"
@@ -351,6 +415,235 @@ include("template/$OJ_TEMPLATE/header.php");
                     </tbody>
 
                 </table>
+
+            </div>
+
+                <?php
+        }
+        ?>
+
+
+        <?php
+        if ($view_search !== '') {
+        ?>
+
+            <div class="ui segment">
+
+                <h3 class="ui dividing header">
+                    문제은행 검색 결과
+                </h3>
+
+
+                <?php
+                if (
+                    empty(
+                        $view_search_problem_rows
+                    )
+                ) {
+                ?>
+
+                    <div class="ui info message">
+                        검색된 문제가 없습니다.
+                    </div>
+
+                <?php
+                }
+                else {
+                ?>
+
+                    <table class="ui celled striped table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th class="center aligned">
+                                    추가
+                                </th>
+
+                                <th class="center aligned">
+                                    문제 번호
+                                </th>
+
+                                <th>
+                                    제목
+                                </th>
+
+                                <th>
+                                    출처
+                                </th>
+
+                                <th class="center aligned">
+                                    점수
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                        <?php
+                        foreach (
+                            $view_search_problem_rows
+                            as $problem
+                        ) {
+
+                            $problem_id =
+                                intval(
+                                    $problem[
+                                        'problem_id'
+                                    ]
+                                );
+
+                            $already_added =
+                                isset(
+                                    $view_current_problem_map[
+                                        $problem_id
+                                    ]
+                                );
+
+                            $is_source_problem =
+                                isset(
+                                    $view_source_problem_map[
+                                        $problem_id
+                                    ]
+                                );
+                        ?>
+
+                            <tr>
+
+                                <td class="center aligned">
+
+                                    <?php
+                                    if ($already_added) {
+                                    ?>
+
+                                        <span
+                                            class="ui tiny grey label"
+                                        >
+                                            등록됨
+                                        </span>
+
+                                    <?php
+                                    }
+                                    elseif ($is_source_problem) {
+                                    ?>
+
+                                        <span
+                                            class="ui tiny blue label"
+                                        >
+                                            원본 목록
+                                        </span>
+
+                                    <?php
+                                    }
+                                    else {
+                                    ?>
+
+                                        <input
+                                            type="checkbox"
+                                            name="problem_ids[]"
+                                            value="<?php
+                                                echo $problem_id;
+                                            ?>"
+                                        >
+
+                                    <?php
+                                    }
+                                    ?>
+
+                                </td>
+
+
+                                <td class="center aligned">
+
+                                    <?php
+                                    echo $problem_id;
+                                    ?>
+
+                                </td>
+
+
+                                <td>
+
+                                    <a
+                                        href="problem.php?id=<?php
+                                            echo $problem_id;
+                                        ?>"
+                                        target="_blank"
+                                    >
+
+                                        <?php
+                                        echo htmlspecialchars(
+                                            $problem['title'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        );
+                                        ?>
+
+                                    </a>
+
+                                </td>
+
+
+                                <td>
+
+                                    <?php
+                                    echo htmlspecialchars(
+                                        isset(
+                                            $problem['source']
+                                        )
+                                            ? $problem['source']
+                                            : '',
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    );
+                                    ?>
+
+                                </td>
+
+
+                                <td class="center aligned">
+
+                                    <?php
+                                    if (
+                                        !$already_added &&
+                                        !$is_source_problem
+                                    ) {
+                                    ?>
+
+                                        <input
+                                            type="number"
+                                            name="score[<?php
+                                                echo $problem_id;
+                                            ?>]"
+                                            min="0"
+                                            step="1"
+                                            value="100"
+                                            style="width:100px;"
+                                        >
+
+                                    <?php
+                                    }
+                                    ?>
+
+                                </td>
+
+                            </tr>
+
+                        <?php
+                        }
+                        ?>
+
+                        </tbody>
+
+                    </table>
+
+                <?php
+                }
+                ?>
 
             </div>
 

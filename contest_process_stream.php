@@ -1,7 +1,10 @@
 <?php
 
 require_once('./include/db_info.inc.php');
+define('OJ_BACKGROUND_REQUEST', true);
+
 require_once('./include/course_functions.inc.php');
+
 
 // 로그인 확인
 if (

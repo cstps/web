@@ -100,6 +100,13 @@ $score_input =
         : array();
 
 
+$selected_languages =
+    isset($_POST['lang']) &&
+    is_array($_POST['lang'])
+        ? $_POST['lang']
+        : array();
+
+
 // ============================================================
 // 4. 기본값 검증
 // ============================================================
@@ -145,6 +152,213 @@ if (empty($selected_problem_ids)) {
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);
 }
+
+
+// ============================================================
+// 제출 가능 언어 검증
+//
+// Course 직접 생성 차시에서는:
+// C++ / Python / JavaScript / Java만 허용
+// ============================================================
+
+$lang_count =
+    count($language_ext);
+
+
+// ------------------------------------------------------------
+// Course에서 허용할 실제 언어 ID 찾기
+// ------------------------------------------------------------
+
+$course_language_specs = array(
+
+    array(
+        'label' => 'C++',
+        'aliases' => array(
+            'C++'
+        )
+    ),
+
+    array(
+        'label' => 'Python',
+        'aliases' => array(
+            'Python3',
+            'Python 3',
+            'Python'
+        )
+    ),
+
+    array(
+        'label' => 'JavaScript',
+        'aliases' => array(
+            'JavaScript',
+            'Java Script',
+            'Node.js'
+        )
+    ),
+
+    array(
+        'label' => 'Java',
+        'aliases' => array(
+            'Java'
+        )
+    )
+
+);
+
+
+$course_allowed_language_ids =
+    array();
+
+
+foreach (
+    $course_language_specs
+    as $language_spec
+) {
+
+    foreach (
+        $language_spec['aliases']
+        as $language_alias
+    ) {
+
+        $language_id =
+            array_search(
+                $language_alias,
+                $language_name,
+                true
+            );
+
+
+        if ($language_id !== false) {
+
+            $course_allowed_language_ids[] =
+                intval($language_id);
+
+            break;
+        }
+    }
+}
+
+
+// ------------------------------------------------------------
+// POST로 전달된 언어 검증
+// ------------------------------------------------------------
+
+$allowed_language_ids =
+    array();
+
+$allowed_language_map =
+    array();
+
+
+foreach (
+    $selected_languages
+    as $language_id_raw
+) {
+
+    if (
+        !is_scalar($language_id_raw) ||
+        filter_var(
+            $language_id_raw,
+            FILTER_VALIDATE_INT
+        ) === false
+    ) {
+
+        $view_errors =
+            "<h2>제출 언어 정보가 올바르지 않습니다.</h2>";
+
+        require(
+            "template/".$OJ_TEMPLATE."/error.php"
+        );
+
+        exit(0);
+    }
+
+
+    $language_id =
+        intval($language_id_raw);
+
+
+    // Course에서 허용한 4개 언어인지 확인
+    if (
+        !in_array(
+            $language_id,
+            $course_allowed_language_ids,
+            true
+        )
+    ) {
+
+        $view_errors =
+            "<h2>Course에서 사용할 수 없는 제출 언어입니다.</h2>";
+
+        require(
+            "template/".$OJ_TEMPLATE."/error.php"
+        );
+
+        exit(0);
+    }
+
+
+    // 중복값 방지
+    if (
+        isset(
+            $allowed_language_map[
+                $language_id
+            ]
+        )
+    ) {
+        continue;
+    }
+
+
+    $allowed_language_map[
+        $language_id
+    ] = true;
+
+    $allowed_language_ids[] =
+        $language_id;
+}
+
+
+if (empty($allowed_language_ids)) {
+
+    $view_errors =
+        "<h2>제출 가능 언어를 하나 이상 선택해야 합니다.</h2>";
+
+    require(
+        "template/".$OJ_TEMPLATE."/error.php"
+    );
+
+    exit(0);
+}
+
+
+// ------------------------------------------------------------
+// HUSTOJ langmask 생성
+//
+// bit = 0 : 허용
+// bit = 1 : 금지
+// ------------------------------------------------------------
+
+$allowed_language_mask = 0;
+
+
+foreach (
+    $allowed_language_ids
+    as $language_id
+) {
+
+    $allowed_language_mask |=
+        (1 << $language_id);
+}
+
+
+$all_language_mask =
+    (1 << $lang_count) - 1;
+
+
+$langmask =
+    $all_language_mask &
+    (~$allowed_language_mask);
 
 
 // ============================================================
@@ -360,40 +574,68 @@ if (empty($problem_ids)) {
 // ============================================================
 // 11. 선택한 문제 서버 재검증
 //
-// 현재 정책:
+// 정책:
 //
-// 1. 존재하지 않는 문제 → 거부
+// administrator
+// → 모든 문제 사용 가능
 //
-// 2. 공개 문제(defunct=N) → 사용 가능
+// 문제 생성자(p{problem_id})
+// → 공개/비공개 및 allow_reuse와 관계없이 사용 가능
 //
-// 3. 비공개 문제는 다음 사용자만 사용 가능
-//    - administrator
-//    - contest_creator
-//    - problem_editor
-//    - 해당 문제의 p{problem_id} 권한 보유자
+// 다른 사용자
+// → 공개 문제(defunct=N)이면서
+//   allow_reuse=1인 문제만 사용 가능
 //
-// 추후:
-// 문제 생성자의 "다른 대회 사용 금지" 설정이 추가되면
-// 이 단계에서 추가 검사한다.
+// 화면에서 문제를 숨기는 것만으로 끝내지 않고
+// 직접 POST 조작도 이 단계에서 차단한다.
 // ============================================================
 
 $problems_to_add =
     array();
 
 
-foreach ($problem_ids as $problem_id) {
-
-    $problem_rows = pdo_query(
-        "SELECT
-            problem_id,
-            title,
-            defunct
-         FROM problem
-         WHERE problem_id = ?
-         LIMIT 1",
-        $problem_id
+$is_admin =
+    isset(
+        $_SESSION[$OJ_NAME . '_administrator']
     );
 
+
+foreach ($problem_ids as $problem_id) {
+
+    $problem_rows =
+        pdo_query(
+            "SELECT
+                p.problem_id,
+                p.title,
+                p.defunct,
+                p.allow_reuse,
+
+                EXISTS
+                (
+                    SELECT 1
+                    FROM privilege pr
+                    WHERE pr.user_id = ?
+                      AND pr.rightstr =
+                          CONCAT(
+                              'p',
+                              p.problem_id
+                          )
+                      AND pr.defunct = 'N'
+                ) AS is_owner
+
+             FROM problem p
+
+             WHERE p.problem_id = ?
+
+             LIMIT 1",
+            $user_id,
+            $problem_id
+        );
+
+
+    // --------------------------------------------------------
+    // 존재하지 않는 문제
+    // --------------------------------------------------------
 
     if (
         !$problem_rows ||
@@ -403,12 +645,14 @@ foreach ($problem_ids as $problem_id) {
     ) {
 
         $view_errors =
-            "<h2>존재하지 않는 문제(".
-            $problem_id.
+            "<h2>존재하지 않는 문제(" .
+            intval($problem_id) .
             ")가 포함되어 있습니다.</h2>";
 
         require(
-            "template/".$OJ_TEMPLATE."/error.php"
+            "template/" .
+            $OJ_TEMPLATE .
+            "/error.php"
         );
 
         exit(0);
@@ -419,84 +663,64 @@ foreach ($problem_ids as $problem_id) {
         $problem_rows[0];
 
 
+    $is_owner =
+        intval(
+            $problem['is_owner']
+        ) === 1;
+
+
+    $is_public =
+        strtoupper(
+            trim(
+                $problem['defunct']
+            )
+        ) === 'N';
+
+
+    $allow_reuse =
+        intval(
+            $problem['allow_reuse']
+        ) === 1;
+
+
     // --------------------------------------------------------
     // 문제 사용 권한
     // --------------------------------------------------------
 
-    $can_use_problem = false;
+    $can_use_problem =
+        $is_admin ||
+        $is_owner ||
+        (
+            $is_public &&
+            $allow_reuse
+        );
 
 
-    // 관리자 / 문제관리 / 대회관리 권한
-    if (
-        isset(
-            $_SESSION[
-                $OJ_NAME.'_administrator'
-            ]
-        ) ||
-        isset(
-            $_SESSION[
-                $OJ_NAME.'_problem_editor'
-            ]
-        ) ||
-        isset(
-            $_SESSION[
-                $OJ_NAME.'_contest_creator'
-            ]
-        )
-    ) {
-
-        $can_use_problem = true;
-    }
-
-
-    // 공개 문제
-    if (
-        strtoupper(
-            trim($problem['defunct'])
-        ) === 'N'
-    ) {
-
-        $can_use_problem = true;
-    }
-
-
-    // 해당 문제 생성자 / 편집 권한
     if (!$can_use_problem) {
-
-        $problem_privilege_rows =
-            pdo_query(
-                "SELECT
-                    user_id
-                 FROM privilege
-                 WHERE user_id = ?
-                   AND rightstr = ?
-                 LIMIT 1",
-                $user_id,
-                "p".$problem_id
-            );
-
 
         if (
-            $problem_privilege_rows &&
-            isset(
-                $problem_privilege_rows[0]['user_id']
-            )
+            !$is_owner &&
+            !$allow_reuse
         ) {
 
-            $can_use_problem = true;
+            $view_errors =
+                "<h2>문제 " .
+                intval($problem_id) .
+                "번은 문제 생성자가 다른 대회에서의 " .
+                "사용을 허용하지 않았습니다.</h2>";
+        } else {
+
+            $view_errors =
+                "<h2>문제 " .
+                intval($problem_id) .
+                "번을 이 차시에 사용할 권한이 없습니다.</h2>";
         }
-    }
 
-
-    if (!$can_use_problem) {
-
-        $view_errors =
-            "<h2>문제 ".
-            $problem_id.
-            "을(를) 이 차시에 사용할 권한이 없습니다.</h2>";
 
         require(
-            "template/".$OJ_TEMPLATE."/error.php"
+            "template/" .
+            $OJ_TEMPLATE .
+            "/error.php"
         );
 
         exit(0);
@@ -535,10 +759,10 @@ foreach ($problem_ids as $problem_id) {
     $problems_to_add[] =
         array(
             'problem_id' =>
-                $problem_id,
+            $problem_id,
 
             'score' =>
-                $score
+            $score
         );
 }
 
@@ -578,31 +802,14 @@ if ($sort_order <= 0) {
 // source Contest가 없으므로:
 //
 // codevisible = 0
-// langmask    = 0
+// langmask    = 위에서 선택 언어 기준으로 계산
 // private     = 1
 // exam_mode   = 0
 // ============================================================
 
 $codevisible = 0;
 
-$langmask = 0;
-
-$private = 1;
-
-$exam_mode = 0;
-
-$description = '';
-
-$password = '';
-
-
-// ============================================================
-// 14. Contest 생성 시작
-// ============================================================
-
-$codevisible = 0;
-
-$langmask = 0;
+// $langmask는 제출 가능 언어 검증 단계에서 이미 계산됨
 
 $private = 1;
 

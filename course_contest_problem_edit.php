@@ -21,6 +21,8 @@ if (!isset($_SESSION[$OJ_NAME.'_user_id'])) {
     exit(0);
 }
 
+$user_id =
+    $_SESSION[$OJ_NAME.'_user_id'];
 
 // ============================================================
 // 2. course_id / contest_id 확인
@@ -112,8 +114,6 @@ if (
 
 $view_contest = $link_rows[0];
 
-
-$view_contest = $link_rows[0];
 
 
 // ============================================================
@@ -306,10 +306,178 @@ if ($source_contest_id > 0) {
         $view_source_problems = array();
     }
 }
+// ============================================================
+// 10. 원본 Contest 문제 ID Map
+//
+// 문제은행 검색 결과와 중복 표시되는 것을 구분하기 위해 사용
+// ============================================================
+
+$view_source_problem_map =
+    array();
+
+
+foreach (
+    $view_source_problems
+    as $problem
+) {
+
+    $problem_id =
+        intval($problem['problem_id']);
+
+    if ($problem_id > 0) {
+
+        $view_source_problem_map[
+            $problem_id
+        ] = true;
+    }
+}
 
 
 // ============================================================
-// 10. 화면 출력
+// 11. 문제은행 검색
+// ============================================================
+
+$view_search =
+    isset($_GET['search'])
+        ? trim($_GET['search'])
+        : '';
+
+
+$view_search_problem_rows =
+    array();
+
+
+if ($view_search !== '') {
+
+    $can_view_all_problems = (
+        isset(
+            $_SESSION[
+                $OJ_NAME.'_administrator'
+            ]
+        ) ||
+        isset(
+            $_SESSION[
+                $OJ_NAME.'_contest_creator'
+            ]
+        ) ||
+        isset(
+            $_SESSION[
+                $OJ_NAME.'_problem_editor'
+            ]
+        )
+    );
+
+
+    $sql =
+        "SELECT
+            p.problem_id,
+            p.title,
+            p.source,
+            p.defunct,
+            p.accepted,
+            p.submit
+         FROM problem p";
+
+
+    $params =
+        array();
+
+
+    if ($can_view_all_problems) {
+
+        $sql .=
+            " WHERE 1 = 1";
+
+    }
+    else {
+
+        $sql .=
+            " WHERE
+            (
+                p.defunct = 'N'
+
+                OR EXISTS
+                (
+                    SELECT 1
+                    FROM privilege pv
+                    WHERE pv.user_id = ?
+                      AND pv.rightstr =
+                          CONCAT('p', p.problem_id)
+                      AND pv.defunct = 'N'
+                )
+            )";
+
+        $params[] =
+            $user_id;
+    }
+
+
+    $search_like =
+        "%".$view_search."%";
+
+
+    if (ctype_digit($view_search)) {
+
+        $sql .=
+            " AND
+            (
+                p.problem_id = ?
+                OR p.title LIKE ?
+                OR p.source LIKE ?
+            )";
+
+        $params[] =
+            intval($view_search);
+
+        $params[] =
+            $search_like;
+
+        $params[] =
+            $search_like;
+    }
+    else {
+
+        $sql .=
+            " AND
+            (
+                p.title LIKE ?
+                OR p.source LIKE ?
+            )";
+
+        $params[] =
+            $search_like;
+
+        $params[] =
+            $search_like;
+    }
+
+
+    $sql .=
+        " ORDER BY p.problem_id DESC
+          LIMIT 50";
+
+
+    $view_search_problem_rows =
+        pdo_query(
+            $sql,
+            ...$params
+        );
+
+
+    if (
+        !is_array(
+            $view_search_problem_rows
+        )
+    ) {
+
+        $view_search_problem_rows =
+            array();
+    }
+}
+
+
+// ============================================================
+// 12. 화면 출력
 // ============================================================
 
 require(

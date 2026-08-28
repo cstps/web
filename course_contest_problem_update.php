@@ -20,6 +20,9 @@ if (!isset($_SESSION[$OJ_NAME.'_user_id'])) {
     exit(0);
 }
 
+$user_id =
+    $_SESSION[$OJ_NAME.'_user_id'];
+
 
 // ============================================================
 // 2. POST 요청 확인
@@ -150,7 +153,6 @@ if (
 $link_rows = pdo_query(
     "SELECT
         cc.id,
-        cc.source_contest_id,
         cc.link_type,
         cc.status
 
@@ -237,11 +239,6 @@ if ($link_type !== 'created') {
 }
 
 
-$source_contest_id =
-    isset($link_rows[0]['source_contest_id'])
-        ? intval($link_rows[0]['source_contest_id'])
-        : 0;
-
 
 // ============================================================
 // 8. 선택 문제 ID 정리
@@ -293,63 +290,198 @@ if (!is_array($current_rows)) {
 
 
 // ============================================================
-// 10. 원본 Contest 문제 목록
+// 10. 현재 문제 Map
 //
-// 현재 문제 + 원본 문제만 허용
-// 임의의 다른 problem_id를 POST로 추가하는 것을 막는다.
+// 현재 Contest에 이미 포함된 문제는 기존 사용 관계로 본다.
+// 현재 Contest에 없는 문제는 모두 신규 추가로 처리하고
+// allow_reuse 정책을 검사한다.
 // ============================================================
 
-$allowed_problem_map = array();
+$current_problem_map =
+    array();
 
 
-// 현재 등록된 문제
 foreach ($current_rows as $row) {
 
     $problem_id =
         intval($row['problem_id']);
 
-    $allowed_problem_map[$problem_id] = true;
+    $current_problem_map[
+        $problem_id
+    ] = true;
 }
 
 
-// 원본 Contest의 문제
-if ($source_contest_id > 0) {
+// ============================================================
+// 11. 선택 문제 서버 검증
+//
+// 현재 Contest에 이미 포함된 문제
+// → 기존 사용 관계이므로 유지 가능
+//
+// 현재 Contest에 없는 문제
+// → 모두 신규 추가로 처리
+//
+// 신규 문제:
+// → administrator는 항상 허용
+// → 문제 생성자는 항상 허용
+// → 다른 사용자는 공개 + allow_reuse=1만 허용
+//
+// allow_reuse가 나중에 변경되어도
+// 현재 Contest에 이미 포함된 문제에는 소급 적용하지 않는다.
+// ============================================================
 
-    $source_rows = pdo_query(
-        "SELECT problem_id
-         FROM contest_problem
-         WHERE contest_id = ?",
-        $source_contest_id
+$is_admin =
+    isset(
+        $_SESSION[$OJ_NAME . '_administrator']
     );
 
 
-    if (is_array($source_rows)) {
+foreach (
+    $selected_map
+    as $problem_id => $dummy
+) {
 
-        foreach ($source_rows as $row) {
+    // 현재 차시에 이미 들어 있는 문제는 유지 가능
 
-            $problem_id =
-                intval($row['problem_id']);
-
-            if ($problem_id > 0) {
-                $allowed_problem_map[$problem_id] = true;
-            }
-        }
+    if (
+        isset(
+            $current_problem_map[$problem_id]
+        )
+    ) {
+        continue;
     }
-}
 
 
-// ============================================================
-// 11. 선택 문제 검증
-// ============================================================
 
-foreach ($selected_map as $problem_id => $dummy) {
+    // 여기부터는 모두 신규 추가 문제
 
-    if (!isset($allowed_problem_map[$problem_id])) {
+    $problem_rows =
+        pdo_query(
+            "SELECT
+                p.problem_id,
+                p.defunct,
+                p.allow_reuse,
+
+                EXISTS
+                (
+                    SELECT 1
+                    FROM privilege pr
+                    WHERE pr.user_id = ?
+                      AND pr.rightstr =
+                          CONCAT(
+                              'p',
+                              p.problem_id
+                          )
+                      AND pr.defunct = 'N'
+                ) AS is_owner
+
+             FROM problem p
+
+             WHERE p.problem_id = ?
+
+             LIMIT 1",
+            $user_id,
+            $problem_id
+        );
+
+
+    // --------------------------------------------------------
+    // 존재하지 않는 문제
+    // --------------------------------------------------------
+
+    if (
+        !$problem_rows ||
+        !isset(
+            $problem_rows[0]['problem_id']
+        )
+    ) {
 
         $view_errors =
-            "<h2>허용되지 않은 문제가 포함되어 있습니다.</h2>";
+            "<h2>존재하지 않는 문제(" .
+            intval($problem_id) .
+            ")가 포함되어 있습니다.</h2>";
 
-        require("template/".$OJ_TEMPLATE."/error.php");
+        require(
+            "template/" .
+            $OJ_TEMPLATE .
+            "/error.php"
+        );
+
+        exit(0);
+    }
+
+
+    $problem =
+        $problem_rows[0];
+
+
+    $is_owner =
+        intval(
+            $problem['is_owner']
+        ) === 1;
+
+
+    $is_public =
+        strtoupper(
+            trim(
+                $problem['defunct']
+            )
+        ) === 'N';
+
+
+    $allow_reuse =
+        intval(
+            $problem['allow_reuse']
+        ) === 1;
+
+
+    // --------------------------------------------------------
+    // 신규 사용 가능 여부
+    // --------------------------------------------------------
+
+    $can_use_problem =
+        $is_admin ||
+        $is_owner ||
+        (
+            $is_public &&
+            $allow_reuse
+        );
+
+
+    if (!$can_use_problem) {
+
+        if (
+            !$is_public
+        ) {
+
+            $view_errors =
+                "<h2>문제 " .
+                intval($problem_id) .
+                "번을 이 차시에 추가할 권한이 없습니다.</h2>";
+        } elseif (
+            !$allow_reuse
+        ) {
+
+            $view_errors =
+                "<h2>문제 " .
+                intval($problem_id) .
+                "번은 문제 생성자가 다른 대회에서의 " .
+                "사용을 허용하지 않았습니다.</h2>";
+        } else {
+
+            $view_errors =
+                "<h2>문제 " .
+                intval($problem_id) .
+                "번을 이 차시에 추가할 권한이 없습니다.</h2>";
+        }
+
+
+        require(
+            "template/" .
+            $OJ_TEMPLATE .
+            "/error.php"
+        );
+
         exit(0);
     }
 }
@@ -357,6 +489,7 @@ foreach ($selected_map as $problem_id => $dummy) {
 
 // ============================================================
 // 12. 최종 문제 순서 생성
+// ============================================================
 //
 // 1) 현재 Contest에 이미 있던 문제 순서를 우선 유지
 // 2) 새로 추가한 문제는 뒤에 붙임

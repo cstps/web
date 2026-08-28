@@ -88,27 +88,41 @@ $pro_point =
         ? intval($_POST['pro_point'])
         : 1;
 
-//php7.4에서 해당 기능 삭제됨
-// if (get_magic_quotes_gpc()) {
-//   $title = stripslashes($title);
-//   $time_limit = stripslashes($time_limit);
-//   $memory_limit = stripslashes($memory_limit);
-//   $description = stripslashes($description);
-//   $input = stripslashes($input);
-//   $output = stripslashes($output);
-//   $sample_input = stripslashes($sample_input);
-//   $sample_output = stripslashes($sample_output);
-//   $test_input = stripslashes($test_input);
-//   $test_output = stripslashes($test_output);
-//   $hint = stripslashes($hint);
-//   $source = stripslashes($source);
-//   $spj = stripslashes($spj);
-//   $source = stripslashes($source);
-//   $front_code = stripslashes($front_code);
-//   $rear_code = stripslashes($rear_code);
-//   $ban_code = stripslashes($ban_code);
-//   $pro_point = stripslashes($pro_point);  
-// }
+
+// ------------------------------------------------------------
+// 문제의 다른 대회 재사용 허용 여부
+//
+// 1 = 허용
+// 0 = 금지
+//
+// 기존 폼이나 오래된 요청과의 호환을 위해
+// 값이 없으면 기본적으로 허용한다.
+// ------------------------------------------------------------
+
+$allow_reuse = 1;
+
+if (isset($_POST['allow_reuse'])) {
+
+    $allow_reuse_raw =
+        (string)$_POST['allow_reuse'];
+
+    if (
+        !in_array(
+            $allow_reuse_raw,
+            array('0', '1'),
+            true
+        )
+    ) {
+
+        echo "Invalid allow_reuse value.";
+        exit(1);
+    }
+
+    $allow_reuse =
+        intval($allow_reuse_raw);
+}
+
+
 
 $title = RemoveXSS($title);
 $description = RemoveXSS($description);
@@ -121,9 +135,42 @@ $hint = RemoveXSS($hint);
 $ban_code = RemoveXSS($ban_code);
 
 //echo "->".$OJ_DATA."<-"; 
-$pid = addproblem($title, $time_limit, $memory_limit, $description, $input, $output, $sample_input, $sample_output, $hint, $source, $spj, $OJ_DATA, $front_code, $rear_code, $ban_code, $pro_point);
+$pid = addproblem(
+    $title,
+    $time_limit,
+    $memory_limit,
+    $description,
+    $input,
+    $output,
+    $sample_input,
+    $sample_output,
+    $hint,
+    $source,
+    $spj,
+    $OJ_DATA,
+    $front_code,
+    $rear_code,
+    $ban_code,
+    $pro_point
+);
+
+
+// ------------------------------------------------------------
+// 문제 재사용 정책 저장
+// ------------------------------------------------------------
+
+pdo_query(
+    "UPDATE problem
+     SET allow_reuse = ?
+     WHERE problem_id = ?",
+    $allow_reuse,
+    $pid
+);
+
+
 $basedir = "$OJ_DATA/$pid";
 mkdir($basedir);
+
 if(strlen($sample_output) && !strlen($sample_input)) $sample_input = "0";
 if(strlen($sample_input)) mkdata($pid, "sample.in", $sample_input, $OJ_DATA);
 if(strlen($sample_output)) mkdata($pid, "sample.out", $sample_output, $OJ_DATA);

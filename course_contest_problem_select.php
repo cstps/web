@@ -231,7 +231,6 @@ if (!$can_use_source_contest) {
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);
 }
-
 // ============================================================
 // 11. 원본 Contest 문제 목록 조회
 // ============================================================
@@ -245,11 +244,28 @@ $view_problems = pdo_query(
         COALESCE(
             NULLIF(cp.title, ''),
             p.title
-        ) AS title
+        ) AS title,
+
+        p.defunct,
+        p.allow_reuse,
+
+        EXISTS
+        (
+            SELECT 1
+            FROM privilege pr
+
+            WHERE pr.user_id = ?
+              AND pr.rightstr =
+                  CONCAT(
+                      'p',
+                      p.problem_id
+                  )
+              AND pr.defunct = 'N'
+        ) AS is_owner
 
      FROM contest_problem cp
 
-     LEFT JOIN problem p
+     INNER JOIN problem p
        ON p.problem_id = cp.problem_id
 
      WHERE cp.contest_id = ?
@@ -257,12 +273,76 @@ $view_problems = pdo_query(
      ORDER BY
         cp.num,
         cp.problem_id",
+    $user_id,
     $source_contest_id
 );
+
 
 if (!is_array($view_problems)) {
     $view_problems = array();
 }
+
+
+// ============================================================
+// 11-1. 실제 재사용 가능한 문제만 화면에 표시
+//
+// administrator
+// → 모두
+//
+// 문제 생성자 본인
+// → 공개/비공개 및 allow_reuse 관계없이 사용 가능
+//
+// 다른 사용자
+// → 공개 + allow_reuse=1만 사용 가능
+// ============================================================
+
+$selectable_problems =
+    array();
+
+
+foreach ($view_problems as $problem) {
+
+    $is_problem_owner =
+        intval(
+            $problem['is_owner']
+        ) === 1;
+
+
+    $is_public =
+        strtoupper(
+            trim(
+                $problem['defunct']
+            )
+        ) === 'N';
+
+
+    $allow_reuse =
+        intval(
+            $problem['allow_reuse']
+        ) === 1;
+
+
+    $can_reuse_problem =
+        $is_admin ||
+        $is_problem_owner ||
+        (
+            $is_public &&
+            $allow_reuse
+        );
+
+
+    if (!$can_reuse_problem) {
+        continue;
+    }
+
+
+    $selectable_problems[] =
+        $problem;
+}
+
+
+$view_problems =
+    $selectable_problems;
 
 
 // ============================================================
