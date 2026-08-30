@@ -1148,6 +1148,59 @@ $view_course_problem_count =
 
 
 // ============================================================
+// 6-5. 전체 활성 차시 수
+// ============================================================
+
+$contest_count_rows =
+    pdo_query(
+        "SELECT COUNT(*) AS cnt
+                 FROM course_contest
+                 WHERE course_id = ?
+                   AND status = 1",
+        $course_id
+    );
+
+
+$view_course_contest_count =
+    isset($contest_count_rows[0]['cnt'])
+    ? intval($contest_count_rows[0]['cnt'])
+    : 0;
+
+
+// ============================================================
+// 6-6. 현재까지 참여 대상인 차시 수
+//
+// - 활성 차시
+// - 학생에게 공개된 차시
+// - 이미 시작된 차시
+//
+// 아직 시작하지 않은 차시는 미참여 판단에서 제외한다.
+// ============================================================
+
+$started_contest_rows =
+    pdo_query(
+        "SELECT COUNT(*) AS cnt
+
+         FROM course_contest cc
+
+         INNER JOIN contest c
+           ON c.contest_id = cc.contest_id
+
+         WHERE cc.course_id = ?
+           AND cc.status = 1
+           AND cc.visible = 1
+           AND c.start_time <= NOW()",
+        $course_id
+    );
+
+
+$view_started_contest_count =
+    isset($started_contest_rows[0]['cnt'])
+    ? intval($started_contest_rows[0]['cnt'])
+    : 0;
+
+
+// ============================================================
 // 7. 학생 목록 조회
 //
 // LEFT JOIN:
@@ -1163,6 +1216,7 @@ $view_students = pdo_query(
         cs.joined_at,
         cs.left_at,
 
+        u.user_id AS account_user_id,
         u.nick,
         u.school,
         u.email,
@@ -1178,7 +1232,7 @@ $view_students = pdo_query(
               AND s.user_id = cs.user_id
         ) AS course_submit_count,
 
-                (
+        (
             SELECT COUNT(
                 DISTINCT CONCAT(
                     s.contest_id,
@@ -1196,17 +1250,61 @@ $view_students = pdo_query(
         ) AS course_solved_count,
 
         (
-            SELECT MAX(s.in_date)
+            SELECT COUNT(
+                DISTINCT s.contest_id
+            )
 
             FROM solution s
 
             INNER JOIN course_contest cc
-                ON cc.contest_id = s.contest_id
-               AND cc.status = 1
+            ON cc.contest_id = s.contest_id
+            AND cc.status = 1
 
             WHERE cc.course_id = cs.course_id
+            AND s.user_id = cs.user_id
+
+        ) AS participated_contest_count,
+
+
+        (
+            SELECT COUNT(
+                DISTINCT s.contest_id
+            )
+
+            FROM solution s
+
+            INNER JOIN course_contest cc
+            ON cc.contest_id = s.contest_id
+            AND cc.status = 1
+            AND cc.visible = 1
+
+            INNER JOIN contest c
+            ON c.contest_id = cc.contest_id
+
+            WHERE cc.course_id = cs.course_id
+            AND s.user_id = cs.user_id
+            AND c.start_time <= NOW()
+
+        ) AS started_participated_contest_count,
+
+
+        (
+            SELECT MAX(s.in_date)
+            FROM solution s
+            INNER JOIN course_contest cc
+                ON cc.contest_id = s.contest_id
+               AND cc.status = 1
+            WHERE cc.course_id = cs.course_id
               AND s.user_id = cs.user_id
-        ) AS course_last_activity
+        ) AS course_last_activity,
+
+
+        (
+            SELECT COUNT(*)
+            FROM course_student_memo m
+            WHERE m.course_id = cs.course_id
+              AND m.user_id = cs.user_id
+        ) AS course_memo_count
 
      FROM course_student cs
 
@@ -1234,21 +1332,202 @@ if (!is_array($view_students)) {
 
 
 // ============================================================
-// 8. 현재 / 종료 학생 수
+// 7-1. 학생별 반복 미해결 문제 수
+//
+// 동일 문제에 2회 이상 제출했으나
+// AC(result=4)가 한 번도 없는 문제.
+//
+// 현재까지 시작된 공개 차시만 대상으로 한다.
+// ============================================================
+
+$retry_unsolved_rows =
+    pdo_query(
+        "SELECT
+            grouped.user_id,
+            COUNT(*) AS cnt
+
+         FROM
+         (
+             SELECT
+                s.user_id,
+                s.contest_id,
+                s.problem_id
+
+             FROM solution s
+
+             INNER JOIN course_contest cc
+               ON cc.contest_id = s.contest_id
+
+             INNER JOIN contest c
+               ON c.contest_id = cc.contest_id
+
+             WHERE cc.course_id = ?
+               AND cc.status = 1
+               AND cc.visible = 1
+               AND c.start_time <= NOW()
+
+             GROUP BY
+                s.user_id,
+                s.contest_id,
+                s.problem_id
+
+             HAVING
+                COUNT(*) >= 2
+
+                AND
+
+                SUM(
+                    CASE
+                        WHEN s.result = 4
+                        THEN 1
+                        ELSE 0
+                    END
+                ) = 0
+
+         ) grouped
+
+         GROUP BY
+            grouped.user_id",
+        $course_id
+    );
+
+
+$retry_unsolved_map =
+    array();
+
+
+if (is_array($retry_unsolved_rows)) {
+
+    foreach ($retry_unsolved_rows as $row) {
+
+        $retry_user_id =
+            isset($row['user_id'])
+            ? trim($row['user_id'])
+            : '';
+
+
+        if ($retry_user_id !== '') {
+
+            $retry_unsolved_map[$retry_user_id] =
+                isset($row['cnt'])
+                ? intval($row['cnt'])
+                : 0;
+        }
+    }
+}
+
+
+// 각 학생 데이터에 확인용 통계 추가
+foreach ($view_students as $index => $student) {
+
+    $student_user_id =
+        isset($student['user_id'])
+        ? $student['user_id']
+        : '';
+
+
+    $started_participated =
+        isset(
+            $student['started_participated_contest_count']
+        )
+        ? intval(
+            $student['started_participated_contest_count']
+        )
+        : 0;
+
+
+    $missed_started_count =
+        $view_started_contest_count -
+        $started_participated;
+
+
+    if ($missed_started_count < 0) {
+        $missed_started_count = 0;
+    }
+
+
+    $view_students[$index]['missed_started_contest_count'] =
+        $missed_started_count;
+
+
+    $view_students[$index]['retry_unsolved_count'] =
+        isset(
+            $retry_unsolved_map[$student_user_id]
+        )
+        ? intval(
+            $retry_unsolved_map[$student_user_id]
+        )
+        : 0;
+}
+
+
+// ============================================================
+// 8. 학생 종합현황
 // ============================================================
 
 $view_active_student_count = 0;
 $view_inactive_student_count = 0;
 
+$view_attention_student_count = 0;
+$view_missed_student_count = 0;
+$view_retry_unsolved_student_count = 0;
+
+
 foreach ($view_students as $student) {
 
-    if (intval($student['status']) === 1) {
+    $student_status =
+        isset($student['status'])
+        ? intval($student['status'])
+        : 0;
+
+
+    if ($student_status === 1) {
+
         $view_active_student_count++;
-    }
-    else {
+
+
+        $missed_count =
+            isset(
+                $student['missed_started_contest_count']
+            )
+            ? intval(
+                $student['missed_started_contest_count']
+            )
+            : 0;
+
+
+        $retry_count =
+            isset(
+                $student['retry_unsolved_count']
+            )
+            ? intval(
+                $student['retry_unsolved_count']
+            )
+            : 0;
+
+
+        if ($missed_count > 0) {
+            $view_missed_student_count++;
+        }
+
+
+        if ($retry_count > 0) {
+            $view_retry_unsolved_student_count++;
+        }
+
+
+        if (
+            $missed_count > 0 ||
+            $retry_count > 0
+        ) {
+            $view_attention_student_count++;
+        }
+    } else {
+
         $view_inactive_student_count++;
     }
 }
+
 
 // ============================================================
 // 9. 화면 출력

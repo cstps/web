@@ -66,7 +66,6 @@
 
 .course-table-scroll table {
     width: 100%;
-    min-width: 1050px;
     margin-bottom: 0;
 }
 
@@ -75,61 +74,6 @@
     white-space: nowrap;
 }
 
-/* ============================================================
-   Course 차시 목록 표
-   ============================================================ */
-
-.course-page table th,
-.course-page table td {
-    vertical-align: middle;
-}
-
-.course-page table th {
-    white-space: nowrap;
-}
-
-/* 차시 */
-.course-page table th:nth-child(2),
-.course-page table td:nth-child(2) {
-    min-width: 60px;
-    white-space: nowrap;
-}
-
-/* 대회 번호 */
-.course-page table th:nth-child(3),
-.course-page table td:nth-child(3) {
-    min-width: 70px;
-    white-space: nowrap;
-}
-
-/* 수업 내용 */
-.course-page table th:nth-child(4),
-.course-page table td:nth-child(4) {
-    min-width: 150px;
-}
-
-/* 시작 / 종료 */
-.course-page table th:nth-child(5),
-.course-page table td:nth-child(5),
-.course-page table th:nth-child(6),
-.course-page table td:nth-child(6) {
-    min-width: 135px;
-    white-space: nowrap;
-}
-
-/* 공개 */
-.course-page table th:nth-child(7),
-.course-page table td:nth-child(7) {
-    min-width: 75px;
-    white-space: nowrap;
-}
-
-/* 관리 버튼 */
-.course-page table th:nth-child(8),
-.course-page table td:nth-child(8) {
-    min-width: 300px;
-    white-space: nowrap;
-}
 
 .course-page table td .button {
     white-space: nowrap;
@@ -194,13 +138,83 @@
 
 /* 학생 목록의 학습현황·관리 열 */
 #course-student-table .course-student-action-column {
-    width: 105px !important;
-    min-width: 105px;
-    max-width: 105px;
+    width: 78px !important;
+    min-width: 78px;
+    max-width: 78px;
     white-space: nowrap;
     box-sizing: border-box;
 }
 
 #course-student-table .course-action-button {
     white-space: nowrap;
+}
+
+/* ============================================================
+   Course 학생 종합현황 표
+   ============================================================ */
+
+.course-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.course-student-overview-table {
+    width: 100%;
+    min-width: 880px;
+    table-layout: auto;
+}
+
+
+/* 숫자 통계 열 */
+#course-student-table .course-student-action-column {
+    width: 78px !important;
+    min-width: 78px;
+    max-width: 78px;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+
+/* 확인 필요 */
+#course-student-table .course-student-attention-column {
+    width: 145px;
+    min-width: 145px;
+}
+
+
+/* 학습현황 */
+#course-student-table .course-student-view-column {
+    width: 1%;
+    min-width: 80px;
+    white-space: nowrap;
+}
+
+
+/* 관리 */
+#course-student-table .course-student-manage-column {
+    width: 1%;
+    min-width: 80px;
+    white-space: nowrap;
+}
+
+
+/* 최근 활동 */
+#course-student-table .course-student-last-column {
+    width: 135px;
+    min-width: 135px;
+    white-space: nowrap;
+}
+
+
+#course-student-table .course-action-button {
+    width: auto !important;
+    min-width: 0 !important;
+    white-space: nowrap;
+}
+
+
+.course-student-overview-table th,
+.course-student-overview-table td {
+    vertical-align: middle !important;
 }

@@ -1,0 +1,329 @@
+/* ============================================================
+   제출 페이지 기본 레이아웃
+   ============================================================ */
+
+.submit-page {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1rem 3rem;
+    box-sizing: border-box;
+}
+
+
+/* ============================================================
+   상단 문제 / 언어 정보
+   ============================================================ */
+
+.submit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+
+    border: 1px solid #ddd;
+    border-radius: 6px;
+
+    background: #fff;
+}
+
+
+.submit-problem-info {
+    min-width: 0;
+}
+
+
+.submit-problem-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+
+.submit-contest-info {
+    margin-top: 0.3rem;
+    color: rgba(0, 0, 0, 0.55);
+    font-size: 0.9rem;
+}
+
+
+.submit-language {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+
+    white-space: nowrap;
+}
+
+
+.submit-language label {
+    font-weight: 600;
+}
+
+
+.submit-language select {
+    min-width: 150px;
+    padding: 0.5rem 0.7rem;
+}
+
+
+.submit-vcode {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+/* ============================================================
+   문제 해결 과정
+   ============================================================ */
+
+.submit-process-card {
+    width: 100%;
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+
+    background: #fafafa;
+
+    text-align: left;
+    box-sizing: border-box;
+}
+
+
+.submit-section-title {
+    margin: 0 0 1.5rem;
+}
+
+
+/* ============================================================
+   코드 작성 영역
+   ============================================================ */
+
+.submit-code-header {
+    width: 100%;
+    margin: 1.5rem 0 0.6rem;
+
+    text-align: left;
+    font-size: 1.05rem;
+}
+
+
+.submit-code-editor {
+    width: 100%;
+    height: 380px;
+
+    margin: 0;
+
+    border: 1px solid #d4d4d5;
+    border-radius: 6px;
+
+    box-sizing: border-box;
+}
+
+
+.submit-source-textarea {
+    display: block;
+
+    width: 100%;
+    min-height: 380px;
+
+    padding: 1rem;
+
+    border: 1px solid #d4d4d5;
+    border-radius: 6px;
+
+    font-family: monospace;
+    font-size: 14px;
+
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+
+/* ============================================================
+   제출 버튼
+   ============================================================ */
+
+.submit-actions {
+    display: flex;
+    justify-content: flex-end;
+
+    margin-top: 1.25rem;
+}
+
+
+
+@media (max-width: 700px) {
+
+    .submit-process-card {
+        padding: 1rem;
+    }
+
+
+    .submit-code-editor,
+    .submit-source-textarea {
+        height: 320px;
+        min-height: 320px;
+    }
+
+    .submit-actions {
+        justify-content: flex-start;
+    }
+
+    .submit-actions .button {
+        width: 100%;   
+    }
+}
+
+/* ============================================================
+   문제 해결 과정 내부
+   ============================================================ */
+
+.submit-process-section {
+    margin-bottom: 1.5rem;
+}
+
+
+.submit-process-section:last-child {
+    margin-bottom: 0;
+}
+
+
+.submit-process-label {
+    display: block;
+    font-size: 1rem;
+}
+
+
+.submit-help-text {
+    margin: 0.4rem 0 0;
+    color: rgba(0, 0, 0, 0.58);
+    line-height: 1.5;
+}
+
+
+.submit-process-textarea,
+.submit-process-input {
+    width: 100%;
+    margin-top: 0.7rem;
+
+    border: 1px solid #d4d4d5;
+    border-radius: 5px;
+
+    background: #fff;
+
+    box-sizing: border-box;
+}
+
+
+.submit-process-textarea {
+    min-height: 105px;
+    padding: 0.8rem;
+
+    line-height: 1.55;
+
+    resize: vertical;
+}
+
+
+.submit-process-input {
+    padding: 0.7rem 0.8rem;
+}
+
+
+/* ============================================================
+   이전 학습 기록
+   ============================================================ */
+
+.submit-history-card {
+    margin-bottom: 1rem;
+    padding: 1rem;
+
+    border: 1px solid #ddd;
+    border-radius: 6px;
+
+    background: #fff;
+
+    line-height: 1.55;
+}
+
+
+.submit-history-title {
+    display: block;
+    margin-bottom: 0.7rem;
+}
+
+
+.submit-history-detail {
+    margin-top: 0.9rem;
+    padding-top: 0.9rem;
+
+    border-top: 1px solid #eee;
+}
+
+
+.submit-history-text {
+    margin-top: 0.4rem;
+}
+
+
+/* ============================================================
+   체크박스 / 라디오 선택
+   ============================================================ */
+
+.submit-choice-group {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 0.7rem 1.4rem;
+
+    margin-top: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+
+.submit-choice-group label {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 0.35rem;
+
+    cursor: pointer;
+}
+
+
+.submit-choice-group input {
+    margin: 0;
+}
+
+
+/* ============================================================
+   AI 질문
+   ============================================================ */
+
+.submit-ai-prompt-area {
+    margin-bottom: 1.5rem;
+}
+
+
+/* ============================================================
+   모바일 - 문제 해결 과정
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+    .submit-choice-group {
+        gap: 0.8rem 1rem;
+    }
+
+    .submit-history-card {
+        padding: 0.9rem;
+    }
+
+    .submit-process-textarea {
+        min-height: 120px;
+    }
+}

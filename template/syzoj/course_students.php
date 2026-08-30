@@ -4,8 +4,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
 <link
     rel="stylesheet"
-    href="template/<?php echo $OJ_TEMPLATE; ?>/css/course.css"
->
+    href="template/<?php echo $OJ_TEMPLATE; ?>/css/course.css">
 
 <div class="course-page">
 
@@ -13,8 +12,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
         <a
             class="ui small basic button"
-            href="course_view.php?course_id=<?php echo intval($course_id); ?>"
-        >
+            href="course_view.php?course_id=<?php echo intval($course_id); ?>">
             <i class="left arrow icon"></i>
             수업으로 돌아가기
         </a>
@@ -38,29 +36,127 @@ include("template/$OJ_TEMPLATE/header.php");
     </div>
 
 
-    <!-- 학생 현황 -->
+    <!-- ========================================================
+     수업 학생 종합현황
+     ======================================================== -->
 
-    <div class="ui two statistics">
+    <div
+        class="ui five small statistics course-student-summary"
+        style="margin-top:1.5rem;">
 
         <div class="statistic">
+
             <div class="value">
-                <?php echo intval($view_active_student_count); ?>
+                <?php
+                echo intval(
+                    $view_active_student_count
+                );
+                ?>
             </div>
 
             <div class="label">
                 수강 중
             </div>
+
         </div>
 
 
         <div class="statistic">
+
             <div class="value">
-                <?php echo intval($view_inactive_student_count); ?>
+
+                <?php
+                echo intval(
+                    $view_started_contest_count
+                );
+                ?>
+
+                /
+
+                <?php
+                echo intval(
+                    $view_course_contest_count
+                );
+                ?>
+
             </div>
 
             <div class="label">
-                수강 종료
+                현재 진행 차시
             </div>
+
+        </div>
+
+
+        <div class="statistic">
+
+            <div class="value">
+
+                <a
+                    href="#course-student-table"
+                    class="course-summary-filter"
+                    data-attention-filter="attention">
+                    <?php
+                    echo intval(
+                        $view_attention_student_count
+                    );
+                    ?>
+                </a>
+
+            </div>
+
+            <div class="label">
+                확인 필요 학생
+            </div>
+
+        </div>
+
+
+        <div class="statistic">
+
+            <div class="value">
+
+                <a
+                    href="#course-student-table"
+                    class="course-summary-filter"
+                    data-attention-filter="missed">
+                    <?php
+                    echo intval(
+                        $view_missed_student_count
+                    );
+                    ?>
+                </a>
+
+            </div>
+
+            <div class="label">
+                미참여 학생
+            </div>
+
+        </div>
+
+
+        <div class="statistic">
+
+            <div class="value">
+
+                <a
+                    href="#course-student-table"
+                    class="course-summary-filter"
+                    data-attention-filter="retry">
+                    <?php
+                    echo intval(
+                        $view_retry_unsolved_student_count
+                    );
+                    ?>
+                </a>
+
+            </div>
+
+            <div class="label">
+                반복 미해결 학생
+            </div>
+
         </div>
 
     </div>
@@ -116,8 +212,7 @@ include("template/$OJ_TEMPLATE/header.php");
                 <input
                     type="text"
                     id="course-student-search"
-                    placeholder="번호, 아이디, 이름, 학교 검색"
-                >
+                    placeholder="번호, 아이디, 이름, 학교 검색">
             </div>
 
 
@@ -126,11 +221,41 @@ include("template/$OJ_TEMPLATE/header.php");
 
                 <select
                     id="course-student-status-filter"
-                    class="ui dropdown"
-                >
+                    class="ui dropdown">
                     <option value="all">전체</option>
                     <option value="active">수강 중</option>
                     <option value="inactive">수강 종료</option>
+                </select>
+            </div>
+
+
+            <div class="four wide field">
+                <label>확인 필요</label>
+
+                <select
+                    id="course-student-attention-filter"
+                    class="ui dropdown">
+
+                    <option value="all">
+                        전체
+                    </option>
+
+                    <option value="attention">
+                        확인 필요 있음
+                    </option>
+
+                    <option value="missed">
+                        미참여
+                    </option>
+
+                    <option value="retry">
+                        반복 미해결
+                    </option>
+
+                    <option value="none">
+                        확인 필요 없음
+                    </option>
+
                 </select>
             </div>
 
@@ -148,413 +273,562 @@ include("template/$OJ_TEMPLATE/header.php");
             </div>
 
         <?php
-        }
-        else {
+        } else {
         ?>
 
             <table
                 id="course-student-table"
-                class="ui compact celled striped table"
-            >
+                class="ui compact celled striped table course-student-overview-table">
 
                 <thead>
                     <tr>
                         <th class="center aligned">번호</th>
                         <th>학생</th>
-                        <th class="center aligned course-student-action-column">수업 해결</th>
-                        <th class="center aligned course-student-action-column">수업 제출</th>
-                        <th>최근 활동</th>
-                        <th
-                            class="center aligned"
-                            style="width:60px; white-space:nowrap;"
-                        >
-                            상태
+                        <th class="center aligned course-student-action-column">
+                            수업 해결
+                        </th>
+
+                        <th class="center aligned course-student-action-column">
+                            수업제출
+                        </th>
+
+                        <th class="center aligned course-student-action-column">
+                            참여차시
                         </th>
                         <th class="center aligned course-student-action-column">
+                            메모
+                        </th>
+
+                        <th class="center aligned course-student-attention-column">
+                            확인 필요
+                        </th>
+
+                        <th class="center aligned course-student-view-column">
                             학습현황
                         </th>
-                        
-                        <th class="center aligned course-student-action-column">
+                        <th class="center aligned course-student-manage-column">
                             관리
                         </th>
-                        
-                        
+                        <th class="course-student-last-column">
+                            최근 활동
+                        </th>
                     </tr>
                 </thead>
 
                 <tbody>
 
-                <?php
-                foreach ($view_students as $student) {
+                    <?php
+                    foreach ($view_students as $student) {
 
-                    $student_status =
-                        intval($student['status']);
+                        $student_status =
+                            intval($student['status']);
 
-                    $account_exists =
-                        isset($student['nick']);
-                ?>
+                        $account_exists =
+                            isset($student['account_user_id']) &&
+                            $student['account_user_id'] !== null &&
+                            $student['account_user_id'] !== '';
 
-                    <tr
-                        class="course-student-row<?php
-                            if ($student_status !== 1) {
-                                echo ' course-student-inactive';
-                            }
-                        ?>"
-                        data-status="<?php
-                            echo ($student_status === 1)
-                                ? 'active'
-                                : 'inactive';
-                        ?>"
-                    >
+                        $missed_started_count =
+                            isset(
+                                $student['missed_started_contest_count']
+                            )
+                            ? intval(
+                                $student['missed_started_contest_count']
+                            )
+                            : 0;
 
-                        <td class="center aligned">
 
-                        <?php
-                        if (
-                            $view_can_manage_students &&
-                            intval($view_course['status']) === 1
-                        ) {
-                        ?>
+                        $retry_unsolved_count =
+                            isset(
+                                $student['retry_unsolved_count']
+                            )
+                            ? intval(
+                                $student['retry_unsolved_count']
+                            )
+                            : 0;
 
-                            <form
-                                method="post"
-                                action="course_students.php?course_id=<?php echo intval($course_id); ?>"
-                                class="ui form"
-                                style="margin:0;"
-                            >
 
-                                <?php echo $view_csrf_input; ?>
+                        $has_attention =
+                            (
+                                $student_status === 1 &&
+                                (
+                                    $missed_started_count > 0 ||
+                                    $retry_unsolved_count > 0
+                                )
+                            );
+                    ?>
 
-                                <input
-                                    type="hidden"
-                                    name="action"
-                                    value="update_student_no"
-                                >
+                        <tr
+                            class="course-student-row<?php
+                                                        if ($student_status !== 1) {
+                                                            echo ' course-student-inactive';
+                                                        }
+                                                        ?>"
 
-                                <input
-                                    type="hidden"
-                                    name="target_user_id"
-                                    value="<?php
-                                        echo htmlspecialchars(
-                                            $student['user_id'],
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        );
-                                    ?>"
-                                >
+                            data-status="<?php
+                                            echo ($student_status === 1)
+                                                ? 'active'
+                                                : 'inactive';
+                                            ?>"
 
-                                <div class="ui action input">
+                            data-attention="<?php
+                                            echo $has_attention
+                                                ? 'attention'
+                                                : 'none';
+                                            ?>"
 
-                                    <input
-                                        type="text"
-                                        name="student_no"
-                                        maxlength="20"
-                                        value="<?php
-                                            echo htmlspecialchars(
-                                                isset($student['student_no'])
-                                                    ? $student['student_no']
-                                                    : '',
-                                                ENT_QUOTES,
-                                                'UTF-8'
-                                            );
-                                        ?>"
-                                        style="width:80px; font-size:14px;"
-                                    >
+                            data-missed="<?php
+                                            echo $missed_started_count > 0
+                                                ? 'yes'
+                                                : 'no';
+                                            ?>"
 
-                                    <button
-                                        type="submit"
-                                        class="ui tiny basic button"
-                                        title="학생 번호 수정"
-                                    >
-                                        저장
-                                    </button>
+                            data-retry="<?php
+                                        echo $retry_unsolved_count > 0
+                                            ? 'yes'
+                                            : 'no';
+                                        ?>">
+                            <td class="center aligned">
+
+                                <?php
+                                if (
+                                    $view_can_manage_students &&
+                                    intval($view_course['status']) === 1
+                                ) {
+                                ?>
+
+                                    <form
+                                        method="post"
+                                        action="course_students.php?course_id=<?php echo intval($course_id); ?>"
+                                        class="ui form"
+                                        style="margin:0;">
+
+                                        <?php echo $view_csrf_input; ?>
+
+                                        <input
+                                            type="hidden"
+                                            name="action"
+                                            value="update_student_no">
+
+                                        <input
+                                            type="hidden"
+                                            name="target_user_id"
+                                            value="<?php
+                                                    echo htmlspecialchars(
+                                                        $student['user_id'],
+                                                        ENT_QUOTES,
+                                                        'UTF-8'
+                                                    );
+                                                    ?>">
+
+                                        <div class="ui action input">
+
+                                            <input
+                                                type="text"
+                                                name="student_no"
+                                                maxlength="20"
+                                                value="<?php
+                                                        echo htmlspecialchars(
+                                                            isset($student['student_no'])
+                                                                ? $student['student_no']
+                                                                : '',
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        );
+                                                        ?>"
+                                                style="width:80px; font-size:14px;">
+
+                                            <button
+                                                type="submit"
+                                                class="ui tiny basic button"
+                                                title="학생 번호 수정">
+                                                저장
+                                            </button>
+
+                                        </div>
+
+                                    </form>
+
+                                <?php
+                                } else {
+                                ?>
+
+                                    <?php
+                                    echo htmlspecialchars(
+                                        isset($student['student_no'])
+                                            ? $student['student_no']
+                                            : '',
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    );
+                                    ?>
+
+                                <?php
+                                }
+                                ?>
+
+                            </td>
+
+
+                            <td>
+
+                                <strong>
+                                    <?php
+                                    echo htmlspecialchars(
+                                        isset($student['nick'])
+                                            ? $student['nick']
+                                            : $student['user_id'],
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    );
+                                    ?>
+                                </strong>
+
+                                <div style="font-size:0.85em; color:#777;">
+
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $student['user_id'],
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    );
+                                    ?>
+
+                                    <?php
+                                    if (!$account_exists) {
+                                    ?>
+
+                                        <span class="ui tiny red label">
+                                            계정 없음
+                                        </span>
+
+                                    <?php
+                                    }
+                                    ?>
+
+                                </div>
+                                <div style="font-size:0.85em; color:#777;">
+
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $student['school'],
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    );
+                                    ?>
 
                                 </div>
 
-                            </form>
-
-                        <?php
-                        }
-                        else {
-                        ?>
-
-                            <?php
-                            echo htmlspecialchars(
-                                isset($student['student_no'])
-                                    ? $student['student_no']
-                                    : '',
-                                ENT_QUOTES,
-                                'UTF-8'
-                            );
-                            ?>
-
-                        <?php
-                        }
-                        ?>
-
-                    </td>
-
-
-                        <td>
-
-                            <strong>
-                                <?php
-                                echo htmlspecialchars(
-                                    isset($student['nick'])
-                                        ? $student['nick']
-                                        : $student['user_id'],
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                );
-                                ?>
-                            </strong>
-
-                            <div style="font-size:0.85em; color:#777;">
-
-                                <?php
-                                echo htmlspecialchars(
-                                    $student['user_id'],
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                );
-                                ?>
-
-                                <?php
-                                if (!$account_exists) {
-                                ?>
-
-                                    <span class="ui tiny red label">
-                                        계정 없음
-                                    </span>
-
-                                <?php
-                                }
-                                ?>
-
-                            </div>
-                            <div style="font-size:0.85em; color:#777;">
-
-                                <?php
-                                echo htmlspecialchars(
-                                    $student['school'],
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                );
-                                ?>
-
-                            </div>
-
-                        </td>
+                            </td>
 
 
 
 
-                        <td class="center aligned">
+                            <td class="center aligned course-student-action-column">
 
-                            <strong>
+                                <strong>
+                                    <?php
+                                    echo intval(
+                                        $student['course_solved_count']
+                                    );
+                                    ?>
+                                </strong>
+
+                                /
+
                                 <?php
                                 echo intval(
-                                    $student['course_solved_count']
+                                    $view_course_problem_count
                                 );
                                 ?>
-                            </strong>
 
-                            /
-
-                            <?php
-                            echo intval(
-                                $view_course_problem_count
-                            );
-                            ?>
-
-                        </td>
+                            </td>
 
 
-                        <td class="center aligned course-student-action-column">
-                            <?php
-                            echo isset($student['course_submit_count'])
-                                ? intval($student['course_submit_count'])
-                                : 0;
-                            ?>
-                        </td>
+                            <td class="center aligned course-student-action-column">
+                                <?php
+                                echo isset($student['course_submit_count'])
+                                    ? intval($student['course_submit_count'])
+                                    : 0;
+                                ?>
+                            </td>
 
-                        <td>
-                            <?php
-                            if (!empty($student['course_last_activity'])) {
 
-                                echo htmlspecialchars(
-                                    $student['course_last_activity'],
-                                    ENT_QUOTES,
-                                    'UTF-8'
+                            <td class="center aligned course-student-action-column">
+
+                                <strong>
+                                    <?php
+                                    echo isset(
+                                        $student['participated_contest_count']
+                                    )
+                                        ? intval(
+                                            $student['participated_contest_count']
+                                        )
+                                        : 0;
+                                    ?>
+                                </strong>
+
+                                /
+
+                                <?php
+                                echo intval(
+                                    $view_course_contest_count
                                 );
+                                ?>
 
-                            } else {
+                            </td>
 
-                                echo '활동 없음';
-                            }
-                            ?>
-                        </td>
 
-                        <td
-                            class="center aligned"
-                            style="width:60px; white-space:nowrap;"
-                        >
+                            <td class="center aligned course-student-action-column">
 
-                            <?php
-                            if ($student_status === 1) {
-                            ?>
+                                <?php
+                                echo isset(
+                                    $student['course_memo_count']
+                                )
+                                    ? intval(
+                                        $student['course_memo_count']
+                                    )
+                                    : 0;
+                                ?>
 
-                                <span class="ui tiny green label">
-                                    수강 중
-                                </span>
+                            </td>
 
-                            <?php
-                            }
-                            else {
-                            ?>
+                            <td class="center aligned course-student-attention-column">
 
-                                <span class="ui tiny grey label">
-                                    수강 종료
-                                </span>
+                                <div class="course-student-attention-labels">
 
-                            <?php
-                            }
-                            ?>
+                                    <?php
 
-                        </td>
+                                    $missed_started_count =
+                                        isset(
+                                            $student['missed_started_contest_count']
+                                        )
+                                        ? intval(
+                                            $student['missed_started_contest_count']
+                                        )
+                                        : 0;
 
-                        <!-- ========================================================
+
+                                    $retry_unsolved_count =
+                                        isset(
+                                            $student['retry_unsolved_count']
+                                        )
+                                        ? intval(
+                                            $student['retry_unsolved_count']
+                                        )
+                                        : 0;
+
+
+                                    if ($student_status !== 1) {
+
+                                        echo '-';
+                                    } else {
+
+                                        $has_attention =
+                                            false;
+
+
+                                        if ($missed_started_count > 0) {
+
+                                            $has_attention = true;
+                                    ?>
+
+                                            <a
+                                                class="ui tiny orange basic label"
+                                                title="미참여 차시 확인"
+                                                href="course_student_view.php?course_id=<?php
+                                                                                        echo intval($course_id);
+                                                                                        ?>&user_id=<?php
+                                                                                                    echo urlencode($student['user_id']);
+                                                                                                    ?>&focus=missed#course-learning-status">
+                                                미참여
+                                                <?php echo $missed_started_count; ?>
+                                            </a>
+
+                                        <?php
+                                        }
+
+
+                                        if ($retry_unsolved_count > 0) {
+
+                                            $has_attention = true;
+                                        ?>
+
+                                            <a
+                                                class="ui tiny red basic label"
+                                                title="반복 미해결 문제 확인"
+                                                href="course_student_view.php?course_id=<?php
+                                                                                        echo intval($course_id);
+                                                                                        ?>&user_id=<?php
+                                                                                                    echo urlencode($student['user_id']);
+                                                                                                    ?>&focus=retry#course-learning-status">
+                                                반복 미해결
+                                                <?php echo $retry_unsolved_count; ?>
+                                            </a>
+
+                                        <?php
+                                        }
+
+
+                                        if (!$has_attention) {
+                                        ?>
+
+                                            <span class="ui tiny basic label">
+                                                -
+                                            </span>
+
+                                    <?php
+                                        }
+                                    }
+                                    ?>
+                                </div>
+
+                            </td>
+
+
+                            <!-- ========================================================
                         추가: 학생 학습현황
                         ======================================================== -->
 
-                        <td class="center aligned course-student-action-column">
+                            <td class="center aligned course-student-view-column">
 
-                            <a
-                                class="ui tiny teal basic button course-action-button"
-                                href="course_student_view.php?course_id=<?php
-                                    echo intval($course_id);
-                                ?>&user_id=<?php
-                                    echo urlencode($student['user_id']);
-                                ?>"
-                            >
-                                학습현황
-                            </a>
+                                <a
+                                    class="ui tiny teal basic button course-action-button"
+                                    href="course_student_view.php?course_id=<?php
+                                                                            echo intval($course_id);
+                                                                            ?>&user_id=<?php
+                                                                                        echo urlencode($student['user_id']);
+                                                                                        ?>">
+                                    학습현황
+                                </a>
 
-                        </td>
-                        <td class="center aligned course-student-action-column">
+                            </td>
 
-                            <?php
-                            if (
-                                $view_can_manage_students &&
-                                intval($view_course['status']) === 1
-                            ) {
-                            ?>
+
+
+
+                            <td class="center aligned course-student-manage-column">
 
                                 <?php
-                                if ($student_status === 1) {
+                                if (
+                                    $view_can_manage_students &&
+                                    intval($view_course['status']) === 1
+                                ) {
                                 ?>
 
-                                    <form
-                                        method="post"
-                                        action="course_students.php?course_id=<?php echo intval($course_id); ?>"
-                                        style="display:inline;"
-                                        onsubmit="return confirm('이 학생의 수강을 종료하시겠습니까?');"
-                                    >
+                                    <?php
+                                    if ($student_status === 1) {
+                                    ?>
 
-                                        <?php echo $view_csrf_input; ?>
+                                        <form
+                                            method="post"
+                                            action="course_students.php?course_id=<?php echo intval($course_id); ?>"
+                                            style="display:inline;"
+                                            onsubmit="return confirm('이 학생의 수강을 종료하시겠습니까?');">
 
-                                        <input
-                                            type="hidden"
-                                            name="action"
-                                            value="deactivate_student"
-                                        >
+                                            <?php echo $view_csrf_input; ?>
 
-                                        <input
-                                            type="hidden"
-                                            name="target_user_id"
-                                            value="<?php
-                                                echo htmlspecialchars(
-                                                    $student['user_id'],
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-                                        >
+                                            <input
+                                                type="hidden"
+                                                name="action"
+                                                value="deactivate_student">
 
-                                        <button
-                                            type="submit"
-                                            class="ui tiny red basic button course-action-button"
-                                        >
-                                            수강 종료
-                                        </button>
+                                            <input
+                                                type="hidden"
+                                                name="target_user_id"
+                                                value="<?php
+                                                        echo htmlspecialchars(
+                                                            $student['user_id'],
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        );
+                                                        ?>">
 
-                                    </form>
+                                            <button
+                                                type="submit"
+                                                class="ui tiny red basic button course-action-button">
+                                                수강 종료
+                                            </button>
+
+                                        </form>
+
+                                    <?php
+                                    } else {
+                                    ?>
+
+                                        <form
+                                            method="post"
+                                            action="course_students.php?course_id=<?php echo intval($course_id); ?>"
+                                            style="display:inline;"
+                                            onsubmit="return confirm('이 학생을 다시 수강 등록하시겠습니까?');">
+
+                                            <?php echo $view_csrf_input; ?>
+
+                                            <input
+                                                type="hidden"
+                                                name="action"
+                                                value="reactivate_student">
+
+                                            <input
+                                                type="hidden"
+                                                name="target_user_id"
+                                                value="<?php
+                                                        echo htmlspecialchars(
+                                                            $student['user_id'],
+                                                            ENT_QUOTES,
+                                                            'UTF-8'
+                                                        );
+                                                        ?>">
+
+                                            <button
+                                                type="submit"
+                                                class="ui tiny blue basic button course-action-button">
+                                                재등록
+                                            </button>
+
+                                        </form>
+
+                                    <?php
+                                    }
+                                    ?>
+
+                                <?php
+                                } else {
+                                ?>
+
+                                    -
 
                                 <?php
                                 }
-                                else {
                                 ?>
 
-                                    <form
-                                        method="post"
-                                        action="course_students.php?course_id=<?php echo intval($course_id); ?>"
-                                        style="display:inline;"
-                                        onsubmit="return confirm('이 학생을 다시 수강 등록하시겠습니까?');"
-                                    >
+                            </td>
 
-                                        <?php echo $view_csrf_input; ?>
-
-                                        <input
-                                            type="hidden"
-                                            name="action"
-                                            value="reactivate_student"
-                                        >
-
-                                        <input
-                                            type="hidden"
-                                            name="target_user_id"
-                                            value="<?php
-                                                echo htmlspecialchars(
-                                                    $student['user_id'],
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                            ?>"
-                                        >
-
-                                        <button
-                                            type="submit"
-                                            class="ui tiny blue basic button course-action-button"
-                                        >
-                                            재등록
-                                        </button>
-
-                                    </form>
-
+                            <td class="course-student-last-column">
                                 <?php
+                                if (!empty($student['course_last_activity'])) {
+
+                                    echo htmlspecialchars(
+                                        $student['course_last_activity'],
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    );
+                                } else {
+
+                                    echo '활동 없음';
                                 }
                                 ?>
+                            </td>
 
-                            <?php
-                            }
-                            else {
-                            ?>
 
-                                -
 
-                            <?php
-                            }
-                            ?>
 
-                        </td>
-                        
 
-                        
-                    </tr>
-                <?php
-                }
-                ?>
-                    
+                        </tr>
+                    <?php
+                    }
+                    ?>
+
                 </tbody>
 
             </table>
@@ -575,7 +849,7 @@ include("template/$OJ_TEMPLATE/header.php");
             </h3>
 
 
-            
+
 
 
             <?php
@@ -585,16 +859,14 @@ include("template/$OJ_TEMPLATE/header.php");
                 <form
                     class="ui form"
                     method="post"
-                    action="course_students.php?course_id=<?php echo intval($course_id); ?>"
-                >
+                    action="course_students.php?course_id=<?php echo intval($course_id); ?>">
 
                     <?php echo $view_csrf_input; ?>
 
                     <input
                         type="hidden"
                         name="action"
-                        value="add_single"
-                    >
+                        value="add_single">
 
 
                     <div class="fields">
@@ -610,8 +882,7 @@ include("template/$OJ_TEMPLATE/header.php");
                                 name="student_user_id"
                                 maxlength="48"
                                 required
-                                placeholder="1024.kr 사용자 아이디"
-                            >
+                                placeholder="1024.kr 사용자 아이디">
 
                         </div>
 
@@ -626,8 +897,7 @@ include("template/$OJ_TEMPLATE/header.php");
                                 type="text"
                                 name="student_no"
                                 maxlength="20"
-                                placeholder="선택 입력"
-                            >
+                                placeholder="선택 입력">
 
                         </div>
 
@@ -636,8 +906,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
                     <button
                         class="ui blue button"
-                        type="submit"
-                    >
+                        type="submit">
                         <i class="user plus icon"></i>
                         학생 추가
                     </button>
@@ -645,8 +914,7 @@ include("template/$OJ_TEMPLATE/header.php");
                 </form>
 
             <?php
-            }
-            else {
+            } else {
             ?>
 
                 <div class="ui warning message">
@@ -741,77 +1009,74 @@ include("template/$OJ_TEMPLATE/header.php");
 
                         <tbody>
 
-                        <?php
-                        foreach ($view_bulk_results as $result) {
-                        ?>
+                            <?php
+                            foreach ($view_bulk_results as $result) {
+                            ?>
 
-                            <tr>
+                                <tr>
 
-                                <td>
-                                    <?php echo intval($result['line']); ?>
-                                </td>
+                                    <td>
+                                        <?php echo intval($result['line']); ?>
+                                    </td>
 
-                                <td>
-                                    <?php
-                                    echo htmlspecialchars(
-                                        $result['user_id'],
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    );
-                                    ?>
-                                </td>
+                                    <td>
+                                        <?php
+                                        echo htmlspecialchars(
+                                            $result['user_id'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        );
+                                        ?>
+                                    </td>
 
-                                <td>
+                                    <td>
 
-                                    <?php
-                                    if ($result['result'] === 'added') {
-                                    ?>
-                                        <span class="ui tiny green label">
-                                            등록
-                                        </span>
+                                        <?php
+                                        if ($result['result'] === 'added') {
+                                        ?>
+                                            <span class="ui tiny green label">
+                                                등록
+                                            </span>
 
-                                    <?php
-                                    }
-                                    elseif ($result['result'] === 'reactivated') {
-                                    ?>
-                                        <span class="ui tiny blue label">
-                                            재등록
-                                        </span>
+                                        <?php
+                                        } elseif ($result['result'] === 'reactivated') {
+                                        ?>
+                                            <span class="ui tiny blue label">
+                                                재등록
+                                            </span>
 
-                                    <?php
-                                    }
-                                    elseif ($result['result'] === 'duplicate') {
-                                    ?>
-                                        <span class="ui tiny grey label">
-                                            기존
-                                        </span>
+                                        <?php
+                                        } elseif ($result['result'] === 'duplicate') {
+                                        ?>
+                                            <span class="ui tiny grey label">
+                                                기존
+                                            </span>
 
-                                    <?php
-                                    }
-                                    else {
-                                    ?>
-                                        <span class="ui tiny red label">
-                                            실패
-                                        </span>
-                                    <?php
-                                    }
-                                    ?>
+                                        <?php
+                                        } else {
+                                        ?>
+                                            <span class="ui tiny red label">
+                                                실패
+                                            </span>
+                                        <?php
+                                        }
+                                        ?>
 
-                                    <?php
-                                    echo htmlspecialchars(
-                                        $result['message'],
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    );
-                                    ?>
+                                        <?php
+                                        echo htmlspecialchars(
+                                            $result['message'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        );
+                                        ?>
 
-                                </td>
+                                    </td>
 
-                            </tr>
+                                </tr>
 
-                        <?php
-                        }
-                        ?>
+                            <?php
+                            }
+                            ?>
 
                         </tbody>
 
@@ -841,7 +1106,7 @@ include("template/$OJ_TEMPLATE/header.php");
                     학생 아이디와 학생 번호를 두 열로 입력할 수 있습니다.
                 </p>
 
-<pre>
+                <pre>
 student01	1
 student02	2
 student03	3
@@ -853,16 +1118,14 @@ student03	3
             <form
                 class="ui form"
                 method="post"
-                action="course_students.php?course_id=<?php echo intval($course_id); ?>"
-            >
+                action="course_students.php?course_id=<?php echo intval($course_id); ?>">
 
                 <?php echo $view_csrf_input; ?>
 
                 <input
                     type="hidden"
                     name="action"
-                    value="add_bulk"
-                >
+                    value="add_bulk">
 
 
                 <div class="field">
@@ -875,16 +1138,14 @@ student03	3
                         name="bulk_students"
                         rows="10"
                         placeholder="Excel에서 학생 목록을 복사하여 붙여넣으세요."
-                        required
-                    ></textarea>
+                        required></textarea>
 
                 </div>
 
 
                 <button
                     class="ui teal button"
-                    type="submit"
-                >
+                    type="submit">
                     <i class="users icon"></i>
                     학생 일괄 추가
                 </button>
@@ -902,13 +1163,26 @@ student03	3
     (function() {
 
         var searchInput =
-            document.getElementById('course-student-search');
+            document.getElementById(
+                'course-student-search'
+            );
 
         var statusFilter =
-            document.getElementById('course-student-status-filter');
+            document.getElementById(
+                'course-student-status-filter'
+            );
+
+        var attentionFilter =
+            document.getElementById(
+                'course-student-attention-filter'
+            );
 
 
-        if (!searchInput || !statusFilter) {
+        if (
+            !searchInput ||
+            !statusFilter ||
+            !attentionFilter
+        ) {
             return;
         }
 
@@ -917,11 +1191,14 @@ student03	3
 
             var keyword =
                 searchInput.value
-                    .trim()
-                    .toLowerCase();
+                .trim()
+                .toLowerCase();
 
             var selectedStatus =
                 statusFilter.value;
+
+            var selectedAttention =
+                attentionFilter.value;
 
             var rows =
                 document.querySelectorAll(
@@ -933,10 +1210,27 @@ student03	3
 
                 var rowText =
                     row.textContent
-                        .toLowerCase();
+                    .toLowerCase();
 
                 var rowStatus =
-                    row.getAttribute('data-status');
+                    row.getAttribute(
+                        'data-status'
+                    );
+
+                var rowAttention =
+                    row.getAttribute(
+                        'data-attention'
+                    );
+
+                var rowMissed =
+                    row.getAttribute(
+                        'data-missed'
+                    );
+
+                var rowRetry =
+                    row.getAttribute(
+                        'data-retry'
+                    );
 
 
                 var keywordMatch =
@@ -949,10 +1243,51 @@ student03	3
                     rowStatus === selectedStatus;
 
 
-                if (keywordMatch && statusMatch) {
-                    row.style.display = '';
+                var attentionMatch =
+                    false;
+
+
+                if (selectedAttention === 'all') {
+
+                    attentionMatch = true;
+
+                } else if (
+                    selectedAttention === 'attention'
+                ) {
+
+                    attentionMatch =
+                        rowAttention === 'attention';
+
+                } else if (
+                    selectedAttention === 'missed'
+                ) {
+
+                    attentionMatch =
+                        rowMissed === 'yes';
+
+                } else if (
+                    selectedAttention === 'retry'
+                ) {
+
+                    attentionMatch =
+                        rowRetry === 'yes';
+
+                } else if (
+                    selectedAttention === 'none'
+                ) {
+
+                    attentionMatch =
+                        rowAttention === 'none';
                 }
-                else {
+
+
+                if (
+                    keywordMatch &&
+                    statusMatch &&
+                    attentionMatch
+                ) {
+                    row.style.display = '';
+                } else {
                     row.style.display = 'none';
                 }
 
@@ -965,6 +1300,59 @@ student03	3
             filterStudents
         );
 
+        attentionFilter.addEventListener(
+            'change',
+            filterStudents
+        );
+
+        var summaryFilters =
+            document.querySelectorAll(
+                '.course-summary-filter'
+            );
+
+
+        summaryFilters.forEach(
+            function(link) {
+
+                link.addEventListener(
+                    'click',
+                    function() {
+
+                        var filterValue =
+                            this.getAttribute(
+                                'data-attention-filter'
+                            );
+
+
+                        if (
+                            filterValue &&
+                            attentionFilter
+                        ) {
+
+                            attentionFilter.value =
+                                filterValue;
+
+
+                            if (
+                                typeof $ !== 'undefined' &&
+                                $(attentionFilter)
+                                .dropdown
+                            ) {
+
+                                $(attentionFilter)
+                                    .dropdown(
+                                        'set selected',
+                                        filterValue
+                                    );
+                            }
+
+
+                            filterStudents();
+                        }
+                    }
+                );
+            }
+        );
         statusFilter.addEventListener(
             'change',
             filterStudents

@@ -58,6 +58,17 @@ else if (isset($_GET['cid']) && isset($_GET['pid'])) {
 		$view_errors = "<title>$MSG_CONTEST</title><h2>No such Contest!</h2>";
 		require("template/".$OJ_TEMPLATE."/error.php");
 		exit(0);
+	} else {
+
+		if (
+			isset($result[0]['langmask'])
+		) {
+
+			$_GET['langmask'] =
+				intval(
+					$result[0]['langmask']
+				);
+		}
 	}
 
 	$psql =
@@ -249,6 +260,18 @@ if (isset($_GET['sid'])) {
             ]
         );
 
+	$view_source_readonly = false;
+
+
+	if (
+		!$is_source_owner &&
+		$has_source_browser
+	) {
+
+		$view_process_mode = false;
+
+		$view_source_readonly = true;
+	}
 
     if (
         !$is_source_owner &&
@@ -437,6 +460,76 @@ if (isset($_GET['sid'])) {
 						$language_name
 					);
 			}
+		} else {
+
+			// --------------------------------------------------------
+			// source_code_user가 없는 아주 오래된 제출
+			//
+			// 기존 source_code에서 채점용 코드를 가져와
+			// 가능한 범위에서 front/rear를 제거한다.
+			// --------------------------------------------------------
+
+			$legacy_source_rows =
+				pdo_query(
+					"SELECT source
+					 FROM source_code
+					 WHERE solution_id = ?
+					 LIMIT 1",
+					$sid
+				);
+
+
+			if (
+				$legacy_source_rows &&
+				isset($legacy_source_rows[0]['source'])
+			) {
+
+				$legacy_source =
+					(string)$legacy_source_rows[0]['source'];
+
+
+				$template_rows =
+					pdo_query(
+						"SELECT
+							front_code,
+							rear_code
+						 FROM problem
+						 WHERE problem_id = ?
+						 LIMIT 1",
+						$sproblem_id
+					);
+
+
+				$front_code = '';
+				$rear_code = '';
+
+
+				if (
+					$template_rows &&
+					isset($template_rows[0])
+				) {
+
+					$front_code =
+						isset($template_rows[0]['front_code'])
+						? $template_rows[0]['front_code']
+						: '';
+
+					$rear_code =
+						isset($template_rows[0]['rear_code'])
+						? $template_rows[0]['rear_code']
+						: '';
+				}
+
+
+				$view_src =
+					oj_strip_legacy_source_templates(
+						$legacy_source,
+						$front_code,
+						$rear_code,
+						$language_num,
+						$language_name
+					);
+			}
 		}
 
 		// Contest 제출일 때만 Contest 언어 제한을 적용한다.
@@ -470,16 +563,6 @@ if (isset($id))
 // ============================================================
 // Edit 모드에서는 기존 제출 언어를 기본 선택 언어로 사용
 // ============================================================
-
-if (
-	isset($_GET['sid']) &&
-	isset($language_num)
-) {
-	$lastlang = intval($language_num);
-}
-else {
-	$lastlang = 0;
-}
 
 
 $view_sample_input = "1 2";
@@ -557,10 +640,8 @@ $result = mysql_query_cache($sql);
 
 $row = $result[0];
 
-if ($row[0]>10) {
+if ($row[0] > 50) {
 	$OJ_VCODE = true;
-	//$OJ_TEST_RUN=false;
-	//echo "$row[0]";
 }
 // ============================================================
 // 수업용 OJ - 첫 제출 / 재제출 판단

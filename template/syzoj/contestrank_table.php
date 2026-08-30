@@ -1,8 +1,7 @@
 <div
   id="ranking-area"
   class="padding"
-  style="overflow-y:auto;"
->
+  style="overflow-y:auto;">
   <?php if ($user_cnt > 0) { ?>
     <table class="ui very basic center aligned table" style="margin:30px">
       <thead>
@@ -12,18 +11,28 @@
           <th>별명</th>
           <th>통과</th>
           <th>시간 패널티</th>
-          <?php for ($i=0; $i<$pid_cnt; $i++) echo "<th><a href=problem.php?cid=$cid&pid=$i>$PID[$i]</a></th>"; ?>
+          <?php for ($i = 0; $i < $pid_cnt; $i++) echo "<th><a href=problem.php?cid=$cid&pid=$i>$PID[$i]</a></th>"; ?>
           <th></th>
         </tr>
       </thead>
       <tbody>
         <?php
+
+        // 닉네임 열람 권한
+        // - 관리자
+        // - 해당 대회 관리자/생성자
+        // - Course 관리교사(m{cid} 권한이 동기화된 경우)
+        $can_see_nick = (
+          isset($_SESSION[$OJ_NAME . '_administrator']) ||
+          isset($_SESSION[$OJ_NAME . "_m$cid"])
+        );
+
         $rank = 1;
         for ($i = 0; $i < $user_cnt; $i++) {
           $uuid = $U[$i]->user_id;
           $nick = $U[$i]->nick;
           $usolved = $U[$i]->solved;
-          $is_me = ($uuid == $_SESSION[$OJ_NAME.'_user_id']);
+          $is_me = ($uuid == $_SESSION[$OJ_NAME . '_user_id']);
 
           // 핵심 분기: exam_mode가 아니면 다 보여주고, 수행평가면 본인/관리자만 상세 정보
           $can_see_detail = ($exam_mode != 1) || $can_see_all || $is_me;
@@ -46,18 +55,28 @@
 
           // 사용자 ID
           if (isset($_GET['user_id']) && $uuid == $_GET['user_id']) {
-              echo "<td bgcolor=#ffff77>";
+            echo "<td bgcolor=#ffff77>";
           } else {
-              echo "<td>";
+            echo "<td>";
           }
           echo "<a name=\"$uuid\" href=userinfo.php?user=$uuid>$uuid</a>";
           echo "</td>";
 
 
           // 닉네임
-          echo "<td><a href=userinfo.php?user=$uuid>".htmlentities($nick, ENT_QUOTES, "UTF-8")."</a></td>";
+          echo "<td>";
 
-          // 통과 문제 수
+          if ($can_see_nick) {
+            echo "<a href=userinfo.php?user=" . urlencode($uuid) . "\">"
+              . htmlentities($nick, ENT_QUOTES, "UTF-8")
+              . "</a>";
+          } else {
+            echo "-";
+          }
+
+          echo "</td>";
+
+          // 통과 문제 수 
           echo "<td><a href=status.php?user_id=$uuid&cid=$cid>$usolved</a></td>";
 
           // 시간 패널티
@@ -74,14 +93,14 @@
 
             $wa = $U[$i]->p_wa_num[$j] ?? 0;
             $ac = $U[$i]->p_ac_sec[$j] ?? 0;
-            
+
 
             if ($ac > 0) {
               if ($uuid == $first_blood[$j]) {
-                echo "<td style=\"background: rgb(".(150+12*$wa).",255,".(150+8*$wa)."); position:relative;\">";
+                echo "<td style=\"background: rgb(" . (150 + 12 * $wa) . ",255," . (150 + 8 * $wa) . "); position:relative;\">";
                 echo "<div style=\"position:absolute;width:30%;margin-top:5%;margin-right:5%;height:30%;right:0px;top:0px;\">※1st</div>";
               } else {
-                echo "<td style=\"background: rgb(".(150+12*$wa).",255,".(150+8*$wa).");\">";
+                echo "<td style=\"background: rgb(" . (150 + 12 * $wa) . ",255," . (150 + 8 * $wa) . ");\">";
               }
 
               echo "<span class=\"score score_10\">";
@@ -91,14 +110,12 @@
               echo "<div class=\"submit_time\">";
               echo $can_see_detail ? sec2str($ac) : "-";
               echo "</div>";
-            }
-            else if ($wa > 0) {
-              echo "<td style=\"background: rgb(255,".(240-9*$wa).",".(240-9*$wa).");\">";
+            } else if ($wa > 0) {
+              echo "<td style=\"background: rgb(255," . (240 - 9 * $wa) . "," . (240 - 9 * $wa) . ");\">";
               echo "<span class=\"score score_0\">";
               echo $can_see_detail ? "-$wa" : "-";
               echo "</span>";
-            }
-            else {
+            } else {
               echo "<td>";
             }
 

@@ -633,7 +633,14 @@ include(
                                 target="_blank"
                                 title="<?php
                                         echo htmlentities(
-                                            $problem['label'] . ' 문제 보기',
+                                            $problem['label'] .
+                                                ' ' .
+                                                (
+                                                    isset($problem['title']) &&
+                                                    trim($problem['title']) !== ''
+                                                    ? $problem['title']
+                                                    : '문제 보기'
+                                                ),
                                             ENT_QUOTES,
                                             'UTF-8'
                                         );
