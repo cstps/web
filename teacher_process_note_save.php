@@ -2,20 +2,13 @@
 
 require_once("./include/db_info.inc.php");
 require_once("./include/my_func.inc.php");
-
+require_once("./include/course_functions.inc.php");
+require_once("./include/permission_functions.inc.php");
 
 // ============================================================
 // 로그인 확인
 // ============================================================
-
-if (
-    !isset(
-        $_SESSION[
-            $OJ_NAME.'_user_id'
-        ]
-    )
-) {
-
+if (!oj_is_logged_in()) {
     exit("로그인이 필요합니다.");
 }
 
@@ -44,6 +37,11 @@ $sid =
         ? intval($_POST['sid'])
         : 0;
 
+$course_id =
+    isset($_POST['course_id'])
+        ? intval($_POST['course_id'])
+        : 0;
+
 $note_text =
     isset($_POST['note_text'])
         ? trim($_POST['note_text'])
@@ -68,35 +66,6 @@ if (
 
 require_once("./include/check_post_key.php");
 
-
-// ============================================================
-// 권한 확인
-//
-// administrator 또는 해당 대회의 m{cid}
-// ============================================================
-
-$is_admin =
-    isset(
-        $_SESSION[
-            $OJ_NAME.'_administrator'
-        ]
-    );
-
-$is_contest_manager =
-    isset(
-        $_SESSION[
-            $OJ_NAME.'_m'.$cid
-        ]
-    );
-
-
-if (
-    !$is_admin &&
-    !$is_contest_manager
-) {
-
-    exit("이 메모를 작성할 권한이 없습니다.");
-}
 
 
 // ============================================================
@@ -157,6 +126,72 @@ if (
 
 
 // ============================================================
+// 관찰 메모 작성 권한 확인
+//
+// 허용:
+// - administrator
+// - 해당 Contest 관리자 m{cid}
+// - 검증된 Course의 owner / teacher
+//
+// assistant는 조회만 가능
+// ============================================================
+
+$can_manage_teacher_note =
+    oj_can_manage_contest($cid);
+
+
+// ------------------------------------------------------------
+// Contest 권한이 없으면 Course 권한 확인
+// ------------------------------------------------------------
+
+if (
+    !$can_manage_teacher_note &&
+    $course_id > 0
+) {
+
+    // 전달받은 Course에 해당 Contest와 학생이
+    // 실제로 소속되어 있는지 동시에 확인한다.
+    $course_relation_rows =
+        pdo_query(
+            "SELECT 1
+               FROM course_contest cc
+
+               INNER JOIN course_student cs
+                  ON cs.course_id = cc.course_id
+                 AND cs.user_id = ?
+
+              WHERE cc.course_id = ?
+                AND cc.contest_id = ?
+                AND cc.status = 1
+
+              LIMIT 1",
+            $solution_user,
+            $course_id,
+            $cid
+        );
+
+
+    $has_valid_course_relation =
+        (
+            $course_relation_rows &&
+            isset($course_relation_rows[0])
+        );
+
+
+    if (
+        $has_valid_course_relation &&
+        course_can_manage_student_records($course_id)
+    ) {
+        $can_manage_teacher_note = true;
+    }
+}
+
+
+if (!$can_manage_teacher_note) {
+    exit("이 관찰 메모를 작성할 권한이 없습니다.");
+}
+
+// ============================================================
 // 메모 길이 제한
 // ============================================================
 
@@ -212,11 +247,18 @@ pdo_query(
 // ============================================================
 // 원래 과정 화면으로 복귀
 // ============================================================
+$redirect_url =
+    "solution_process_view.php?sid=" .
+    intval($sid);
 
-header(
-    "Location: solution_process_view.php?sid=".
-    intval($sid)
-);
+if ($course_id > 0) {
+    $redirect_url .=
+        "&course_id=" .
+        intval($course_id);
+}
 
+header("Location: ".$redirect_url);
 exit;
+
+
 ?>

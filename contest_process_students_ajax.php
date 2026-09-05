@@ -4,6 +4,7 @@ require_once('./include/db_info.inc.php');
 require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
+require_once('./include/permission_functions.inc.php');
 require_once('./include/course_functions.inc.php');
 
 // ============================================================
@@ -51,36 +52,15 @@ if ($cid <= 0) {
 // AJAX 데이터에도 접근할 수 없다.
 // ============================================================
 
-$is_admin =
-    isset(
-        $_SESSION[
-            $OJ_NAME.'_administrator'
-        ]
-    );
-
-
-$is_contest_manager =
-    isset(
-        $_SESSION[
-            $OJ_NAME.'_m'.$cid
-        ]
-    );
-
-
-$is_course_teacher =
-    course_can_view_contest_process($cid);
-
-
 if (
-    !$is_admin &&
-    !$is_contest_manager &&
-    !$is_course_teacher
+    !oj_can_view_contest_process(
+        $cid
+    )
 ) {
 
     http_response_code(403);
     exit;
 }
-
 
 // ============================================================
 // 4. 대회 존재 확인

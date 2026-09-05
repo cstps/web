@@ -67,7 +67,7 @@
           echo "<td>";
 
           if ($can_see_nick) {
-            echo "<a href=userinfo.php?user=" . urlencode($uuid) . "\">"
+            echo "<a href=userinfo.php?user=" . urlencode($uuid) . ">"
               . htmlentities($nick, ENT_QUOTES, "UTF-8")
               . "</a>";
           } else {

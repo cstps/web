@@ -118,7 +118,8 @@ $view_course = $course_rows[0];
 // 5. Course 접근 권한 확인
 // ============================================================
 
-if (!course_can_access($course_id)) {
+if (!course_can_view_student_records($course_id)) {
+
 
     $view_errors =
         "<h2>이 수업의 학생 정보를 볼 권한이 없습니다.</h2>";

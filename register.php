@@ -1,6 +1,9 @@
-<?php 
+<?php
+
 require_once("./include/db_info.inc.php");
-$sql="SELECT `register` FROM `setting` ";
+require_once("./include/permission_functions.inc.php");
+
+$sql = "SELECT `register` FROM `setting` ";
 $result = pdo_query($sql);
 $row =  $result[0];
 if( $row['register']==0) { // 회원가입 off인 경우
@@ -133,18 +136,39 @@ $rows=pdo_query($sql,$user_id,$email,$ip,$password,$nick,$school,$defunct);// or
 $sql="INSERT INTO `loginlog` VALUES(?,?,?,NOW())";
 pdo_query($sql,$user_id,"no save",$ip);
 
-if(!isset($OJ_REG_NEED_CONFIRM)||!$OJ_REG_NEED_CONFIRM){
-		$_SESSION[$OJ_NAME.'_'.'user_id']=$user_id;
-		$sql="SELECT `rightstr` FROM `privilege` WHERE `user_id`=?";
-		//echo $sql."<br />";
-		$result=pdo_query($sql,$_SESSION[$OJ_NAME.'_'.'user_id']);
-		foreach ($result as $row){
-			$_SESSION[$OJ_NAME.'_'.$row['rightstr']]=true;
-			//echo $_SESSION[$OJ_NAME.'_'.$row['rightstr']]."<br />";
-		}
-		$_SESSION[$OJ_NAME.'_'.'ac']=Array();
-		$_SESSION[$OJ_NAME.'_'.'sub']=Array();
-	        if($OJ_SaaS_ENABLE && $domain==$DOMAIN)    create_subdomain($cid,"syzoj",3);
+if (
+	!isset($OJ_REG_NEED_CONFIRM) ||
+	!$OJ_REG_NEED_CONFIRM
+) {
+
+	$_SESSION[$OJ_NAME . '_user_id'] = $user_id;
+
+
+	// 현재 사용자의 활성 권한만 공통 함수로 로딩한다.
+	//
+	// 같은 브라우저 세션에 이전 사용자의 권한이 남아 있더라도
+	// 전역 권한과 c{cid}, m{cid}, s{pid}를 먼저 제거한다.
+	oj_refresh_privilege_sessions(
+		$user_id
+	);
+
+
+	$_SESSION[$OJ_NAME . '_ac'] = array();
+
+	$_SESSION[$OJ_NAME . '_sub'] = array();
+
+
+	if (
+		$OJ_SaaS_ENABLE &&
+		$domain == $DOMAIN
+	) {
+
+		create_subdomain(
+			$cid,
+			"syzoj",
+			3
+		);
+	}
 }
 ?>
 <script>window.location.href = 'https://1024.kr/';</script>

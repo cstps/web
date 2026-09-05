@@ -121,7 +121,7 @@ if (
 // 5. Course 접근 권한 확인
 // ============================================================
 
-if (!course_can_access($course_id)) {
+if (!course_can_manage_student_records($course_id)) {
 
     $view_errors =
         "<h2>이 수업의 메모를 수정할 권한이 없습니다.</h2>";

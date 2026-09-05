@@ -289,7 +289,7 @@
                                         ENT_QUOTES,
                                         'UTF-8'
                                     );
-                                    ?>"
+                                    ?>">
 
                             <?php
                             echo htmlentities(

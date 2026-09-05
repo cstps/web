@@ -1,28 +1,103 @@
-<?php require_once("admin-header.php");
+<?php
+
+require_once("admin-header.php");
 require_once("../include/check_get_key.php");
-$$cid = intval($_GET['cid']);
+require_once("../include/permission_functions.inc.php");
 
-if (!(
-    isset($_SESSION[$OJ_NAME.'_m'.$cid]) ||
-    isset($_SESSION[$OJ_NAME.'_administrator'])
-)) {
-    exit();
+
+// ============================================================
+// 1. Contest 번호 확인
+// ============================================================
+
+$cid =
+    isset($_GET['cid'])
+    ? intval($_GET['cid'])
+    : 0;
+
+
+if ($cid <= 0) {
+
+    http_response_code(400);
+    echo "잘못된 대회 번호입니다.";
+    exit;
 }
 
-$sql="select `private` FROM `contest` WHERE `contest_id`=?";
-$result=pdo_query($sql,$cid);
-$num=count($result);
-if ($num < 1) {
-    echo "No Such Contest!";
-    exit(0);
-}
-$row=$result[0];
-if (intval($row[0])==0) $sql="UPDATE `contest` SET `private`='1' WHERE `contest_id`=?";
-else $sql="UPDATE `contest` SET `private`='0' WHERE `contest_id`=?";
 
-pdo_query($sql,$cid);
+// ============================================================
+// 2. 권한 확인
+//
+// 허용:
+// - administrator
+// - 해당 Contest의 m{cid}
+// ============================================================
+
+if (
+    !oj_can_manage_contest(
+        $cid
+    )
+) {
+
+    http_response_code(403);
+    echo "이 대회의 공개 상태를 변경할 권한이 없습니다.";
+    exit;
+}
+
+
+// ============================================================
+// 3. 현재 공개 상태 확인
+// ============================================================
+
+$result =
+    pdo_query(
+        "SELECT private
+         FROM contest
+         WHERE contest_id=?
+         LIMIT 1",
+        $cid
+    );
+
+
+if (
+    !$result ||
+    !isset($result[0])
+) {
+
+    http_response_code(404);
+    echo "대회를 찾을 수 없습니다.";
+    exit;
+}
+
+
+$current_private =
+    isset($result[0]['private'])
+    ? intval($result[0]['private'])
+    : intval($result[0][0]);
+
+
+// ============================================================
+// 4. 공개 상태 전환
+//
+// private=0 : 공개
+// private=1 : 비공개
+// ============================================================
+
+$new_private =
+    $current_private === 0
+    ? 1
+    : 0;
+
+
+pdo_query(
+    "UPDATE contest
+     SET private=?
+     WHERE contest_id=?",
+    $new_private,
+    $cid
+);
+
 ?>
-<script language=javascript>
-	history.go(-1);
-</script>
 
+
+<script>
+    history.go(-1);
+</script>

@@ -243,12 +243,13 @@ if (
 // administrator
 // owner
 // teacher
-// assistant
 //
+// assistant는 조회만 가능하며
+// 세특 초안 작성·변경은 허용하지 않는다.
 // 학생 학습현황 페이지와 동일한 접근 기준을 사용한다.
 // ============================================================
 
-if (!course_can_access($course_id)) {
+if (!course_can_manage_student_records($course_id)) {
 
     $view_errors =
         "<h2>이 학생의 세특 초안을 작성할 권한이 없습니다.</h2>";

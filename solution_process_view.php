@@ -6,6 +6,7 @@ require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 // Course 권한 확인용
 require_once('./include/course_functions.inc.php');
+require_once('./include/permission_functions.inc.php');
 
 $view_title = "문제 해결 과정";
 
@@ -204,7 +205,7 @@ function build_source_diff($old_source, $new_source) {
 // 1. 로그인 확인
 // ============================================================
 
-if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])) {
+if (!oj_is_logged_in()) {
 
     $view_errors = "<h2>로그인이 필요합니다.</h2>";
 
@@ -237,10 +238,10 @@ $current_user = isset($_SESSION[$OJ_NAME.'_'.'user_id'])
     : "";
 
 $is_admin =
-    isset($_SESSION[$OJ_NAME.'_'.'administrator']);
+    oj_is_admin();
 
 $is_source_browser =
-    isset($_SESSION[$OJ_NAME.'_'.'source_browser']);
+    oj_has_global_privilege('source_browser');
 
 
 // ============================================================
@@ -250,15 +251,18 @@ $is_source_browser =
 // ============================================================
 
 $sql = "SELECT
-        solution_id,
-        user_id,
-        problem_id,
-        contest_id,
-        result,
-        language,
-        in_date
-    FROM solution
-    WHERE solution_id=?
+        s.solution_id,
+        s.user_id,
+        s.problem_id,
+        s.contest_id,
+        s.result,
+        s.language,
+        s.in_date,
+        u.nick AS user_nick
+    FROM solution s
+    LEFT JOIN users u
+      ON u.user_id = s.user_id
+    WHERE s.solution_id=?
     LIMIT 1";
 
 $result = pdo_query($sql, $sid);
@@ -275,12 +279,17 @@ if (!$result || count($result) == 0) {
 
 
 $solution = $result[0];
+
 $solution_user_id = isset($solution['user_id'])
     ? trim((string)$solution['user_id'])
     : "";
 
-$problem_id       = intval($solution['problem_id']);
-$contest_id       = intval($solution['contest_id']);
+$solution_nick = isset($solution['user_nick'])
+    ? trim((string)$solution['user_nick'])
+    : "";
+
+$problem_id = intval($solution['problem_id']);
+$contest_id = intval($solution['contest_id']);
 
 
 // ============================================================
@@ -301,17 +310,11 @@ $is_owner = (
 // contest_creator 자체는 과정 열람 권한이 아님
 // ============================================================
 
-$is_contest_manager = false;
-
-if ($contest_id > 0) {
-
-    $is_contest_manager =
-        isset(
-            $_SESSION[
-                $OJ_NAME.'_m'.$contest_id
-            ]
-        );
-}
+$is_contest_manager =
+    (
+        $contest_id > 0 &&
+        oj_can_manage_contest($contest_id)
+    );
 
 // ============================================================
 // Course를 통한 학생 해결과정 조회 권한
@@ -349,7 +352,7 @@ if (
     // administrator / owner / teacher / assistant
     // --------------------------------------------------------
 
-    if (course_can_access($process_course_id)) {
+    if (course_can_view_student_records($process_course_id)) {
 
         // ----------------------------------------------------
         // 제출 학생 + Course + Contest 관계를 동시에 검증
@@ -406,18 +409,11 @@ if (
     $process_course_id > 0
 ) {
 
-    $course_role =
-        course_get_role(
-            $process_course_id
-        );
-
-
     if (
-        $course_role === 'administrator' ||
-        $course_role === 'owner' ||
-        $course_role === 'teacher'
+    course_can_manage_student_records(
+        $process_course_id
+        )
     ) {
-
         $can_manage_course_teacher_note = true;
     }
 }
@@ -491,28 +487,22 @@ if (!$check_result || count($check_result) == 0) {
 //
 // 학생 / 다른 대회 교사 / source_browser / contest_creator는 불가
 // ============================================================
-
-$is_note_admin =
-    isset(
-        $_SESSION[
-            $OJ_NAME.'_administrator'
-        ]
-    );
-
-$is_note_contest_manager =
+// 관찰 메모 조회 권한
+// 학생 본인과 source_browser는 제외
+$can_view_teacher_note =
     (
-        $contest_id > 0 &&
-        isset(
-            $_SESSION[
-                $OJ_NAME.'_m'.$contest_id
-            ]
-        )
+        $is_admin ||
+        $is_contest_manager ||
+        $is_course_process_viewer
     );
 
+
+// 관찰 메모 작성·수정·삭제 권한
+// Course assistant는 제외
 $can_manage_teacher_note =
     (
-        $is_note_admin ||
-        $is_note_contest_manager ||
+        $is_admin ||
+        $is_contest_manager ||
         $can_manage_course_teacher_note
     );
 // ============================================================
@@ -521,7 +511,7 @@ $can_manage_teacher_note =
 
 $teacher_notes = array();
 
-if ($can_manage_teacher_note) {
+if ($can_view_teacher_note) {
 
     $note_sql = "SELECT
                     note_id,

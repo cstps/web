@@ -128,12 +128,12 @@ if (
 // assistant는 현재 학생관리 권한 정책상 제외
 // ============================================================
 
-$is_course_teacher = false;
+$is_course_record_viewer = false;
 
 
 if (
     $course_id > 0 &&
-    course_can_manage_students($course_id)
+    course_can_view_student_records($course_id)
 ) {
 
     // --------------------------------------------------------
@@ -161,7 +161,7 @@ if (
         )
     ) {
 
-        $is_course_teacher = true;
+        $is_course_record_viewer = true;
     }
 }
 
@@ -170,7 +170,7 @@ $can_view_student_summary =
     (
         $is_admin ||
         $is_contest_manager ||
-        $is_course_teacher
+        $is_course_record_viewer
     );
 
 

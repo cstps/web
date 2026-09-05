@@ -4,6 +4,7 @@ require_once('./include/db_info.inc.php');
 require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
+require_once('./include/permission_functions.inc.php');
 require_once('./include/course_functions.inc.php');
 
 $view_title = "학생 문제 해결 과정 현황";
@@ -38,32 +39,26 @@ $cid = intval($_GET['cid']);
 
 // ============================================================
 // 3. 권한
+//
+// 허용:
+// - administrator
+// - 해당 Contest의 m{cid}
+// - 해당 Course의 활성 owner/teacher
+//
+// source_browser와 contest_creator만으로는
+// 학생 문제 해결과정 현황을 열람할 수 없다.
 // ============================================================
-
-$is_admin =
-    isset($_SESSION[$OJ_NAME.'_'.'administrator']);
-
-$is_source_browser =
-    isset($_SESSION[$OJ_NAME.'_'.'source_browser']);
-
-$is_contest_manager =
-    isset($_SESSION[$OJ_NAME.'_m'.$cid]);
-
-
 /*
  * Course의 활성 owner/teacher인지 DB에서 직접 확인한다.
- * 담당교사 등록 직후 세션에 m{cid}가 반영되지 않은 경우도 허용한다.
+ *
+ * 담당교사 등록 직후 세션의 m{cid}가 갱신되지 않았거나,
+ * linked Contest의 기존 소유권이 별도로 유지되는 경우에도
+ * Course 역할을 기준으로 열람할 수 있다.
  */
-$is_course_teacher =
-    course_can_view_contest_process($cid);
-
-
-$can_view_contest_process = (
-    $is_admin ||
-    $is_contest_manager ||
-    $is_course_teacher
-);
-
+$can_view_contest_process =
+    oj_can_view_contest_process(
+        $cid
+    );
 
 if (!$can_view_contest_process) {
 

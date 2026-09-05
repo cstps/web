@@ -2,6 +2,7 @@
 require_once("./include/db_info.inc.php");
 require_once("./include/cookie_helper.php"); // 안전 쿠키 헬퍼
 require_once("./include/setlang.php");
+require_once("./include/permission_functions.inc.php");
 
 $use_cookie = false;
 $login = false;
@@ -116,27 +117,20 @@ if ($login) {
 
     $_SESSION[$OJ_NAME . '_' . 'user_id'] = $login;
 
-    // 권한 로딩
-    $sql = "SELECT * FROM `privilege` WHERE `user_id`=?";
-    $result = pdo_query($sql, $login);
-    foreach ($result as $row) {
-        if (isset($row['valuestr']))
-            $_SESSION[$OJ_NAME . '_' . $row['rightstr']] = $row['valuestr'];
-        else
-            $_SESSION[$OJ_NAME . '_' . $row['rightstr']] = true;
-    }
-
-    // VIP → VIP 대회 자동 접근
-    if (isset($_SESSION[$OJ_NAME . '_vip'])) {
-        $sql = "SELECT contest_id FROM contest WHERE title LIKE '%[VIP]%'";
-        $vrows = pdo_query($sql);
-        foreach ($vrows as $r) {
-            $_SESSION[$OJ_NAME . '_c' . $r['contest_id']] = true;
-        }
-    }
+    // 활성 권한을 공통 함수로 다시 로딩
+    //
+    // 기존 세션에 남아 있을 수 있는 전역 권한,
+    // c{cid}, m{cid}, s{pid}를 먼저 제거한 뒤
+    // privilege.defunct='N'인 현재 권한만 다시 등록한다.
+    oj_refresh_privilege_sessions($login);
 
     // 접속시간 갱신
-    pdo_query("UPDATE `users` SET `accesstime` = NOW() WHERE `user_id` = ?", $login);
+    pdo_query(
+        "UPDATE `users`
+         SET `accesstime` = NOW()
+         WHERE `user_id` = ?",
+        $login
+    );
 
     // 장기 로그인 쿠키
     if ($OJ_LONG_LOGIN) {
