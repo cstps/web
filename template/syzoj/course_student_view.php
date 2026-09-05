@@ -1889,6 +1889,205 @@ if (empty($view_student_memos)) {
 </div>
 
 <!-- ======================================================
+     문제별 교사 관찰 메모
+     ====================================================== -->
+
+<h3
+    class="ui dividing header"
+    style="margin-top:2rem;">
+
+    문제별 관찰 메모
+
+</h3>
+
+
+<?php
+if (empty($view_teacher_process_notes)) {
+?>
+
+    <div class="ui info message">
+        등록된 문제별 관찰 메모가 없습니다.
+    </div>
+
+<?php
+} else {
+?>
+
+    <div class="ui relaxed divided list">
+
+        <?php
+        foreach (
+            $view_teacher_process_notes
+            as $process_note
+        ) {
+
+            $lesson_no =
+                isset($process_note['lesson_no'])
+                ? intval($process_note['lesson_no'])
+                : 0;
+
+
+            $contest_title =
+                isset($process_note['contest_title'])
+                ? trim($process_note['contest_title'])
+                : '';
+
+
+            $problem_title =
+                isset($process_note['problem_title'])
+                ? trim($process_note['problem_title'])
+                : '';
+
+
+            $teacher_id =
+                isset($process_note['teacher_id'])
+                ? trim($process_note['teacher_id'])
+                : '';
+
+
+            $note_text =
+                isset($process_note['note_text'])
+                ? trim($process_note['note_text'])
+                : '';
+
+
+            if ($contest_title === '') {
+
+                $contest_title =
+                    $lesson_no > 0
+                    ? $lesson_no . '차시'
+                    : '차시 제목 없음';
+            }
+
+
+            if ($problem_title === '') {
+
+                $problem_title =
+                    '문제 ' .
+                    intval(
+                        $process_note['problem_id']
+                    );
+            }
+        ?>
+
+            <div class="item">
+
+                <div class="content">
+
+                    <div class="header">
+
+                        <?php
+                        if ($lesson_no > 0) {
+
+                            echo intval($lesson_no);
+                            echo '차시 - ';
+                        }
+
+
+                        echo htmlspecialchars(
+                            $contest_title,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        );
+                        ?>
+
+                    </div>
+
+
+                    <div
+                        style="
+                            margin-top:0.35rem;
+                            font-weight:600;
+                        ">
+
+                        <?php
+                        echo htmlspecialchars(
+                            $problem_title,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        );
+                        ?>
+
+                    </div>
+
+
+                    <div class="meta">
+
+                        작성자:
+
+                        <?php
+                        echo htmlspecialchars(
+                            $teacher_id,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        );
+                        ?>
+
+                        ·
+
+                        <?php
+                        echo htmlspecialchars(
+                            $process_note['created_at'],
+                            ENT_QUOTES,
+                            'UTF-8'
+                        );
+                        ?>
+
+                        <?php
+                        if (
+                            !empty($process_note['updated_at'])
+                        ) {
+                        ?>
+
+                            · 수정:
+
+                            <?php
+                            echo htmlspecialchars(
+                                $process_note['updated_at'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+
+                        <?php
+                        }
+                        ?>
+
+                    </div>
+
+
+                    <div
+                        class="description"
+                        style="margin-top:0.6rem;">
+
+                        <?php
+                        echo nl2br(
+                            htmlspecialchars(
+                                $note_text,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            )
+                        );
+                        ?>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        <?php
+        }
+        ?>
+
+    </div>
+
+<?php
+}
+?>
+
+
+<!-- ======================================================
      세특 작성 참고자료
      ====================================================== -->
 
@@ -1976,16 +2175,13 @@ if (empty($view_student_memos)) {
 
     <div class="ui small grey message">
 
-        세특 초안 생성에 사용할 학습 자료를 선택합니다.
+        세특 초안 작성에 참고할 학습 자료를 선택합니다.
 
-        AI 초안 생성을 실행하면 선택한 참고자료가
-        외부 AI API로 전송됩니다.
+        선택한 자료는 아래 미리보기에서 확인할 수 있으며,
+        교사가 직접 작성하는 세특 초안의 참고자료로 사용할 수 있습니다.
 
-        학생 이름, 아이디, 학교 등의 기본정보는
-        전송하지 않습니다.
-
-        단, 교사 누적 메모를 선택한 경우
-        메모에 작성된 내용은 포함됩니다.
+        외부 AI API를 이용한 초안 생성 기능은
+        현재 제공하지 않습니다.
 
     </div>
 
@@ -1993,8 +2189,7 @@ if (empty($view_student_memos)) {
     <form
         id="record-ai-generate-form"
         class="ui form"
-        method="post"
-        >
+        method="post">
 
         <?php include("./csrf.php"); ?>
 
@@ -2122,7 +2317,7 @@ if (empty($view_student_memos)) {
                             checked>
 
                         <label for="record-source-memo">
-                            교사 누적 메모
+                            교사 누적 메모 및 문제별 관찰 메모
                         </label>
 
                     </div>

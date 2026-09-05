@@ -1434,6 +1434,67 @@ if (!is_array($view_student_memos)) {
     $view_student_memos = array();
 }
 
+// ============================================================
+// 12-1. 문제별 교사 관찰 메모 조회
+//
+// 현재 Course의 활성 차시에 포함된 문제 메모만 조회한다.
+// ============================================================
+
+$view_teacher_process_notes =
+    pdo_query(
+    "SELECT
+            tpn.note_id,
+            tpn.contest_id,
+            tpn.user_id,
+            tpn.problem_id,
+            tpn.teacher_id,
+            tpn.note_text,
+            tpn.created_at,
+            tpn.updated_at,
+
+            cc.lesson_no,
+
+            c.title AS contest_title,
+
+            cp.num AS problem_num,
+
+            COALESCE(
+                NULLIF(cp.title, ''),
+                p.title
+            ) AS problem_title
+
+         FROM teacher_process_note tpn
+
+         INNER JOIN course_contest cc
+           ON cc.contest_id = tpn.contest_id
+          AND cc.course_id = ?
+          AND cc.status = 1
+
+         LEFT JOIN contest c
+           ON c.contest_id = tpn.contest_id
+
+         LEFT JOIN contest_problem cp
+           ON cp.contest_id = tpn.contest_id
+          AND cp.problem_id = tpn.problem_id
+
+         LEFT JOIN problem p
+           ON p.problem_id = tpn.problem_id
+
+         WHERE tpn.user_id = ?
+
+         ORDER BY
+            cc.lesson_no ASC,
+            cp.num ASC,
+            tpn.created_at DESC,
+            tpn.note_id DESC",
+        $course_id,
+        $student_user_id
+    );
+
+
+if (!is_array($view_teacher_process_notes)) {
+    $view_teacher_process_notes = array();
+}
 
 
 // ============================================================
@@ -1499,11 +1560,25 @@ foreach (
         intval($memo['contest_id']) > 0
     ) {
 
-        $memo_label =
-            intval(
-                $memo['lesson_no']
-            ) .
-            '차시';
+        $contest_title =
+            isset($memo['contest_title'])
+            ? trim($memo['contest_title'])
+            : '';
+
+
+        if ($contest_title !== '') {
+
+            $memo_label =
+                $contest_title;
+        } else {
+
+            // 제목이 없는 예외 상황에서만 차시 번호 사용
+            $memo_label =
+                intval(
+                    $memo['lesson_no']
+                ) .
+                '차시';
+        }
     }
 
 
@@ -1514,6 +1589,76 @@ foreach (
         $memo_text;
 }
 
+// ------------------------------------------------------------
+// 13-3. 문제별 교사 관찰 메모
+// ------------------------------------------------------------
+
+foreach (
+    $view_teacher_process_notes
+    as $process_note
+) {
+
+    $note_text =
+        isset($process_note['note_text'])
+        ? trim($process_note['note_text'])
+        : '';
+
+
+    if ($note_text === '') {
+        continue;
+    }
+
+
+    $lesson_no =
+        isset($process_note['lesson_no'])
+        ? intval($process_note['lesson_no'])
+        : 0;
+
+
+    $contest_title =
+        isset($process_note['contest_title'])
+        ? trim($process_note['contest_title'])
+        : '';
+
+
+    $problem_title =
+        isset($process_note['problem_title'])
+        ? trim($process_note['problem_title'])
+        : '';
+
+
+    $lesson_label =
+        $lesson_no > 0
+        ? $lesson_no . '차시'
+        : '차시 미확인';
+
+
+    if ($contest_title !== '') {
+
+        $lesson_label .=
+            ' - ' .
+            $contest_title;
+    }
+
+
+    if ($problem_title === '') {
+
+        $problem_title =
+            '문제 ' .
+            intval(
+                $process_note['problem_id']
+            );
+    }
+
+
+    $view_student_record_reference[] =
+        '[문제관찰/' .
+        $lesson_label .
+        '/' .
+        $problem_title .
+        '] ' .
+        $note_text;
+}
 
 // textarea용 문자열
 $view_student_record_reference_text =
@@ -1521,6 +1666,9 @@ $view_student_record_reference_text =
         "\n",
         $view_student_record_reference
     );
+
+
+
 
 // ============================================================
 // 14. 세특 초안 생성용 참고자료 분류
@@ -1773,11 +1921,25 @@ foreach ($view_student_memos as $memo) {
         intval($memo['contest_id']) > 0
     ) {
 
-        $memo_label =
-            intval(
-                $memo['lesson_no']
-            ) .
-            '차시';
+        $contest_title =
+            isset($memo['contest_title'])
+            ? trim($memo['contest_title'])
+            : '';
+
+
+        if ($contest_title !== '') {
+
+            $memo_label =
+                $contest_title;
+        } else {
+
+            // 제목이 없는 예외 상황에서만 차시 번호 사용
+            $memo_label =
+                intval(
+                    $memo['lesson_no']
+                ) .
+                '차시';
+        }
     }
 
 
@@ -1788,6 +1950,71 @@ foreach ($view_student_memos as $memo) {
         $memo_text;
 }
 
+// ------------------------------------------------------------
+// 5-1. 문제별 교사 관찰 메모
+// ------------------------------------------------------------
+
+foreach (
+    $view_teacher_process_notes
+    as $process_note
+) {
+
+    $note_text =
+        isset($process_note['note_text'])
+        ? trim($process_note['note_text'])
+        : '';
+
+
+    if ($note_text === '') {
+        continue;
+    }
+
+
+    $contest_title =
+        isset($process_note['contest_title'])
+        ? trim($process_note['contest_title'])
+        : '';
+
+
+    $problem_title =
+        isset($process_note['problem_title'])
+        ? trim($process_note['problem_title'])
+        : '';
+
+
+    if ($contest_title === '') {
+
+        $lesson_no =
+            isset($process_note['lesson_no'])
+            ? intval($process_note['lesson_no'])
+            : 0;
+
+
+        $contest_title =
+            $lesson_no > 0
+            ? $lesson_no . '차시'
+            : '차시 제목 없음';
+    }
+
+
+    if ($problem_title === '') {
+
+        $problem_title =
+            '문제 ' .
+            intval(
+                $process_note['problem_id']
+            );
+    }
+
+
+    $view_record_ai_sources['memo'][] =
+        '[문제관찰/' .
+        $contest_title .
+        '/' .
+        $problem_title .
+        '] ' .
+        $note_text;
+}
 
 // 배열 → 화면용 문자열
 foreach (

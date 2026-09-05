@@ -162,6 +162,25 @@ include(
                 ? $process_diff_map[$process_sid]
                 : null;
 
+            $has_process_source =
+                array_key_exists(
+                    $process_sid,
+                    $source_map
+                );
+
+
+            $process_source_version =
+                (
+                    $has_process_source &&
+                    isset(
+                        $source_version_map[$process_sid]
+                    )
+                )
+                ? intval(
+                    $source_version_map[$process_sid]
+                )
+                : -1;
+
             $result_num =
                 intval(
                     $process['result']
@@ -343,7 +362,7 @@ include(
                             <?php
 
                             $first_source =
-                                isset($source_map[$process_sid])
+                                $has_process_source
                                 ? (string)$source_map[$process_sid]
                                 : "";
 
@@ -358,9 +377,42 @@ include(
                             ">
 
                                 <strong>
-                                    1차 제출 코드
+
+                                    <?php
+                                    if ($process_source_version === 1) {
+
+                                        echo '1차 제출 학생 원본 코드';
+                                    } else if ($process_source_version === 0) {
+
+                                        echo '1차 제출 레거시 저장 코드';
+                                    } else {
+
+                                        echo '1차 제출 코드';
+                                    }
+                                    ?>
+
                                 </strong>
 
+                                <?php
+                                if (
+                                    $first_source !== '' &&
+                                    $process_source_version === 0
+                                ) {
+                                ?>
+
+                                    <div
+                                        class="ui tiny warning message"
+                                        style="margin-top:10px;">
+
+                                        이 제출은 과거 저장 방식으로 기록되어
+                                        학생 코드 외에 문제의 front/rear 코드가
+                                        포함되어 있을 수 있습니다.
+
+                                    </div>
+
+                                <?php
+                                }
+                                ?>
 
                                 <?php if ($first_source !== "") { ?>
 
@@ -389,7 +441,7 @@ include(
                                         margin-top:8px;
                                         color:#999;
                                     ">
-                                        기록된 원본 코드가 없습니다.
+                                        저장된 제출 코드가 없습니다.
                                     </div>
 
                                 <?php } ?>

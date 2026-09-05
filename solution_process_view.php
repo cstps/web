@@ -658,6 +658,8 @@ if (!$process_result) {
 
 $source_map = array();
 
+$source_version_map = array();
+
 $process_solution_ids = array();
 
 
@@ -694,10 +696,11 @@ if (count($process_solution_ids) > 0) {
 
 
     $source_sql = "SELECT
-                        solution_id,
-                        source
-                   FROM source_code_user
-                   WHERE solution_id IN ($solution_id_list)";
+        solution_id,
+        source,
+        source_version
+   FROM source_code_user
+   WHERE solution_id IN ($solution_id_list)";
 
 
     $source_result =
@@ -722,9 +725,20 @@ if (count($process_solution_ids) > 0) {
                     : $source_row[1];
 
 
-            $source_map[
-                $source_sid
-            ] = $source_text;
+            $source_version =
+                isset($source_row['source_version'])
+                ? intval($source_row['source_version'])
+                : (
+                    isset($source_row[2])
+                    ? intval($source_row[2])
+                    : 0
+                );
+
+
+            $source_map[$source_sid] = $source_text;
+
+
+            $source_version_map[$source_sid] = $source_version;
         }
     }
 }
@@ -750,7 +764,25 @@ foreach ($process_result as $process) {
         isset($source_map[$current_sid])
             ? $source_map[$current_sid]
             : null;
+            
+    $current_source_version =
+        isset($source_version_map[$current_sid])
+        ? intval($source_version_map[$current_sid])
+        : 0;
 
+
+    // 원본 코드가 아니거나 코드가 없으면
+    // 이전 제출과의 코드 비교를 중단한다.
+    if (
+        $current_source === null ||
+        $current_source_version !== 1
+    ) {
+
+        $previous_source = null;
+        $previous_sid = 0;
+
+        continue;
+    }
 
     // 첫 제출은 비교 대상 없음
     if (

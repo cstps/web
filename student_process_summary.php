@@ -123,13 +123,11 @@ if (
 
 // ============================================================
 // Course 교사의 학생 기록 열람 권한
-//
-// owner / teacher만 허용
-// assistant는 현재 학생관리 권한 정책상 제외
+// owner / teacher / assistant는 조회 가능
+// assistant는 조회만 가능하며 기록 작성·수정은 불가능
 // ============================================================
 
 $is_course_record_viewer = false;
-
 
 if (
     $course_id > 0 &&
@@ -344,13 +342,16 @@ if ($problem_result) {
                 0,
 
             'latest_result' =>
-                -1,
+            -1,
 
             'latest_solution_id' =>
-                0,
+            0,
+
+            'has_ac' =>
+            0,
 
             'ai_count' =>
-                0,
+            0,
 
             'has_plan' =>
                 0,
@@ -377,14 +378,22 @@ if ($problem_result) {
 $solution_summary =
     pdo_query(
         "SELECT
-            s.problem_id,
-
-            COUNT(*) AS submit_count,
-
-            MAX(s.solution_id)
-                AS latest_solution_id
-
-         FROM solution s
+        s.problem_id,
+    
+        COUNT(*) AS submit_count,
+    
+        MAX(
+            CASE
+                WHEN s.result = 4
+                THEN 1
+                ELSE 0
+            END
+        ) AS has_ac,
+    
+        MAX(s.solution_id)
+            AS latest_solution_id
+    
+     FROM solution s
 
          WHERE
             s.contest_id=?
@@ -413,14 +422,19 @@ if ($solution_summary) {
         $solution_by_problem[$pid] =
             array(
                 'submit_count' =>
-                    intval(
-                        $row['submit_count']
-                    ),
+                intval(
+                    $row['submit_count']
+                ),
+
+                'has_ac' =>
+                isset($row['has_ac'])
+                    ? intval($row['has_ac'])
+                    : 0,
 
                 'latest_solution_id' =>
-                    intval(
-                        $row['latest_solution_id']
-                    )
+                intval(
+                    $row['latest_solution_id']
+                )
             );
     }
 }
@@ -492,6 +506,7 @@ foreach (
             );
     }
 
+    
 
     $student_problem_summary[
         $problem_num
@@ -503,9 +518,13 @@ foreach (
         );
 
 
-    $student_problem_summary[
-        $problem_num
-    ]['latest_solution_id'] =
+    $student_problem_summary[$problem_num]['has_ac'] =
+        isset($submit_info['has_ac'])
+        ? intval($submit_info['has_ac'])
+        : 0;
+
+
+    $student_problem_summary[$problem_num]['latest_solution_id'] =
         $latest_solution_id;
 
 
@@ -664,6 +683,11 @@ foreach (
             $problem['latest_result']
         );
 
+    $has_ac =
+        isset($problem['has_ac'])
+        ? intval($problem['has_ac'])
+        : 0;
+
     $ai_count =
         intval(
             $problem['ai_count']
@@ -682,7 +706,7 @@ foreach (
         $ai_count;
 
 
-    if ($result_num === 4) {
+    if ($has_ac === 1) {
 
         $solved_count++;
     }
@@ -713,7 +737,7 @@ foreach (
 
     if (
         $submit_count >= 5 &&
-        $result_num !== 4
+        $has_ac !== 1
     ) {
 
         $attention = true;
