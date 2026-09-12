@@ -1,44 +1,24 @@
 <?php
 require_once("../include/db_info.inc.php");
 require_once("../include/const.inc.php");
+require_once("admin-header.php");
 require_once("../include/my_func.inc.php");
-require_once("../include/permission_functions.inc.php");
 
-$request_problem_id = 0;
-
-if (isset($_POST['problem_id'])) {
-  $request_problem_id =
-    intval($_POST['problem_id']);
-} elseif (isset($_GET['id'])) {
-  $request_problem_id =
-    intval($_GET['id']);
+if (
+  !(
+    isset($_SESSION[$OJ_NAME . '_administrator']) ||
+    isset($_SESSION[$OJ_NAME . '_problem_editor'])
+  )
+) {
+  echo "<a href='../loginpage.php'>Please Login First!</a>";
+  exit(1);
 }
-
-if ($request_problem_id <= 0) {
-  http_response_code(400);
-  exit("올바른 문제 번호가 필요합니다.");
-}
-
-if (!oj_is_logged_in()) {
-  http_response_code(401);
-  exit("로그인이 필요합니다.");
-}
-
-if (!oj_can_manage_problem($request_problem_id)) {
-  http_response_code(403);
-  exit("본인이 생성한 문제만 수정할 수 있습니다.");
-}
-
-// p{pid} 권한 사용자가 관리자 공통 화면을 사용할 수 있도록 허용
-$admin_page_access_allowed = true;
 
 ?>
 
-<!DOCTYPE html>
-<html lang="ko">
+<html>
 
 <head>
-  <?php require_once("admin-header.php"); ?>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>문제 수정</title>
   <?php include_once("tinymce.php"); ?>
@@ -913,6 +893,22 @@ $admin_page_access_allowed = true;
       $id = intval(
         $_POST['problem_id']
       );
+
+      if (
+        !(
+          isset(
+            $_SESSION[$OJ_NAME . "_p$id"]
+          ) ||
+          isset(
+            $_SESSION[$OJ_NAME . '_administrator']
+          ) ||
+          isset(
+            $_SESSION[$OJ_NAME . '_problem_editor']
+          )
+        )
+      ) {
+        exit();
+      }
 
 
       $title = isset($_POST['title'])

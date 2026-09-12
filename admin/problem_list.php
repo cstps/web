@@ -1,24 +1,18 @@
 <?php
-require("admin-header.php");
-require_once("../include/set_get_key.php");
 
-if (
-  !(
-    isset($_SESSION[$OJ_NAME . '_administrator']) ||
-    isset($_SESSION[$OJ_NAME . '_problem_editor']) ||
-    isset($_SESSION[$OJ_NAME . '_contest_creator'])
-  )
-) {
-  echo "<a href='../loginpage.php'>Please Login First!</a>";
-  exit(1);
+require_once __DIR__ . '/admin-init.php';
+require_once __DIR__ . '/../include/set_get_key.php';
+
+if (!oj_can_view_admin_problems()) {
+  http_response_code(403);
+  exit('문제 목록을 볼 권한이 없습니다.');
 }
 
-if (isset($OJ_LANG)) {
-  require_once("../lang/$OJ_LANG.php");
-}
+$admin_page_title = '문제 관리';
+$admin_active_menu = 'problem_list';
+
+require_once __DIR__ . '/admin-layout-start.php';
 ?>
-
-<title>문제 관리</title>
 
 <div class="admin-page">
 
@@ -35,10 +29,7 @@ if (isset($OJ_LANG)) {
     </div>
 
     <?php
-    if (
-      isset($_SESSION[$OJ_NAME . '_administrator']) ||
-      isset($_SESSION[$OJ_NAME . '_problem_editor'])
-    ) {
+    if (oj_can_create_admin_problems()) {
     ?>
       <a
         href="problem_add_page.php"
@@ -552,15 +543,8 @@ if (isset($OJ_LANG)) {
 
                 $pid = intval($row['problem_id']);
 
-                $is_admin =
-                  isset(
-                    $_SESSION[$OJ_NAME . '_administrator']
-                  );
-
-                $is_owner =
-                  isset(
-                    $_SESSION[$OJ_NAME . '_p' . $pid]
-                  );
+                $can_manage_problem =
+                  oj_can_manage_problem($pid);
               ?>
 
                 <tr>
@@ -659,10 +643,7 @@ if (isset($OJ_LANG)) {
                   <td>
 
                     <?php
-                    if (
-                      $is_admin ||
-                      $is_owner
-                    ) {
+                    if ($can_manage_problem) {
 
                       if (
                         $row['defunct']
@@ -728,33 +709,22 @@ if (isset($OJ_LANG)) {
                   <td class="admin-manage-cell">
 
                     <?php
-                    if (
-                      $is_admin ||
-                      $is_owner
-                    ) {
+                    if ($can_manage_problem) {
                     ?>
 
                       <div class="admin-row-actions">
 
                         <a
                           class="admin-row-action"
-                          href="problem_edit.php?id=<?php
-                                                    echo $pid;
-                                                    ?>&getkey=<?php
-                                            echo urlencode(
-                                              $_SESSION[$OJ_NAME .
-                                                '_getkey']
-                                            );
-                                            ?>">
+                          href="problem_edit.php?id=<?php echo $pid; ?>">
                           수정
                         </a>
 
 
                         <a
                           class="admin-row-action"
-                          href="javascript:phpfm(<?php
-                                                  echo $pid;
-                                                  ?>);">
+                          href="problem_testdata.php?id=<?php echo $pid; ?>"
+                          target="_top">
                           테스트 데이터
                         </a>
 
@@ -782,11 +752,11 @@ if (isset($OJ_LANG)) {
                                                   'problem_del.php?id=<?php
                                                                       echo $pid;
                                                                       ?>&getkey=<?php
-                                                            echo rawurlencode(
-                                                              $_SESSION[$OJ_NAME .
-                                                                '_getkey']
-                                                            );
-                                                            ?>';
+                                                                                echo rawurlencode(
+                                                                                  $_SESSION[$OJ_NAME .
+                                                                                    '_getkey']
+                                                                                );
+                                                                                ?>';
                                           }
 
                                           return false;
@@ -822,31 +792,9 @@ if (isset($OJ_LANG)) {
       </div>
 
     </form>
-
   </div>
 
 </div>
 
-
-<script src="../template/bs3/jquery.min.js"></script>
-
-<script>
-  function phpfm(pid) {
-
-    $.post(
-      "phpfm.php", {
-        frame: 3,
-        pid: pid,
-        pass: ""
-      },
-      function(data, status) {
-
-        if (status === "success") {
-
-          document.location.href =
-            "phpfm.php?frame=3&pid=" + pid;
-        }
-      }
-    );
-  }
-</script>
+<?php
+require_once __DIR__ . '/admin-layout-end.php';

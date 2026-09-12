@@ -1,7 +1,48 @@
 <?php
 
-if (isset($OJ_LANG)) {
-  require_once("../lang/$OJ_LANG.php");
+if (!isset($admin_legacy_frame_mode)) {
+  $admin_legacy_frame_mode = false;
+}
+
+if (!isset($admin_active_menu)) {
+  $admin_active_menu = "";
+}
+
+$admin_internal_target =
+  $admin_legacy_frame_mode
+  ? "main"
+  : "_self";
+
+
+if (!function_exists("admin_menu_link_class")) {
+
+  function admin_menu_link_class(
+    $menu_key,
+    $extra_class = ""
+  ) {
+
+    global $admin_active_menu;
+
+    $classes = array(
+      "admin-nav-link"
+    );
+
+    if ($extra_class !== "") {
+      $classes[] = $extra_class;
+    }
+
+    if (
+      (string)$admin_active_menu ===
+      (string)$menu_key
+    ) {
+      $classes[] = "active";
+    }
+
+    return implode(
+      " ",
+      $classes
+    );
+  }
 }
 
 ?>
@@ -19,8 +60,8 @@ if (isset($OJ_LANG)) {
 
       <a
         href="help.php"
-        target="main"
-        class="admin-nav-link active">
+        target="<?php echo $admin_internal_target; ?>"
+        class="<?php echo admin_menu_link_class("dashboard"); ?>">
         관리자 홈
       </a>
 
@@ -37,10 +78,7 @@ if (isset($OJ_LANG)) {
   </div>
   <!-- 공지사항 관리 -->
   <?php
-  if (
-    isset($_SESSION[$OJ_NAME . '_administrator']) ||
-    isset($_SESSION[$OJ_NAME . '_vip'])
-  ) {
+  if (oj_can_manage_admin_notice()) {
   ?>
 
     <div class="admin-nav-group">
@@ -54,7 +92,7 @@ if (isset($OJ_LANG)) {
         <a
           class="admin-nav-link"
           href="setmsg.php"
-          target="main"
+          target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_SETMESSAGE; ?>">
           공지 메시지 설정
         </a>
@@ -62,7 +100,7 @@ if (isset($OJ_LANG)) {
         <a
           class="admin-nav-link"
           href="news_list.php"
-          target="main"
+          target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_NEWS_LIST; ?>">
           공지사항 목록
         </a>
@@ -70,7 +108,7 @@ if (isset($OJ_LANG)) {
         <a
           class="admin-nav-link"
           href="news_add_page.php"
-          target="main"
+          target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_ADD_NEWS; ?>">
           공지사항 추가
         </a>
@@ -85,10 +123,7 @@ if (isset($OJ_LANG)) {
 
   <!-- IT NEWS -->
   <?php
-  if (
-    isset($_SESSION[$OJ_NAME . '_administrator']) ||
-    isset($_SESSION[$OJ_NAME . '_vip'])
-  ) {
+  if (oj_can_manage_admin_notice()) {
   ?>
 
     <div class="admin-nav-group">
@@ -102,7 +137,7 @@ if (isset($OJ_LANG)) {
         <a
           class="admin-nav-link"
           href="coding_news_list.php"
-          target="main"
+          target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_NEWS_LIST; ?>">
           IT NEWS 목록
         </a>
@@ -110,7 +145,7 @@ if (isset($OJ_LANG)) {
         <a
           class="admin-nav-link"
           href="coding_news_add_page.php"
-          target="main"
+          target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_ADD_NEWS; ?>">
           IT NEWS 추가
         </a>
@@ -125,10 +160,7 @@ if (isset($OJ_LANG)) {
 
   <!-- 사용자 관리 -->
   <?php
-  if (
-    isset($_SESSION[$OJ_NAME . '_administrator']) ||
-    isset($_SESSION[$OJ_NAME . '_password_setter'])
-  ) {
+  if (oj_can_view_admin_users()) {
   ?>
 
     <div class="admin-nav-group">
@@ -142,48 +174,39 @@ if (isset($OJ_LANG)) {
         <a
           class="admin-nav-link"
           href="user_list.php"
-          target="main"
+          target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_USER_LIST; ?>">
           사용자 목록
         </a>
-
-        <a
-          class="admin-nav-link"
-          href="user_add.php"
-          target="main"
-          title="<?php echo $MSG_HELP_USER_ADD; ?>">
-          사용자 추가
-        </a>
-
         <a
           class="admin-nav-link"
           href="changepass.php"
-          target="main"
+          target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_SETPASSWORD; ?>">
           비밀번호 변경
         </a>
-
-        <a
-          class="admin-nav-link"
-          href="school_admin.php"
-          target="main"
-          title="<?php echo $MSG_SCHOOL_MANAGE; ?>">
-          학교 관리
-        </a>
-
-
         <?php
-        if (
-          isset(
-            $_SESSION[$OJ_NAME . '_administrator']
-          )
-        ) {
+        if (oj_can_manage_admin_users()) {
         ?>
+          <a
+            class="admin-nav-link"
+            href="user_add.php"
+            target="<?php echo $admin_internal_target; ?>"
+            title="<?php echo $MSG_HELP_USER_ADD; ?>">
+            사용자 추가
+          </a>
+          <a
+            class="admin-nav-link"
+            href="school_admin.php"
+            target="<?php echo $admin_internal_target; ?>"
+            title="<?php echo $MSG_SCHOOL_MANAGE; ?>">
+            학교 관리
+          </a>
 
           <a
             class="admin-nav-link"
             href="privilege_list.php"
-            target="main"
+            target="<?php echo $admin_internal_target; ?>"
             title="<?php echo $MSG_HELP_PRIVILEGE_LIST; ?>">
             권한 목록
           </a>
@@ -191,30 +214,23 @@ if (isset($OJ_LANG)) {
           <a
             class="admin-nav-link"
             href="privilege_add.php"
-            target="main"
+            target="<?php echo $admin_internal_target; ?>"
             title="<?php echo $MSG_HELP_ADD_PRIVILEGE; ?>">
             권한 추가
           </a>
-
         <?php
         }
         ?>
-
       </div>
 
     </div>
-
   <?php
   }
   ?>
 
   <!-- 문제 관리 -->
   <?php
-  if (
-    isset($_SESSION[$OJ_NAME . '_administrator']) ||
-    isset($_SESSION[$OJ_NAME . '_problem_editor']) ||
-    isset($_SESSION[$OJ_NAME . '_contest_creator'])
-  ) {
+  if (oj_can_view_admin_problems()) {
   ?>
 
     <div class="admin-nav-group">
@@ -227,36 +243,41 @@ if (isset($OJ_LANG)) {
 
         <a
           href="problem_list.php"
-          target="main"
-          class="admin-nav-link">
+          target="_top"
+          class="<?php
+                  echo admin_menu_link_class(
+                    'problem_list'
+                  );
+                  ?>">
           문제 목록
         </a>
 
 
         <?php
-        if (
-          isset($_SESSION[$OJ_NAME . '_administrator']) ||
-          isset($_SESSION[$OJ_NAME . '_problem_editor'])
-        ) {
+        if (oj_can_create_admin_problems()) {
         ?>
 
           <a
             href="problem_add_page.php"
-            target="main"
-            class="admin-nav-link">
+            target="<?php echo $admin_internal_target; ?>"
+            class="<?php
+                    echo admin_menu_link_class(
+                      "problem_add"
+                    );
+                    ?>">
             문제 추가
           </a>
 
           <a
             href="problem_import.php"
-            target="main"
+            target="<?php echo $admin_internal_target; ?>"
             class="admin-nav-link">
             문제 가져오기
           </a>
 
           <a
             href="problem_export.php"
-            target="main"
+            target="<?php echo $admin_internal_target; ?>"
             class="admin-nav-link">
             문제 내보내기
           </a>
@@ -264,24 +285,21 @@ if (isset($OJ_LANG)) {
         <?php
         }
         ?>
+
         <?php
-        if (
-          isset(
-            $_SESSION[$OJ_NAME . '_administrator']
-          )
-        ) {
+        if (oj_is_admin()) {
         ?>
 
           <a
             href="problem_copy.php"
-            target="main"
+            target="<?php echo $admin_internal_target; ?>"
             class="admin-nav-link">
             문제 복사
           </a>
 
           <a
             href="problem_changeid.php"
-            target="main"
+            target="<?php echo $admin_internal_target; ?>"
             class="admin-nav-link">
             문제 번호 변경
           </a>
@@ -300,10 +318,7 @@ if (isset($OJ_LANG)) {
 
   <!-- 대회 관리 -->
   <?php
-  if (
-    isset($_SESSION[$OJ_NAME . '_administrator']) ||
-    isset($_SESSION[$OJ_NAME . '_contest_creator'])
-  ) {
+  if (oj_can_manage_admin_contests()) {
   ?>
 
     <div class="admin-nav-group">
@@ -317,32 +332,30 @@ if (isset($OJ_LANG)) {
         <a
           class="admin-nav-link"
           href="contest_list.php"
-          target="main"
+          target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_CONTEST_LIST; ?>">
           대회 목록
         </a>
-                
+
         <a
           class="admin-nav-link"
           href="contest_add.php"
-          target="main"
+          target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_ADD_CONTEST; ?>">
           대회 생성
         </a>
 
         <?php
-        if (
-          isset($_SESSION[$OJ_NAME . '_administrator'])
-        ){
-          ?> 
-        <a
-          class="admin-nav-link"
-          href="user_set_ip.php"
-          target="main"
-          title="<?php echo $MSG_SET_LOGIN_IP; ?>">
-          로그인 IP 설정
-        </a>
-        <?php 
+        if (oj_can_manage_admin_system()) {
+        ?>
+          <a
+            class="admin-nav-link"
+            href="user_set_ip.php"
+            target="<?php echo $admin_internal_target; ?>"
+            title="<?php echo $MSG_SET_LOGIN_IP; ?>">
+            로그인 IP 설정
+          </a>
+        <?php
         }
         ?>
       </div>
@@ -355,10 +368,7 @@ if (isset($OJ_LANG)) {
 
   <!-- 수업 관리 -->
   <?php
-  if (
-    isset($_SESSION[$OJ_NAME . '_administrator']) ||
-    isset($_SESSION[$OJ_NAME . '_contest_creator'])
-  ) {
+  if (oj_can_manage_admin_contests()) {
   ?>
 
     <div class="admin-nav-group">
@@ -388,10 +398,7 @@ if (isset($OJ_LANG)) {
 
   <!-- 시스템 관리 -->
   <?php
-  if (
-    isset($_SESSION[$OJ_NAME . '_administrator']) ||
-    isset($_SESSION[$OJ_NAME . '_vip'])
-  ) {
+  if (oj_can_manage_admin_system()) {
   ?>
 
     <div class="admin-nav-group">
@@ -413,35 +420,35 @@ if (isset($OJ_LANG)) {
           <a
             class="admin-nav-link"
             href="rejudge.php"
-            target="main">
+            target="<?php echo $admin_internal_target; ?>">
             재채점
           </a>
 
           <a
             class="admin-nav-link"
             href="source_give.php"
-            target="main">
+            target="<?php echo $admin_internal_target; ?>">
             소스 권한 관리
           </a>
 
           <a
             class="admin-nav-link"
             href="../online.php"
-            target="main">
+            target="<?php echo $admin_internal_target; ?>">
             접속 사용자
           </a>
 
           <a
             class="admin-nav-link"
             href="update_db.php"
-            target="main">
+            target="<?php echo $admin_internal_target; ?>">
             DB 업데이트
           </a>
 
           <a
             class="admin-nav-link"
             href="backup.php"
-            target="main">
+            target="<?php echo $admin_internal_target; ?>">
             백업
           </a>
 
@@ -453,7 +460,7 @@ if (isset($OJ_LANG)) {
         <a
           class="admin-nav-link"
           href="setdbinfo.php"
-          target="main">
+          target="<?php echo $admin_internal_target; ?>">
           DB 설정
         </a>
 
@@ -466,11 +473,7 @@ if (isset($OJ_LANG)) {
   ?>
 
   <?php
-  if (
-    isset(
-      $_SESSION[$OJ_NAME . '_administrator']
-    )
-  ) {
+  if (oj_can_manage_admin_system()) {
   ?>
 
     <div class="admin-nav-group">
@@ -513,9 +516,9 @@ if (isset($OJ_LANG)) {
   }
   ?>
   <!-- 이동
-<?php if (isset($_SESSION[$OJ_NAME . '_' . 'administrator']) && !$OJ_SAE) { ?>
-  <a href="problem_copy.php" target="main" title="Create your own data"><font color="eeeeee">CopyProblem</font></a> <br>
-  <a href="problem_changeid.php" target="main" title="Danger,Use it on your own risk"><font color="eeeeee">ReOrderProblem</font></a>
+<?php if (oj_is_admin() && !$OJ_SAE) { ?>
+  <a href="problem_copy.php" target="<?php echo $admin_internal_target; ?>" title="Create your own data"><font color="eeeeee">CopyProblem</font></a> <br>
+  <a href="problem_changeid.php" target="<?php echo $admin_internal_target; ?>" title="Danger,Use it on your own risk"><font color="eeeeee">ReOrderProblem</font></a>
 <?php } ?>
 -->
 </nav>
@@ -525,7 +528,7 @@ if (isset($OJ_LANG)) {
 
     var links =
       document.querySelectorAll(
-        '.admin-nav-link[target="main"]'
+        '.admin-nav-link[target="<?php echo $admin_internal_target; ?>"]'
       );
 
     links.forEach(function(link) {

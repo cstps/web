@@ -1,14 +1,19 @@
 <?php
-require_once ("admin-header.php");
-require_once("../include/check_post_key.php");
-if (!(isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor']))) {
-  echo "<a href='../loginpage.php'>Please Login First!</a>";
-  exit(1);
+require_once __DIR__ . '/admin-init.php';
+require_once __DIR__ . '/../include/problem.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    header('Allow: POST');
+    exit('잘못된 요청 방식입니다.');
 }
 
-require_once ("../include/db_info.inc.php");
-require_once ("../include/my_func.inc.php");
-require_once ("../include/problem.php");
+if (!oj_can_create_admin_problems()) {
+    http_response_code(403);
+    exit('문제를 생성할 권한이 없습니다.');
+}
+
+require_once __DIR__ . '/../include/check_post_key.php';
 
 // contest_id
 $title = $_POST['title'];
@@ -17,19 +22,19 @@ $time_limit = $_POST['time_limit'];
 $memory_limit = $_POST['memory_limit'];
 
 $description = $_POST['description'];
-$description = str_replace("<p>", "", $description); 
+$description = str_replace("<p>", "", $description);
 $description = str_replace("</p>", "<br />", $description);
-$description = str_replace(",", "&#44;", $description); 
+$description = str_replace(",", "&#44;", $description);
 
 $input = $_POST['input'];
-$input = str_replace("<p>", "", $input); 
-$input = str_replace("</p>", "<br />", $input); 
+$input = str_replace("<p>", "", $input);
+$input = str_replace("</p>", "<br />", $input);
 $input = str_replace(",", "&#44;", $input);
 
 $output = $_POST['output'];
-$output = str_replace("<p>", "", $output); 
+$output = str_replace("<p>", "", $output);
 $output = str_replace("</p>", "<br />", $output);
-$output = str_replace(",", "&#44;", $output); 
+$output = str_replace(",", "&#44;", $output);
 
 $sample_input = $_POST['sample_input'];
 $sample_output = $_POST['sample_output'];
@@ -42,12 +47,47 @@ if ($test_input=="") $test_input="\n";
 if ($test_output=="") $test_output="\n";
 */
 $hint = $_POST['hint'];
-$hint = str_replace("<p>", "", $hint); 
-$hint = str_replace("</p>", "<br />", $hint); 
+$hint = str_replace("<p>", "", $hint);
+$hint = str_replace("</p>", "<br />", $hint);
 $hint = str_replace(",", "&#44;", $hint);
 
 $source = $_POST['source'];
-$creator = $_POST['creator'];
+$current_user_id =
+    (string)$_SESSION[$OJ_NAME . '_user_id'];
+
+$requested_creator =
+    isset($_POST['creator'])
+    ? trim((string)$_POST['creator'])
+    : '';
+
+$owner_user_id = $current_user_id;
+
+// 관리자만 다른 사용자를 제작자로 지정할 수 있다.
+if (
+    $requested_creator !== '' &&
+    $requested_creator !== $current_user_id
+) {
+    if (!oj_is_admin()) {
+        http_response_code(403);
+        exit('다른 사용자를 문제 제작자로 지정할 수 없습니다.');
+    }
+
+    $owner_rows = pdo_query(
+        'SELECT user_id
+         FROM users
+         WHERE user_id=?
+         LIMIT 1',
+        $requested_creator
+    );
+
+    if (!$owner_rows || !isset($owner_rows[0])) {
+        http_response_code(400);
+        exit('지정한 문제 제작자 계정을 찾을 수 없습니다.');
+    }
+
+    $owner_user_id =
+        (string)$owner_rows[0]['user_id'];
+}
 
 $spj = $_POST['spj'];
 
@@ -56,13 +96,13 @@ $spj = $_POST['spj'];
 // 코드는 내용과 빈 줄을 보존하고 줄바꿈 방식만 LF로 통일한다.
 $front_code =
     isset($_POST['front_code'])
-        ? $_POST['front_code']
-        : '';
+    ? $_POST['front_code']
+    : '';
 
 $rear_code =
     isset($_POST['rear_code'])
-        ? $_POST['rear_code']
-        : '';
+    ? $_POST['rear_code']
+    : '';
 
 $front_code =
     str_replace(
@@ -80,13 +120,13 @@ $rear_code =
 
 $ban_code =
     isset($_POST['ban_code'])
-        ? $_POST['ban_code']
-        : '';
+    ? $_POST['ban_code']
+    : '';
 
 $pro_point =
     isset($_POST['pro_point'])
-        ? intval($_POST['pro_point'])
-        : 1;
+    ? intval($_POST['pro_point'])
+    : 1;
 
 
 // ------------------------------------------------------------
@@ -171,35 +211,35 @@ pdo_query(
 $basedir = "$OJ_DATA/$pid";
 mkdir($basedir);
 
-if(strlen($sample_output) && !strlen($sample_input)) $sample_input = "0";
-if(strlen($sample_input)) mkdata($pid, "sample.in", $sample_input, $OJ_DATA);
-if(strlen($sample_output)) mkdata($pid, "sample.out", $sample_output, $OJ_DATA);
-if(strlen($test_output) && !strlen($test_input)) $test_input = "0";
-if(strlen($test_input)) mkdata($pid,"test.in", $test_input, $OJ_DATA);
-if(strlen($test_output)) mkdata($pid,"test.out", $test_output, $OJ_DATA);
+if (strlen($sample_output) && !strlen($sample_input)) $sample_input = "0";
+if (strlen($sample_input)) mkdata($pid, "sample.in", $sample_input, $OJ_DATA);
+if (strlen($sample_output)) mkdata($pid, "sample.out", $sample_output, $OJ_DATA);
+if (strlen($test_output) && !strlen($test_input)) $test_input = "0";
+if (strlen($test_input)) mkdata($pid, "test.in", $test_input, $OJ_DATA);
+if (strlen($test_output)) mkdata($pid, "test.out", $test_output, $OJ_DATA);
 
 // 만든 사람 정보 추가하기 없으면 로그인 정보 
 
-$sql = "INSERT INTO `privilege` (`user_id`,`rightstr`) VALUES(?,?)";
-if(trim($creator)!=""){
-  pdo_query($sql, trim($creator), "p$pid");
-}else{
-  pdo_query($sql, $_SESSION[$OJ_NAME.'_'.'user_id'], "p$pid");
+pdo_query(
+    "INSERT INTO privilege
+        (user_id, rightstr, defunct)
+     VALUES
+        (?, ?, 'N')",
+    $owner_user_id,
+    'p' . $pid
+);
+
+// 현재 사용자가 실제 제작자인 경우에만 세션 소유권 부여
+if ($owner_user_id === $current_user_id) {
+    $_SESSION[$OJ_NAME . '_p' . $pid] = true;
+} else {
+    unset($_SESSION[$OJ_NAME . '_p' . $pid]);
 }
-$_SESSION[$OJ_NAME.'_'."p$pid"] = true;
-  
-echo "&nbsp;&nbsp;- <a href='javascript:phpfm($pid);'>Add more TestData now!</a>";
+
+header(
+    'Location: problem_testdata.php?id=' .
+        rawurlencode((string)$pid)
+);
+exit;
 /*  */
 ?>
-
-<script src='../template/bs3/jquery.min.js' ></script>
-<script>
-function phpfm(pid){
-  //alert(pid);
-  $.post("phpfm.php",{'frame':3,'pid':pid,'pass':''},function(data,status){
-    if(status=="success"){
-      document.location.href="phpfm.php?frame=3&pid="+pid;
-    }
-  });
-}
-</script>

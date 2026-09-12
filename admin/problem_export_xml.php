@@ -1,14 +1,13 @@
 <?php
-@session_start ();
-echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-require_once ("../include/db_info.inc.php");
 
-if (!isset($OJ_LANG)) {
-  $OJ_LANG = "en";
+require_once __DIR__ . '/admin-init.php';
+
+if (!oj_is_admin()) {
+  http_response_code(403);
+  exit('문제를 내보낼 권한이 없습니다.');
 }
 
-require_once("../lang/$OJ_LANG.php");
-require_once("../include/const.inc.php");
+require_once __DIR__ . '/../include/const.inc.php';
 
 function fixcdata($content) {
   $content = str_replace("\x1a","",$content);   // remove some strange \x1a [SUB] char from datafile

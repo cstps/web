@@ -9,6 +9,49 @@ include(
 
 ?>
 
+<style>
+    .contest-problem-cell {
+        padding: 0 !important;
+        text-align: center;
+    }
+
+    .contest-problem-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        width: 100%;
+        min-width: 52px;
+        min-height: 48px;
+        padding: 10px 12px;
+        box-sizing: border-box;
+
+        color: inherit;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+
+        transition:
+            background-color 0.15s ease,
+            color 0.15s ease;
+    }
+
+    .contest-problem-link:hover {
+        color: #2563eb;
+        background-color: #eef4ff;
+        text-decoration: none;
+    }
+
+    .contest-problem-link:focus-visible {
+        position: relative;
+        z-index: 1;
+        outline: 3px solid rgba(37, 99, 235, 0.35);
+        outline-offset: -3px;
+    }
+</style>
+
+
+
 <div
     class="ui container"
     style="
@@ -619,18 +662,17 @@ include(
                     ) {
                     ?>
 
-                        <th
-                            style="
-                            text-align:center;
-                        ">
+                        <th class="contest-problem-cell">
 
                             <a
+                                class="contest-problem-link"
                                 href="problem.php?cid=<?php
                                                         echo intval($cid);
                                                         ?>&pid=<?php
-                                echo intval($problem_num);
-                            ?>"
+                                                                echo intval($problem_num);
+                                                                ?>"
                                 target="_blank"
+                                rel="noopener noreferrer"
                                 title="<?php
                                         echo htmlentities(
                                             $problem['label'] .
@@ -644,10 +686,7 @@ include(
                                             ENT_QUOTES,
                                             'UTF-8'
                                         );
-                                        ?>"
-                                style="
-                                    text-decoration:none;
-                                ">
+                                        ?>">
 
                                 <?php
                                 echo htmlentities(
@@ -704,6 +743,11 @@ include(
                     as
                     $student
                 ) {
+
+                    $student_nick =
+                        isset($student['nick'])
+                        ? trim($student['nick'])
+                        : '';
                 ?>
 
 
@@ -867,7 +911,9 @@ include(
                                                                                         ?>"
                                     title="<?php
                                             echo htmlentities(
-                                                $student['nick'] .
+                                                ($student_nick !== ''
+                                                    ? $student_nick
+                                                    : $student['user_id']) .
                                                     ' 학생 전체 문제 해결 과정 요약',
                                                 ENT_QUOTES,
                                                 'UTF-8'
@@ -882,6 +928,31 @@ include(
                                     );
                                     ?>
 
+                                    <?php
+                                    if ($student_nick !== '') {
+                                    ?>
+
+                                        <span
+                                            style="
+                                                display:block;
+                                                margin-top:3px;
+                                                color:#6b7280;
+                                                font-size:0.84em;
+                                                font-weight:400;
+                                                line-height:1.25;
+                                            ">
+                                            <?php
+                                            echo htmlentities(
+                                                $student_nick,
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            );
+                                            ?>
+                                        </span>
+
+                                    <?php
+                                    }
+                                    ?>
                                 </a>
 
                             </strong>

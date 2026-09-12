@@ -22,8 +22,7 @@
 
 	
 ?>
-<script src="../tinymce/tinymce.min.js"></script>
-
+<script src="../tinymce/tinymce.min.js?v=8.9.0"></script>
 
 <center>
 <div style="width:90%; text-align:left">
@@ -42,8 +41,10 @@
 </center>
 <script>
     tinymce.init({
-        selector: '#mytextarea',
-        height: 500,
-    });
+    selector: '#mytextarea',
+    license_key: 'gpl',
+    cache_suffix: '?v=8.9.0',
+    height: 500
+});
   </script>
 <?php require_once("template/$OJ_TEMPLATE/discuss.php")?>

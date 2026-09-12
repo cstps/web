@@ -6,6 +6,8 @@ require_once('./include/cache_start.php');
 require_once('./include/db_info.inc.php');
 require_once('./include/const.inc.php');
 require_once('./include/my_func.inc.php');
+require_once('./include/permission_functions.inc.php');
+
 require_once('./include/setlang.php');
 
 require_once('./include/course_functions.inc.php');
@@ -36,7 +38,9 @@ if (isset($_GET['id'])) {
 
 	if ($OJ_FREE_PRACTICE)
                 $sql = "SELECT * FROM `problem` WHERE defunct='N' and `problem_id`=?";
-	else if (isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']) || isset($_SESSION[$OJ_NAME.'_'.'problem_editor']))
+	else if (
+		oj_can_manage_problem($id)
+	)
 		$sql = "SELECT * FROM `problem` WHERE `problem_id`=?";
 	else
 
@@ -81,9 +85,8 @@ else if (isset($_GET['cid']) && isset($_GET['pid'])) {
 
 
 	if (
-		isset($_SESSION[$OJ_NAME.'_administrator']) ||
-		isset($_SESSION[$OJ_NAME.'_m'.$cid])
-	){
+		oj_can_manage_contest($cid)
+	) {
 		$sql =
 			"SELECT langmask, private, defunct
 			FROM contest

@@ -1,11 +1,11 @@
-<?php
-require_once("admin-header.php");
-?>
-
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 
 <head>
+
+    <?php
+    require_once("admin-header.php");
+    ?>
 
     <title>1024.kr 관리자</title>
 
@@ -14,35 +14,38 @@ require_once("admin-header.php");
 <body class="admin-layout-page">
 
 
-<?php
-require_once("admin-bar.php");
-?>
+    <?php
+    require_once("admin-bar.php");
+    ?>
 
 
-<div class="admin-layout">
+    <div class="admin-layout">
 
-    <aside class="admin-sidebar">
+        <aside class="admin-sidebar">
 
-        <?php
-        require("menu2.php");
-        ?>
+            <?php
+            $admin_legacy_frame_mode = true;
+            $admin_active_menu = "dashboard";
 
-    </aside>
+            require("menu2.php");
+            ?>
+
+        </aside>
 
 
-    <main class="admin-main">
+        <main class="admin-main">
 
-        <iframe
-            name="main"
-            src="help.php"
-            class="admin-main-frame"
-            title="관리자 작업 영역"
-        ></iframe>
+            <iframe
+                name="main"
+                src="help.php"
+                class="admin-main-frame"
+                title="관리자 작업 영역"></iframe>
 
-    </main>
+        </main>
 
-</div>
+    </div>
 
 
 </body>
+
 </html>

@@ -53,12 +53,25 @@ if (isset($_POST['do'])) {
 		<label class="col-sm-offset-3 col-sm-3 control-label"><?php echo $MSG_PRIVILEGE_TYPE?></label>
 		<select class="col-sm-3" name="rightstr" onchange="show_value_input(this.value)" >
 		<?php
-			$rightarray = array("administrator","problem_editor","source_browser","contest_creator","http_judge","password_setter","printer","balloon","vip",'problem_start','problem_end');
-			while (list($key, $val)=each($rightarray)) {
-				if (isset($rightstr) && ($rightstr == $val)) {
-					echo '<option value="'.$val.'" selected>'.$val.'</option>';
+			$rightarray = array(
+				"administrator",
+				"problem_editor",
+				"source_browser",
+				"contest_creator",
+				"http_judge",
+				"password_setter",
+				"printer",
+				"balloon",
+				"vip",
+				"problem_start",
+				"problem_end"
+			);
+
+			foreach ($rightarray as $val) {
+				if (isset($rightstr) && $rightstr === $val) {
+					echo '<option value="' . $val . '" selected>' . $val . '</option>';
 				} else {
-					echo '<option value="'.$val.'">'.$val.'</option>';
+					echo '<option value="' . $val . '">' . $val . '</option>';
 				}
 			}
 		?>

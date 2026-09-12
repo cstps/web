@@ -585,7 +585,6 @@
 
 
 <script>
-
 	function encoded_submit() {
 
 		var mark = "<?php echo isset($id) ? 'problem_id' : 'cid'; ?>";
@@ -772,9 +771,9 @@
 		editor.setTheme("ace/theme/chrome");
 		switchLang(<?php echo $lastlang ?>);
 		editor.setOptions({
-			enableBasicAutocompletion: true,
+			enableBasicAutocompletion: false,
 			enableSnippets: true,
-			enableLiveAutocompletion: true,
+			enableLiveAutocompletion: false,
 			fontSize: "13pt", // font size 키우기
 
 		});
