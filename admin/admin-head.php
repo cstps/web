@@ -48,6 +48,15 @@ require_once(
 
             var $form = $(this);
 
+            var method =
+                String(
+                    $form.attr("method") || "get"
+                ).toLowerCase();
+
+            if (method !== "post") {
+                return;
+            }
+
             if ($form.find(".admin-csrf-fields").length > 0) {
                 return;
             }
