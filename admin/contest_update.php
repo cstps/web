@@ -108,6 +108,17 @@ if (
 $current_contest =
     $contest_rows[0];
 
+if (
+    isset($current_contest['is_archived']) &&
+    intval(
+        $current_contest['is_archived']
+    ) === 1
+) {
+    $fail(
+        409,
+        '보관된 대회는 수정할 수 없습니다. 먼저 복원하세요.'
+    );
+}
 
 // ============================================================
 // 수정 권한 확인

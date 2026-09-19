@@ -340,6 +340,8 @@ else {
 		"SELECT COUNT(1)
 		FROM contest
 		WHERE contest.defunct = 'N'
+		AND contest.is_stopped = 0
+		AND contest.is_archived = 0
 		$exclude_course_created_sql"
 	);
 
@@ -384,6 +386,8 @@ else {
   $sql = "SELECT *
 			FROM contest
 			WHERE contest.defunct = 'N'
+			AND contest.is_stopped = 0
+			AND contest.is_archived = 0
 			$exclude_course_created_sql
 			ORDER BY contest.contest_id DESC
 			LIMIT 1000";
@@ -392,6 +396,8 @@ else {
 		$sql = "SELECT *
 				FROM contest
 				WHERE contest.defunct = 'N'
+				AND contest.is_stopped = 0
+				AND contest.is_archived = 0
 				AND contest.title LIKE ?
 				$wheremy
 				$exclude_course_created_sql
@@ -413,6 +419,8 @@ else {
 			$sql = "SELECT *
 					FROM contest
 					WHERE contest.defunct = 'N'
+					AND contest.is_stopped = 0
+					AND contest.is_archived = 0
 					$wheremy
 					$exclude_course_created_sql
 					ORDER BY contest.contest_id ASC";
@@ -423,6 +431,8 @@ else {
 			$sql = "SELECT *
 					FROM contest
 					WHERE contest.defunct = 'N'
+					AND contest.is_stopped = 0
+					AND contest.is_archived = 0
 					$exclude_course_created_sql
 					ORDER BY contest.contest_id ASC";
 			$sql .= " limit ".strval($pstart).",".strval($pend); 

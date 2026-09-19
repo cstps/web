@@ -1,21 +1,32 @@
 <?php
-header("Cache-control:private");
 
-require_once("../include/db_info.inc.php");
-require_once("../lang/$OJ_LANG.php");
-require_once("../include/const.inc.php");
-require_once("admin-header.php");
+header(
+    'Cache-Control: private, no-store, no-cache, must-revalidate'
+);
 
-if (
-    !isset(
-        $_SESSION[$OJ_NAME . '_user_id']
-    )
-) {
-    echo "<a href='../loginpage.php'>Please Login First!</a>";
-    exit(1);
-}
+header(
+    'Pragma: no-cache'
+);
 
-include_once("kindeditor.php");
+
+require_once(
+    __DIR__ . '/admin-init.php'
+);
+
+require_once(
+    __DIR__ . '/../include/const.inc.php'
+);
+
+
+$admin_page_title =
+    '대회 수정';
+
+$admin_active_menu =
+    'contest_list';
+
+$admin_page_head_file =
+    __DIR__ . '/contest-add-head.php';
+
 
 $cid = 0;
 
@@ -28,8 +39,8 @@ $cid = 0;
 
 $cid =
     isset($_GET['cid'])
-        ? intval($_GET['cid'])
-        : 0;
+    ? intval($_GET['cid'])
+    : 0;
 
 
 if ($cid <= 0) {
@@ -48,14 +59,19 @@ $result =
     );
 
 
+if ($result === false) {
+    http_response_code(500);
+    exit('대회 정보를 확인하지 못했습니다.');
+}
+
 if (
-    !$result ||
+    count($result) === 0 ||
     !isset(
         $result[0]['contest_id']
     )
 ) {
-    echo "No such Contest!";
-    exit(0);
+    http_response_code(404);
+    exit('존재하지 않는 대회입니다.');
 }
 
 
@@ -63,59 +79,28 @@ $row =
     $result[0];
 
 
-$user_id =
-    $_SESSION[$OJ_NAME.'_user_id'];
+if (
+    isset($row['is_archived']) &&
+    intval($row['is_archived']) === 1
+) {
+    http_response_code(409);
 
-
-// ============================================================
-// 3. GET 단계 수정 권한 확인
-// ============================================================
-
-$can_edit =
-    isset(
-        $_SESSION[
-            $OJ_NAME.'_administrator'
-        ]
-    ) ||
-    isset(
-        $_SESSION[
-            $OJ_NAME.'_m'.$cid
-        ]
-    );
-
-
-if (!$can_edit) {
-
-    $privilege_rows =
-        pdo_query(
-            "SELECT 1
-             FROM privilege
-             WHERE user_id = ?
-               AND rightstr = ?
-               AND defunct = 'N'
-             LIMIT 1",
-            $user_id,
-            "m".$cid
-        );
-
-
-    $can_edit =
-        $privilege_rows &&
-        isset(
-            $privilege_rows[0][0]
-        );
+    exit('보관된 대회는 수정할 수 없습니다. 먼저 복원하세요.');
 }
 
+// ============================================================
+// 2. GET 단계 수정 권한 확인
+// ============================================================
 
-if (!$can_edit) {
-
-    echo "<h3>이 대회를 수정할 권한이 없습니다.</h3>";
-    exit(1);
+if (
+    !oj_can_manage_contest($cid)
+) {
+    http_response_code(403);
+    exit('이 대회를 수정할 권한이 없습니다.');
 }
 
-
 // ============================================================
-// 4. 기본값
+// 3. 기본값
 // ============================================================
 
 $starttime =
@@ -136,8 +121,8 @@ $private =
 
 $password =
     isset($row['password'])
-        ? $row['password']
-        : '';
+    ? $row['password']
+    : '';
 
 $langmask =
     intval(
@@ -157,14 +142,14 @@ $exam_mode =
 
 $allow_copy =
     isset($row['allow_copy'])
-        ? intval(
-            $row['allow_copy']
-        )
-        : 1;
+    ? intval(
+        $row['allow_copy']
+    )
+    : 1;
 
 
 // ============================================================
-// 5. 현재 문제 / 점수 / 초기 선택 정보
+// 4. 현재 문제 / 점수 / 초기 선택 정보
 // ============================================================
 
 $plist =
@@ -232,42 +217,42 @@ foreach (
         array(
 
             'problem_id' =>
-                $problem_id,
+            $problem_id,
 
             'title' =>
-                isset($problem['title'])
-                    ? (string)$problem['title']
-                    : '(문제 정보 없음)',
+            isset($problem['title'])
+                ? (string)$problem['title']
+                : '(문제 정보 없음)',
 
             'source' =>
-                isset($problem['source'])
-                    ? (string)$problem['source']
-                    : '',
+            isset($problem['source'])
+                ? (string)$problem['source']
+                : '',
 
             'defunct' =>
-                isset($problem['defunct'])
-                    ? (string)$problem['defunct']
-                    : 'Y',
+            isset($problem['defunct'])
+                ? (string)$problem['defunct']
+                : 'Y',
 
             'allow_reuse' =>
-                isset($problem['allow_reuse'])
-                    ? intval(
-                        $problem['allow_reuse']
-                    )
-                    : 0,
+            isset($problem['allow_reuse'])
+                ? intval(
+                    $problem['allow_reuse']
+                )
+                : 0,
 
             'score' =>
-                isset($problem['score'])
-                    ? intval(
-                        $problem['score']
-                    )
-                    : 100
+            isset($problem['score'])
+                ? intval(
+                    $problem['score']
+                )
+                : 100
         );
 }
 
 
 // ============================================================
-// 6. 참가자 목록
+// 5. 참가자 목록
 // ============================================================
 
 $ulist =
@@ -307,7 +292,7 @@ foreach ($user_rows as $user) {
 
 
 // ============================================================
-// 7. 현재 허용 언어 Mask
+// 6. 현재 허용 언어 Mask
 // ============================================================
 
 $lang_count =
@@ -320,595 +305,591 @@ $enabled_language_mask =
         (1 << $lang_count) - 1
     );
 
+require(
+    __DIR__ . '/admin-layout-start.php'
+);
 ?>
-<!DOCTYPE html>
-<html>
 
-<head>
+<div class="admin-page">
 
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Cache-Control" content="no-cache">
-    <meta http-equiv="Content-Language" content="ko">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1"
-    >
-
-    <link
-        rel="stylesheet"
-        href="contest-form.css"
-    >
-
-    <title>Edit Contest</title>
-
-</head>
-
-<body>
-
-<div class="container contest-add-wrap">
-
-
-    <div class="contest-edit-header">
-
-        <h3>
-            <?php echo $MSG_CONTEST; ?> 수정
-        </h3>
+    <div class="admin-page-header">
 
         <div>
-            Contest ID:
-            <strong>
-                <?php echo intval($cid); ?>
-            </strong>
+
+            <h1 class="admin-page-title">
+                대회 수정
+            </h1>
+
+            <div class="admin-page-description">
+                대회 일정, 문제, 제출 언어와 참가자를 수정합니다.
+                Contest ID:
+                <strong>
+                    <?php echo intval($cid); ?>
+                </strong>
+            </div>
+
         </div>
+
+        <a
+            href="contest_list.php"
+            class="admin-btn admin-btn-secondary">
+            대회 목록
+        </a>
 
     </div>
 
 
-    <form
-    method="POST"
-    action="contest_update.php"
-    id="contest-edit-form"
->
+    <div class="contest-add-wrap">
 
-        <?php
-        require_once(
-            "../include/set_post_key.php"
-        );
-        ?>
+        <form
+            method="POST"
+            action="contest_update.php"
+            id="contest-edit-form">
 
-        <input
-            type="hidden"
-            name="cid"
-            value="<?php echo intval($cid); ?>"
-        >
-
-
-        <!-- ==================================================
-             1. 기본 정보
-             ================================================== -->
-
-        <div class="contest-add-card">
-
-            <h4>1. 기본 정보</h4>
-
-
-            <div class="contest-add-field">
-
-                <label>
-                    <?php
-                    echo
-                        $MSG_CONTEST.
-                        "-".
-                        $MSG_TITLE;
-                    ?>
-                </label>
-
-                <input
-                    type="text"
-                    name="title"
-                    value="<?php
-                        echo htmlspecialchars(
-                            $title,
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
-                    ?>"
-                    required
-                >
-
-            </div>
-
-
-            <div
-                class="contest-add-grid"
-                style="margin-top:14px;"
-            >
-
-
-                <div class="contest-add-field">
-
-                    <label>
-                        <?php
-                        echo
-                            $MSG_CONTEST.
-                            $MSG_Start;
-                        ?>
-                    </label>
-
-
-                    <div class="contest-add-inline-time">
-
-                        <input
-                            type="date"
-                            name="startdate"
-                            value="<?php
-                                echo substr(
-                                    $starttime,
-                                    0,
-                                    10
-                                );
-                            ?>"
-                            required
-                        >
-
-                        <input
-                            type="number"
-                            name="shour"
-                            min="0"
-                            max="23"
-                            value="<?php
-                                echo substr(
-                                    $starttime,
-                                    11,
-                                    2
-                                );
-                            ?>"
-                            title="시"
-                            required
-                        >
-
-                        <input
-                            type="number"
-                            name="sminute"
-                            min="0"
-                            max="59"
-                            value="<?php
-                                echo substr(
-                                    $starttime,
-                                    14,
-                                    2
-                                );
-                            ?>"
-                            title="분"
-                            required
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <div class="contest-add-field">
-
-                    <label>
-                        <?php
-                        echo
-                            $MSG_CONTEST.
-                            $MSG_End;
-                        ?>
-                    </label>
-
-
-                    <div class="contest-add-inline-time">
-
-                        <input
-                            type="date"
-                            name="enddate"
-                            value="<?php
-                                echo substr(
-                                    $endtime,
-                                    0,
-                                    10
-                                );
-                            ?>"
-                            required
-                        >
-
-                        <input
-                            type="number"
-                            name="ehour"
-                            min="0"
-                            max="23"
-                            value="<?php
-                                echo substr(
-                                    $endtime,
-                                    11,
-                                    2
-                                );
-                            ?>"
-                            title="시"
-                            required
-                        >
-
-                        <input
-                            type="number"
-                            name="eminute"
-                            min="0"
-                            max="59"
-                            value="<?php
-                                echo substr(
-                                    $endtime,
-                                    14,
-                                    2
-                                );
-                            ?>"
-                            title="분"
-                            required
-                        >
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div
-                class="contest-add-field"
-                style="margin-top:14px;"
-            >
-
-                <label>
-                    <?php
-                    echo
-                        $MSG_CONTEST.
-                        "-".
-                        $MSG_Description;
-                    ?>
-                </label>
-
-                <textarea
-                    class="kindeditor"
-                    rows="13"
-                    name="description"
-                    cols="80"
-                ><?php
-                    echo htmlspecialchars(
-                        $description,
-                        ENT_QUOTES,
-                        'UTF-8'
-                    );
-                ?></textarea>
-
-            </div>
-
-        </div>
-
-
-        <!-- ==================================================
-             2. 문제 구성
-             ================================================== -->
-
-        <div class="contest-add-card">
-
-            <h4>2. 문제 구성</h4>
-
+            <?php
+            require_once(
+                "../include/set_post_key.php"
+            );
+            ?>
 
             <input
                 type="hidden"
-                id="plist"
-                name="cproblem"
-                value="<?php
-                    echo htmlspecialchars(
-                        $plist,
-                        ENT_QUOTES,
-                        'UTF-8'
-                    );
-                ?>"
-            >
+                name="cid"
+                value="<?php echo intval($cid); ?>">
 
 
-            <div class="contest-problem-selector">
+            <!-- ==================================================
+             1. 기본 정보
+             ================================================== -->
+
+            <div class="contest-add-card">
+
+                <h4>1. 기본 정보</h4>
 
 
-                <div class="contest-problem-search">
+                <div class="contest-add-field">
+
+                    <label>
+                        <?php
+                        echo
+                        $MSG_CONTEST .
+                            "-" .
+                            $MSG_TITLE;
+                        ?>
+                    </label>
 
                     <input
                         type="text"
-                        id="problem-search"
-                        placeholder="문제 번호·제목·출처 검색"
-                        autocomplete="off"
-                    >
-
-                    <button
-                        type="button"
-                        id="problem-search-button"
-                    >
-                        검색
-                    </button>
-
-                </div>
-
-
-                <div class="contest-problem-tabs">
-
-                    <button
-                        type="button"
-                        class="contest-problem-tab active"
-                        data-scope="my"
-                    >
-                        내가 만든 문제
-                    </button>
-
-                    <button
-                        type="button"
-                        class="contest-problem-tab"
-                        data-scope="available"
-                    >
-                        사용 가능한 전체 문제
-                    </button>
-
-                </div>
-
-
-                <div class="contest-add-help">
-                    한 번에 최대 50개까지 표시됩니다.
-                    검색을 다시 해도 현재 대회에 선택된 문제는 유지됩니다.
-                </div>
-
-
-                <div
-                    id="problem-search-results"
-                    class="contest-problem-results"
-                >
-                    문제를 불러오는 중입니다.
-                </div>
-
-
-                <div class="contest-selected-header">
-
-                    <strong>
-                        선택한 문제
-                    </strong>
-
-                    <span id="selected-problem-count">
-                        0개
-                    </span>
+                        name="title"
+                        value="<?php
+                                echo htmlspecialchars(
+                                    $title,
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                                ?>"
+                        required>
 
                 </div>
 
 
                 <div
-                    id="selected-problem-list"
-                    class="contest-selected-list"
-                ></div>
+                    class="contest-add-grid"
+                    style="margin-top:14px;">
+
+
+                    <div class="contest-add-field">
+
+                        <label>
+                            <?php
+                            echo
+                            $MSG_CONTEST .
+                                $MSG_Start;
+                            ?>
+                        </label>
+
+
+                        <div class="contest-add-inline-time">
+
+                            <input
+                                type="date"
+                                name="startdate"
+                                value="<?php
+                                        echo substr(
+                                            $starttime,
+                                            0,
+                                            10
+                                        );
+                                        ?>"
+                                required>
+
+                            <input
+                                type="number"
+                                name="shour"
+                                min="0"
+                                max="23"
+                                value="<?php
+                                        echo substr(
+                                            $starttime,
+                                            11,
+                                            2
+                                        );
+                                        ?>"
+                                title="시"
+                                required>
+
+                            <input
+                                type="number"
+                                name="sminute"
+                                min="0"
+                                max="59"
+                                value="<?php
+                                        echo substr(
+                                            $starttime,
+                                            14,
+                                            2
+                                        );
+                                        ?>"
+                                title="분"
+                                required>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="contest-add-field">
+
+                        <label>
+                            <?php
+                            echo
+                            $MSG_CONTEST .
+                                $MSG_End;
+                            ?>
+                        </label>
+
+
+                        <div class="contest-add-inline-time">
+
+                            <input
+                                type="date"
+                                name="enddate"
+                                value="<?php
+                                        echo substr(
+                                            $endtime,
+                                            0,
+                                            10
+                                        );
+                                        ?>"
+                                required>
+
+                            <input
+                                type="number"
+                                name="ehour"
+                                min="0"
+                                max="23"
+                                value="<?php
+                                        echo substr(
+                                            $endtime,
+                                            11,
+                                            2
+                                        );
+                                        ?>"
+                                title="시"
+                                required>
+
+                            <input
+                                type="number"
+                                name="eminute"
+                                min="0"
+                                max="59"
+                                value="<?php
+                                        echo substr(
+                                            $endtime,
+                                            14,
+                                            2
+                                        );
+                                        ?>"
+                                title="분"
+                                required>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="contest-add-field"
+                    style="margin-top:14px;">
+
+                    <label>
+                        <?php
+                        echo
+                        $MSG_CONTEST .
+                            "-" .
+                            $MSG_Description;
+                        ?>
+                    </label>
+
+                    <textarea
+                        class="tinymce-editor"
+                        rows="13"
+                        name="description"
+                        cols="80"><?php
+                                    echo htmlspecialchars(
+                                        $description,
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    );
+                                    ?></textarea>
+
+                </div>
 
             </div>
 
-        </div>
 
-
-        <!-- ==================================================
-             3. 대회 운영 설정
+            <!-- ==================================================
+             2. 문제 구성
              ================================================== -->
 
-        <div class="contest-add-card">
+            <div class="contest-add-card">
 
-            <h4>3. 대회 운영 설정</h4>
-
-
-            <div class="contest-setting-grid">
+                <h4>2. 문제 구성</h4>
 
 
-                <div class="contest-setting-box">
+                <input
+                    type="hidden"
+                    id="plist"
+                    name="cproblem"
+                    value="<?php
+                            echo htmlspecialchars(
+                                $plist,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>">
 
-                    <div class="contest-setting-title">
-                        공개 범위
-                    </div>
 
-                    <div class="contest-setting-description">
-                        사용자가 대회에 접근할 수 있는 범위를 설정합니다.
-                    </div>
+                <div class="contest-problem-selector">
 
-                    <div class="contest-choice-group">
 
-                        <input
-                            type="radio"
-                            id="private-public"
-                            name="private"
-                            value="0"
-                            <?php
-                            echo
-                                $private === 0
-                                    ? 'checked'
-                                    : '';
-                            ?>
-                        >
-
-                        <label for="private-public">
-                            공개
-                        </label>
-
+                    <div class="contest-problem-search">
 
                         <input
-                            type="radio"
-                            id="private-private"
-                            name="private"
-                            value="1"
-                            <?php
-                            echo
-                                $private === 1
-                                    ? 'checked'
-                                    : '';
-                            ?>
-                        >
+                            type="text"
+                            id="problem-search"
+                            placeholder="문제 번호·제목·출처 검색"
+                            autocomplete="off">
 
-                        <label for="private-private">
-                            비공개
-                        </label>
+                        <button
+                            type="button"
+                            id="problem-search-button">
+                            검색
+                        </button>
+
+                    </div>
+
+
+                    <div class="contest-problem-tabs">
+
+                        <button
+                            type="button"
+                            class="contest-problem-tab active"
+                            data-scope="my">
+                            내가 만든 문제
+                        </button>
+
+                        <button
+                            type="button"
+                            class="contest-problem-tab"
+                            data-scope="available">
+                            사용 가능한 전체 문제
+                        </button>
 
                     </div>
 
 
                     <div class="contest-add-help">
-                        비공개 대회는 참가 권한이 있는 사용자만 접근할 수 있습니다.
+                        한 번에 최대 50개까지 표시됩니다.
+                        검색을 다시 해도 현재 대회에 선택된 문제는 유지됩니다.
                     </div>
+
+
+                    <div
+                        id="problem-search-results"
+                        class="contest-problem-results">
+                        문제를 불러오는 중입니다.
+                    </div>
+
+
+                    <div class="contest-selected-header">
+
+                        <strong>
+                            선택한 문제
+                        </strong>
+
+                        <span id="selected-problem-count">
+                            0개
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="selected-problem-list"
+                        class="contest-selected-list"></div>
 
                 </div>
 
+            </div>
 
-                <div class="contest-setting-box">
 
-                    <div class="contest-setting-title">
-                        제출 코드
+            <!-- ==================================================
+             3. 대회 운영 설정
+             ================================================== -->
+
+            <div class="contest-add-card">
+
+                <h4>3. 대회 운영 설정</h4>
+
+
+                <div class="contest-setting-grid">
+
+
+                    <div class="contest-setting-box">
+
+                        <div class="contest-setting-title">
+                            공개 범위
+                        </div>
+
+                        <div class="contest-setting-description">
+                            사용자가 대회에 접근할 수 있는 범위를 설정합니다.
+                        </div>
+
+                        <div class="contest-choice-group">
+
+                            <input
+                                type="radio"
+                                id="private-public"
+                                name="private"
+                                value="0"
+                                <?php
+                                echo
+                                $private === 0
+                                    ? 'checked'
+                                    : '';
+                                ?>>
+
+                            <label for="private-public">
+                                공개
+                            </label>
+
+
+                            <input
+                                type="radio"
+                                id="private-private"
+                                name="private"
+                                value="1"
+                                <?php
+                                echo
+                                $private === 1
+                                    ? 'checked'
+                                    : '';
+                                ?>>
+
+                            <label for="private-private">
+                                비공개
+                            </label>
+
+                        </div>
+
+
+                        <div class="contest-add-help">
+                            비공개 대회는 참가 권한이 있는 사용자만 접근할 수 있습니다.
+                        </div>
+
                     </div>
 
-                    <div class="contest-setting-description">
-                        참가자의 제출 코드를 다른 사용자에게 공개할지 설정합니다.
-                    </div>
 
-                    <div class="contest-choice-group">
+                    <div class="contest-setting-box">
 
-                        <input
-                            type="radio"
-                            id="codevisible-public"
-                            name="codevisible"
-                            value="0"
-                            <?php
-                            echo
+                        <div class="contest-setting-title">
+                            제출 코드
+                        </div>
+
+                        <div class="contest-setting-description">
+                            참가자의 제출 코드를 다른 사용자에게 공개할지 설정합니다.
+                        </div>
+
+                        <div class="contest-choice-group">
+
+                            <input
+                                type="radio"
+                                id="codevisible-public"
+                                name="codevisible"
+                                value="0"
+                                <?php
+                                echo
                                 $codevisible === 0
                                     ? 'checked'
                                     : '';
-                            ?>
-                        >
+                                ?>>
 
-                        <label for="codevisible-public">
-                            공개
-                        </label>
+                            <label for="codevisible-public">
+                                공개
+                            </label>
 
 
-                        <input
-                            type="radio"
-                            id="codevisible-private"
-                            name="codevisible"
-                            value="1"
-                            <?php
-                            echo
+                            <input
+                                type="radio"
+                                id="codevisible-private"
+                                name="codevisible"
+                                value="1"
+                                <?php
+                                echo
                                 $codevisible === 1
                                     ? 'checked'
                                     : '';
-                            ?>
-                        >
+                                ?>>
 
-                        <label for="codevisible-private">
-                            비공개
-                        </label>
+                            <label for="codevisible-private">
+                                비공개
+                            </label>
+
+                        </div>
 
                     </div>
 
-                </div>
 
+                    <div class="contest-setting-box">
 
-                <div class="contest-setting-box">
+                        <div class="contest-setting-title">
+                            시험 모드
+                        </div>
 
-                    <div class="contest-setting-title">
-                        시험 모드
-                    </div>
+                        <div class="contest-setting-description">
+                            평가용 대회에서는 다른 사용자의 제출 상태 노출을 제한합니다.
+                        </div>
 
-                    <div class="contest-setting-description">
-                        평가용 대회에서는 다른 사용자의 제출 상태 노출을 제한합니다.
-                    </div>
+                        <div class="contest-choice-group">
 
-                    <div class="contest-choice-group">
-
-                        <input
-                            type="radio"
-                            id="exam-mode-off"
-                            name="exam_mode"
-                            value="0"
-                            <?php
-                            echo
+                            <input
+                                type="radio"
+                                id="exam-mode-off"
+                                name="exam_mode"
+                                value="0"
+                                <?php
+                                echo
                                 $exam_mode === 0
                                     ? 'checked'
                                     : '';
-                            ?>
-                        >
+                                ?>>
 
-                        <label for="exam-mode-off">
-                            일반
-                        </label>
+                            <label for="exam-mode-off">
+                                일반
+                            </label>
 
 
-                        <input
-                            type="radio"
-                            id="exam-mode-on"
-                            name="exam_mode"
-                            value="1"
-                            <?php
-                            echo
+                            <input
+                                type="radio"
+                                id="exam-mode-on"
+                                name="exam_mode"
+                                value="1"
+                                <?php
+                                echo
                                 $exam_mode === 1
                                     ? 'checked'
                                     : '';
-                            ?>
-                        >
+                                ?>>
 
-                        <label for="exam-mode-on">
-                            시험 모드
-                        </label>
+                            <label for="exam-mode-on">
+                                시험 모드
+                            </label>
+
+                        </div>
 
                     </div>
 
-                </div>
 
+                    <div class="contest-setting-box">
 
-                <div class="contest-setting-box">
+                        <div class="contest-setting-title">
+                            대회 복사
+                        </div>
 
-                    <div class="contest-setting-title">
-                        대회 복사
-                    </div>
+                        <div class="contest-setting-description">
+                            다른 Contest Creator가 이 대회의 구성을 가져갈 수 있는지 설정합니다.
+                        </div>
 
-                    <div class="contest-setting-description">
-                        다른 Contest Creator가 이 대회의 구성을 가져갈 수 있는지 설정합니다.
-                    </div>
+                        <div class="contest-choice-group">
 
-                    <div class="contest-choice-group">
-
-                        <input
-                            type="radio"
-                            id="allow-copy-on"
-                            name="allow_copy"
-                            value="1"
-                            <?php
-                            echo
+                            <input
+                                type="radio"
+                                id="allow-copy-on"
+                                name="allow_copy"
+                                value="1"
+                                <?php
+                                echo
                                 $allow_copy === 1
                                     ? 'checked'
                                     : '';
-                            ?>
-                        >
+                                ?>>
 
-                        <label for="allow-copy-on">
-                            허용
-                        </label>
+                            <label for="allow-copy-on">
+                                허용
+                            </label>
 
 
-                        <input
-                            type="radio"
-                            id="allow-copy-off"
-                            name="allow_copy"
-                            value="0"
-                            <?php
-                            echo
+                            <input
+                                type="radio"
+                                id="allow-copy-off"
+                                name="allow_copy"
+                                value="0"
+                                <?php
+                                echo
                                 $allow_copy === 0
                                     ? 'checked'
                                     : '';
-                            ?>
-                        >
+                                ?>>
 
-                        <label for="allow-copy-off">
-                            허용하지 않음
-                        </label>
+                            <label for="allow-copy-off">
+                                허용하지 않음
+                            </label>
 
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="contest-setting-password"
+                    style="margin-top:16px;">
+
+                    <label for="contest-password">
+                        대회 비밀번호
+                    </label>
+
+                    <input
+                        id="contest-password"
+                        type="text"
+                        name="password"
+                        value="<?php
+                                echo htmlspecialchars(
+                                    $password,
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                                ?>"
+                        placeholder="필요한 경우에만 입력">
+
+                    <div
+                        id="contest-password-help"
+                        class="contest-add-help">
+                        공개 대회에서는 필요한 경우 비밀번호를 사용할 수 있습니다.
                     </div>
 
                 </div>
@@ -916,1292 +897,1386 @@ $enabled_language_mask =
             </div>
 
 
-            <div
-                class="contest-setting-password"
-                style="margin-top:16px;"
-            >
-
-                <label for="contest-password">
-                    대회 비밀번호
-                </label>
-
-                <input
-                    id="contest-password"
-                    type="text"
-                    name="password"
-                    value="<?php
-                        echo htmlspecialchars(
-                            $password,
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
-                    ?>"
-                    placeholder="필요한 경우에만 입력"
-                >
-
-                <div
-                    id="contest-password-help"
-                    class="contest-add-help"
-                >
-                    공개 대회에서는 필요한 경우 비밀번호를 사용할 수 있습니다.
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- ==================================================
+            <!-- ==================================================
              4. 제출 가능 언어
              ================================================== -->
 
-        <div class="contest-add-card">
+            <div class="contest-add-card">
 
-            <div class="contest-language-header">
+                <div class="contest-language-header">
 
-                <h4>
-                    4. 제출 가능 언어
-                </h4>
+                    <h4>
+                        4. 제출 가능 언어
+                    </h4>
 
-                <span
-                    id="selected-language-count"
-                    class="contest-language-count"
-                >
-                    0개 선택
-                </span>
+                    <span
+                        id="selected-language-count"
+                        class="contest-language-count">
+                        0개 선택
+                    </span>
 
-            </div>
-
-
-            <div class="contest-add-help">
-                현재 대회에서 참가자가 제출할 수 있는 언어를 선택하세요.
-                하나 이상의 언어가 필요합니다.
-            </div>
+                </div>
 
 
-            <div
-                class="contest-language-options"
-                id="contest-language-options"
-            >
+                <div class="contest-add-help">
+                    현재 대회에서 참가자가 제출할 수 있는 언어를 선택하세요.
+                    하나 이상의 언어가 필요합니다.
+                </div>
 
-                <?php
 
-                for (
-                    $i = 0;
-                    $i < $lang_count;
-                    $i++
-                ) {
+                <div
+                    class="contest-language-options"
+                    id="contest-language-options">
 
-                    $checked =
-                        (
-                            $enabled_language_mask &
-                            (1 << $i)
-                        )
+                    <?php
+
+                    for (
+                        $i = 0;
+                        $i < $lang_count;
+                        $i++
+                    ) {
+
+                        $checked =
+                            (
+                                $enabled_language_mask &
+                                (1 << $i)
+                            )
                             ? 'checked'
                             : '';
 
                     ?>
 
-                    <div class="contest-language-item">
+                        <div class="contest-language-item">
 
-                        <input
-                            type="checkbox"
-                            id="contest-language-<?php echo $i; ?>"
-                            name="lang[]"
-                            value="<?php echo $i; ?>"
-                            <?php echo $checked; ?>
-                        >
+                            <input
+                                type="checkbox"
+                                id="contest-language-<?php echo $i; ?>"
+                                name="lang[]"
+                                value="<?php echo $i; ?>"
+                                <?php echo $checked; ?>>
 
-                        <label
-                            for="contest-language-<?php echo $i; ?>"
-                        >
-                            <?php
-                            echo htmlspecialchars(
-                                $language_name[$i],
-                                ENT_QUOTES,
-                                'UTF-8'
-                            );
-                            ?>
-                        </label>
+                            <label
+                                for="contest-language-<?php echo $i; ?>">
+                                <?php
+                                echo htmlspecialchars(
+                                    $language_name[$i],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                                ?>
+                            </label>
 
-                    </div>
+                        </div>
 
                     <?php
-                }
+                    }
 
-                ?>
-
-            </div>
-
-
-            <div
-                id="contest-language-error"
-                class="contest-language-error"
-                style="display:none;"
-            >
-                제출 가능 언어를 하나 이상 선택하세요.
-            </div>
-
-        </div>
-
-
-        <!-- ==================================================
-             5. 참가자 설정
-             ================================================== -->
-
-        <div class="contest-add-card">
-
-            <h4>5. 참가자 설정</h4>
-
-
-            <div class="contest-add-field">
-
-                <label>
-                    <?php
-                    echo
-                        $MSG_CONTEST.
-                        "-".
-                        $MSG_USER;
                     ?>
-                </label>
 
-                <textarea
-                    name="ulist"
-                    rows="10"
-                    placeholder="user1&#10;user2&#10;user3"
-                ><?php
-                    echo htmlspecialchars(
-                        $ulist,
-                        ENT_QUOTES,
-                        'UTF-8'
-                    );
-                ?></textarea>
+                </div>
 
 
-                <div class="contest-add-help">
-                    비공개 대회의 참가자 아이디를 한 줄에 하나씩 입력하세요.
-                    공개 대회에서는 입력하지 않아도 됩니다.
+                <div
+                    id="contest-language-error"
+                    class="contest-language-error"
+                    style="display:none;">
+                    제출 가능 언어를 하나 이상 선택하세요.
                 </div>
 
             </div>
 
-        </div>
+
+            <!-- ==================================================
+             5. 참가자 설정
+             ================================================== -->
+
+            <div class="contest-add-card">
+
+                <h4>5. 참가자 설정</h4>
 
 
-        <div class="contest-edit-actions">
+                <div class="contest-add-field">
 
-            <input
-                type="submit"
-                value="<?php echo $MSG_SAVE; ?>"
-                name="submit"
-            >
+                    <label>
+                        <?php
+                        echo
+                        $MSG_CONTEST .
+                            "-" .
+                            $MSG_USER;
+                        ?>
+                    </label>
 
-            <input
-                type="reset"
-                value="Reset"
-                name="reset"
-            >
-
-        </div>
-
-    </form>
-
-</div>
-
-
-<script>
-
-const INITIAL_SELECTED_PROBLEMS =
-    <?php
-    echo json_encode(
-        $initial_selected_problems,
-        JSON_UNESCAPED_UNICODE |
-        JSON_UNESCAPED_SLASHES |
-        JSON_HEX_TAG |
-        JSON_HEX_AMP |
-        JSON_HEX_APOS |
-        JSON_HEX_QUOT
-    );
-    ?>;
+                    <textarea
+                        name="ulist"
+                        rows="10"
+                        placeholder="user1&#10;user2&#10;user3"><?php
+                                                                echo htmlspecialchars(
+                                                                    $ulist,
+                                                                    ENT_QUOTES,
+                                                                    'UTF-8'
+                                                                );
+                                                                ?></textarea>
 
 
-const selectedProblems =
-    new Map();
+                    <div class="contest-add-help">
+                        비공개 대회의 참가자 아이디를 한 줄에 하나씩 입력하세요.
+                        공개 대회에서는 입력하지 않아도 됩니다.
+                    </div>
+
+                </div>
+
+            </div>
 
 
-let currentProblemScope =
-    "my";
+            <div class="contest-edit-actions">
+
+                <input
+                    type="submit"
+                    value="<?php echo $MSG_SAVE; ?>"
+                    name="submit">
+
+                <input
+                    type="reset"
+                    value="Reset"
+                    name="reset">
+
+            </div>
+
+        </form>
+
+    </div>
 
 
-// ============================================================
-// 초기 선택 문제
-// ============================================================
-
-INITIAL_SELECTED_PROBLEMS.forEach(
-    function (problem) {
-
-        const pid =
-            String(
-                problem.problem_id
+    <script>
+        const INITIAL_SELECTED_PROBLEMS =
+            <?php
+            echo json_encode(
+                $initial_selected_problems,
+                JSON_UNESCAPED_UNICODE |
+                    JSON_UNESCAPED_SLASHES |
+                    JSON_HEX_TAG |
+                    JSON_HEX_AMP |
+                    JSON_HEX_APOS |
+                    JSON_HEX_QUOT
             );
+            ?>;
 
 
-        selectedProblems.set(
-            pid,
-            {
-                problem_id:
-                    Number(
+        const selectedProblems =
+            new Map();
+
+
+        let currentProblemScope =
+            "my";
+
+
+        // ============================================================
+        // 초기 선택 문제
+        // ============================================================
+
+        INITIAL_SELECTED_PROBLEMS.forEach(
+            function(problem) {
+
+                const pid =
+                    String(
                         problem.problem_id
-                    ),
+                    );
 
-                title:
-                    String(
-                        problem.title || ""
-                    ),
 
-                source:
-                    String(
-                        problem.source || ""
-                    ),
+                selectedProblems.set(
+                    pid, {
+                        problem_id: Number(
+                            problem.problem_id
+                        ),
 
-                defunct:
-                    String(
-                        problem.defunct || "N"
-                    ),
+                        title: String(
+                            problem.title || ""
+                        ),
 
-                allow_reuse:
-                    Number(
-                        problem.allow_reuse || 0
-                    ),
+                        source: String(
+                            problem.source || ""
+                        ),
 
-                score:
-                    (
-                        problem.score !== undefined &&
-                        problem.score !== null &&
-                        problem.score !== ""
-                    )
-                        ? Number(
-                            problem.score
-                        )
-                        : 100
+                        defunct: String(
+                            problem.defunct || "N"
+                        ),
+
+                        allow_reuse: Number(
+                            problem.allow_reuse || 0
+                        ),
+
+                        score: (
+                                problem.score !== undefined &&
+                                problem.score !== null &&
+                                problem.score !== ""
+                            ) ?
+                            Number(
+                                problem.score
+                            ) : 100
+                    }
+                );
             }
         );
-    }
-);
 
 
-// ============================================================
-// A / B / C / ... / AA 변환
-// ============================================================
+        // ============================================================
+        // A / B / C / ... / AA 변환
+        // ============================================================
 
-function problemOrderLabel(index) {
+        function problemOrderLabel(index) {
 
-    let number =
-        index + 1;
+            let number =
+                index + 1;
 
-    let result =
-        "";
-
-
-    while (number > 0) {
-
-        number--;
+            let result =
+                "";
 
 
-        result =
-            String.fromCharCode(
-                65 + (number % 26)
-            ) +
-            result;
+            while (number > 0) {
+
+                number--;
 
 
-        number =
-            Math.floor(
-                number / 26
-            );
-    }
+                result =
+                    String.fromCharCode(
+                        65 + (number % 26)
+                    ) +
+                    result;
 
 
-    return result;
-}
-
-
-// ============================================================
-// hidden cproblem 동기화
-// ============================================================
-
-function syncProblemListInput() {
-
-    const input =
-        document.getElementById(
-            "plist"
-        );
-
-
-    if (!input) {
-        return;
-    }
-
-
-    input.value =
-        Array.from(
-            selectedProblems.keys()
-        ).join(",");
-}
-
-
-// ============================================================
-// 선택 개수
-// ============================================================
-
-function updateSelectedCount() {
-
-    const count =
-        document.getElementById(
-            "selected-problem-count"
-        );
-
-
-    if (count) {
-
-        count.textContent =
-            selectedProblems.size +
-            "개";
-    }
-}
-
-
-// ============================================================
-// 검색 결과 체크상태 동기화
-// ============================================================
-
-function synchronizeSearchChecks() {
-
-    document
-        .querySelectorAll(
-            ".contest-problem-result-check"
-        )
-        .forEach(
-            function (checkbox) {
-
-                checkbox.checked =
-                    selectedProblems.has(
-                        String(
-                            checkbox.value
-                        )
+                number =
+                    Math.floor(
+                        number / 26
                     );
             }
-        );
-}
 
 
-// ============================================================
-// 선택 문제 목록 렌더링
-// ============================================================
-
-function renderSelectedProblems() {
-
-    const container =
-        document.getElementById(
-            "selected-problem-list"
-        );
+            return result;
+        }
 
 
-    if (!container) {
-        return;
-    }
+        // ============================================================
+        // hidden cproblem 동기화
+        // ============================================================
+
+        function syncProblemListInput() {
+
+            const input =
+                document.getElementById(
+                    "plist"
+                );
 
 
-    container.innerHTML =
-        "";
+            if (!input) {
+                return;
+            }
 
 
-    if (
-        selectedProblems.size === 0
-    ) {
-
-        const empty =
-            document.createElement(
-                "div"
-            );
-
-        empty.className =
-            "contest-problem-empty";
-
-        empty.textContent =
-            "선택된 문제가 없습니다.";
+            input.value =
+                Array.from(
+                    selectedProblems.keys()
+                ).join(",");
+        }
 
 
-        container.appendChild(
-            empty
-        );
+        // ============================================================
+        // 선택 개수
+        // ============================================================
+
+        function updateSelectedCount() {
+
+            const count =
+                document.getElementById(
+                    "selected-problem-count"
+                );
 
 
-        syncProblemListInput();
-        updateSelectedCount();
-        synchronizeSearchChecks();
+            if (count) {
 
-        return;
-    }
-
-
-    let index =
-        0;
+                count.textContent =
+                    selectedProblems.size +
+                    "개";
+            }
+        }
 
 
-    selectedProblems.forEach(
-        function (
-            problem,
-            pid
+        // ============================================================
+        // 검색 결과 체크상태 동기화
+        // ============================================================
+
+        function synchronizeSearchChecks() {
+
+            document
+                .querySelectorAll(
+                    ".contest-problem-result-check"
+                )
+                .forEach(
+                    function(checkbox) {
+
+                        checkbox.checked =
+                            selectedProblems.has(
+                                String(
+                                    checkbox.value
+                                )
+                            );
+                    }
+                );
+        }
+
+        // ============================================================
+        // 선택 문제 순서 이동
+        // ============================================================
+
+        function moveSelectedProblem(
+            pid,
+            direction
         ) {
-
-            const row =
-                document.createElement(
-                    "div"
+            const entries =
+                Array.from(
+                    selectedProblems.entries()
                 );
 
-            row.className =
-                "contest-selected-row";
-
-
-            const order =
-                document.createElement(
-                    "div"
+            const currentIndex =
+                entries.findIndex(
+                    function(entry) {
+                        return entry[0] === pid;
+                    }
                 );
 
-            order.className =
-                "contest-selected-order";
+            if (currentIndex < 0) {
+                return;
+            }
 
-            order.textContent =
-                problemOrderLabel(
-                    index
-                );
+            const targetIndex =
+                currentIndex +
+                direction;
+
+            if (
+                targetIndex < 0 ||
+                targetIndex >= entries.length
+            ) {
+                return;
+            }
+
+            const temporaryEntry =
+                entries[currentIndex];
+
+            entries[currentIndex] =
+                entries[targetIndex];
+
+            entries[targetIndex] =
+                temporaryEntry;
 
 
-            row.appendChild(
-                order
+            selectedProblems.clear();
+
+            entries.forEach(
+                function(entry) {
+                    selectedProblems.set(
+                        entry[0],
+                        entry[1]
+                    );
+                }
             );
 
 
-            const titleBox =
-                document.createElement(
-                    "div"
+            renderSelectedProblems();
+        }
+        // ============================================================
+        // 선택 문제 목록 렌더링
+        // ============================================================
+
+        function renderSelectedProblems() {
+
+            const container =
+                document.getElementById(
+                    "selected-problem-list"
                 );
 
-            titleBox.className =
-                "contest-selected-title";
+
+            if (!container) {
+                return;
+            }
 
 
-            const titleLink =
-                document.createElement(
-                    "a"
-                );
-
-            titleLink.href =
-                "../problem.php?id=" +
-                encodeURIComponent(
-                    pid
-                );
-
-            titleLink.target =
-                "_blank";
-
-            titleLink.textContent =
-                pid +
-                " · " +
-                problem.title;
+            container.innerHTML =
+                "";
 
 
-            titleBox.appendChild(
-                titleLink
-            );
+            if (
+                selectedProblems.size === 0
+            ) {
 
-
-            if (problem.source) {
-
-                const meta =
+                const empty =
                     document.createElement(
                         "div"
                     );
 
-                meta.className =
-                    "contest-problem-meta";
+                empty.className =
+                    "contest-problem-empty";
 
-                meta.textContent =
-                    problem.source;
+                empty.textContent =
+                    "선택된 문제가 없습니다.";
 
 
-                titleBox.appendChild(
-                    meta
+                container.appendChild(
+                    empty
                 );
+
+
+                syncProblemListInput();
+                updateSelectedCount();
+                synchronizeSearchChecks();
+
+                return;
             }
 
 
-            row.appendChild(
-                titleBox
-            );
+            let index =
+                0;
 
 
-            const scoreBox =
-                document.createElement(
-                    "div"
-                );
+            selectedProblems.forEach(
+                function(
+                    problem,
+                    pid
+                ) {
 
-            scoreBox.className =
-                "contest-selected-score";
+                    const row =
+                        document.createElement(
+                            "div"
+                        );
 
-
-            const scoreInput =
-                document.createElement(
-                    "input"
-                );
-
-            scoreInput.type =
-                "number";
-
-            scoreInput.name =
-                "cpoint[" +
-                pid +
-                "]";
-
-            scoreInput.min =
-                "0";
-
-            scoreInput.step =
-                "1";
-
-            scoreInput.value =
-                problem.score;
+                    row.className =
+                        "contest-selected-row";
 
 
-            scoreInput.addEventListener(
-                "input",
-                function () {
+                    const order =
+                        document.createElement(
+                            "div"
+                        );
 
-                    problem.score =
-                        this.value;
-                }
-            );
+                    order.className =
+                        "contest-selected-order";
 
-
-            const scoreLabel =
-                document.createElement(
-                    "span"
-                );
-
-            scoreLabel.textContent =
-                "점";
+                    order.textContent =
+                        problemOrderLabel(
+                            index
+                        );
 
 
-            scoreBox.appendChild(
-                scoreInput
-            );
-
-            scoreBox.appendChild(
-                scoreLabel
-            );
-
-
-            row.appendChild(
-                scoreBox
-            );
-
-
-            const removeButton =
-                document.createElement(
-                    "button"
-                );
-
-            removeButton.type =
-                "button";
-
-            removeButton.className =
-                "contest-selected-remove";
-
-            removeButton.textContent =
-                "삭제";
-
-
-            removeButton.addEventListener(
-                "click",
-                function () {
-
-                    selectedProblems.delete(
-                        pid
+                    row.appendChild(
+                        order
                     );
 
-                    renderSelectedProblems();
-                }
-            );
+
+                    const titleBox =
+                        document.createElement(
+                            "div"
+                        );
+
+                    titleBox.className =
+                        "contest-selected-title";
 
 
-            row.appendChild(
-                removeButton
-            );
+                    const titleLink =
+                        document.createElement(
+                            "a"
+                        );
 
-
-            container.appendChild(
-                row
-            );
-
-
-            index++;
-        }
-    );
-
-
-    syncProblemListInput();
-    updateSelectedCount();
-    synchronizeSearchChecks();
-}
-
-
-// ============================================================
-// 검색 결과 렌더링
-// ============================================================
-
-function renderProblemSearchResults(
-    problems
-) {
-
-    const container =
-        document.getElementById(
-            "problem-search-results"
-        );
-
-
-    if (!container) {
-        return;
-    }
-
-
-    container.innerHTML =
-        "";
-
-
-    if (
-        !Array.isArray(problems) ||
-        problems.length === 0
-    ) {
-
-        const empty =
-            document.createElement(
-                "div"
-            );
-
-        empty.className =
-            "contest-problem-empty";
-
-        empty.textContent =
-            "검색 결과가 없습니다.";
-
-
-        container.appendChild(
-            empty
-        );
-
-        return;
-    }
-
-
-    problems.forEach(
-        function (problem) {
-
-            const pid =
-                String(
-                    problem.problem_id
-                );
-
-
-            const row =
-                document.createElement(
-                    "div"
-                );
-
-            row.className =
-                "contest-problem-result";
-
-
-            const checkbox =
-                document.createElement(
-                    "input"
-                );
-
-            checkbox.type =
-                "checkbox";
-
-            checkbox.value =
-                pid;
-
-            checkbox.className =
-                "contest-problem-result-check";
-
-            checkbox.checked =
-                selectedProblems.has(
-                    pid
-                );
-
-
-            checkbox.addEventListener(
-                "change",
-                function () {
-
-                    if (this.checked) {
-
-                        if (
-                            !selectedProblems.has(
-                                pid
-                            )
-                        ) {
-
-                            selectedProblems.set(
-                                pid,
-                                {
-                                    problem_id:
-                                        Number(
-                                            problem.problem_id
-                                        ),
-
-                                    title:
-                                        String(
-                                            problem.title || ""
-                                        ),
-
-                                    source:
-                                        String(
-                                            problem.source || ""
-                                        ),
-
-                                    defunct:
-                                        String(
-                                            problem.defunct || "N"
-                                        ),
-
-                                    allow_reuse:
-                                        Number(
-                                            problem.allow_reuse || 0
-                                        ),
-
-                                    score:
-                                        100
-                                }
-                            );
-                        }
-
-                    } else {
-
-                        selectedProblems.delete(
+                    titleLink.href =
+                        "../problem.php?id=" +
+                        encodeURIComponent(
                             pid
+                        );
+
+                    titleLink.target =
+                        "_blank";
+
+                    titleLink.textContent =
+                        pid +
+                        " · " +
+                        problem.title;
+
+
+                    titleBox.appendChild(
+                        titleLink
+                    );
+
+
+                    if (problem.source) {
+
+                        const meta =
+                            document.createElement(
+                                "div"
+                            );
+
+                        meta.className =
+                            "contest-problem-meta";
+
+                        meta.textContent =
+                            problem.source;
+
+
+                        titleBox.appendChild(
+                            meta
                         );
                     }
 
 
-                    renderSelectedProblems();
+                    row.appendChild(
+                        titleBox
+                    );
+
+
+                    const scoreBox =
+                        document.createElement(
+                            "div"
+                        );
+
+                    scoreBox.className =
+                        "contest-selected-score";
+
+
+                    const scoreInput =
+                        document.createElement(
+                            "input"
+                        );
+
+                    scoreInput.type =
+                        "number";
+
+                    scoreInput.name =
+                        "cpoint[" +
+                        pid +
+                        "]";
+
+                    scoreInput.min =
+                        "0";
+
+                    scoreInput.step =
+                        "1";
+
+                    scoreInput.value =
+                        problem.score;
+
+
+                    scoreInput.addEventListener(
+                        "input",
+                        function() {
+
+                            problem.score =
+                                this.value;
+                        }
+                    );
+
+
+                    const scoreLabel =
+                        document.createElement(
+                            "span"
+                        );
+
+                    scoreLabel.textContent =
+                        "점";
+
+
+                    scoreBox.appendChild(
+                        scoreInput
+                    );
+
+                    scoreBox.appendChild(
+                        scoreLabel
+                    );
+
+
+                    row.appendChild(
+                        scoreBox
+                    );
+
+
+                    const actionBox =
+                        document.createElement(
+                            "div"
+                        );
+
+                    actionBox.className =
+                        "contest-selected-actions";
+
+
+                    // --------------------------------------------------------
+                    // 위로 이동
+                    // --------------------------------------------------------
+
+                    const moveUpButton =
+                        document.createElement(
+                            "button"
+                        );
+
+                    moveUpButton.type =
+                        "button";
+
+                    moveUpButton.className =
+                        "contest-selected-move";
+
+                    moveUpButton.textContent =
+                        "↑ 위로";
+
+                    moveUpButton.title =
+                        "문제를 한 칸 위로 이동";
+
+                    moveUpButton.disabled =
+                        index === 0;
+
+                    moveUpButton.addEventListener(
+                        "click",
+                        function() {
+                            moveSelectedProblem(
+                                pid,
+                                -1
+                            );
+                        }
+                    );
+
+
+                    // --------------------------------------------------------
+                    // 아래로 이동
+                    // --------------------------------------------------------
+
+                    const moveDownButton =
+                        document.createElement(
+                            "button"
+                        );
+
+                    moveDownButton.type =
+                        "button";
+
+                    moveDownButton.className =
+                        "contest-selected-move";
+
+                    moveDownButton.textContent =
+                        "↓ 아래로";
+
+                    moveDownButton.title =
+                        "문제를 한 칸 아래로 이동";
+
+                    moveDownButton.disabled =
+                        index ===
+                        selectedProblems.size - 1;
+
+                    moveDownButton.addEventListener(
+                        "click",
+                        function() {
+                            moveSelectedProblem(
+                                pid,
+                                1
+                            );
+                        }
+                    );
+
+
+                    // --------------------------------------------------------
+                    // 문제 삭제
+                    // --------------------------------------------------------
+
+                    const removeButton =
+                        document.createElement(
+                            "button"
+                        );
+
+                    removeButton.type =
+                        "button";
+
+                    removeButton.className =
+                        "contest-selected-remove";
+
+                    removeButton.textContent =
+                        "삭제";
+
+                    removeButton.title =
+                        "대회에서 문제 제외";
+
+                    removeButton.addEventListener(
+                        "click",
+                        function() {
+
+                            selectedProblems.delete(
+                                pid
+                            );
+
+                            renderSelectedProblems();
+                        }
+                    );
+
+
+                    actionBox.appendChild(
+                        moveUpButton
+                    );
+
+                    actionBox.appendChild(
+                        moveDownButton
+                    );
+
+                    actionBox.appendChild(
+                        removeButton
+                    );
+
+
+                    row.appendChild(
+                        actionBox
+                    );
+
+
+                    container.appendChild(
+                        row
+                    );
+
+
+                    index++;
                 }
             );
 
 
-            row.appendChild(
-                checkbox
-            );
+            syncProblemListInput();
+            updateSelectedCount();
+            synchronizeSearchChecks();
+        }
 
 
-            const titleBox =
-                document.createElement(
-                    "div"
-                );
+        // ============================================================
+        // 검색 결과 렌더링
+        // ============================================================
 
-            titleBox.className =
-                "contest-problem-result-title";
+        function renderProblemSearchResults(
+            problems
+        ) {
 
-
-            const titleLink =
-                document.createElement(
-                    "a"
-                );
-
-            titleLink.href =
-                "../problem.php?id=" +
-                encodeURIComponent(
-                    pid
-                );
-
-            titleLink.target =
-                "_blank";
-
-            titleLink.textContent =
-                pid +
-                " · " +
-                String(
-                    problem.title || ""
+            const container =
+                document.getElementById(
+                    "problem-search-results"
                 );
 
 
-            titleBox.appendChild(
-                titleLink
-            );
-
-
-            const meta =
-                document.createElement(
-                    "div"
-                );
-
-            meta.className =
-                "contest-problem-meta";
-
-
-            const metaParts =
-                [];
-
-
-            if (problem.source) {
-
-                metaParts.push(
-                    String(
-                        problem.source
-                    )
-                );
+            if (!container) {
+                return;
             }
 
 
-            metaParts.push(
-                "AC " +
-                Number(
-                    problem.accepted || 0
-                )
-            );
-
-
-            meta.textContent =
-                metaParts.join(
-                    " · "
-                );
-
-
-            titleBox.appendChild(
-                meta
-            );
-
-
-            row.appendChild(
-                titleBox
-            );
+            container.innerHTML =
+                "";
 
 
             if (
-                Number(
-                    problem.allow_reuse
-                ) === 0
+                !Array.isArray(problems) ||
+                problems.length === 0
             ) {
 
-                const badge =
+                const empty =
                     document.createElement(
-                        "span"
+                        "div"
                     );
 
-                badge.className =
-                    "contest-problem-reuse";
+                empty.className =
+                    "contest-problem-empty";
 
-                badge.textContent =
-                    "재사용 제한";
+                empty.textContent =
+                    "검색 결과가 없습니다.";
 
 
-                row.appendChild(
-                    badge
+                container.appendChild(
+                    empty
                 );
+
+                return;
             }
 
 
-            container.appendChild(
-                row
-            );
-        }
-    );
-}
-
-
-// ============================================================
-// 문제 검색
-// ============================================================
-
-async function searchContestProblems() {
-
-    const searchInput =
-        document.getElementById(
-            "problem-search"
-        );
-
-    const resultContainer =
-        document.getElementById(
-            "problem-search-results"
-        );
-
-
-    if (
-        !searchInput ||
-        !resultContainer
-    ) {
-        return;
-    }
-
-
-    resultContainer.textContent =
-        "문제를 불러오는 중입니다.";
-
-
-    try {
-
-        const params =
-            new URLSearchParams(
-                {
-                    scope:
-                        currentProblemScope,
-
-                    search:
-                        searchInput.value.trim()
-                }
-            );
-
-
-        const response =
-            await fetch(
-                "contest_problem_search.php?" +
-                params.toString(),
-                {
-                    credentials:
-                        "same-origin"
-                }
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if (
-            !response.ok ||
-            !data.success
-        ) {
-
-            throw new Error(
-                data.message ||
-                "문제를 불러오지 못했습니다."
-            );
-        }
-
-
-        renderProblemSearchResults(
-            data.problems || []
-        );
-
-    } catch (error) {
-
-        resultContainer.textContent =
-            error.message ||
-            "문제 검색 중 오류가 발생했습니다.";
-    }
-}
-
-
-// ============================================================
-// 제출 언어 선택 상태
-// ============================================================
-
-function updateLanguageSelection() {
-
-    const checkedLanguages =
-        document.querySelectorAll(
-            'input[name="lang[]"]:checked'
-        );
-
-
-    const countLabel =
-        document.getElementById(
-            "selected-language-count"
-        );
-
-
-    const errorBox =
-        document.getElementById(
-            "contest-language-error"
-        );
-
-
-    if (countLabel) {
-
-        countLabel.textContent =
-            checkedLanguages.length +
-            "개 선택";
-    }
-
-
-    if (
-        errorBox &&
-        checkedLanguages.length > 0
-    ) {
-
-        errorBox.style.display =
-            "none";
-    }
-}
-
-
-// ============================================================
-// 공개 / 비공개 ↔ 비밀번호
-// ============================================================
-
-function synchronizeContestPrivacy() {
-
-    const privateInput =
-        document.querySelector(
-            'input[name="private"]:checked'
-        );
-
-    const passwordInput =
-        document.getElementById(
-            "contest-password"
-        );
-
-    const passwordHelp =
-        document.getElementById(
-            "contest-password-help"
-        );
-
-
-    if (
-        !privateInput ||
-        !passwordInput
-    ) {
-        return;
-    }
-
-
-    const isPrivate =
-        String(
-            privateInput.value
-        ) === "1";
-
-
-    passwordInput.disabled =
-        isPrivate;
-
-
-    if (isPrivate) {
-
-        passwordInput.value =
-            "";
-
-        passwordInput.placeholder =
-            "비공개 대회에서는 사용할 수 없습니다.";
-
-
-        if (passwordHelp) {
-
-            passwordHelp.textContent =
-                "비공개 대회는 참가자 목록에 등록되어 참가 권한(c{cid})이 있는 사용자만 접근할 수 있습니다. 비밀번호는 사용하지 않습니다.";
-        }
-
-    } else {
-
-        passwordInput.placeholder =
-            "필요한 경우에만 입력";
-
-
-        if (passwordHelp) {
-
-            passwordHelp.textContent =
-                "공개 대회에서는 필요한 경우 비밀번호를 사용할 수 있습니다. 비밀번호가 없으면 일반 공개 대회로 운영됩니다.";
-        }
-    }
-}
-
-
-// ============================================================
-// 초기화 / 이벤트
-// ============================================================
-
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
-
-        renderSelectedProblems();
-
-        searchContestProblems();
-
-        updateLanguageSelection();
-
-        synchronizeContestPrivacy();
-
-
-        const searchButton =
-            document.getElementById(
-                "problem-search-button"
-            );
-
-
-        if (searchButton) {
-
-            searchButton.addEventListener(
-                "click",
-                searchContestProblems
-            );
-        }
-
-
-        const searchInput =
-            document.getElementById(
-                "problem-search"
-            );
-
-
-        if (searchInput) {
-
-            searchInput.addEventListener(
-                "keydown",
-                function (event) {
-
-                    if (
-                        event.key === "Enter"
-                    ) {
-
-                        event.preventDefault();
-
-                        searchContestProblems();
-                    }
-                }
-            );
-        }
-
-
-        document
-            .querySelectorAll(
-                ".contest-problem-tab"
-            )
-            .forEach(
-                function (tab) {
-
-                    tab.addEventListener(
-                        "click",
-                        function () {
-
-                            document
-                                .querySelectorAll(
-                                    ".contest-problem-tab"
-                                )
-                                .forEach(
-                                    function (item) {
-
-                                        item.classList.remove(
-                                            "active"
-                                        );
-                                    }
-                                );
-
-
-                            this.classList.add(
-                                "active"
-                            );
-
-
-                            currentProblemScope =
-                                this.dataset.scope ||
-                                "my";
-
-
-                            searchContestProblems();
-                        }
-                    );
-                }
-            );
-
-
-        document
-            .querySelectorAll(
-                'input[name="lang[]"]'
-            )
-            .forEach(
-                function (languageInput) {
-
-                    languageInput.addEventListener(
-                        "change",
-                        updateLanguageSelection
-                    );
-                }
-            );
-
-
-        document
-            .querySelectorAll(
-                'input[name="private"]'
-            )
-            .forEach(
-                function (privateInput) {
-
-                    privateInput.addEventListener(
-                        "change",
-                        synchronizeContestPrivacy
-                    );
-                }
-            );
-
-
-        const contestForm =
-            document.getElementById(
-                "contest-edit-form"
-            );
-
-
-        if (contestForm) {
-
-            contestForm.addEventListener(
-                "submit",
-                function (event) {
-
-                    const checkedLanguages =
-                        document.querySelectorAll(
-                            'input[name="lang[]"]:checked'
+            problems.forEach(
+                function(problem) {
+
+                    const pid =
+                        String(
+                            problem.problem_id
                         );
 
 
+                    const row =
+                        document.createElement(
+                            "div"
+                        );
+
+                    row.className =
+                        "contest-problem-result";
+
+
+                    const checkbox =
+                        document.createElement(
+                            "input"
+                        );
+
+                    checkbox.type =
+                        "checkbox";
+
+                    checkbox.value =
+                        pid;
+
+                    checkbox.className =
+                        "contest-problem-result-check";
+
+                    checkbox.checked =
+                        selectedProblems.has(
+                            pid
+                        );
+
+
+                    checkbox.addEventListener(
+                        "change",
+                        function() {
+
+                            if (this.checked) {
+
+                                if (
+                                    !selectedProblems.has(
+                                        pid
+                                    )
+                                ) {
+
+                                    selectedProblems.set(
+                                        pid, {
+                                            problem_id: Number(
+                                                problem.problem_id
+                                            ),
+
+                                            title: String(
+                                                problem.title || ""
+                                            ),
+
+                                            source: String(
+                                                problem.source || ""
+                                            ),
+
+                                            defunct: String(
+                                                problem.defunct || "N"
+                                            ),
+
+                                            allow_reuse: Number(
+                                                problem.allow_reuse || 0
+                                            ),
+
+                                            score: 100
+                                        }
+                                    );
+                                }
+
+                            } else {
+
+                                selectedProblems.delete(
+                                    pid
+                                );
+                            }
+
+
+                            renderSelectedProblems();
+                        }
+                    );
+
+
+                    row.appendChild(
+                        checkbox
+                    );
+
+
+                    const titleBox =
+                        document.createElement(
+                            "div"
+                        );
+
+                    titleBox.className =
+                        "contest-problem-result-title";
+
+
+                    const titleLink =
+                        document.createElement(
+                            "a"
+                        );
+
+                    titleLink.href =
+                        "../problem.php?id=" +
+                        encodeURIComponent(
+                            pid
+                        );
+
+                    titleLink.target =
+                        "_blank";
+
+                    titleLink.textContent =
+                        pid +
+                        " · " +
+                        String(
+                            problem.title || ""
+                        );
+
+
+                    titleBox.appendChild(
+                        titleLink
+                    );
+
+
+                    const meta =
+                        document.createElement(
+                            "div"
+                        );
+
+                    meta.className =
+                        "contest-problem-meta";
+
+
+                    const metaParts = [];
+
+
+                    if (problem.source) {
+
+                        metaParts.push(
+                            String(
+                                problem.source
+                            )
+                        );
+                    }
+
+
+                    metaParts.push(
+                        "AC " +
+                        Number(
+                            problem.accepted || 0
+                        )
+                    );
+
+
+                    meta.textContent =
+                        metaParts.join(
+                            " · "
+                        );
+
+
+                    titleBox.appendChild(
+                        meta
+                    );
+
+
+                    row.appendChild(
+                        titleBox
+                    );
+
+
                     if (
-                        checkedLanguages.length === 0
+                        Number(
+                            problem.allow_reuse
+                        ) === 0
                     ) {
 
-                        event.preventDefault();
-
-
-                        const errorBox =
-                            document.getElementById(
-                                "contest-language-error"
+                        const badge =
+                            document.createElement(
+                                "span"
                             );
 
+                        badge.className =
+                            "contest-problem-reuse";
 
-                        if (errorBox) {
+                        badge.textContent =
+                            "재사용 제한";
 
-                            errorBox.style.display =
-                                "block";
 
-                            errorBox.scrollIntoView(
-                                {
-                                    behavior:
-                                        "smooth",
-
-                                    block:
-                                        "center"
-                                }
-                            );
-                        }
+                        row.appendChild(
+                            badge
+                        );
                     }
+
+
+                    container.appendChild(
+                        row
+                    );
                 }
             );
         }
 
-    }
+
+        // ============================================================
+        // 문제 검색
+        // ============================================================
+
+        async function searchContestProblems() {
+
+            const searchInput =
+                document.getElementById(
+                    "problem-search"
+                );
+
+            const resultContainer =
+                document.getElementById(
+                    "problem-search-results"
+                );
+
+
+            if (
+                !searchInput ||
+                !resultContainer
+            ) {
+                return;
+            }
+
+
+            resultContainer.textContent =
+                "문제를 불러오는 중입니다.";
+
+
+            try {
+
+                const params =
+                    new URLSearchParams({
+                        scope: currentProblemScope,
+
+                        search: searchInput.value.trim(),
+
+                        cid: "<?php
+                                echo intval($cid);
+                                ?>"
+                    });
+
+
+                const response =
+                    await fetch(
+                        "contest_problem_search.php?" +
+                        params.toString(), {
+                            credentials: "same-origin"
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (
+                    !response.ok ||
+                    !data.success
+                ) {
+
+                    throw new Error(
+                        data.message ||
+                        "문제를 불러오지 못했습니다."
+                    );
+                }
+
+
+                renderProblemSearchResults(
+                    data.problems || []
+                );
+
+            } catch (error) {
+
+                resultContainer.textContent =
+                    error.message ||
+                    "문제 검색 중 오류가 발생했습니다.";
+            }
+        }
+
+
+        // ============================================================
+        // 제출 언어 선택 상태
+        // ============================================================
+
+        function updateLanguageSelection() {
+
+            const checkedLanguages =
+                document.querySelectorAll(
+                    'input[name="lang[]"]:checked'
+                );
+
+
+            const countLabel =
+                document.getElementById(
+                    "selected-language-count"
+                );
+
+
+            const errorBox =
+                document.getElementById(
+                    "contest-language-error"
+                );
+
+
+            if (countLabel) {
+
+                countLabel.textContent =
+                    checkedLanguages.length +
+                    "개 선택";
+            }
+
+
+            if (
+                errorBox &&
+                checkedLanguages.length > 0
+            ) {
+
+                errorBox.style.display =
+                    "none";
+            }
+        }
+
+
+        // ============================================================
+        // 공개 / 비공개 ↔ 비밀번호
+        // ============================================================
+
+        function synchronizeContestPrivacy() {
+
+            const privateInput =
+                document.querySelector(
+                    'input[name="private"]:checked'
+                );
+
+            const passwordInput =
+                document.getElementById(
+                    "contest-password"
+                );
+
+            const passwordHelp =
+                document.getElementById(
+                    "contest-password-help"
+                );
+
+
+            if (
+                !privateInput ||
+                !passwordInput
+            ) {
+                return;
+            }
+
+
+            const isPrivate =
+                String(
+                    privateInput.value
+                ) === "1";
+
+
+            passwordInput.disabled =
+                isPrivate;
+
+
+            if (isPrivate) {
+
+                passwordInput.value =
+                    "";
+
+                passwordInput.placeholder =
+                    "비공개 대회에서는 사용할 수 없습니다.";
+
+
+                if (passwordHelp) {
+
+                    passwordHelp.textContent =
+                        "비공개 대회는 참가자 목록에 등록되어 참가 권한(c{cid})이 있는 사용자만 접근할 수 있습니다. 비밀번호는 사용하지 않습니다.";
+                }
+
+            } else {
+
+                passwordInput.placeholder =
+                    "필요한 경우에만 입력";
+
+
+                if (passwordHelp) {
+
+                    passwordHelp.textContent =
+                        "공개 대회에서는 필요한 경우 비밀번호를 사용할 수 있습니다. 비밀번호가 없으면 일반 공개 대회로 운영됩니다.";
+                }
+            }
+        }
+
+
+        // ============================================================
+        // 초기화 / 이벤트
+        // ============================================================
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function() {
+
+                renderSelectedProblems();
+
+                searchContestProblems();
+
+                updateLanguageSelection();
+
+                synchronizeContestPrivacy();
+
+
+                const searchButton =
+                    document.getElementById(
+                        "problem-search-button"
+                    );
+
+
+                if (searchButton) {
+
+                    searchButton.addEventListener(
+                        "click",
+                        searchContestProblems
+                    );
+                }
+
+
+                const searchInput =
+                    document.getElementById(
+                        "problem-search"
+                    );
+
+
+                if (searchInput) {
+
+                    searchInput.addEventListener(
+                        "keydown",
+                        function(event) {
+
+                            if (
+                                event.key === "Enter"
+                            ) {
+
+                                event.preventDefault();
+
+                                searchContestProblems();
+                            }
+                        }
+                    );
+                }
+
+
+                document
+                    .querySelectorAll(
+                        ".contest-problem-tab"
+                    )
+                    .forEach(
+                        function(tab) {
+
+                            tab.addEventListener(
+                                "click",
+                                function() {
+
+                                    document
+                                        .querySelectorAll(
+                                            ".contest-problem-tab"
+                                        )
+                                        .forEach(
+                                            function(item) {
+
+                                                item.classList.remove(
+                                                    "active"
+                                                );
+                                            }
+                                        );
+
+
+                                    this.classList.add(
+                                        "active"
+                                    );
+
+
+                                    currentProblemScope =
+                                        this.dataset.scope ||
+                                        "my";
+
+
+                                    searchContestProblems();
+                                }
+                            );
+                        }
+                    );
+
+
+                document
+                    .querySelectorAll(
+                        'input[name="lang[]"]'
+                    )
+                    .forEach(
+                        function(languageInput) {
+
+                            languageInput.addEventListener(
+                                "change",
+                                updateLanguageSelection
+                            );
+                        }
+                    );
+
+
+                document
+                    .querySelectorAll(
+                        'input[name="private"]'
+                    )
+                    .forEach(
+                        function(privateInput) {
+
+                            privateInput.addEventListener(
+                                "change",
+                                synchronizeContestPrivacy
+                            );
+                        }
+                    );
+
+
+                const contestForm =
+                    document.getElementById(
+                        "contest-edit-form"
+                    );
+
+
+                if (contestForm) {
+
+                    contestForm.addEventListener(
+                        "submit",
+                        function(event) {
+
+                            const checkedLanguages =
+                                document.querySelectorAll(
+                                    'input[name="lang[]"]:checked'
+                                );
+
+
+                            if (
+                                checkedLanguages.length === 0
+                            ) {
+
+                                event.preventDefault();
+
+
+                                const errorBox =
+                                    document.getElementById(
+                                        "contest-language-error"
+                                    );
+
+
+                                if (errorBox) {
+
+                                    errorBox.style.display =
+                                        "block";
+
+                                    errorBox.scrollIntoView({
+                                        behavior: "smooth",
+
+                                        block: "center"
+                                    });
+                                }
+                            }
+                        }
+                    );
+                }
+
+            }
+        );
+    </script>
+
+</div>
+
+<?php
+require(
+    __DIR__ . '/admin-layout-end.php'
 );
-
-</script>
-
-</body>
-
-</html>
+?>

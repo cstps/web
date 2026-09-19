@@ -1,32 +1,32 @@
 <?php
 
-require("admin-header.php");
+require_once(__DIR__ . "/admin-init.php");
 require_once("../include/set_get_key.php");
 require_once("../include/set_post_key.php");
 
 
 if (
-  !isset($_SESSION[$OJ_NAME . '_administrator']) &&
-  !isset($_SESSION[$OJ_NAME . '_contest_creator'])
+    !isset($_SESSION[$OJ_NAME . '_administrator']) &&
+    !isset($_SESSION[$OJ_NAME . '_contest_creator'])
 ) {
 
-  echo "<a href='../loginpage.php'>Please Login First!</a>";
-  exit;
+    echo "<a href='../loginpage.php'>Please Login First!</a>";
+    exit;
 }
 
 
 if (isset($OJ_LANG)) {
-  require_once("../lang/$OJ_LANG.php");
+    require_once("../lang/$OJ_LANG.php");
 }
 
 
 $current_user_id =
-  isset($_SESSION[$OJ_NAME . '_user_id'])
-  ? $_SESSION[$OJ_NAME . '_user_id']
-  : '';
+    isset($_SESSION[$OJ_NAME . '_user_id'])
+    ? $_SESSION[$OJ_NAME . '_user_id']
+    : '';
 
 $is_admin =
-  isset($_SESSION[$OJ_NAME . '_administrator']);
+    isset($_SESSION[$OJ_NAME . '_administrator']);
 
 
 // ============================================================
@@ -34,18 +34,29 @@ $is_admin =
 //
 // 기본: 내가 관리하는 대회
 // ?view=all : 전체 대회
+// ?view=archived : 보관된 대회
 //
 // 기존 ?my=1 링크도 전체 대회로 호환
 // ============================================================
 
-$view_mode =
-  (
+$requested_view =
     isset($_GET['view']) &&
-    $_GET['view'] === 'all'
-  ) ||
-  isset($_GET['my'])
-  ? 'all'
-  : 'mine';
+    is_scalar($_GET['view'])
+    ? trim((string)$_GET['view'])
+    : '';
+
+if (isset($_GET['my'])) {
+    $requested_view = 'all';
+}
+
+$view_mode =
+    in_array(
+        $requested_view,
+        array('mine', 'all', 'archived'),
+        true
+    )
+    ? $requested_view
+    : 'mine';
 
 
 // ============================================================
@@ -53,31 +64,32 @@ $view_mode =
 // ============================================================
 
 $valid_cols = array(
-  'contest_id',
-  'title',
-  'start_time',
-  'end_time',
-  'private',
-  'defunct',
-  'codevisible',
-  'allow_copy'
+    'contest_id',
+    'title',
+    'start_time',
+    'end_time',
+    'private',
+    'defunct',
+    'is_stopped',
+    'codevisible',
+    'allow_copy'
 );
 
 $orderby =
-  isset($_GET['orderby']) &&
-  in_array(
-    $_GET['orderby'],
-    $valid_cols,
-    true
-  )
-  ? $_GET['orderby']
-  : 'contest_id';
+    isset($_GET['orderby']) &&
+    in_array(
+        $_GET['orderby'],
+        $valid_cols,
+        true
+    )
+    ? $_GET['orderby']
+    : 'contest_id';
 
 $order =
-  isset($_GET['order']) &&
-  $_GET['order'] === 'asc'
-  ? 'asc'
-  : 'desc';
+    isset($_GET['order']) &&
+    $_GET['order'] === 'asc'
+    ? 'asc'
+    : 'desc';
 
 
 // ============================================================
@@ -85,15 +97,15 @@ $order =
 // ============================================================
 
 $keyword =
-  isset($_GET['keyword'])
-  ? trim($_GET['keyword'])
-  : '';
+    isset($_GET['keyword'])
+    ? trim($_GET['keyword'])
+    : '';
 
 $has_keyword =
-  $keyword !== '';
+    $keyword !== '';
 
 $keyword_like =
-  "%" . $keyword . "%";
+    "%" . $keyword . "%";
 
 
 // ============================================================
@@ -107,82 +119,82 @@ $my_cids = array();
 
 foreach ($_SESSION as $key => $val) {
 
-  if (
-    $val &&
-    preg_match(
-      "/^" . preg_quote($OJ_NAME, "/") . "_m(\d+)$/",
-      $key,
-      $matches
-    )
-  ) {
+    if (
+        $val &&
+        preg_match(
+            "/^" . preg_quote($OJ_NAME, "/") . "_m(\d+)$/",
+            $key,
+            $matches
+        )
+    ) {
 
-    $my_cids[] =
-      intval($matches[1]);
-  }
+        $my_cids[] =
+            intval($matches[1]);
+    }
 }
 
 
 if ($current_user_id !== '') {
 
-  $managed_rows = pdo_query(
-    "SELECT DISTINCT rightstr
+    $managed_rows = pdo_query(
+        "SELECT DISTINCT rightstr
      FROM privilege
      WHERE user_id = ?
        AND rightstr LIKE 'm%'
        AND valuestr = 'true'
        AND defunct = 'N'",
-    $current_user_id
-  );
+        $current_user_id
+    );
 
 
-  if (is_array($managed_rows)) {
+    if (is_array($managed_rows)) {
 
-    foreach ($managed_rows as $managed) {
+        foreach ($managed_rows as $managed) {
 
-      $rightstr =
-        isset($managed['rightstr'])
-        ? $managed['rightstr']
-        : '';
+            $rightstr =
+                isset($managed['rightstr'])
+                ? $managed['rightstr']
+                : '';
 
-      if (
-        preg_match(
-          '/^m(\d+)$/',
-          $rightstr,
-          $matches
-        )
-      ) {
+            if (
+                preg_match(
+                    '/^m(\d+)$/',
+                    $rightstr,
+                    $matches
+                )
+            ) {
 
-        $my_cids[] =
-          intval($matches[1]);
-      }
+                $my_cids[] =
+                    intval($matches[1]);
+            }
+        }
     }
-  }
 }
 
 
 $my_cids =
-  array_values(
-    array_unique(
-      array_filter(
-        $my_cids,
-        function ($cid) {
-          return intval($cid) > 0;
-        }
-      )
-    )
-  );
+    array_values(
+        array_unique(
+            array_filter(
+                $my_cids,
+                function ($cid) {
+                    return intval($cid) > 0;
+                }
+            )
+        )
+    );
 
 
 $in_clause =
-  empty($my_cids)
-  ? '0'
-  : implode(
-    ',',
-    array_map(
-      'intval',
-      $my_cids
-    )
-  );
+    empty($my_cids)
+    ? '0'
+    : implode(
+        ',',
+        array_map(
+            'intval',
+            $my_cids
+        )
+    );
 
 
 // ============================================================
@@ -190,65 +202,71 @@ $in_clause =
 // ============================================================
 
 $where_parts =
-  array();
+    array();
 
 $params =
-  array();
+    array();
 
 
 if (
-  $view_mode === 'mine' &&
-  !$is_admin
+    $view_mode !== 'all' &&
+    !$is_admin
 ) {
 
-  $where_parts[] =
-    "contest_id IN ($in_clause)";
+    $where_parts[] =
+        "contest_id IN ($in_clause)";
 }
+
+
+$where_parts[] =
+    $view_mode === 'archived'
+    ? 'is_archived = 1'
+    : 'is_archived = 0';
 
 
 if ($has_keyword) {
 
-  if (ctype_digit($keyword)) {
+    if (ctype_digit($keyword)) {
 
-    $where_parts[] =
-      "(
+        $where_parts[] =
+            "(
                 contest_id = ?
                 OR title LIKE ?
                 OR description LIKE ?
             )";
 
-    $params[] =
-      intval($keyword);
+        $params[] =
+            intval($keyword);
 
-    $params[] =
-      $keyword_like;
+        $params[] =
+            $keyword_like;
 
-    $params[] =
-      $keyword_like;
-  } else {
+        $params[] =
+            $keyword_like;
+    } else {
 
-    $where_parts[] =
-      "(
+        $where_parts[] =
+            "(
                 title LIKE ?
                 OR description LIKE ?
             )";
 
-    $params[] =
-      $keyword_like;
+        $params[] =
+            $keyword_like;
 
-    $params[] =
-      $keyword_like;
-  }
+        $params[] =
+            $keyword_like;
+    }
 }
 
 
 $where_sql =
-  empty($where_parts)
-  ? ''
-  : " WHERE " . implode(
-    " AND ",
-    $where_parts
-  );
+    empty($where_parts)
+    ? ''
+    : " WHERE " . implode(
+        " AND ",
+        $where_parts
+    );
 
 
 // ============================================================
@@ -256,47 +274,47 @@ $where_sql =
 // ============================================================
 
 $count_rows =
-  pdo_query(
-    "SELECT COUNT(*) AS cnt
+    pdo_query(
+        "SELECT COUNT(*) AS cnt
          FROM contest" .
-      $where_sql,
-    ...$params
-  );
+            $where_sql,
+        ...$params
+    );
 
 $total_contests =
-  isset($count_rows[0]['cnt'])
-  ? intval($count_rows[0]['cnt'])
-  : 0;
+    isset($count_rows[0]['cnt'])
+    ? intval($count_rows[0]['cnt'])
+    : 0;
 
 $per_page =
-  50;
+    50;
 
 $total_pages =
-  max(
-    1,
-    intval(
-      ceil(
-        $total_contests /
-          $per_page
-      )
-    )
-  );
+    max(
+        1,
+        intval(
+            ceil(
+                $total_contests /
+                    $per_page
+            )
+        )
+    );
 
 $page =
-  isset($_GET['page'])
-  ? max(
-    1,
-    intval($_GET['page'])
-  )
-  : 1;
+    isset($_GET['page'])
+    ? max(
+        1,
+        intval($_GET['page'])
+    )
+    : 1;
 
 if ($page > $total_pages) {
-  $page = $total_pages;
+    $page = $total_pages;
 }
 
 $offset =
-  ($page - 1) *
-  $per_page;
+    ($page - 1) *
+    $per_page;
 
 
 // ============================================================
@@ -304,30 +322,34 @@ $offset =
 // ============================================================
 
 $sql =
-  "SELECT
+    "SELECT
         contest_id,
         title,
         start_time,
         end_time,
         private,
         defunct,
+        is_stopped,
+        is_archived,
+        archived_at,
+        archived_by,
         codevisible,
         allow_copy,
         user_id
      FROM contest" .
-  $where_sql .
-  " ORDER BY `" . $orderby . "` " . $order .
-  " LIMIT " . $offset . ", " . $per_page;
+    $where_sql .
+    " ORDER BY `" . $orderby . "` " . $order .
+    " LIMIT " . $offset . ", " . $per_page;
 
 
 $result =
-  pdo_query(
-    $sql,
-    ...$params
-  );
+    pdo_query(
+        $sql,
+        ...$params
+    );
 
 if (!is_array($result)) {
-  $result = array();
+    $result = array();
 }
 
 // ============================================================
@@ -344,52 +366,111 @@ $contest_delete_csrf_input = ob_get_clean();
 // ============================================================
 
 function contest_list_sort_th(
-  $col,
-  $label,
-  $cur_col,
-  $cur_order,
-  $base
+    $col,
+    $label,
+    $cur_col,
+    $cur_order,
+    $base
 ) {
 
-  if ($col === $cur_col) {
+    if ($col === $cur_col) {
 
-    $next =
-      $cur_order === 'asc'
-      ? 'desc'
-      : 'asc';
+        $next =
+            $cur_order === 'asc'
+            ? 'desc'
+            : 'asc';
 
-    $arrow =
-      $cur_order === 'asc'
-      ? ' ▲'
-      : ' ▼';
-  } else {
+        $arrow =
+            $cur_order === 'asc'
+            ? ' ▲'
+            : ' ▼';
+    } else {
 
-    $next =
-      'desc';
+        $next =
+            'desc';
 
-    $arrow =
-      '';
-  }
+        $arrow =
+            '';
+    }
 
 
-  return
-    "<th><a href=\"" .
-    htmlspecialchars(
-      $base .
-        "&orderby=" .
-        urlencode($col) .
-        "&order=" .
-        urlencode($next),
-      ENT_QUOTES,
-      'UTF-8'
-    ) .
-    "\">" .
-    htmlspecialchars(
-      $label . $arrow,
-      ENT_QUOTES,
-      'UTF-8'
-    ) .
-    "</a></th>";
+    return
+        "<th><a href=\"" .
+        htmlspecialchars(
+            $base .
+                "&orderby=" .
+                urlencode($col) .
+                "&order=" .
+                urlencode($next),
+            ENT_QUOTES,
+            'UTF-8'
+        ) .
+        "\">" .
+        htmlspecialchars(
+            $label . $arrow,
+            ENT_QUOTES,
+            'UTF-8'
+        ) .
+        "</a></th>";
+}
+
+
+function contest_list_setting_control(
+    $cid,
+    $setting,
+    $label,
+    $badge_class,
+    $can_edit,
+    $postkey
+) {
+    $safe_label = htmlspecialchars(
+        $label,
+        ENT_QUOTES,
+        'UTF-8'
+    );
+
+    $safe_class =
+        $badge_class === 'ok'
+        ? 'ok'
+        : 'no';
+
+    if (!$can_edit) {
+        echo '<span class="contest-list-badge ' .
+            $safe_class . '">' .
+            $safe_label .
+            '</span>';
+        return;
+    }
+
+    echo '<form method="post" ' .
+        'action="contest_setting_change.php" ' .
+        'class="contest-setting-form">';
+
+    echo '<input type="hidden" name="cid" value="' .
+        intval($cid) . '">';
+
+    echo '<input type="hidden" name="setting" value="' .
+        htmlspecialchars(
+            $setting,
+            ENT_QUOTES,
+            'UTF-8'
+        ) . '">';
+
+    echo '<input type="hidden" name="postkey" value="' .
+        htmlspecialchars(
+            $postkey,
+            ENT_QUOTES,
+            'UTF-8'
+        ) . '">';
+
+    echo '<button type="submit" ' .
+        'class="contest-list-badge ' .
+        $safe_class . '" ' .
+        'title="클릭하여 설정 변경">' .
+        $safe_label .
+        '</button>';
+
+    echo '</form>';
 }
 
 
@@ -398,677 +479,439 @@ function contest_list_sort_th(
 // ============================================================
 
 $base_params =
-  array(
-    'view' =>
-    $view_mode
-  );
+    array(
+        'view' =>
+        $view_mode
+    );
 
 
 if ($has_keyword) {
 
-  $base_params['keyword'] =
-    $keyword;
+    $base_params['keyword'] =
+        $keyword;
 }
 
 
 $base =
-  'contest_list.php?' .
-  http_build_query(
-    $base_params
-  );
+    'contest_list.php?' .
+    http_build_query(
+        $base_params
+    );
 
+$admin_page_title =
+    '대회 관리';
+
+$admin_active_menu =
+    'contest_list';
+
+$admin_page_head_file =
+    __DIR__ . '/contest-list-head.php';
+
+require(
+    __DIR__ . '/admin-layout-start.php'
+);
 ?>
-<!DOCTYPE html>
-<html>
 
-<head>
-  <meta charset="utf-8">
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1">
-  <title>Contest List</title>
+    <div class="contest-list-wrap">
 
-  <style>
-    .contest-list-wrap {
-      max-width: 1500px;
-      margin: 0 auto;
-      padding: 12px 8px 28px;
-      box-sizing: border-box;
-    }
-
-    .contest-list-header {
-      text-align: center;
-      margin: 8px 0 20px;
-    }
-
-    .contest-list-toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: end;
-      justify-content: space-between;
-      padding: 14px;
-      margin-bottom: 16px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background: #fff;
-    }
-
-    .contest-list-search {
-      display: flex;
-      gap: 8px;
-      flex: 1 1 420px;
-    }
-
-    .contest-list-search input {
-      flex: 1;
-      min-width: 180px;
-      box-sizing: border-box;
-    }
-
-    .contest-list-tabs {
-      display: flex;
-      gap: 6px;
-    }
-
-    .contest-list-tab {
-      display: inline-block;
-      padding: 7px 12px;
-      border: 1px solid #bbb;
-      border-radius: 5px;
-      text-decoration: none;
-    }
-
-    .contest-list-tab.active {
-      font-weight: bold;
-      border-color: #555;
-      background: #eee;
-    }
-
-    .contest-table-scroll {
-      overflow-x: auto;
-    }
-
-    .contest-list-table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #fff;
-    }
-
-    .contest-list-table th,
-    .contest-list-table td {
-      border: 1px solid #ddd;
-      padding: 7px 8px;
-      vertical-align: middle;
-      white-space: nowrap;
-    }
-
-    .contest-list-table th {
-      background: #f5f5f5;
-      text-align: center;
-    }
-
-    .contest-list-table .contest-title {
-      min-width: 220px;
-      white-space: normal;
-    }
-
-    .contest-list-table .center {
-      text-align: center;
-    }
-
-    .contest-list-badge {
-      display: inline-block;
-      padding: 2px 7px;
-      border-radius: 12px;
-      font-size: 0.88em;
-      border: 1px solid #bbb;
-    }
-
-    .contest-list-badge.ok {
-      color: #216e39;
-      border-color: #8dc89e;
-      background: #f2fbf5;
-    }
-
-    .contest-list-badge.no {
-      color: #9f2d2d;
-      border-color: #d9a2a2;
-      background: #fff6f6;
-    }
-
-    .contest-list-actions a,
-    .contest-list-actions span {
-      margin-right: 5px;
-    }
-
-    .contest-list-disabled {
-      color: #999;
-      font-size: 0.9em;
-    }
-
-    .contest-list-pagination {
-      margin-top: 18px;
-      text-align: center;
-    }
-
-    .contest-list-pagination a,
-    .contest-list-pagination strong {
-      display: inline-block;
-      min-width: 28px;
-      padding: 5px 7px;
-      margin: 2px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      text-decoration: none;
-    }
-
-    .contest-list-pagination strong {
-      background: #eee;
-    }
-
-    @media (max-width: 800px) {
-      .contest-list-toolbar {
-        align-items: stretch;
-      }
-
-      .contest-list-search,
-      .contest-list-tabs {
-        width: 100%;
-      }
-
-      .contest-list-search {
-        flex-direction: column;
-      }
-    }
-  </style>
-</head>
-
-<body>
-
-  <div class="contest-list-wrap">
-
-    <div class="contest-list-header">
-      <h3>
-        <?php echo $MSG_CONTEST; ?> - <?php echo $MSG_LIST; ?>
-      </h3>
-    </div>
+        <div class="contest-list-header">
+            <h3>
+                <?php echo $MSG_CONTEST; ?> - <?php echo $MSG_LIST; ?>
+            </h3>
+        </div>
 
 
-    <!-- ========================================================
+        <!-- ========================================================
        검색 / 보기
        ======================================================== -->
 
-    <div class="contest-list-toolbar">
+        <div class="contest-list-toolbar">
 
-      <form
-        action="contest_list.php"
-        method="get"
-        class="contest-list-search">
+            <form
+                action="contest_list.php"
+                method="get"
+                class="contest-list-search">
 
-        <input
-          type="hidden"
-          name="view"
-          value="<?php
-                  echo htmlspecialchars(
-                    $view_mode,
-                    ENT_QUOTES,
-                    'UTF-8'
-                  );
-                  ?>">
+                <input
+                    type="hidden"
+                    name="view"
+                    value="<?php
+                            echo htmlspecialchars(
+                                $view_mode,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>">
 
-        <input
-          type="text"
-          name="keyword"
-          placeholder="대회 번호, 제목 또는 설명 검색"
-          value="<?php
-                  echo htmlspecialchars(
-                    $keyword,
-                    ENT_QUOTES,
-                    'UTF-8'
-                  );
-                  ?>">
+                <input
+                    type="text"
+                    name="keyword"
+                    placeholder="대회 번호, 제목 또는 설명 검색"
+                    value="<?php
+                            echo htmlspecialchars(
+                                $keyword,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>">
 
-        <button type="submit">
-          검색
-        </button>
+                <button type="submit">
+                    검색
+                </button>
 
-      </form>
-
-
-      <div class="contest-list-tabs">
-
-        <a
-          class="contest-list-tab <?php
-                                  echo $view_mode === 'mine'
-                                    ? 'active'
-                                    : '';
-                                  ?>"
-          href="contest_list.php?view=mine">
-          내가 관리하는 대회
-        </a>
+            </form>
 
 
-        <a
-          class="contest-list-tab <?php
-                                  echo $view_mode === 'all'
-                                    ? 'active'
-                                    : '';
-                                  ?>"
-          href="contest_list.php?view=all">
-          전체 대회
-        </a>
+            <div class="contest-list-tabs">
 
-      </div>
-
-    </div>
+                <a
+                    class="contest-list-tab <?php
+                                            echo $view_mode === 'mine'
+                                                ? 'active'
+                                                : '';
+                                            ?>"
+                    href="contest_list.php?view=mine">
+                    내가 관리하는 대회
+                </a>
 
 
-    <!-- ========================================================
+                <a
+                    class="contest-list-tab <?php
+                                            echo $view_mode === 'all'
+                                                ? 'active'
+                                                : '';
+                                            ?>"
+                    href="contest_list.php?view=all">
+                    전체 대회
+                </a>
+
+
+                <a
+                    class="contest-list-tab <?php
+                                            echo $view_mode === 'archived'
+                                                ? 'active'
+                                                : '';
+                                            ?>"
+                    href="contest_list.php?view=archived">
+                    보관함
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- ========================================================
        목록
        ======================================================== -->
 
-    <div class="contest-table-scroll">
+        <div class="contest-table-scroll">
 
-      <table class="contest-list-table">
+            <table class="contest-list-table">
 
-        <thead>
+                <thead>
 
-          <tr>
-
-            <?php
-            echo contest_list_sort_th(
-              'contest_id',
-              'ID',
-              $orderby,
-              $order,
-              $base
-            );
-
-            echo contest_list_sort_th(
-              'title',
-              '제목',
-              $orderby,
-              $order,
-              $base
-            );
-
-            echo contest_list_sort_th(
-              'private',
-              '공개',
-              $orderby,
-              $order,
-              $base
-            );
-
-            echo contest_list_sort_th(
-              'codevisible',
-              '코드',
-              $orderby,
-              $order,
-              $base
-            );
-
-            echo contest_list_sort_th(
-              'allow_copy',
-              '복사',
-              $orderby,
-              $order,
-              $base
-            );
-
-            echo contest_list_sort_th(
-              'defunct',
-              '상태',
-              $orderby,
-              $order,
-              $base
-            );
-            ?>
-
-            <th>관리</th>
-
-            <th>부가기능</th>
-
-            <?php
-            echo contest_list_sort_th(
-              'start_time',
-              '시작',
-              $orderby,
-              $order,
-              $base
-            );
-
-            echo contest_list_sort_th(
-              'end_time',
-              '종료',
-              $orderby,
-              $order,
-              $base
-            );
-            ?>
-
-          </tr>
-
-        </thead>
-
-
-        <tbody>
-
-          <?php
-          if (empty($result)) {
-          ?>
-
-            <tr>
-              <td
-                colspan="10"
-                class="center">
-                대회가 없습니다.
-              </td>
-            </tr>
-
-            <?php
-          } else {
-
-            foreach ($result as $r) {
-
-              $cid =
-                intval($r['contest_id']);
-
-              $is_mine =
-                $is_admin ||
-                isset(
-                  $_SESSION[$OJ_NAME . '_m' . $cid]
-                ) ||
-                in_array(
-                  $cid,
-                  $my_cids,
-                  true
-                );
-
-              $is_owner =
-                isset($r['user_id']) &&
-                trim($r['user_id']) ===
-                $current_user_id;
-
-              $can_copy =
-                $is_admin ||
-                $is_owner ||
-                intval($r['allow_copy']) === 1;
-            ?>
-
-              <tr>
-
-                <td class="center">
-                  <?php echo $cid; ?>
-                </td>
-
-
-                <td class="contest-title">
-
-                  <a
-                    href="../contest.php?cid=<?php
-                                              echo $cid;
-                                              ?>">
-                    <?php
-                    echo htmlspecialchars(
-                      $r['title'],
-                      ENT_QUOTES,
-                      'UTF-8'
-                    );
-                    ?>
-                  </a>
-
-                </td>
-
-
-                <td class="center">
-
-                  <?php
-                  if ($is_mine) {
-                  ?>
-
-                    <a
-                      href="contest_pr_change.php?cid=<?php
-                                                      echo $cid;
-                                                      ?>&getkey=<?php
-                                                                echo urlencode(
-                                                                  $_SESSION[$OJ_NAME . '_getkey']
-                                                                );
-                                                                ?>">
-
-                    <?php
-                  }
-                    ?>
-
-                    <span class="contest-list-badge <?php
-                                                    echo intval($r['private']) === 0
-                                                      ? 'ok'
-                                                      : 'no';
-                                                    ?>">
-                      <?php
-                      echo intval($r['private']) === 0
-                        ? '공개'
-                        : '비공개';
-                      ?>
-                    </span>
-
-                    <?php
-                    if ($is_mine) {
-                    ?>
-
-                    </a>
-
-                  <?php
-                    }
-                  ?>
-
-                </td>
-
-
-                <td class="center">
-
-                  <?php
-                  if ($is_mine) {
-                  ?>
-
-                    <a
-                      href="contest_cv_change.php?cid=<?php
-                                                      echo $cid;
-                                                      ?>&getkey=<?php
-                                                                echo urlencode(
-                                                                  $_SESSION[$OJ_NAME . '_getkey']
-                                                                );
-                                                                ?>">
-
-                    <?php
-                  }
-                    ?>
-
-                    <span class="contest-list-badge <?php
-                                                    echo intval($r['codevisible']) === 0
-                                                      ? 'ok'
-                                                      : 'no';
-                                                    ?>">
-                      <?php
-                      echo intval($r['codevisible']) === 0
-                        ? '공개'
-                        : '비공개';
-                      ?>
-                    </span>
-
-                    <?php
-                    if ($is_mine) {
-                    ?>
-
-                    </a>
-
-                  <?php
-                    }
-                  ?>
-
-                </td>
-
-
-                <td class="center">
-
-                  <?php if ($is_mine) { ?>
-
-                    <form
-                      method="post"
-                      action="contest_copy_change.php"
-                      style="display:inline;"
-                      onsubmit="return confirm(
-                '이 대회의 복사 허용 설정을 변경하시겠습니까?'
-            );">
-
-                      <input
-                        type="hidden"
-                        name="cid"
-                        value="<?php echo intval($cid); ?>">
-
-                      <input
-                        type="hidden"
-                        name="postkey"
-                        value="<?php
-                                echo htmlentities(
-                                  $_SESSION[$OJ_NAME . '_postkey'],
-                                  ENT_QUOTES,
-                                  'UTF-8'
-                                );
-                                ?>">
-
-                      <button
-                        type="submit"
-                        class="contest-list-badge <?php
-                                                  echo intval($r['allow_copy']) === 1
-                                                    ? 'ok'
-                                                    : 'no';
-                                                  ?>"
-                        
-                        title="클릭하여 대회 복사 정책 변경">
+                    <tr>
 
                         <?php
-                        echo intval($r['allow_copy']) === 1
-                          ? '허용'
-                          : '금지';
+                        echo contest_list_sort_th(
+                            'contest_id',
+                            'ID',
+                            $orderby,
+                            $order,
+                            $base
+                        );
+
+                        echo contest_list_sort_th(
+                            'title',
+                            '제목',
+                            $orderby,
+                            $order,
+                            $base
+                        );
+
+                        echo contest_list_sort_th(
+                            'private',
+                            '공개',
+                            $orderby,
+                            $order,
+                            $base
+                        );
+
+                        echo contest_list_sort_th(
+                            'codevisible',
+                            '코드',
+                            $orderby,
+                            $order,
+                            $base
+                        );
+
+                        echo contest_list_sort_th(
+                            'allow_copy',
+                            '복사',
+                            $orderby,
+                            $order,
+                            $base
+                        );
+
+                        echo contest_list_sort_th(
+                            'defunct',
+                            '목록',
+                            $orderby,
+                            $order,
+                            $base
+                        );
+
+                        echo contest_list_sort_th(
+                            'is_stopped',
+                            '운영',
+                            $orderby,
+                            $order,
+                            $base
+                        );
                         ?>
 
-                      </button>
+                        <th>관리</th>
 
-                    </form>
+                        <th>부가기능</th>
 
-                  <?php } else { ?>
+                        <?php
+                        echo contest_list_sort_th(
+                            'start_time',
+                            '시작',
+                            $orderby,
+                            $order,
+                            $base
+                        );
 
-                    <span class="contest-list-badge <?php
-                                                    echo intval($r['allow_copy']) === 1
-                                                      ? 'ok'
-                                                      : 'no';
-                                                    ?>"
-                      style="
-                    border:0;
-                    font-family:inherit;
-                ">
+                        echo contest_list_sort_th(
+                            'end_time',
+                            '종료',
+                            $orderby,
+                            $order,
+                            $base
+                        );
+                        ?>
 
-                      <?php
-                      echo intval($r['allow_copy']) === 1
-                        ? '허용'
-                        : '금지';
-                      ?>
+                    </tr>
 
-                    </span>
-
-                  <?php } ?>
-
-                </td>
+                </thead>
 
 
-                <td class="center">
-
-                  <?php
-                  if ($is_mine) {
-                  ?>
-
-                    <a
-                      href="contest_df_change.php?cid=<?php
-                                                      echo $cid;
-                                                      ?>&getkey=<?php
-                                                                echo urlencode(
-                                                                  $_SESSION[$OJ_NAME . '_getkey']
-                                                                );
-                                                                ?>">
+                <tbody>
 
                     <?php
-                  }
+                    if (empty($result)) {
                     ?>
 
-                    <span class="contest-list-badge <?php
-                                                    echo $r['defunct'] === 'N'
-                                                      ? 'ok'
-                                                      : 'no';
-                                                    ?>">
-                      <?php
-                      echo $r['defunct'] === 'N'
-                        ? '사용'
-                        : '예약/중지';
-                      ?>
-                    </span>
+                        <tr>
+                            <td
+                                colspan="11"
+                                class="center">
+                                대회가 없습니다.
+                            </td>
+                        </tr>
 
-                    <?php
-                    if ($is_mine) {
-                    ?>
+                        <?php
+                    } else {
 
-                    </a>
+                        foreach ($result as $r) {
 
-                  <?php
-                    }
-                  ?>
+                            $cid =
+                                intval($r['contest_id']);
 
-                </td>
+                            $is_mine =
+                                $is_admin ||
+                                isset(
+                                    $_SESSION[$OJ_NAME . '_m' . $cid]
+                                ) ||
+                                in_array(
+                                    $cid,
+                                    $my_cids,
+                                    true
+                                );
+
+                            $is_owner =
+                                isset($r['user_id']) &&
+                                trim($r['user_id']) ===
+                                $current_user_id;
+
+                            $row_is_archived =
+                                intval($r['is_archived']) === 1;
+
+                            $can_change_settings =
+                                $is_mine &&
+                                !$row_is_archived;
+
+                            $can_copy =
+                                $is_admin ||
+                                $is_owner ||
+                                intval($r['allow_copy']) === 1;
+                        ?>
+
+                            <tr>
+
+                                <td class="center">
+                                    <?php echo $cid; ?>
+                                </td>
 
 
-                <td class="center contest-list-actions">
+                                <td class="contest-title">
 
-                  <?php
-                  if ($is_mine) {
-                  ?>
+                                    <a
+                                        href="../contest.php?cid=<?php
+                                                                    echo $cid;
+                                                                    ?>">
+                                        <?php
+                                        echo htmlspecialchars(
+                                            $r['title'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        );
+                                        ?>
+                                    </a>
 
-                    <a
-                      href="contest_edit.php?cid=<?php
-                                                  echo $cid;
-                                                  ?>">
-                      수정
-                    </a>
+                                </td>
 
-                  <?php
-                  }
 
-                  if (
-                    $is_admin ||
-                    $is_owner
-                  ) {
-                  ?>
+                                <td class="center">
+                                    <?php
+                                    contest_list_setting_control(
+                                        $cid,
+                                        'private',
+                                        intval($r['private']) === 0
+                                            ? '공개'
+                                            : '비공개',
+                                        intval($r['private']) === 0
+                                            ? 'ok'
+                                            : 'no',
+                                        $can_change_settings,
+                                        $_SESSION[$OJ_NAME . '_postkey']
+                                    );
+                                    ?>
+                                </td>
 
-                    <form
-                      method="post"
-                      action="contest_delete.php"
-                      style="display:inline;"
-                      onsubmit="return confirm(
+
+                                <td class="center">
+                                    <?php
+                                    contest_list_setting_control(
+                                        $cid,
+                                        'codevisible',
+                                        intval($r['codevisible']) === 0
+                                            ? '공개'
+                                            : '비공개',
+                                        intval($r['codevisible']) === 0
+                                            ? 'ok'
+                                            : 'no',
+                                        $can_change_settings,
+                                        $_SESSION[$OJ_NAME . '_postkey']
+                                    );
+                                    ?>
+                                </td>
+
+
+                                <td class="center">
+                                    <?php
+                                    contest_list_setting_control(
+                                        $cid,
+                                        'allow_copy',
+                                        intval($r['allow_copy']) === 1
+                                            ? '허용'
+                                            : '금지',
+                                        intval($r['allow_copy']) === 1
+                                            ? 'ok'
+                                            : 'no',
+                                        $can_change_settings,
+                                        $_SESSION[$OJ_NAME . '_postkey']
+                                    );
+                                    ?>
+                                </td>
+
+
+                                <td class="center">
+                                    <?php
+                                    contest_list_setting_control(
+                                        $cid,
+                                        'defunct',
+                                        $r['defunct'] === 'N'
+                                            ? '표시'
+                                            : '숨김',
+                                        $r['defunct'] === 'N'
+                                            ? 'ok'
+                                            : 'no',
+                                        $can_change_settings,
+                                        $_SESSION[$OJ_NAME . '_postkey']
+                                    );
+                                    ?>
+                                </td>
+
+
+                                <td class="center">
+                                    <?php
+                                    $is_stopped =
+                                        intval($r['is_stopped']) !== 0;
+
+                                    contest_list_setting_control(
+                                        $cid,
+                                        'is_stopped',
+                                        $is_stopped
+                                            ? '중지됨'
+                                            : '운영 중',
+                                        $is_stopped
+                                            ? 'no'
+                                            : 'ok',
+                                        $can_change_settings,
+                                        $_SESSION[$OJ_NAME . '_postkey']
+                                    );
+                                    ?>
+                                </td>
+
+
+                                <td class="center contest-list-actions">
+
+                                    <?php
+                                    if (
+                                        $is_mine &&
+                                        !$row_is_archived
+                                    ) {
+                                    ?>
+
+                                        <a
+                                            href="contest_edit.php?cid=<?php
+                                                                        echo $cid;
+                                                                        ?>">
+                                            수정
+                                        </a>
+
+                                    <?php
+                                    }
+
+                                    if (
+                                        $is_admin ||
+                                        $is_owner
+                                    ) {
+                                    ?>
+
+                                        <form
+                                            method="post"
+                                            action="contest_delete.php"
+                                            style="display:inline;"
+                                            onsubmit="return confirm(
                   '이 대회를 완전히 삭제하시겠습니까?\n\n'.
                   '제출 기록이 있거나 Course 차시와 연결된 대회는 삭제할 수 없습니다.\n'.
                   '삭제된 대회는 복구할 수 없습니다.'
                 );">
 
-                      <?php echo $contest_delete_csrf_input; ?>
+                                            <?php echo $contest_delete_csrf_input; ?>
 
-                      <input
-                        type="hidden"
-                        name="cid"
-                        value="<?php echo $cid; ?>">
+                                            <input
+                                                type="hidden"
+                                                name="cid"
+                                                value="<?php echo $cid; ?>">
 
-                      <button
-                        type="submit"
-                        style="
+                                            <button
+                                                type="submit"
+                                                style="
                     border:0;
                     background:none;
                     padding:0;
@@ -1076,234 +919,418 @@ $base =
                     color:#b03030;
                     cursor:pointer;
                   ">
-                        삭제
-                      </button>
+                                                삭제
+                                            </button>
 
-                    </form>
+                                        </form>
 
-                  <?php
-                  }
-                  ?>
+                                    <?php
+                                    }
+                                    ?>
 
-                  <?php
+                                    <?php
+                                    if (
+                                        $is_admin ||
+                                        $is_owner
+                                    ) {
+                                        if ($row_is_archived) {
+                                    ?>
 
-                  if ($can_copy) {
-                  ?>
+                                            <form
+                                                method="post"
+                                                action="contest_archive.php"
+                                                style="display:inline;"
+                                                onsubmit="return window.confirm('이 대회를 복원하시겠습니까?\n복원 후에도 중지 상태가 유지됩니다.');">
 
-                    <a
-                      href="contest_add.php?cid=<?php
-                                                echo $cid;
-                                                ?>">
-                      복사
-                    </a>
+                                                <input
+                                                    type="hidden"
+                                                    name="postkey"
+                                                    value="<?php
+                                                            echo htmlspecialchars(
+                                                                $_SESSION[$OJ_NAME . '_postkey'],
+                                                                ENT_QUOTES,
+                                                                'UTF-8'
+                                                            );
+                                                            ?>">
 
-                  <?php
-                  } else {
-                  ?>
+                                                <input
+                                                    type="hidden"
+                                                    name="cid"
+                                                    value="<?php echo $cid; ?>">
 
-                    <span class="contest-list-disabled">
-                      복사 금지
-                    </span>
+                                                <input
+                                                    type="hidden"
+                                                    name="action"
+                                                    value="restore">
 
-                  <?php
-                  }
-                  ?>
+                                                <button
+                                                    type="submit"
+                                                    style="
+                            border:0;
+                            background:none;
+                            padding:0;
+                            margin-right:5px;
+                            color:#216e39;
+                            cursor:pointer;
+                          ">
+                                                    복원
+                                                </button>
 
-                </td>
+                                            </form>
+
+                                        <?php
+                                        } elseif ($is_stopped) {
+                                        ?>
+
+                                            <form
+                                                method="post"
+                                                action="contest_archive.php"
+                                                style="display:inline;"
+                                                onsubmit="return window.confirm('이 대회를 보관하시겠습니까?\n보관된 대회는 학생이 접근하거나 제출할 수 없습니다.');">
+
+                                                <input
+                                                    type="hidden"
+                                                    name="postkey"
+                                                    value="<?php
+                                                            echo htmlspecialchars(
+                                                                $_SESSION[$OJ_NAME . '_postkey'],
+                                                                ENT_QUOTES,
+                                                                'UTF-8'
+                                                            );
+                                                            ?>">
+
+                                                <input
+                                                    type="hidden"
+                                                    name="cid"
+                                                    value="<?php echo $cid; ?>">
+
+                                                <input
+                                                    type="hidden"
+                                                    name="action"
+                                                    value="archive">
+
+                                                <button
+                                                    type="submit"
+                                                    style="
+                            border:0;
+                            background:none;
+                            padding:0;
+                            margin-right:5px;
+                            color:#8a5a00;
+                            cursor:pointer;
+                          ">
+                                                    보관
+                                                </button>
+
+                                            </form>
+
+                                        <?php
+                                        } else {
+                                        ?>
+
+                                            <button
+                                                type="button"
+                                                disabled
+                                                title="대회를 먼저 중지해야 보관할 수 있습니다."
+                                                style="
+                          border:0;
+                          background:none;
+                          padding:0;
+                          margin-right:5px;
+                          color:#999;
+                          cursor:not-allowed;
+                        ">
+                                                보관
+                                            </button>
+
+                                    <?php
+                                        }
+                                    }
+                                    ?>
+
+                                    <?php
+
+                                    if ($can_copy) {
+                                    ?>
+
+                                        <a
+                                            href="contest_add.php?cid=<?php
+                                                                        echo $cid;
+                                                                        ?>">
+                                            복사
+                                        </a>
+
+                                    <?php
+                                    } else {
+                                    ?>
+
+                                        <span class="contest-list-disabled">
+                                            복사 금지
+                                        </span>
+
+                                    <?php
+                                    }
+                                    ?>
+
+                                </td>
 
 
-                <td class="center contest-list-actions">
+                                <td class="center contest-list-actions">
 
-                  <?php
-                  if ($is_mine) {
-                  ?>
+                                    <?php
+                                    if ($is_mine) {
+                                    ?>
 
-                    <a
-                      href="problem_export_xml.php?cid=<?php
-                                                        echo $cid;
-                                                        ?>&getkey=<?php
-                                                                  echo urlencode(
-                                                                    $_SESSION[$OJ_NAME . '_getkey']
-                                                                  );
-                                                                  ?>">
-                      Export
-                    </a>
-
-                    <a
-                      href="../export_contest_code.php?cid=<?php
-                                                            echo $cid;
-                                                            ?>&getkey=<?php
-                                                                      echo urlencode(
+                                        <a
+                                            href="problem_export_xml.php?cid=<?php
+                                                                                echo $cid;
+                                                                                ?>&getkey=<?php
+                                                                    echo urlencode(
                                                                         $_SESSION[$OJ_NAME . '_getkey']
-                                                                      );
-                                                                      ?>">
-                      Logs
-                    </a>
+                                                                    );
+                                                                    ?>">
+                                            Export
+                                        </a>
 
-                    <a
-                      href="suspect_list.php?cid=<?php
-                                                  echo $cid;
-                                                  ?>">
-                      Suspect
-                    </a>
+                                        <a
+                                            href="../export_contest_code.php?cid=<?php
+                                                                                    echo $cid;
+                                                                                    ?>&getkey=<?php
+                                                                        echo urlencode(
+                                                                            $_SESSION[$OJ_NAME . '_getkey']
+                                                                        );
+                                                                        ?>">
+                                            Logs
+                                        </a>
 
-                  <?php
-                  } else {
-                  ?>
+                                        <a
+                                            href="suspect_list.php?cid=<?php
+                                                                        echo $cid;
+                                                                        ?>">
+                                            Suspect
+                                        </a>
 
-                    -
+                                    <?php
+                                    } else {
+                                    ?>
 
-                  <?php
-                  }
-                  ?>
+                                        -
 
-                </td>
+                                    <?php
+                                    }
+                                    ?>
 
-
-                <td class="center">
-                  <?php
-                  echo htmlspecialchars(
-                    $r['start_time'],
-                    ENT_QUOTES,
-                    'UTF-8'
-                  );
-                  ?>
-                </td>
-
-
-                <td class="center">
-                  <?php
-                  echo htmlspecialchars(
-                    $r['end_time'],
-                    ENT_QUOTES,
-                    'UTF-8'
-                  );
-                  ?>
-                </td>
-
-              </tr>
-
-          <?php
-            }
-          }
-          ?>
-
-        </tbody>
-
-      </table>
-
-    </div>
+                                </td>
 
 
-    <!-- ========================================================
+                                <td class="center">
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $r['start_time'],
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    );
+                                    ?>
+                                </td>
+
+
+                                <td class="center">
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $r['end_time'],
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    );
+                                    ?>
+                                </td>
+
+                            </tr>
+
+                    <?php
+                        }
+                    }
+                    ?>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- ========================================================
        페이징
        ======================================================== -->
 
-    <div class="contest-list-pagination">
+        <div class="contest-list-pagination">
 
-      <?php
+            <?php
 
-      $page_base_params =
-        $base_params;
+            $page_base_params =
+                $base_params;
 
-      $page_base_params['orderby'] =
-        $orderby;
+            $page_base_params['orderby'] =
+                $orderby;
 
-      $page_base_params['order'] =
-        $order;
-
-
-      function page_link(
-        $label,
-        $page_no,
-        $params
-      ) {
-
-        $params['page'] =
-          $page_no;
-
-        echo
-        '<a href="contest_list.php?' .
-          htmlspecialchars(
-            http_build_query($params),
-            ENT_QUOTES,
-            'UTF-8'
-          ) .
-          '">' .
-          $label .
-          '</a>';
-      }
+            $page_base_params['order'] =
+                $order;
 
 
-      page_link(
-        '&laquo;',
-        1,
-        $page_base_params
-      );
+            function page_link(
+                $label,
+                $page_no,
+                $params
+            ) {
 
-      page_link(
-        '&lsaquo;',
-        max(1, $page - 1),
-        $page_base_params
-      );
+                $params['page'] =
+                    $page_no;
 
-
-      $page_start =
-        max(
-          1,
-          $page - 5
-        );
-
-      $page_end =
-        min(
-          $total_pages,
-          $page + 5
-        );
+                echo
+                '<a href="contest_list.php?' .
+                    htmlspecialchars(
+                        http_build_query($params),
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ) .
+                    '">' .
+                    $label .
+                    '</a>';
+            }
 
 
-      for (
-        $i = $page_start;
-        $i <= $page_end;
-        $i++
-      ) {
+            page_link(
+                '&laquo;',
+                1,
+                $page_base_params
+            );
 
-        if ($i === $page) {
-
-          echo "<strong>" .
-            intval($i) .
-            "</strong>";
-        } else {
-
-          page_link(
-            intval($i),
-            $i,
-            $page_base_params
-          );
-        }
-      }
+            page_link(
+                '&lsaquo;',
+                max(1, $page - 1),
+                $page_base_params
+            );
 
 
-      page_link(
-        '&rsaquo;',
-        min(
-          $total_pages,
-          $page + 1
-        ),
-        $page_base_params
-      );
+            $page_start =
+                max(
+                    1,
+                    $page - 5
+                );
 
-      page_link(
-        '&raquo;',
-        $total_pages,
-        $page_base_params
-      );
+            $page_end =
+                min(
+                    $total_pages,
+                    $page + 5
+                );
 
-      ?>
+
+            for (
+                $i = $page_start;
+                $i <= $page_end;
+                $i++
+            ) {
+
+                if ($i === $page) {
+
+                    echo "<strong>" .
+                        intval($i) .
+                        "</strong>";
+                } else {
+
+                    page_link(
+                        intval($i),
+                        $i,
+                        $page_base_params
+                    );
+                }
+            }
+
+
+            page_link(
+                '&rsaquo;',
+                min(
+                    $total_pages,
+                    $page + 1
+                ),
+                $page_base_params
+            );
+
+            page_link(
+                '&raquo;',
+                $total_pages,
+                $page_base_params
+            );
+
+            ?>
+
+        </div>
 
     </div>
 
-  </div>
+    <script>
+        document
+            .querySelectorAll(
+                ".contest-setting-form"
+            )
+            .forEach(function(form) {
+                form.addEventListener(
+                    "submit",
+                    function(event) {
+                        event.preventDefault();
 
-</body>
+                        const button =
+                            form.querySelector(
+                                'button[type="submit"]'
+                            );
 
-</html>
+                        if (button) {
+                            button.disabled = true;
+                        }
+
+                        fetch(
+                                form.action, {
+                                    method: "POST",
+                                    body: new FormData(form),
+                                    credentials: "same-origin",
+                                    headers: {
+                                        "X-Requested-With": "XMLHttpRequest"
+                                    }
+                                }
+                            )
+                            .then(function(response) {
+                                return response
+                                    .json()
+                                    .catch(function() {
+                                        return {};
+                                    })
+                                    .then(function(data) {
+                                        if (!response.ok) {
+                                            throw new Error(
+                                                data.message ||
+                                                "대회 설정을 변경하지 못했습니다."
+                                            );
+                                        }
+
+                                        return data;
+                                    });
+                            })
+                            .then(function() {
+                                window.location.reload();
+                            })
+                            .catch(function(error) {
+                                window.alert(error.message);
+
+                                if (button) {
+                                    button.disabled = false;
+                                }
+                            });
+                    }
+                );
+            });
+    </script>
+
+<?php
+require(
+    __DIR__ . '/admin-layout-end.php'
+);
+?>

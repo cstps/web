@@ -1,4 +1,5 @@
-include/
+include/*
+!include/contest_access.inc.php
 kindeditor/
 upload/
 blockly/
@@ -20,5 +21,6 @@ sae/
 zabbix/
 bbs/
 tinymce/
+tmp/
 phpad.php
 ads.txt
