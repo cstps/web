@@ -10,7 +10,7 @@ require_once("../include/setlang.php");
 // 1. 로그인 확인
 // ============================================================
 
-if (!isset($_SESSION[$OJ_NAME.'_user_id'])) {
+if (!isset($_SESSION[$OJ_NAME . '_user_id'])) {
 
     echo "Please Login First!";
     exit(1);
@@ -30,13 +30,32 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 require_once("../include/check_post_key.php");
 
 // ============================================================
+// 영구 삭제 임시 차단
+//
+// Contest 참조 테이블과 삭제 영향 범위를
+// 충분히 점검할 때까지 기존 물리 삭제 처리를 실행하지 않는다.
+// ============================================================
+
+http_response_code(409);
+
+header(
+    'Content-Type: text/plain; charset=utf-8'
+);
+
+echo
+    "대회 영구 삭제 기능은 현재 안전성 점검으로 인해 중지되어 있습니다.\n" .
+    "참조 관계와 삭제 안전성 검토가 완료된 뒤 다시 제공할 예정입니다.";
+
+exit;
+
+// ============================================================
 // 3. contest_id 확인
 // ============================================================
 
 $cid =
     isset($_POST['cid'])
-        ? intval($_POST['cid'])
-        : 0;
+    ? intval($_POST['cid'])
+    : 0;
 
 
 if ($cid <= 0) {
@@ -78,10 +97,10 @@ $contest =
 
 
 $current_user_id =
-    $_SESSION[$OJ_NAME.'_user_id'];
+    $_SESSION[$OJ_NAME . '_user_id'];
 
 $is_admin =
-    isset($_SESSION[$OJ_NAME.'_administrator']);
+    isset($_SESSION[$OJ_NAME . '_administrator']);
 
 $is_owner =
     isset($contest['user_id']) &&
@@ -127,14 +146,14 @@ $solution_rows = pdo_query(
 
 $solution_count =
     isset($solution_rows[0]['cnt'])
-        ? intval($solution_rows[0]['cnt'])
-        : 0;
+    ? intval($solution_rows[0]['cnt'])
+    : 0;
 
 
 if ($solution_count > 0) {
 
     echo
-        "제출 기록이 존재하는 대회는 완전 삭제할 수 없습니다. ".
+    "제출 기록이 존재하는 대회는 완전 삭제할 수 없습니다. " .
         "대회를 사용 중지 상태로 변경하세요.";
 
     exit(1);
@@ -166,7 +185,7 @@ if (
 ) {
 
     echo
-        "수업 차시와 연결된 대회는 완전 삭제할 수 없습니다. ".
+    "수업 차시와 연결된 대회는 완전 삭제할 수 없습니다. " .
         "Course 관계를 먼저 확인하세요.";
 
     exit(1);
@@ -208,8 +227,8 @@ pdo_query(
     "DELETE FROM privilege
      WHERE rightstr = ?
         OR rightstr = ?",
-    "c".$cid,
-    "m".$cid
+    "c" . $cid,
+    "m" . $cid
 );
 
 
@@ -258,7 +277,7 @@ pdo_query(
 // ============================================================
 
 $session_key =
-    $OJ_NAME.'_m'.$cid;
+    $OJ_NAME . '_m' . $cid;
 
 
 if (isset($_SESSION[$session_key])) {
