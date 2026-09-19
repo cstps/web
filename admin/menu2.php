@@ -1,17 +1,10 @@
 <?php
 
-if (!isset($admin_legacy_frame_mode)) {
-  $admin_legacy_frame_mode = false;
-}
-
 if (!isset($admin_active_menu)) {
   $admin_active_menu = "";
 }
 
-$admin_internal_target =
-  $admin_legacy_frame_mode
-  ? "main"
-  : "_self";
+$admin_internal_target = "_self";
 
 
 if (!function_exists("admin_menu_link_class")) {
@@ -243,7 +236,6 @@ if (!function_exists("admin_menu_link_class")) {
 
         <a
           href="problem_list.php"
-          target="_top"
           class="<?php
                   echo admin_menu_link_class(
                     'problem_list'
@@ -297,12 +289,7 @@ if (!function_exists("admin_menu_link_class")) {
             문제 복사
           </a>
 
-          <a
-            href="problem_changeid.php"
-            target="<?php echo $admin_internal_target; ?>"
-            class="admin-nav-link">
-            문제 번호 변경
-          </a>
+
 
         <?php
         }
@@ -330,7 +317,11 @@ if (!function_exists("admin_menu_link_class")) {
       <div class="admin-nav-items">
 
         <a
-          class="admin-nav-link"
+          class="<?php
+                  echo admin_menu_link_class(
+                    'contest_list'
+                  );
+                  ?>"
           href="contest_list.php"
           target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_CONTEST_LIST; ?>">
@@ -338,7 +329,11 @@ if (!function_exists("admin_menu_link_class")) {
         </a>
 
         <a
-          class="admin-nav-link"
+          class="<?php
+                  echo admin_menu_link_class(
+                    'contest_add'
+                  );
+                  ?>"
           href="contest_add.php"
           target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_ADD_CONTEST; ?>">
@@ -445,12 +440,6 @@ if (!function_exists("admin_menu_link_class")) {
             DB 업데이트
           </a>
 
-          <a
-            class="admin-nav-link"
-            href="backup.php"
-            target="<?php echo $admin_internal_target; ?>">
-            백업
-          </a>
 
         <?php
         }
@@ -515,34 +504,5 @@ if (!function_exists("admin_menu_link_class")) {
   <?php
   }
   ?>
-  <!-- 이동
-<?php if (oj_is_admin() && !$OJ_SAE) { ?>
-  <a href="problem_copy.php" target="<?php echo $admin_internal_target; ?>" title="Create your own data"><font color="eeeeee">CopyProblem</font></a> <br>
-  <a href="problem_changeid.php" target="<?php echo $admin_internal_target; ?>" title="Danger,Use it on your own risk"><font color="eeeeee">ReOrderProblem</font></a>
-<?php } ?>
--->
+
 </nav>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-
-    var links =
-      document.querySelectorAll(
-        '.admin-nav-link[target="<?php echo $admin_internal_target; ?>"]'
-      );
-
-    links.forEach(function(link) {
-
-      link.addEventListener('click', function() {
-
-        links.forEach(function(item) {
-          item.classList.remove('active');
-        });
-
-        this.classList.add('active');
-      });
-
-    });
-
-  });
-</script>

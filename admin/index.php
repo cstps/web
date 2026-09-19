@@ -1,51 +1,15 @@
-<!DOCTYPE html>
-<html lang="ko">
+<?php
 
-<head>
+require_once(__DIR__ . "/admin-init.php");
 
-    <?php
-    require_once("admin-header.php");
-    ?>
+header(
+    "Cache-Control: no-store, no-cache, must-revalidate, max-age=0"
+);
 
-    <title>1024.kr 관리자</title>
+header(
+    "Location: help.php",
+    true,
+    302
+);
 
-</head>
-
-<body class="admin-layout-page">
-
-
-    <?php
-    require_once("admin-bar.php");
-    ?>
-
-
-    <div class="admin-layout">
-
-        <aside class="admin-sidebar">
-
-            <?php
-            $admin_legacy_frame_mode = true;
-            $admin_active_menu = "dashboard";
-
-            require("menu2.php");
-            ?>
-
-        </aside>
-
-
-        <main class="admin-main">
-
-            <iframe
-                name="main"
-                src="help.php"
-                class="admin-main-frame"
-                title="관리자 작업 영역"></iframe>
-
-        </main>
-
-    </div>
-
-
-</body>
-
-</html>
+exit;
