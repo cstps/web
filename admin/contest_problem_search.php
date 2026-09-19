@@ -1,141 +1,249 @@
 <?php
 
-require_once("../include/db_info.inc.php");
-
-header(
-    "Content-Type: application/json; charset=utf-8"
+require_once(
+    __DIR__ .
+    '/admin-init.php'
 );
 
 
-if (
-    !isset(
-        $_SESSION[$OJ_NAME . '_user_id']
-    )
+header(
+    'Cache-Control: private, no-store'
+);
+
+header(
+    'Content-Type: application/json; charset=utf-8'
+);
+
+
+$fail = function (
+    $status,
+    $message
 ) {
 
-    http_response_code(401);
+    http_response_code(
+        intval($status)
+    );
 
     echo json_encode(
         array(
             'success' => false,
-            'message' => '로그인이 필요합니다.'
-        )
+            'message' => $message
+        ),
+        JSON_UNESCAPED_UNICODE |
+            JSON_INVALID_UTF8_SUBSTITUTE
     );
 
     exit;
+};
+
+
+// ============================================================
+// 검색 대상 대회와 접근 권한
+//
+// 생성 화면:
+// 전역 대회 생성 권한 필요
+//
+// 수정 화면:
+// 전역 권한 또는 해당 대회 관리 권한 필요
+// ============================================================
+
+$contest_id =
+    0;
+
+
+if (
+    array_key_exists(
+        'cid',
+        $_GET
+    )
+) {
+    if (
+        !is_scalar(
+            $_GET['cid']
+        )
+    ) {
+        $fail(
+            422,
+            '대회 번호 형식이 올바르지 않습니다.'
+        );
+    }
+
+
+    $contest_id_raw =
+        trim(
+            (string)$_GET['cid']
+        );
+
+
+    if (
+        preg_match(
+            '/^[1-9][0-9]*$/D',
+            $contest_id_raw
+        ) !== 1 ||
+        strlen($contest_id_raw) > 10 ||
+        (
+            strlen($contest_id_raw) === 10 &&
+            strcmp(
+                $contest_id_raw,
+                '2147483647'
+            ) > 0
+        )
+    ) {
+        $fail(
+            422,
+            '대회 번호 형식이 올바르지 않습니다.'
+        );
+    }
+
+
+    $contest_id =
+        intval(
+            $contest_id_raw
+        );
+}
+
+
+$can_search_problems =
+    oj_can_manage_admin_contests();
+
+
+if (
+    !$can_search_problems &&
+    $contest_id > 0
+) {
+    $can_search_problems =
+        oj_can_manage_contest(
+            $contest_id
+        );
+}
+
+
+if (!$can_search_problems) {
+    $fail(
+        403,
+        '문제를 선택할 권한이 없습니다.'
+    );
+}
+
+if (
+    !isset($_SERVER['REQUEST_METHOD']) ||
+    $_SERVER['REQUEST_METHOD'] !== 'GET'
+) {
+
+    header('Allow: GET');
+
+    $fail(
+        405,
+        'GET 요청만 허용됩니다.'
+    );
+}
+
+
+// ============================================================
+// GET 문자열 입력
+// ============================================================
+
+$get_string = function (
+    $name,
+    $default = ''
+) use ($fail) {
+
+    if (!isset($_GET[$name])) {
+        return $default;
+    }
+
+    if (!is_scalar($_GET[$name])) {
+
+        $fail(
+            422,
+            '검색 조건의 형식이 올바르지 않습니다: ' .
+                $name
+        );
+    }
+
+    return trim(
+        (string)$_GET[$name]
+    );
+};
+
+
+$search =
+    $get_string(
+        'search',
+        ''
+    );
+
+$scope =
+    $get_string(
+        'scope',
+        'my'
+    );
+
+
+if (
+    !in_array(
+        $scope,
+        array(
+            'my',
+            'available'
+        ),
+        true
+    )
+) {
+
+    $fail(
+        422,
+        '검색 범위가 올바르지 않습니다.'
+    );
 }
 
 
 if (
-    !isset(
-        $_SESSION[$OJ_NAME . '_administrator']
-    ) &&
-    !isset(
-        $_SESSION[$OJ_NAME . '_contest_creator']
-    )
+    preg_match(
+        '//u',
+        $search
+    ) !== 1
 ) {
-
-    http_response_code(403);
-
-    echo json_encode(
-        array(
-            'success' => false,
-            'message' => '문제를 선택할 권한이 없습니다.'
-        )
+    $fail(
+        422,
+        '검색어의 문자 인코딩이 올바르지 않습니다.'
     );
+}
 
-    exit;
+
+if (
+    strpos(
+        $search,
+        "\0"
+    ) !== false
+) {
+    $fail(
+        422,
+        '검색어에 사용할 수 없는 문자가 포함되어 있습니다.'
+    );
+}
+
+
+if (strlen($search) > 300) {
+
+    $fail(
+        422,
+        '검색어가 너무 깁니다.'
+    );
 }
 
 
 $user_id =
-    $_SESSION[$OJ_NAME . '_user_id'];
-
+    (string)$_SESSION[$OJ_NAME .
+        '_user_id'];
 
 $is_admin =
-    isset(
-        $_SESSION[$OJ_NAME . '_administrator']
-    );
+    oj_is_admin();
 
-
-$search =
-    isset($_GET['search'])
-    ? trim($_GET['search'])
-    : '';
-
-
-$scope =
-    isset($_GET['scope'])
-    ? trim($_GET['scope'])
-    : 'my';
 
 // ============================================================
-// 내가 생성한 문제 ID
-//
-// scope=my
-// → 관리자라도 자신의 문제만 조회해야 하므로 필요
-//
-// scope=available
-// → 관리자가 아닌 경우 자신의 비공개/재사용 제한 문제도
-//   사용 가능 목록에 포함해야 하므로 필요
+// 조회 조건
 // ============================================================
-
-$owned_problem_ids =
-    array();
-
-
-$need_owned_problem_ids =
-    (
-        $scope === 'my'
-        ||
-        !$is_admin
-    );
-
-
-if ($need_owned_problem_ids) {
-
-    $owned_rows =
-        pdo_query(
-            "SELECT rightstr
-             FROM privilege
-             WHERE user_id = ?
-               AND defunct = 'N'
-               AND rightstr LIKE 'p%'",
-            $user_id
-        );
-
-
-    if (is_array($owned_rows)) {
-
-        foreach ($owned_rows as $owned_row) {
-
-            $rightstr =
-                isset($owned_row['rightstr'])
-                ? trim($owned_row['rightstr'])
-                : '';
-
-
-            if (
-                preg_match(
-                    '/^p([0-9]+)$/',
-                    $rightstr,
-                    $matches
-                )
-            ) {
-
-                $problem_id =
-                    intval($matches[1]);
-
-
-                if ($problem_id > 0) {
-
-                    $owned_problem_ids[$problem_id] = true;
-                }
-            }
-        }
-    }
-}
-
 
 $where =
     array();
@@ -144,133 +252,78 @@ $params =
     array();
 
 
-// ============================================================
-// 조회 범위
-// ============================================================
+$owned_problem_condition =
+    "
+    EXISTS (
+        SELECT 1
+        FROM privilege AS pr
+        WHERE pr.user_id = ?
+          AND pr.defunct = 'N'
+          AND pr.rightstr =
+              CONCAT(
+                  'p',
+                  p.problem_id
+              )
+    )
+    ";
+
 
 if ($scope === 'my') {
 
-    // --------------------------------------------------------
-    // 내가 만든 문제
-    // --------------------------------------------------------
+    $where[] =
+        $owned_problem_condition;
 
-    if (empty($owned_problem_ids)) {
-
-        // 소유 문제가 없으면 결과 없음
-        $where[] =
-            "1 = 0";
-    } else {
-
-        $owned_placeholders =
-            implode(
-                ',',
-                array_fill(
-                    0,
-                    count($owned_problem_ids),
-                    '?'
-                )
-            );
-
-
-        $where[] =
-            "p.problem_id IN (" .
-            $owned_placeholders .
-            ")";
-
-
-        foreach (
-            array_keys($owned_problem_ids)
-            as $owned_problem_id
-        ) {
-
-            $params[] =
-                intval($owned_problem_id);
-        }
-    }
+    $params[] =
+        $user_id;
 } elseif (!$is_admin) {
 
-    // --------------------------------------------------------
-    // 사용 가능한 전체 문제
-    //
-    // 자신의 문제
-    // → 공개/비공개, allow_reuse 관계없이 사용 가능
-    //
-    // 다른 사용자의 문제
-    // → 공개 + allow_reuse=1
-    // --------------------------------------------------------
+    $where[] =
+        "
+        (
+            (
+                p.defunct = 'N'
+                AND p.allow_reuse = 1
+            )
 
-    if (!empty($owned_problem_ids)) {
+            OR
 
-        $owned_placeholders =
-            implode(
-                ',',
-                array_fill(
-                    0,
-                    count($owned_problem_ids),
-                    '?'
-                )
-            );
+            " .
+        $owned_problem_condition .
+        "
+        )
+        ";
 
-
-        $where[] =
-            "
-                (
-                    (
-                        p.defunct = 'N'
-                        AND p.allow_reuse = 1
-                    )
-    
-                    OR
-    
-                    p.problem_id IN (
-                        " . $owned_placeholders . "
-                    )
-                )
-                ";
-
-
-        foreach (
-            array_keys($owned_problem_ids)
-            as $owned_problem_id
-        ) {
-
-            $params[] =
-                intval($owned_problem_id);
-        }
-    } else {
-
-        $where[] =
-            "
-                (
-                    p.defunct = 'N'
-                    AND p.allow_reuse = 1
-                )
-                ";
-    }
+    $params[] =
+        $user_id;
 }
 
 
 // ============================================================
-// 검색 조건
+// 검색어
 // ============================================================
 
 if ($search !== '') {
 
-    $search_like =
-        '%' . $search . '%';
-
-
     if (ctype_digit($search)) {
 
-        // 숫자만 입력하면 문제번호 정확검색
-        // problem_id PRIMARY KEY 활용
-        $where[] =
-            "p.problem_id = ?";
-
-
-        $params[] =
+        $problem_id =
             intval($search);
+
+        if ($problem_id <= 0) {
+            $where[] = '1 = 0';
+        } else {
+            $where[] =
+                'p.problem_id = ?';
+
+            $params[] =
+                $problem_id;
+        }
     } else {
+
+        $search_like =
+            '%' .
+            $search .
+            '%';
 
         $where[] =
             "
@@ -290,19 +343,20 @@ if ($search !== '') {
 
 
 $where_sql =
-    count($where) > 0
-    ? " WHERE " .
+    empty($where)
+    ? ''
+    : ' WHERE ' .
     implode(
-        " AND ",
+        ' AND ',
         $where
-    )
-    : "";
+    );
 
 
 $result_limit =
-    ($search === '')
+    $search === ''
     ? 50
     : 300;
+
 
 $sql =
     "
@@ -315,73 +369,101 @@ $sql =
         p.submit,
         p.allow_reuse
 
-    FROM problem p
+    FROM problem AS p
 
-    $where_sql
+    " .
+    $where_sql .
+    "
 
     ORDER BY
         p.problem_id DESC
 
-    LIMIT " . $result_limit;
+    LIMIT " .
+    $result_limit;
 
+
+$query_arguments =
+    array_merge(
+        array($sql),
+        $params
+    );
 
 $rows =
-    pdo_query(
-        $sql,
-        ...$params
+    call_user_func_array(
+        'pdo_query',
+        $query_arguments
     );
 
 
 if (!is_array($rows)) {
-    $rows = array();
+
+    $fail(
+        500,
+        '문제 목록을 불러오지 못했습니다.'
+    );
 }
 
 
-$result =
+// ============================================================
+// JSON 결과
+// ============================================================
+
+$problems =
     array();
 
 
 foreach ($rows as $row) {
 
-    $result[] =
+    $problems[] =
         array(
-
             'problem_id' =>
-            intval(
-                $row['problem_id']
-            ),
+            intval($row['problem_id']),
 
             'title' =>
-            (string)$row['title'],
+            isset($row['title'])
+                ? (string)$row['title']
+                : '',
 
             'source' =>
-            (string)$row['source'],
+            isset($row['source'])
+                ? (string)$row['source']
+                : '',
 
             'defunct' =>
-            (string)$row['defunct'],
+            isset($row['defunct'])
+                ? (string)$row['defunct']
+                : '',
 
             'accepted' =>
-            intval(
-                $row['accepted']
-            ),
+            intval($row['accepted']),
 
             'submit' =>
-            intval(
-                $row['submit']
-            ),
+            intval($row['submit']),
 
             'allow_reuse' =>
-            intval(
-                $row['allow_reuse']
-            )
+            intval($row['allow_reuse'])
         );
 }
 
 
-echo json_encode(
-    array(
-        'success' => true,
-        'problems' => $result
-    ),
-    JSON_UNESCAPED_UNICODE
-);
+$json =
+    json_encode(
+        array(
+            'success' => true,
+            'problems' => $problems
+        ),
+        JSON_UNESCAPED_UNICODE |
+            JSON_INVALID_UTF8_SUBSTITUTE
+    );
+
+
+if ($json === false) {
+
+    $fail(
+        500,
+        '문제 목록을 변환하지 못했습니다.'
+    );
+}
+
+
+echo $json;

@@ -244,7 +244,7 @@
     display: grid;
 
     grid-template-columns:
-        42px minmax(200px, 1fr) 150px 70px;
+        42px minmax(200px, 1fr) 150px 190px;
 
     gap: 10px;
 
@@ -299,6 +299,44 @@
     box-sizing: border-box;
 
     padding: 6px 7px;
+}
+
+.contest-selected-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 5px;
+}
+
+
+.contest-selected-move {
+    padding: 6px 8px;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+
+    background: #fff;
+    color: #334155;
+
+    font-size: 12px;
+    white-space: nowrap;
+
+    cursor: pointer;
+}
+
+
+.contest-selected-move:hover:not(:disabled) {
+    border-color: #93c5fd;
+
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+
+.contest-selected-move:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 
@@ -364,6 +402,8 @@
 
 
 .contest-choice-group {
+    position: relative;
+
     display: flex;
     gap: 6px;
 
@@ -378,10 +418,27 @@
 .contest-choice-group input[type="radio"] {
     position: absolute;
 
+    top: 0;
+    left: 0;
+
     width: 1px;
     height: 1px;
 
+    margin: 0;
+    padding: 0;
+
+    border: 0;
+
     opacity: 0;
+
+    overflow: hidden;
+
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+
+    white-space: nowrap;
+
+    pointer-events: none;
 }
 
 
@@ -509,14 +566,34 @@
     margin-top: 15px;
 }
 
+.contest-language-item {
+    position: relative;
+}
 
-.contest-language-item input {
+.contest-language-item input[type="checkbox"] {
     position: absolute;
+
+    top: 0;
+    left: 0;
 
     width: 1px;
     height: 1px;
 
+    margin: 0;
+    padding: 0;
+
+    border: 0;
+
     opacity: 0;
+
+    overflow: hidden;
+
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+
+    white-space: nowrap;
+
+    pointer-events: none;
 }
 
 
@@ -614,8 +691,14 @@
     }
 
     .contest-selected-score,
-    .contest-selected-remove {
+    .contest-selected-remove,
+    .contest-selected-actions {
         grid-column: 2;
+    }
+
+    .contest-selected-actions {
+        justify-content: flex-start;
+        flex-wrap: wrap;
     }
 
     .contest-setting-grid {
