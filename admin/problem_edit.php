@@ -3,6 +3,8 @@ require_once("../include/db_info.inc.php");
 require_once("../include/const.inc.php");
 require_once("../include/my_func.inc.php");
 require_once("../include/permission_functions.inc.php");
+require_once("../include/code_template_functions.inc.php");
+
 
 $request_problem_id = 0;
 
@@ -1242,8 +1244,9 @@ $admin_page_access_allowed = true;
         WHERE `problem_id` = ?
     ";
 
-      @pdo_query(
-        $sql,
+      $problem_update_result =
+        pdo_query(
+          $sql,
         $title,
         $time_limit,
         $memory_limit,
@@ -1263,6 +1266,25 @@ $admin_page_access_allowed = true;
         $id
       );
 
+      if ($problem_update_result === false) {
+        http_response_code(500);
+        exit('문제 정보를 수정하지 못했습니다.');
+      }
+
+      $template_sync_result =
+        oj_sync_problem_templates_from_legacy(
+          $id,
+          $front_code,
+          $rear_code,
+          $language_name
+        );
+
+      if ($template_sync_result === false) {
+        http_response_code(500);
+
+        exit('문제 기본 정보는 수정되었지만 ' .
+          '언어별 코드 템플릿 동기화에 실패했습니다.');
+      }
 
       // 출제자 정보 수정
       if ($creator !== '') {
@@ -1273,11 +1295,17 @@ $admin_page_access_allowed = true;
             WHERE `rightstr` = ?
         ";
 
-        @pdo_query(
-          $sql_creator,
-          $creator,
-          "p" . $id
-        );
+        $creator_update_result =
+          pdo_query(
+            $sql_creator,
+            $creator,
+            "p" . $id
+          );
+
+        if ($creator_update_result === false) {
+          http_response_code(500);
+          exit('문제 출제자 정보를 수정하지 못했습니다.');
+        }
       }
 
 

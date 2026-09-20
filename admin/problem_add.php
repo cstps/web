@@ -194,6 +194,16 @@ $pid = addproblem(
     $pro_point
 );
 
+if (
+    $pid === false ||
+    intval($pid) <= 0
+) {
+    http_response_code(500);
+    exit('문제를 저장하지 못했습니다.');
+}
+
+$pid =
+    intval($pid);
 
 // ------------------------------------------------------------
 // 문제 재사용 정책 저장
