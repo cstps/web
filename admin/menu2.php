@@ -433,6 +433,8 @@ if (!function_exists("admin_menu_link_class")) {
             접속 사용자
           </a>
 
+          <a class="admin-nav-link" href="shorturl_list.php">단축 URL 관리</a>
+
           <a
             class="admin-nav-link"
             href="update_db.php"

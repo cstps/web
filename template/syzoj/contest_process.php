@@ -785,15 +785,19 @@ include(
                             );
 
 
-                        $problem_result_num =
-                            intval(
-                                $problem_data['latest_result']
-                            );
+                        $problem_ever_accepted =
+                            isset(
+                                $problem_data['ever_accepted']
+                            )
+                            ? intval(
+                                $problem_data['ever_accepted']
+                            )
+                            : 0;
 
 
                         if (
                             $problem_submit_count >= 5 &&
-                            $problem_result_num !== 4
+                            $problem_ever_accepted !== 1
                         ) {
 
                             $student_attention_count++;
@@ -863,8 +867,20 @@ include(
                                     );
 
 
+                                $problem_ever_accepted =
+                                    isset(
+                                        $student['problems'][$problem_num]['ever_accepted']
+                                    )
+                                    ? intval(
+                                        $student['problems'][$problem_num]['ever_accepted']
+                                    )
+                                    : 0;
+
+
                                 $problem_result =
-                                    intval(
+                                    $problem_ever_accepted === 1
+                                    ? 4
+                                    : intval(
                                         $student['problems'][$problem_num]['latest_result']
                                     );
                             }
@@ -1012,10 +1028,27 @@ include(
                                     // 결과
                                     // =====================================
 
-                                    $result_num =
+                                    $latest_result_num =
                                         intval(
                                             $p['latest_result']
                                         );
+
+
+                                    $problem_ever_accepted =
+                                        isset(
+                                            $p['ever_accepted']
+                                        )
+                                        ? intval(
+                                            $p['ever_accepted']
+                                        )
+                                        : 0;
+
+
+                                    // 화면의 문제 상태는 한 번이라도 정답이면 AC를 유지한다.
+                                    $result_num =
+                                        $problem_ever_accepted === 1
+                                        ? 4
+                                        : $latest_result_num;
 
 
                                     $result_text =
@@ -1032,6 +1065,25 @@ include(
                                             $judge_result[$result_num];
                                     }
 
+
+                                    // 해결 후 최근 제출이 오답이면 툴팁에 최근 결과도 표시한다.
+                                    if (
+                                        $problem_ever_accepted === 1 &&
+                                        $latest_result_num !== 4
+                                    ) {
+
+                                        $latest_result_text =
+                                            isset(
+                                                $judge_result[$latest_result_num]
+                                            )
+                                            ? $judge_result[$latest_result_num]
+                                            : '-';
+
+
+                                        $result_text =
+                                            '해결 완료 / 최근 제출: ' .
+                                            $latest_result_text;
+                                    }
                                 ?>
 
 
@@ -2563,7 +2615,7 @@ include(
                     </th>
 
                     <th>
-                        최종 결과
+                        최근 제출 결과
                     </th>
 
                     <th>

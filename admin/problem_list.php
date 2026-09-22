@@ -1,12 +1,15 @@
 <?php
 
 require_once __DIR__ . '/admin-init.php';
-require_once __DIR__ . '/../include/set_get_key.php';
+
 
 if (!oj_can_view_admin_problems()) {
   http_response_code(403);
   exit('문제 목록을 볼 권한이 없습니다.');
 }
+
+$can_create_contest_from_problems =
+  oj_can_manage_admin_contests();
 
 $admin_page_title = '문제 관리';
 $admin_active_menu = 'problem_list';
@@ -316,13 +319,500 @@ require_once __DIR__ . '/admin-layout-start.php';
 
   <div class="admin-card admin-table-card">
 
+    <?php
+    if ($can_create_contest_from_problems) {
+    ?>
+
+      <form
+        id="problem-contest-form"
+        method="post"
+        action="contest_add.php">
+
+        <div class="admin-csrf-fields">
+
+          <?php
+          require(
+            __DIR__ .
+            "/../include/set_post_key.php"
+          );
+          ?>
+
+        </div>
+
+        <input
+          type="hidden"
+          name="keyword"
+          value="<?php
+                  echo htmlspecialchars(
+                    $keyword_raw,
+                    ENT_QUOTES,
+                    'UTF-8'
+                  );
+                  ?>">
+
+        <div class="admin-bulk-actions">
+
+          <span class="admin-bulk-label">
+            선택한 문제
+          </span>
+
+          <button
+            type="submit"
+            name="problem2contest"
+            class="admin-btn admin-btn-secondary">
+            새 대회 만들기
+          </button>
+
+        </div>
+
+      </form>
+
+    <?php
+    }
+    ?>
+
+
+    <!-- 페이지네이션 : 목록 위 / 가운데 정렬 -->
+    <div class="admin-pagination-wrap">
+
+      <div class="admin-pagination-info">
+        전체 <?php echo number_format($ids); ?>개
+        ·
+        <?php echo $page; ?> / <?php echo $pages; ?> 페이지
+      </div>
+
+      <?php
+      if ($pages > 1) {
+      ?>
+
+        <nav
+          class="admin-pagination"
+          aria-label="문제 목록 페이지">
+
+          <a
+            class="admin-page-link <?php
+                                    echo $page <= 1
+                                      ? 'disabled'
+                                      : '';
+                                    ?>"
+            href="<?php
+                  echo htmlspecialchars(
+                    $problem_page_url(1),
+                    ENT_QUOTES,
+                    'UTF-8'
+                  );
+                  ?>"
+            title="첫 페이지">
+            «
+          </a>
+
+
+          <a
+            class="admin-page-link <?php
+                                    echo $page <= 1
+                                      ? 'disabled'
+                                      : '';
+                                    ?>"
+            href="<?php
+                  echo htmlspecialchars(
+                    $problem_page_url($prev_page),
+                    ENT_QUOTES,
+                    'UTF-8'
+                  );
+                  ?>"
+            title="이전 페이지">
+            ‹
+          </a>
+
+
+          <?php
+          for ($i = $spage; $i <= $epage; $i++) {
+          ?>
+
+            <a
+              class="admin-page-link <?php
+                                      echo $page === $i
+                                        ? 'active'
+                                        : '';
+                                      ?>"
+              href="<?php
+                    echo htmlspecialchars(
+                      $problem_page_url($i),
+                      ENT_QUOTES,
+                      'UTF-8'
+                    );
+                    ?>">
+              <?php echo $i; ?>
+            </a>
+
+          <?php
+          }
+          ?>
+
+
+          <a
+            class="admin-page-link <?php
+                                    echo $page >= $pages
+                                      ? 'disabled'
+                                      : '';
+                                    ?>"
+            href="<?php
+                  echo htmlspecialchars(
+                    $problem_page_url($next_page),
+                    ENT_QUOTES,
+                    'UTF-8'
+                  );
+                  ?>"
+            title="다음 페이지">
+            ›
+          </a>
+
+
+          <a
+            class="admin-page-link <?php
+                                    echo $page >= $pages
+                                      ? 'disabled'
+                                      : '';
+                                    ?>"
+            href="<?php
+                  echo htmlspecialchars(
+                    $problem_page_url($pages),
+                    ENT_QUOTES,
+                    'UTF-8'
+                  );
+                  ?>"
+            title="마지막 페이지">
+            »
+          </a>
+
+        </nav>
+
+      <?php
+      }
+      ?>
+
+    </div>
+
+
+    <div class="admin-table-wrap">
+
+      <table class="admin-table">
+
+        <thead>
+
+          <tr>
+
+            <?php
+            if ($can_create_contest_from_problems) {
+            ?>
+
+              <th class="admin-col-check">
+
+                <input
+                  type="checkbox"
+                  aria-label="현재 페이지 문제 전체 선택"
+                  onchange="
+        var checked = this.checked;
+
+        document
+          .querySelectorAll(
+            'input[name=&quot;pid[]&quot;][form=&quot;problem-contest-form&quot;]'
+          )
+          .forEach(function (input) {
+            input.checked = checked;
+          });
+      ">
+
+              </th>
+
+            <?php
+            }
+            ?>
+
+            <th class="admin-col-id">
+              문제 번호
+            </th>
+
+            <th>
+              문제 제목
+            </th>
+
+            <th class="admin-col-small">
+              AC
+            </th>
+
+            <th class="admin-col-date">
+              등록일
+            </th>
+
+            <th class="admin-col-reuse">
+              재사용
+            </th>
+
+            <th>
+              상태
+            </th>
+
+            <th class="admin-col-manage">
+              관리
+            </th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          <?php
+          if (count($result) === 0) {
+          ?>
+
+            <tr>
+              <td
+                colspan="<?php
+                          echo $can_create_contest_from_problems
+                            ? 8
+                            : 7;
+                          ?>"
+                style="padding: 32px 16px; color: #7b8797;">
+                표시할 문제가 없습니다.
+              </td>
+            </tr>
+
+            <?php
+          } else {
+
+            foreach ($result as $row) {
+
+              $pid = intval($row['problem_id']);
+
+              $can_manage_problem =
+                oj_can_manage_problem($pid);
+            ?>
+
+              <tr>
+
+                <?php
+                if ($can_create_contest_from_problems) {
+                ?>
+
+                  <td class="admin-col-check">
+
+                    <input
+                      type="checkbox"
+                      name="pid[]"
+                      value="<?php echo $pid; ?>"
+                      form="problem-contest-form"
+                      aria-label="<?php echo $pid; ?>번 문제 선택">
+
+                  </td>
+
+                <?php
+                }
+                ?>
+
+
+                <td class="admin-col-id">
+                  <?php echo $pid; ?>
+                </td>
+
+
+                <td class="admin-problem-title">
+
+                  <a
+                    href="../problem.php?id=<?php
+                                            echo $pid;
+                                            ?>">
+                    <?php
+                    echo htmlspecialchars(
+                      $row['title'],
+                      ENT_QUOTES,
+                      'UTF-8'
+                    );
+                    ?>
+                  </a>
+
+                </td>
+
+
+                <td>
+                  <?php
+                  echo intval(
+                    $row['accepted']
+                  );
+                  ?>
+                </td>
+
+
+                <td>
+                  <?php
+                  echo htmlspecialchars(
+                    $row['in_date'],
+                    ENT_QUOTES,
+                    'UTF-8'
+                  );
+                  ?>
+                </td>
+
+
+                <td>
+
+                  <?php
+                  if (
+                    intval(
+                      $row['allow_reuse']
+                    ) === 1
+                  ) {
+                  ?>
+
+                    <span
+                      class="
+                                            admin-badge
+                                            admin-badge-success
+                                        ">
+                      허용
+                    </span>
+
+                  <?php
+                  } else {
+                  ?>
+
+                    <span
+                      class="
+                                            admin-badge
+                                            admin-badge-muted
+                                        ">
+                      제한
+                    </span>
+
+                  <?php
+                  }
+                  ?>
+
+                </td>
+
+
+                <!-- 상태 -->
+                <td>
+
+                  <?php
+                  if ($can_manage_problem) {
+
+                    if (
+                      $row['defunct']
+                      === 'N'
+                    ) {
+                  ?>
+
+                      <button
+                        type="submit"
+                        form="problem-visibility-form"
+                        name="visibility_change"
+                        value="Y:<?php echo $pid; ?>"
+                        class="admin-status admin-status-public"
+                        title="클릭하면 비공개로 변경됩니다.">
+                        공개
+                      </button>
+
+                    <?php
+                    } else {
+                    ?>
+
+                      <button
+                        type="submit"
+                        form="problem-visibility-form"
+                        name="visibility_change"
+                        value="N:<?php echo $pid; ?>"
+                        class="admin-status admin-status-private"
+                        title="클릭하면 공개로 변경됩니다.">
+                        비공개
+                      </button>
+
+                  <?php
+                    }
+                  } else {
+                    echo '--';
+                  }
+                  ?>
+
+                </td>
+
+
+
+                <!-- 관리 -->
+                <td class="admin-manage-cell">
+
+                  <?php
+                  if ($can_manage_problem) {
+                  ?>
+
+                    <div class="admin-row-actions">
+
+                      <a
+                        class="admin-row-action"
+                        href="problem_edit.php?id=<?php echo $pid; ?>">
+                        수정
+                      </a>
+
+                      <a
+                        class="admin-row-action"
+                        href="problem_testdata.php?id=<?php echo $pid; ?>">
+                        테스트 데이터
+                      </a>
+
+                    </div>
+
+                  <?php
+                  } else {
+                    echo '--';
+                  }
+                  ?>
+
+                </td>
+
+              </tr>
+
+          <?php
+            }
+          }
+          ?>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+
     <form
+      id="problem-visibility-form"
       method="post"
-      action="contest_add.php">
+      action="problem_df_change.php"
+      hidden>
+
+      <div class="admin-csrf-fields">
+
+        <?php
+        require(
+          __DIR__ .
+          "/../include/set_post_key.php"
+        );
+        ?>
+
+      </div>
 
       <input
         type="hidden"
-        name="keyword"
+        name="return_scope"
+        value="<?php
+                echo $show_my
+                  ? ''
+                  : 'all';
+                ?>">
+
+      <input
+        type="hidden"
+        name="return_keyword"
         value="<?php
                 echo htmlspecialchars(
                   $keyword_raw,
@@ -331,465 +821,10 @@ require_once __DIR__ . '/admin-layout-start.php';
                 );
                 ?>">
 
-
-      <!-- 선택 문제 작업 -->
-      <div class="admin-bulk-actions">
-
-        <span class="admin-bulk-label">
-          선택한 문제
-        </span>
-
-        <button
-          type="submit"
-          name="problem2contest"
-          class="admin-btn admin-btn-secondary">
-          새 대회 만들기
-        </button>
-
-      </div>
-
-
-      <!-- 페이지네이션 : 목록 위 / 가운데 정렬 -->
-      <div class="admin-pagination-wrap">
-
-        <div class="admin-pagination-info">
-          전체 <?php echo number_format($ids); ?>개
-          ·
-          <?php echo $page; ?> / <?php echo $pages; ?> 페이지
-        </div>
-
-        <?php
-        if ($pages > 1) {
-        ?>
-
-          <nav
-            class="admin-pagination"
-            aria-label="문제 목록 페이지">
-
-            <a
-              class="admin-page-link <?php
-                                      echo $page <= 1
-                                        ? 'disabled'
-                                        : '';
-                                      ?>"
-              href="<?php
-                    echo htmlspecialchars(
-                      $problem_page_url(1),
-                      ENT_QUOTES,
-                      'UTF-8'
-                    );
-                    ?>"
-              title="첫 페이지">
-              «
-            </a>
-
-
-            <a
-              class="admin-page-link <?php
-                                      echo $page <= 1
-                                        ? 'disabled'
-                                        : '';
-                                      ?>"
-              href="<?php
-                    echo htmlspecialchars(
-                      $problem_page_url($prev_page),
-                      ENT_QUOTES,
-                      'UTF-8'
-                    );
-                    ?>"
-              title="이전 페이지">
-              ‹
-            </a>
-
-
-            <?php
-            for ($i = $spage; $i <= $epage; $i++) {
-            ?>
-
-              <a
-                class="admin-page-link <?php
-                                        echo $page === $i
-                                          ? 'active'
-                                          : '';
-                                        ?>"
-                href="<?php
-                      echo htmlspecialchars(
-                        $problem_page_url($i),
-                        ENT_QUOTES,
-                        'UTF-8'
-                      );
-                      ?>">
-                <?php echo $i; ?>
-              </a>
-
-            <?php
-            }
-            ?>
-
-
-            <a
-              class="admin-page-link <?php
-                                      echo $page >= $pages
-                                        ? 'disabled'
-                                        : '';
-                                      ?>"
-              href="<?php
-                    echo htmlspecialchars(
-                      $problem_page_url($next_page),
-                      ENT_QUOTES,
-                      'UTF-8'
-                    );
-                    ?>"
-              title="다음 페이지">
-              ›
-            </a>
-
-
-            <a
-              class="admin-page-link <?php
-                                      echo $page >= $pages
-                                        ? 'disabled'
-                                        : '';
-                                      ?>"
-              href="<?php
-                    echo htmlspecialchars(
-                      $problem_page_url($pages),
-                      ENT_QUOTES,
-                      'UTF-8'
-                    );
-                    ?>"
-              title="마지막 페이지">
-              »
-            </a>
-
-          </nav>
-
-        <?php
-        }
-        ?>
-
-      </div>
-
-
-      <div class="admin-table-wrap">
-
-        <table class="admin-table">
-
-          <thead>
-
-            <tr>
-
-              <th class="admin-col-check">
-
-                <input
-                  type="checkbox"
-                  onchange="
-                                        $('input[name=&quot;pid[]&quot;]')
-                                            .prop('checked', this.checked);
-                                    ">
-
-              </th>
-
-              <th class="admin-col-id">
-                문제 번호
-              </th>
-
-              <th>
-                문제 제목
-              </th>
-
-              <th class="admin-col-small">
-                AC
-              </th>
-
-              <th class="admin-col-date">
-                등록일
-              </th>
-
-              <th class="admin-col-reuse">
-                재사용
-              </th>
-
-              <th>
-                상태
-              </th>
-
-              <th class="admin-col-manage">
-                관리
-              </th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            <?php
-            if (count($result) === 0) {
-            ?>
-
-              <tr>
-                <td
-                  colspan="8"
-                  style="padding: 32px 16px; color: #7b8797;">
-                  표시할 문제가 없습니다.
-                </td>
-              </tr>
-
-              <?php
-            } else {
-
-              foreach ($result as $row) {
-
-                $pid = intval($row['problem_id']);
-
-                $can_manage_problem =
-                  oj_can_manage_problem($pid);
-              ?>
-
-                <tr>
-
-                  <td class="admin-col-check">
-
-                    <input
-                      type="checkbox"
-                      name="pid[]"
-                      value="<?php echo $pid; ?>">
-
-                  </td>
-
-
-                  <td class="admin-col-id">
-                    <?php echo $pid; ?>
-                  </td>
-
-
-                  <td class="admin-problem-title">
-
-                    <a
-                      href="../problem.php?id=<?php
-                                              echo $pid;
-                                              ?>">
-                      <?php
-                      echo htmlspecialchars(
-                        $row['title'],
-                        ENT_QUOTES,
-                        'UTF-8'
-                      );
-                      ?>
-                    </a>
-
-                  </td>
-
-
-                  <td>
-                    <?php
-                    echo intval(
-                      $row['accepted']
-                    );
-                    ?>
-                  </td>
-
-
-                  <td>
-                    <?php
-                    echo htmlspecialchars(
-                      $row['in_date'],
-                      ENT_QUOTES,
-                      'UTF-8'
-                    );
-                    ?>
-                  </td>
-
-
-                  <td>
-
-                    <?php
-                    if (
-                      intval(
-                        $row['allow_reuse']
-                      ) === 1
-                    ) {
-                    ?>
-
-                      <span
-                        class="
-                                            admin-badge
-                                            admin-badge-success
-                                        ">
-                        허용
-                      </span>
-
-                    <?php
-                    } else {
-                    ?>
-
-                      <span
-                        class="
-                                            admin-badge
-                                            admin-badge-muted
-                                        ">
-                        제한
-                      </span>
-
-                    <?php
-                    }
-                    ?>
-
-                  </td>
-
-
-                  <!-- 상태 -->
-                  <td>
-
-                    <?php
-                    if ($can_manage_problem) {
-
-                      if (
-                        $row['defunct']
-                        === 'N'
-                      ) {
-                    ?>
-
-                        <a
-                          class="
-                                            admin-status
-                                            admin-status-public
-                                        "
-                          href="problem_df_change.php?id=<?php
-                                                          echo $pid;
-                                                          ?>&getkey=<?php
-                                                                    echo urlencode(
-                                                                      $_SESSION[$OJ_NAME .
-                                                                        '_getkey']
-                                                                    );
-                                                                    ?>"
-                          title="
-                                            클릭하면 비공개로
-                                            변경됩니다.
-                                        ">
-                          공개
-                        </a>
-
-                      <?php
-                      } else {
-                      ?>
-
-                        <a
-                          class="
-                                            admin-status
-                                            admin-status-private
-                                        "
-                          href="problem_df_change.php?id=<?php
-                                                          echo $pid;
-                                                          ?>&getkey=<?php
-                                                                    echo urlencode(
-                                                                      $_SESSION[$OJ_NAME .
-                                                                        '_getkey']
-                                                                    );
-                                                                    ?>"
-                          title="
-                                            클릭하면 공개로
-                                            변경됩니다.
-                                        ">
-                          비공개
-                        </a>
-
-                    <?php
-                      }
-                    } else {
-                      echo '--';
-                    }
-                    ?>
-
-                  </td>
-
-
-                  <!-- 관리 -->
-                  <td class="admin-manage-cell">
-
-                    <?php
-                    if ($can_manage_problem) {
-                    ?>
-
-                      <div class="admin-row-actions">
-
-                        <a
-                          class="admin-row-action"
-                          href="problem_edit.php?id=<?php echo $pid; ?>">
-                          수정
-                        </a>
-
-
-                        <a
-                          class="admin-row-action"
-                          href="problem_testdata.php?id=<?php echo $pid; ?>"
-                          target="_top">
-                          테스트 데이터
-                        </a>
-
-
-                        <?php
-                        if (
-                          $OJ_SAE ||
-                          function_exists('system')
-                        ) {
-                        ?>
-
-                          <a
-                            class="
-                                          admin-row-action
-                                          admin-row-action-danger
-                                      "
-                            href="#"
-                            onclick="
-                                          if (
-                                              confirm(
-                                                  '이 문제를 삭제하시겠습니까?'
-                                              )
-                                          ) {
-                                              location.href =
-                                                  'problem_del.php?id=<?php
-                                                                      echo $pid;
-                                                                      ?>&getkey=<?php
-                                                                                echo rawurlencode(
-                                                                                  $_SESSION[$OJ_NAME .
-                                                                                    '_getkey']
-                                                                                );
-                                                                                ?>';
-                                          }
-
-                                          return false;
-                                      ">
-                            삭제
-                          </a>
-
-                        <?php
-                        }
-                        ?>
-
-                      </div>
-
-                    <?php
-                    } else {
-                      echo '--';
-                    }
-                    ?>
-
-                  </td>
-
-                </tr>
-
-            <?php
-              }
-            }
-            ?>
-
-          </tbody>
-
-        </table>
-
-      </div>
+      <input
+        type="hidden"
+        name="return_page"
+        value="<?php echo $page; ?>">
 
     </form>
   </div>

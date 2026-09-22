@@ -1,70 +1,69 @@
 <!DOCTYPE html>
-<?php 
-	$request_path=parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-	$url=basename($request_path);
-	$dir=basename(getcwd());
-	if($dir=="discuss3") $path_fix="../";
-	else $path_fix="";
- 	if(isset($OJ_NEED_LOGIN)&&$OJ_NEED_LOGIN&&(
-                  $url!='loginpage.php'&&
-                  $url!='lostpassword.php'&&
-                  $url!='lostpassword2.php'&&
-                  $url!='registerpage.php'
-                  ) && !isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
- 
-           header("location:".$path_fix."loginpage.php");
-           exit();
-        }
+<?php
+$request_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$url = basename($request_path);
+$dir = basename(getcwd());
+if ($dir == "discuss3") $path_fix = "../";
+else $path_fix = "";
+if (isset($OJ_NEED_LOGIN) && $OJ_NEED_LOGIN && (
+    $url != 'loginpage.php' &&
+    $url != 'lostpassword.php' &&
+    $url != 'lostpassword2.php' &&
+    $url != 'registerpage.php'
+) && !isset($_SESSION[$OJ_NAME . '_' . 'user_id'])) {
 
-	if($OJ_ONLINE){
-		require_once($path_fix.'include/online.php');
-		$on = new online();
-	}
+    header("location:" . $path_fix . "loginpage.php");
+    exit();
+}
 
-	// ---------------------------------------------------------
-	// 수업·대회 메뉴 표시 정보
-	// ---------------------------------------------------------
+if ($OJ_ONLINE) {
+    require_once($path_fix . 'include/online.php');
+    $on = new online();
+}
 
-	$header_logged_in =
-		isset($_SESSION[$OJ_NAME.'_user_id']);
+// ---------------------------------------------------------
+// 수업·대회 메뉴 표시 정보
+// ---------------------------------------------------------
 
-	$header_can_manage_course = false;
+$header_logged_in =
+    isset($_SESSION[$OJ_NAME . '_user_id']);
 
-	if ($header_logged_in) {
+$header_can_manage_course = false;
 
-		if (isset($_SESSION[$OJ_NAME.'_administrator'])) {
+if ($header_logged_in) {
 
-			$header_can_manage_course = true;
+    if (isset($_SESSION[$OJ_NAME . '_administrator'])) {
 
-		} else {
+        $header_can_manage_course = true;
+    } else {
 
-			$header_course_teacher_rows = pdo_query(
-				"SELECT course_id
+        $header_course_teacher_rows = pdo_query(
+            "SELECT course_id
 				 FROM course_teacher
 				 WHERE user_id = ?
 				   AND status = 1
 				 LIMIT 1",
-				$_SESSION[$OJ_NAME.'_user_id']
-			);
+            $_SESSION[$OJ_NAME . '_user_id']
+        );
 
-			$header_can_manage_course = (
-				$header_course_teacher_rows &&
-				isset($header_course_teacher_rows[0]['course_id'])
-			);
-		}
-	}
+        $header_can_manage_course = (
+            $header_course_teacher_rows &&
+            isset($header_course_teacher_rows[0]['course_id'])
+        );
+    }
+}
 
-	$header_is_my_course_page =
-		strpos($url, 'my_course_') === 0;
+$header_is_my_course_page =
+    strpos($url, 'my_course_') === 0;
 
-	$header_is_course_manage_page =
-		strpos($url, 'course_') === 0;
+$header_is_course_manage_page =
+    strpos($url, 'course_') === 0;
 
-	// $header_is_course_contest_menu = (
-	// 	$url === 'contest.php' ||
-	// 	$header_is_my_course_page ||
-	// 	$header_is_course_manage_page
-	// );
+// $header_is_course_contest_menu = (
+// 	$url === 'contest.php' ||
+// 	$header_is_my_course_page ||
+// 	$header_is_course_manage_page
+// );
 ?>
 
 <html lang="ko" style="position: fixed; width: 100%; overflow: hidden; ">
@@ -76,80 +75,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=0.65">
     <meta name="description" content="online coding judge site for student">
     <!-- naver webmaster 24.10.15 -->
-    <meta property="og:type" content="website"> 
+    <meta property="og:type" content="website">
     <meta property="og:title" content="1024 Online Judge Site">
     <meta property="og:description" content="초중고 학생 대상 실시간 코딩 채점 시스템">
     <meta property="og:image" content="./image/logo.png">
     <meta property="og:url" content="https://1024.kr">
 
     <title><?php echo $show_title ?></title>
-    <?php include("template/$OJ_TEMPLATE/css.php");?>
-    <script src="<?php echo $OJ_CDN_URL?>/include/jquery-latest.js"></script>
+    <?php include("template/$OJ_TEMPLATE/css.php"); ?>
+    <script src="<?php echo $OJ_CDN_URL ?>/include/jquery-latest.js"></script>
 
-</script>
+    </script>
 </head>
 
 <body style="position: relative; margin-top: 49px; height: calc(100% - 49px); overflow-y: overlay; ">
     <div class="ui fixed borderless menu" style="position: fixed; height: 49px; ">
-    <div class="left menu">
-                    <?php if(isset($_SESSION[$OJ_NAME.'_'.'user_id'])) { ?>
-                    <a href="<?php echo $path_fix?>/userinfo.php?user=<?php echo $_SESSION[$OJ_NAME.'_'.'user_id']?>"
-                        style="color: inherit; ">
-                        <div
-                            id="user-account-dropdown"
-                            class="ui dropdown item"
-                        >
-                            <?php echo $_SESSION[$OJ_NAME.'_'.'user_id']; ?>
-                            <i class="dropdown icon"></i>
-                            <div class="menu">
-                                <a class="item" href="<?php echo $path_fix?>mail.php"><?php echo $MSG_Message_Send;?></a>
-                                <a class="item" href="<?php echo $path_fix?>modifypage.php"><i
-                                        class="edit icon"></i><?php echo $MSG_REG_INFO;?></a>
-                    <?php if ($OJ_SaaS_ENABLE){ ?>
-                    <?php if($_SERVER['HTTP_HOST']==$DOMAIN)
-                        echo  "<a class='item' href='http://".  $_SESSION[$OJ_NAME.'_'.'user_id'].".$DOMAIN'><i class='globe icon' ></i>MyOJ</a>";?>
-                    <?php } ?>
-                                <?php if(isset($_SESSION[$OJ_NAME.'_'.'administrator'])||isset($_SESSION[$OJ_NAME.'_'.'contest_creator'])||isset($_SESSION[$OJ_NAME.'_'.'problem_editor'])||isset($_SESSION[$OJ_NAME.'_'.'password_setter'])){ ?>
-                                <a class="item" href="admin/"><i class="settings icon"></i><?php echo $MSG_ADMIN;?></a>
-                                <?php } ?>
-                                <a class="item" href="logout.php"><i class="power icon"></i><?php echo $MSG_LOGOUT;?></a>
-                            </div>
+        <div class="left menu">
+            <?php if (isset($_SESSION[$OJ_NAME . '_' . 'user_id'])) { ?>
+                <a href="<?php echo $path_fix ?>/userinfo.php?user=<?php echo $_SESSION[$OJ_NAME . '_' . 'user_id'] ?>"
+                    style="color: inherit; ">
+                    <div
+                        id="user-account-dropdown"
+                        class="ui dropdown item">
+                        <?php echo $_SESSION[$OJ_NAME . '_' . 'user_id']; ?>
+                        <i class="dropdown icon"></i>
+                        <div class="menu">
+                            <a class="item" href="<?php echo $path_fix ?>mail.php"><?php echo $MSG_Message_Send; ?></a>
+                            <a class="item" href="<?php echo $path_fix ?>modifypage.php"><i
+                                    class="edit icon"></i><?php echo $MSG_REG_INFO; ?></a>
+                            <?php if ($OJ_SaaS_ENABLE) { ?>
+                                <?php if ($_SERVER['HTTP_HOST'] == $DOMAIN)
+                                    echo  "<a class='item' href='http://" .  $_SESSION[$OJ_NAME . '_' . 'user_id'] . ".$DOMAIN'><i class='globe icon' ></i>MyOJ</a>"; ?>
+                            <?php } ?>
+                            <?php if (isset($_SESSION[$OJ_NAME . '_' . 'administrator']) || isset($_SESSION[$OJ_NAME . '_' . 'contest_creator']) || isset($_SESSION[$OJ_NAME . '_' . 'problem_editor']) || isset($_SESSION[$OJ_NAME . '_' . 'password_setter'])) { ?>
+                                <a class="item" href="admin/"><i class="settings icon"></i><?php echo $MSG_ADMIN; ?></a>
+                            <?php } ?>
+                            <a class="item" href="logout.php"><i class="power icon"></i><?php echo $MSG_LOGOUT; ?></a>
                         </div>
-                    </a>
-                    <?php } else { ?>
-                    <div class="item">
-                        <a class="ui button" style="margin-right: 0.5em; " href="loginpage.php">
-                        <?php echo $MSG_LOGIN?> 
-                        </a>
-                        <?php	// DB에서 확인하도록 수정
-                            $sql="SELECT `register` FROM `setting` ";
-                            $reg_result = pdo_query($sql);
-                            $reg_row =  $reg_result[0];
-
-                            if( $reg_row['register']==1){ ?>
-                        <a class="ui primary button" href="registerpage.php">
-                        <?php echo $MSG_REGISTER?> 
-                        </a>
-                        <?php } ?>
                     </div>
+                </a>
+            <?php } else { ?>
+                <div class="item">
+                    <a class="ui button" style="margin-right: 0.5em; " href="loginpage.php">
+                        <?php echo $MSG_LOGIN ?>
+                    </a>
+                    <?php    // DB에서 확인하도록 수정
+                    $sql = "SELECT `register` FROM `setting` ";
+                    $reg_result = pdo_query($sql);
+                    $reg_row =  $reg_result[0];
+
+                    if ($reg_row['register'] == 1) { ?>
+                        <a class="ui primary button" href="registerpage.php">
+                            <?php echo $MSG_REGISTER ?>
+                        </a>
                     <?php } ?>
-                </div>    
+                </div>
+            <?php } ?>
+        </div>
         <div class="ui container">
-           <!-- <a class="header item" href="/"><span style="font-family: 'Exo 2'; font-size: 1.5em; font-weight: 500; "><?php echo $domain==$DOMAIN?$OJ_NAME:ucwords($OJ_NAME)."'s OJ"?></span></a>
+            <!-- <a class="header item" href="/"><span style="font-family: 'Exo 2'; font-size: 1.5em; font-weight: 500; "><?php echo $domain == $DOMAIN ? $OJ_NAME : ucwords($OJ_NAME) . "'s OJ" ?></span></a>
                         -->
-                
-	        <a class="item <?php if ($url=="") echo "active";?>" href="/"><?php echo $MSG_HOME?></a>
-            <a class="item <?php if ($url=="problemset.php") echo "active";?>"
-                href="<?php echo $path_fix?>problemset.php"><?php echo $MSG_PROBLEMS?> </a>
-            <a class="item <?php if ($url=="drawproblemset.php") echo "active";?>"
-                href="<?php echo $path_fix?>drawproblemset.php"><?php echo $MSG_DRAWPROBLEMS?> </a>
-            <a class="item <?php if ($url=="category.php") echo "active";?>"
-                href="<?php echo $path_fix?>category.php"><?php echo $MSG_SOURCE?></a>
-            
+
+            <a class="item <?php if ($url == "") echo "active"; ?>" href="/"><?php echo $MSG_HOME ?></a>
+            <a class="item <?php if ($url == "problemset.php") echo "active"; ?>"
+                href="<?php echo $path_fix ?>problemset.php"><?php echo $MSG_PROBLEMS ?> </a>
+            <a class="item <?php if ($url == "drawproblemset.php") echo "active"; ?>"
+                href="<?php echo $path_fix ?>drawproblemset.php"><?php echo $MSG_DRAWPROBLEMS ?> </a>
+            <a class="item <?php if ($url == "category.php") echo "active"; ?>"
+                href="<?php echo $path_fix ?>category.php"><?php echo $MSG_SOURCE ?></a>
+
             <div
                 id="course-contest-dropdown"
-                class="ui dropdown item"
-            >
+                class="ui dropdown item">
                 🧑‍🏫수업·대회
                 <i class="dropdown icon"></i>
 
@@ -161,12 +158,11 @@
 
                         <a
                             class="item <?php
-                                if ($header_is_my_course_page) {
-                                    echo 'active';
-                                }
-                            ?>"
-                            href="<?php echo $path_fix; ?>my_course_list.php"
-                        >
+                                        if ($header_is_my_course_page) {
+                                            echo 'active';
+                                        }
+                                        ?>"
+                            href="<?php echo $path_fix; ?>my_course_list.php">
                             <i class="book icon"></i>
                             내 수업
                         </a>
@@ -177,16 +173,15 @@
 
                     <a
                         class="item <?php
-                            if ($url === 'contest.php') {
-                                echo 'active';
-                            }
-                        ?>"
+                                    if ($url === 'contest.php') {
+                                        echo 'active';
+                                    }
+                                    ?>"
                         href="<?php echo $path_fix; ?>contest.php<?php
-                            if ($header_logged_in) {
-                                echo '?my';
-                            }
-                        ?>"
-                    >
+                                                                    if ($header_logged_in) {
+                                                                        echo '?my';
+                                                                    }
+                                                                    ?>">
                         <i class="trophy icon"></i>
                         대회 목록
                     </a>
@@ -199,12 +194,11 @@
 
                         <a
                             class="item <?php
-                                if ($header_is_course_manage_page) {
-                                    echo 'active';
-                                }
-                            ?>"
-                            href="<?php echo $path_fix; ?>course_list.php"
-                        >
+                                        if ($header_is_course_manage_page) {
+                                            echo 'active';
+                                        }
+                                        ?>"
+                            href="<?php echo $path_fix; ?>course_list.php">
                             <i class="settings icon"></i>
                             수업 관리
                         </a>
@@ -216,57 +210,45 @@
                 </div>
 
             </div>
-            <a class="item <?php if ($url=="status.php") echo "active";?>" href="<?php echo $path_fix?>status.php"><?php echo $MSG_STATUS?></a>
-            <a class="item <?php if ($url=="ranklist.php") echo "active";?>"
-                href="<?php echo $path_fix?>ranklist.php"><?php echo $MSG_RANKLIST?></a>    
+            <a class="item <?php if ($url == "status.php") echo "active"; ?>" href="<?php echo $path_fix ?>status.php"><?php echo $MSG_STATUS ?></a>
+            <a class="item <?php if ($url == "ranklist.php") echo "active"; ?>"
+                href="<?php echo $path_fix ?>ranklist.php"><?php echo $MSG_RANKLIST ?></a>
             <!-- 유틸리티 추가 -->
-                
-            
-            <div
-                id="user-dev-dropdown"
-                class="ui dropdown item"
-            >
-                <a class="item <?php if ($url=="pc.php") echo "active";?>" href="<?php echo $path_fix?>pc.php"><?php echo $MSG_ULTILIST?></a><i class="dropdown icon"></i>
-                <ul class="menu">
-                    <a class="item" href="<?php echo $path_fix?>pc.php"><?php echo $MSG_POINTCHECK?></a>
-                    <a class="item" href="<?php echo $path_fix?>charcount.php"><?php echo $MSG_CHARCOUNT?></a>
-                    <a class="item" href="<?php echo $path_fix?>seat_assign.php"><?php echo $MSG_SEATASSIGN?></a>
-                    <a class="item" href="<?php echo $path_fix?>sadari.php"><?php echo $MSG_SADARI?></a>
-                    <a class="item" href="<?php echo $path_fix?>"><i class="edit icon"></i>개발중</a>
-                </ul>
-            </div>
-            
-            <!--<a class="item <?php //if ($url=="contest.php") echo "active";?>" href="/discussion/global"><i class="comments icon"></i> 讨论</a>-->
-            <a class="item <?php if ($url=="faqs.php") echo "active";?>" href="<?php echo $path_fix?>faqs.php"></i> <?php echo $MSG_FAQ?></a>
+            <!-- 기존 드롭다운 영역 대체 -->
+            <a class="item <?php if ($url == "tools.php" || $url == "pc.php" || $url == "charcount.php" || $url == "seat_assign.php" || $url == "sadari.php") echo "active"; ?>" href="<?php echo $path_fix ?>tools.php">
+                <i class="wrench icon"></i><?php echo isset($MSG_ULTILIST) ? $MSG_ULTILIST : "유틸리티"; ?>
+            </a>
 
-              <?php if (isset($OJ_BBS)&& $OJ_BBS){ ?>
-                  <a class='item' href="discuss.php"> <?php echo $MSG_BBS?></a>
-              <?php }?>
-            <?php if(isset($_GET['cid'])){
-            	$cid=intval($_GET['cid']);
+            <!--<a class="item <?php //if ($url=="contest.php") echo "active";
+                                ?>" href="/discussion/global"><i class="comments icon"></i> 讨论</a>-->
+            <a class="item <?php if ($url == "faqs.php") echo "active"; ?>" href="<?php echo $path_fix ?>faqs.php"></i> <?php echo $MSG_FAQ ?></a>
+
+            <?php if (isset($OJ_BBS) && $OJ_BBS) { ?>
+                <a class='item' href="discuss.php"> <?php echo $MSG_BBS ?></a>
+            <?php } ?>
+            <?php if (isset($_GET['cid'])) {
+                $cid = intval($_GET['cid']);
             ?>
-            <a id="back_to_contest" class="item active" href="<?php echo $path_fix?>contest.php?cid=<?php echo $cid?>" ><i
-                    class="arrow left icon"></i><?php echo $MSG_CONTEST.$MSG_PROBLEMS.$MSG_LIST?></a>
-            <?php }?>
-            
+                <a id="back_to_contest" class="item active" href="<?php echo $path_fix ?>contest.php?cid=<?php echo $cid ?>"><i
+                        class="arrow left icon"></i><?php echo $MSG_CONTEST . $MSG_PROBLEMS . $MSG_LIST ?></a>
+            <?php } ?>
+
         </div>
         <script>
-        $(function () {
+            $(function() {
 
-            $('#course-contest-dropdown').dropdown({
-                on: 'click'
-            });
-            $('#user-account-dropdown').dropdown({
-                on: 'click'
-            });
-            $('#user-dev-dropdown').dropdown({
-                on: 'click'
-            });
+                $('#course-contest-dropdown').dropdown({
+                    on: 'click'
+                });
+                $('#user-account-dropdown').dropdown({
+                    on: 'click'
+                });
+                $('#user-dev-dropdown').dropdown({
+                    on: 'click'
+                });
 
-        });
+            });
         </script>
     </div>
     <div style="margin-top: 28px; ">
         <div class="ui main container">
-
-

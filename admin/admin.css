@@ -1403,6 +1403,14 @@ body.admin-layout-page {
 
     text-decoration: none;
 }
+
+button.admin-status {
+    appearance: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+
 /* ============================================================
    Row actions
    ============================================================ */

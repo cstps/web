@@ -155,15 +155,19 @@
                     );
 
 
-                $attention_result =
-                    intval(
-                        $attention_problem['latest_result']
-                    );
+                $attention_ever_accepted =
+                    isset(
+                        $attention_problem['ever_accepted']
+                    )
+                    ? intval(
+                        $attention_problem['ever_accepted']
+                    )
+                    : 0;
 
 
                 if (
                     $attention_submit_count >= 5 &&
-                    $attention_result !== 4
+                    $attention_ever_accepted !== 1
                 ) {
 
                     $student_attention_count++;
@@ -240,8 +244,20 @@
                             );
 
 
+                        $problem_ever_accepted =
+                            isset(
+                                $student['problems'][$problem_num]['ever_accepted']
+                            )
+                            ? intval(
+                                $student['problems'][$problem_num]['ever_accepted']
+                            )
+                            : 0;
+
+
                         $problem_result =
-                            intval(
+                            $problem_ever_accepted === 1
+                            ? 4
+                            : intval(
                                 $student['problems'][$problem_num]['latest_result']
                             );
                     }
@@ -389,13 +405,31 @@
                             // 최신 결과
                             // ================================================
 
-                            $result_num =
+                            $latest_result_num =
                                 intval(
                                     $p['latest_result']
                                 );
 
 
-                            $result_text = "-";
+                            $problem_ever_accepted =
+                                isset(
+                                    $p['ever_accepted']
+                                )
+                                ? intval(
+                                    $p['ever_accepted']
+                                )
+                                : 0;
+
+
+                            // 문제 상태는 정답 이력을 우선한다.
+                            $result_num =
+                                $problem_ever_accepted === 1
+                                ? 4
+                                : $latest_result_num;
+
+
+                            $result_text =
+                                "-";
 
 
                             if (
@@ -406,6 +440,25 @@
 
                                 $result_text =
                                     $judge_result[$result_num];
+                            }
+
+
+                            if (
+                                $problem_ever_accepted === 1 &&
+                                $latest_result_num !== 4
+                            ) {
+
+                                $latest_result_text =
+                                    isset(
+                                        $judge_result[$latest_result_num]
+                                    )
+                                    ? $judge_result[$latest_result_num]
+                                    : '-';
+
+
+                                $result_text =
+                                    '해결 완료 / 최근 제출: ' .
+                                    $latest_result_text;
                             }
 
                         ?>
