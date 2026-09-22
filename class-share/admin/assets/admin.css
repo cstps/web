@@ -1,0 +1,155 @@
+:root {
+    --primary: #3730a3;
+    --primary-hover: #312e81;
+    --background: #f5f7fb;
+    --surface: #ffffff;
+    --text: #172033;
+    --muted: #64748b;
+    --border: #dbe2ea;
+    --danger: #b91c1c;
+    --danger-bg: #fef2f2;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--background);
+    color: var(--text);
+    font-family:
+        Pretendard,
+        "Noto Sans KR",
+        Arial,
+        sans-serif;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+.admin-login-page {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+}
+
+.admin-login-card {
+    width: min(440px, 100%);
+    padding: 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow:
+        0 18px 50px
+        rgba(15, 23, 42, 0.10);
+}
+
+.admin-login-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 26px;
+}
+
+.admin-login-logo {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 14px;
+    background: var(--primary);
+    color: #ffffff;
+    font-weight: 900;
+}
+
+.admin-login-brand h1 {
+    margin: 0;
+    font-size: 21px;
+}
+
+.admin-login-brand p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.admin-field {
+    margin-top: 18px;
+}
+
+.admin-field label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.admin-field input {
+    width: 100%;
+    padding: 12px 13px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: #ffffff;
+    color: var(--text);
+}
+
+.admin-field input:focus {
+    border-color: var(--primary);
+    outline: 3px solid rgba(79, 70, 229, 0.14);
+}
+
+.admin-login-button {
+    width: 100%;
+    margin-top: 22px;
+    padding: 13px 16px;
+    border: 0;
+    border-radius: 11px;
+    background: var(--primary);
+    color: #ffffff;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.admin-login-button:hover {
+    background: var(--primary-hover);
+}
+
+.admin-error {
+    margin: 0 0 18px;
+    padding: 12px 14px;
+    border: 1px solid #fecaca;
+    border-radius: 11px;
+    background: var(--danger-bg);
+    color: var(--danger);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.admin-login-note {
+    margin: 20px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: center;
+}
+
+@media (max-width: 520px) {
+    .admin-login-page {
+        padding: 14px;
+    }
+
+    .admin-login-card {
+        padding: 24px 20px;
+        border-radius: 16px;
+    }
+}
