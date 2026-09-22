@@ -8,17 +8,11 @@ require_once(
 $admin =
     class_share_admin_require_login();
 
-header(
-    "Content-Security-Policy: " .
-    "default-src 'self'; " .
-    "style-src 'self'; " .
-    "img-src 'self' data:; " .
-    "script-src 'self'; " .
-    "form-action 'self'; " .
-    "frame-ancestors 'none'; " .
-    "base-uri 'self'; " .
-    "object-src 'none'"
-);
+$page_title =
+    '대시보드';
+
+$active_menu =
+    'dashboard';
 
 $role_name =
     class_share_admin_is_super_admin(
@@ -27,104 +21,82 @@ $role_name =
     ? '최고 관리자'
     : '학교 관리자';
 
+require_once(
+    __DIR__ .
+    '/include/admin_layout_start.php'
+);
+
 ?>
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
+<section class="admin-panel">
+    <h2>
+        관리자 로그인 정보
+    </h2>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1">
+    <div class="admin-field">
+        <label>관리자 이름</label>
 
-    <title>수업나눔 관리자</title>
+        <p>
+            <?php
+            echo class_share_escape(
+                $admin['display_name']
+            );
+            ?>
+        </p>
+    </div>
 
-    <link
-        rel="stylesheet"
-        href="/class-share/admin/assets/admin.css">
-</head>
+    <div class="admin-field">
+        <label>관리자 아이디</label>
 
-<body>
-    <main class="admin-login-page">
-        <section
-            class="admin-login-card"
-            aria-labelledby="dashboard-title">
+        <p>
+            <?php
+            echo class_share_escape(
+                $admin['login_id']
+            );
+            ?>
+        </p>
+    </div>
 
-            <div class="admin-login-brand">
-                <div
-                    class="admin-login-logo"
-                    aria-hidden="true">
-                    나
-                </div>
+    <div class="admin-field">
+        <label>권한</label>
 
-                <div>
-                    <h1 id="dashboard-title">
-                        수업나눔 관리자
-                    </h1>
+        <p>
+            <?php
+            echo class_share_escape(
+                $role_name
+            );
+            ?>
+        </p>
+    </div>
+</section>
 
-                    <p>
-                        관리자 인증이 완료되었습니다.
-                    </p>
-                </div>
-            </div>
+<section class="admin-panel admin-panel-spaced">
 
-            <div class="admin-field">
-                <label>관리자 이름</label>
+    <h2>
+        수업나눔 관리
+    </h2>
 
-                <p>
-                    <?php
-                    echo class_share_escape(
-                        $admin['display_name']
-                    );
-                    ?>
-                </p>
-            </div>
+    <p class="admin-muted">
+        학교를 등록한 후 학교별 행사, 수업,
+        공지사항과 참관 신청내역을 관리할 수 있습니다.
+    </p>
 
-            <div class="admin-field">
-                <label>관리자 아이디</label>
+    <?php
+    if (
+        class_share_admin_is_super_admin(
+            $admin
+        )
+    ) {
+    ?>
+        <p class="admin-muted">
+            왼쪽의 ‘학교 관리’ 메뉴에서
+            첫 번째 학교를 등록할 수 있습니다.
+        </p>
+    <?php } ?>
+</section>
 
-                <p>
-                    <?php
-                    echo class_share_escape(
-                        $admin['login_id']
-                    );
-                    ?>
-                </p>
-            </div>
+<?php
 
-            <div class="admin-field">
-                <label>권한</label>
-
-                <p>
-                    <?php
-                    echo class_share_escape(
-                        $role_name
-                    );
-                    ?>
-                </p>
-            </div>
-
-            <p class="admin-login-note">
-                학교·수업·공지·신청자 관리 기능은
-                다음 단계에서 연결합니다.
-            </p>
-
-            <form
-                method="post"
-                action="/class-share/admin/logout.php">
-
-                <?php
-                echo class_share_admin_csrf_input();
-                ?>
-
-                <button
-                    type="submit"
-                    class="admin-login-button">
-
-                    로그아웃
-                </button>
-            </form>
-        </section>
-    </main>
-</body>
-</html>
+require_once(
+    __DIR__ .
+    '/include/admin_layout_end.php'
+);
