@@ -210,13 +210,23 @@ require_once(
                                 </span>
                             </td>
                             <td>
-                                <a
-                                    class="admin-table-action"
-                                    href="/class-share/admin/school_form.php?id=<?php
-                                                                                echo (int)$school['id'];
-                                                                                ?>">
-                                    수정
-                                </a>
+                                <div class="admin-table-actions">
+                                    <a
+                                        class="admin-table-action"
+                                        href="/class-share/admin/events.php?school_id=<?php
+                                                                                        echo (int)$school['id'];
+                                                                                        ?>">
+                                        행사 관리
+                                    </a>
+
+                                    <a
+                                        class="admin-table-action"
+                                        href="/class-share/admin/school_form.php?id=<?php
+                                                                                    echo (int)$school['id'];
+                                                                                    ?>">
+                                        학교 수정
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     <?php } ?>

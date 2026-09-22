@@ -460,6 +460,26 @@ input {
     background: #e0e7ff;
 }
 
+.admin-table-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.admin-back-link {
+    display: inline-block;
+    margin-top: 7px;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.admin-back-link:hover {
+    text-decoration: underline;
+}
+
+
 @media (max-width: 760px) {
     .admin-form-grid {
         grid-template-columns: 1fr;
