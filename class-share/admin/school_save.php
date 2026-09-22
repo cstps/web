@@ -159,8 +159,8 @@ if (count($errors) === 0) {
             ",
             $slug,
             $school_code !== ''
-            ? $school_code
-            : null
+                ? $school_code
+                : null
         );
 
     if ($duplicate_rows === false) {
@@ -169,7 +169,10 @@ if (count($errors) === 0) {
     } else {
         foreach ($duplicate_rows as $row) {
             if (
-                (string)$row['slug'] === $slug
+                strcasecmp(
+                    (string)$row['slug'],
+                    $slug
+                ) === 0
             ) {
                 $errors[] =
                     '이미 사용 중인 공개 주소 식별자입니다.';
@@ -177,8 +180,11 @@ if (count($errors) === 0) {
 
             if (
                 $school_code !== '' &&
-                (string)$row['school_code'] ===
+                $row['school_code'] !== null &&
+                strcasecmp(
+                    (string)$row['school_code'],
                     $school_code
+                ) === 0
             ) {
                 $errors[] =
                     '이미 등록된 학교 코드입니다.';
@@ -188,18 +194,14 @@ if (count($errors) === 0) {
 }
 
 if (count($errors) > 0) {
-    $_SESSION[
-        'class_share_school_form_errors'
-    ] =
+    $_SESSION['class_share_school_form_errors'] =
         array_values(
             array_unique(
                 $errors
             )
         );
 
-    $_SESSION[
-        'class_share_school_form_values'
-    ] =
+    $_SESSION['class_share_school_form_values'] =
         $form_values;
 
     session_write_close();
@@ -261,8 +263,8 @@ try {
             $slug,
             $page_title,
             $introduction !== ''
-            ? $introduction
-            : null,
+                ? $introduction
+                : null,
             $status
         );
 
@@ -276,22 +278,22 @@ try {
         json_encode(
             array(
                 'school_code' =>
-                    $school_code_value,
+                $school_code_value,
 
                 'school_name' =>
-                    $school_name,
+                $school_name,
 
                 'slug' =>
-                    $slug,
+                $slug,
 
                 'page_title' =>
-                    $page_title,
+                $page_title,
 
                 'status' =>
-                    $status
+                $status
             ),
             JSON_UNESCAPED_UNICODE |
-            JSON_UNESCAPED_SLASHES
+                JSON_UNESCAPED_SLASHES
         );
 
     if ($after_data === false) {
@@ -355,19 +357,15 @@ try {
 
     error_log(
         '[class-share] 학교 생성 실패: ' .
-        $e->getMessage()
+            $e->getMessage()
     );
 
-    $_SESSION[
-        'class_share_school_form_errors'
-    ] =
+    $_SESSION['class_share_school_form_errors'] =
         array(
             '학교를 저장하지 못했습니다.'
         );
 
-    $_SESSION[
-        'class_share_school_form_values'
-    ] =
+    $_SESSION['class_share_school_form_values'] =
         $form_values;
 
     session_write_close();
@@ -381,9 +379,7 @@ try {
     exit;
 }
 
-$_SESSION[
-    'class_share_admin_flash'
-] =
+$_SESSION['class_share_admin_flash'] =
     '학교가 등록되었습니다.';
 
 session_write_close();

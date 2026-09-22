@@ -445,6 +445,21 @@ input {
     background: var(--primary-hover);
 }
 
+.admin-table-action {
+    display: inline-block;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: #eef2ff;
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.admin-table-action:hover {
+    background: #e0e7ff;
+}
+
 @media (max-width: 760px) {
     .admin-form-grid {
         grid-template-columns: 1fr;

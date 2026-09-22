@@ -66,19 +66,13 @@ if ($schools === false) {
 
 $flash_message =
     isset(
-        $_SESSION[
-            'class_share_admin_flash'
-        ]
+        $_SESSION['class_share_admin_flash']
     )
-    ? (string)$_SESSION[
-        'class_share_admin_flash'
-    ]
+    ? (string)$_SESSION['class_share_admin_flash']
     : '';
 
 unset(
-    $_SESSION[
-        'class_share_admin_flash'
-    ]
+    $_SESSION['class_share_admin_flash']
 );
 
 $status_names =
@@ -147,6 +141,7 @@ require_once(
                         <th>행사 수</th>
                         <th>관리자 수</th>
                         <th>상태</th>
+                        <th>관리</th>
                     </tr>
                 </thead>
 
@@ -177,8 +172,8 @@ require_once(
                                 <?php
                                 echo class_share_escape(
                                     $school['school_code'] !== null
-                                    ? $school['school_code']
-                                    : '-'
+                                        ? $school['school_code']
+                                        : '-'
                                 );
                                 ?>
                             </td>
@@ -186,10 +181,10 @@ require_once(
                             <td>
                                 <code>
                                     /class-share/<?php
-                                    echo class_share_escape(
-                                        $school['slug']
-                                    );
-                                    ?>
+                                                    echo class_share_escape(
+                                                        $school['slug']
+                                                    );
+                                                    ?>
                                 </code>
                             </td>
 
@@ -213,6 +208,15 @@ require_once(
                                     );
                                     ?>
                                 </span>
+                            </td>
+                            <td>
+                                <a
+                                    class="admin-table-action"
+                                    href="/class-share/admin/school_form.php?id=<?php
+                                                                                echo (int)$school['id'];
+                                                                                ?>">
+                                    수정
+                                </a>
                             </td>
                         </tr>
                     <?php } ?>
