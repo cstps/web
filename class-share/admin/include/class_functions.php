@@ -1,5 +1,10 @@
 <?php
 
+require_once(
+    __DIR__ .
+    '/content_sanitizer.php'
+);
+
 /**
  * 수업 등록·수정·일괄 등록에서 공통으로 사용하는 함수입니다.
  */
@@ -141,7 +146,8 @@ function class_share_class_database_timestamp($value)
  */
 function class_share_class_validate_input(
     $source,
-    $event
+    $event,
+    $description_format = 'html'
 ) {
     if (!is_array($source)) {
         $source =
@@ -217,10 +223,6 @@ function class_share_class_validate_input(
             'place' => array(
                 '장소',
                 150
-            ),
-            'description' => array(
-                '수업 소개',
-                5000
             )
         );
 
@@ -239,6 +241,39 @@ function class_share_class_validate_input(
                 $rule[1] .
                 '자 이하로 입력해 주세요.';
         }
+    }
+
+    if ($description_format === 'plain') {
+        $description_html =
+            class_share_content_plain_text_to_html(
+                $form_values['description']
+            );
+    } else {
+        $description_html =
+            $form_values['description'];
+    }
+
+    $safe_description =
+        class_share_content_sanitize_html(
+            $description_html
+        );
+
+    if (
+        class_share_content_visible_text_length(
+            $safe_description
+        ) > 5000
+    ) {
+        $errors[] =
+            '수업 소개의 실제 글 내용은 5,000자 이하로 입력해 주세요.';
+    }
+
+    if (
+        strlen(
+            $safe_description
+        ) > 60000
+    ) {
+        $errors[] =
+            '수업 소개의 서식 포함 데이터가 너무 큽니다. 표나 서식을 줄여 주세요.';
     }
 
     if ($form_values['title'] === '') {
@@ -501,7 +536,7 @@ function class_share_class_validate_input(
                 : 0,
 
             'description' =>
-                $form_values['description'],
+                $safe_description,
 
             'sort_order' =>
                 isset($sort_order)

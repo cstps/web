@@ -8,59 +8,91 @@ require_once(
 $admin =
     class_share_admin_require_login();
 
-$event_id =
-    isset($_GET['event_id'])
-    ? (int)$_GET['event_id']
+$class_id =
+    isset($_GET['class_id'])
+    ? (int)$_GET['class_id']
     : 0;
 
-if ($event_id <= 0) {
+if ($class_id <= 0) {
     http_response_code(400);
-    exit('행사 번호가 올바르지 않습니다.');
+    exit('수업 번호가 올바르지 않습니다.');
 }
 
-$event_rows =
+$class_rows =
     pdo_query(
         "
         SELECT
-            event.id,
+            class_item.id,
+            class_item.event_id,
+            class_item.subject,
+            class_item.title,
+            class_item.teacher_name,
+            class_item.target,
+            class_item.class_start_at,
+            class_item.class_end_at,
+            class_item.place,
+            class_item.application_deadline,
+            class_item.capacity,
+            class_item.description,
+            class_item.sort_order,
+            class_item.status,
+
             event.school_id,
-            event.title,
+            event.title AS event_title,
             event.academic_year,
-            event.status,
+            event.status AS event_status,
             event.event_start_at,
             event.event_end_at,
             event.application_start_at,
             event.application_end_at,
-            school.school_name,
-            school.slug AS school_slug
 
-        FROM class_share_event AS event
+            school.school_name,
+
+            (
+                SELECT COUNT(*)
+                FROM class_share_application AS application
+                WHERE application.class_id =
+                      class_item.id
+                  AND application.status IN (
+                      'applied',
+                      'approved',
+                      'waiting'
+                  )
+            ) AS active_application_count
+
+        FROM class_share_class AS class_item
+
+        INNER JOIN class_share_event AS event
+            ON event.id = class_item.event_id
 
         INNER JOIN class_share_school AS school
             ON school.id = event.school_id
 
-        WHERE event.id = ?
+        WHERE class_item.id = ?
 
         LIMIT 1
         ",
-        $event_id
+        $class_id
     );
 
-if ($event_rows === false) {
+if ($class_rows === false) {
     http_response_code(500);
-    exit('행사 정보를 불러올 수 없습니다.');
+    exit('수업 정보를 불러올 수 없습니다.');
 }
 
-if (!isset($event_rows[0])) {
+if (!isset($class_rows[0])) {
     http_response_code(404);
-    exit('행사를 찾을 수 없습니다.');
+    exit('수업을 찾을 수 없습니다.');
 }
 
-$event =
-    $event_rows[0];
+$class_item =
+    $class_rows[0];
+
+$event_id =
+    (int)$class_item['event_id'];
 
 $school_id =
-    (int)$event['school_id'];
+    (int)$class_item['school_id'];
 
 if (
     !class_share_admin_can_edit_school(
@@ -69,12 +101,12 @@ if (
     )
 ) {
     http_response_code(403);
-    exit('해당 행사의 수업을 등록할 권한이 없습니다.');
+    exit('해당 수업을 수정할 권한이 없습니다.');
 }
 
 if (
     in_array(
-        (string)$event['status'],
+        (string)$class_item['event_status'],
         array(
             'cancelled',
             'archived'
@@ -83,35 +115,22 @@ if (
     )
 ) {
     http_response_code(409);
-    exit('취소되거나 보관된 행사에는 수업을 추가할 수 없습니다.');
+    exit('취소되거나 보관된 행사의 수업은 수정할 수 없습니다.');
 }
-
-$sort_rows =
-    pdo_query(
-        "
-        SELECT
-            COALESCE(
-                MAX(sort_order),
-                0
-            ) + 10 AS next_sort_order
-
-        FROM class_share_class
-
-        WHERE event_id = ?
-        ",
-        $event_id
-    );
 
 if (
-    $sort_rows === false ||
-    !isset($sort_rows[0])
+    in_array(
+        (string)$class_item['status'],
+        array(
+            'cancelled',
+            'archived'
+        ),
+        true
+    )
 ) {
-    http_response_code(500);
-    exit('수업 정렬 순서를 확인할 수 없습니다.');
+    http_response_code(409);
+    exit('취소되거나 보관된 수업은 수정할 수 없습니다.');
 }
-
-$next_sort_order =
-    (int)$sort_rows[0]['next_sort_order'];
 
 $to_input_datetime =
     function ($value) {
@@ -161,52 +180,75 @@ $format_display_datetime =
         );
     };
 
-
 $default_values =
     array(
-        'subject' => '',
-        'title' => '',
-        'teacher_name' => '',
-        'target' => '',
+        'subject' =>
+        (string)$class_item['subject'],
+
+        'title' =>
+        (string)$class_item['title'],
+
+        'teacher_name' =>
+        (string)$class_item['teacher_name'],
+
+        'target' =>
+        (string)$class_item['target'],
 
         'class_start_at' =>
         $to_input_datetime(
-            $event['event_start_at']
+            $class_item['class_start_at']
         ),
 
-        'class_end_at' => '',
-        'place' => '',
+        'class_end_at' =>
+        $to_input_datetime(
+            $class_item['class_end_at']
+        ),
+
+        'place' =>
+        (string)$class_item['place'],
 
         'application_deadline' =>
         $to_input_datetime(
-            $event['application_end_at']
+            $class_item['application_deadline']
         ),
 
-        'capacity' => '20',
-        'description' => '',
+        'capacity' =>
+        (string)$class_item['capacity'],
+
+        'description' =>
+        (string)$class_item['description'],
 
         'sort_order' =>
-        (string)$next_sort_order
+        (string)$class_item['sort_order']
     );
 
-$form_errors =
+$saved_class_id =
     isset(
-        $_SESSION['class_share_class_form_errors']
+        $_SESSION['class_share_class_edit_id']
+    )
+    ? (int)$_SESSION['class_share_class_edit_id']
+    : 0;
+
+$form_errors =
+    $saved_class_id === $class_id &&
+    isset(
+        $_SESSION['class_share_class_edit_errors']
     ) &&
     is_array(
-        $_SESSION['class_share_class_form_errors']
+        $_SESSION['class_share_class_edit_errors']
     )
-    ? $_SESSION['class_share_class_form_errors']
+    ? $_SESSION['class_share_class_edit_errors']
     : array();
 
 $saved_values =
+    $saved_class_id === $class_id &&
     isset(
-        $_SESSION['class_share_class_form_values']
+        $_SESSION['class_share_class_edit_values']
     ) &&
     is_array(
-        $_SESSION['class_share_class_form_values']
+        $_SESSION['class_share_class_edit_values']
     )
-    ? $_SESSION['class_share_class_form_values']
+    ? $_SESSION['class_share_class_edit_values']
     : array();
 
 $form_values =
@@ -216,13 +258,40 @@ $form_values =
     );
 
 unset(
-    $_SESSION['class_share_class_form_errors'],
-    $_SESSION['class_share_class_form_values']
+    $_SESSION['class_share_class_edit_id'],
+    $_SESSION['class_share_class_edit_errors'],
+    $_SESSION['class_share_class_edit_values']
 );
 
+$status_names =
+    array(
+        'draft' => '작성 중',
+        'published' => '공개',
+        'closed' => '신청 마감',
+        'cancelled' => '취소',
+        'archived' => '보관'
+    );
+
+$status =
+    (string)$class_item['status'];
+
+$status_name =
+    isset($status_names[$status])
+    ? $status_names[$status]
+    : $status;
+
+$active_application_count =
+    (int)$class_item['active_application_count'];
+
+$minimum_capacity =
+    max(
+        1,
+        $active_application_count
+    );
+
 $page_title =
-    $event['title'] .
-    ' 수업 추가';
+    $class_item['title'] .
+    ' 수정';
 
 $active_menu =
     'schools';
@@ -238,13 +307,19 @@ require_once(
         <p class="admin-muted">
             <?php
             echo class_share_escape(
-                $event['school_name']
+                $class_item['school_name']
             );
             ?>
             ·
             <?php
-            echo (int)$event['academic_year'];
+            echo (int)$class_item['academic_year'];
             ?>학년도
+            ·
+            <?php
+            echo class_share_escape(
+                $class_item['event_title']
+            );
+            ?>
         </p>
 
         <p class="admin-muted">
@@ -253,7 +328,7 @@ require_once(
                 <?php
                 echo class_share_escape(
                     $format_display_datetime(
-                        $event['event_start_at']
+                        $class_item['event_start_at']
                     )
                 );
                 ?>
@@ -261,7 +336,7 @@ require_once(
                 <?php
                 echo class_share_escape(
                     $format_display_datetime(
-                        $event['event_end_at']
+                        $class_item['event_end_at']
                     )
                 );
                 ?>
@@ -274,7 +349,7 @@ require_once(
                 <?php
                 echo class_share_escape(
                     $format_display_datetime(
-                        $event['application_start_at']
+                        $class_item['application_start_at']
                     )
                 );
                 ?>
@@ -282,7 +357,7 @@ require_once(
                 <?php
                 echo class_share_escape(
                     $format_display_datetime(
-                        $event['application_end_at']
+                        $class_item['application_end_at']
                     )
                 );
                 ?>
@@ -321,13 +396,46 @@ require_once(
 <?php } ?>
 
 <section class="admin-panel">
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <tbody>
+                <tr>
+                    <th>현재 상태</th>
+                    <td>
+                        <?php
+                        echo class_share_escape(
+                            $status_name
+                        );
+                        ?>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>현재 유효 신청</th>
+                    <td>
+                        <?php
+                        echo $active_application_count;
+                        ?>명
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="admin-panel">
     <form
         method="post"
-        action="/class-share/admin/class_save.php">
+        action="/class-share/admin/class_update.php">
 
         <?php
         echo class_share_admin_csrf_input();
         ?>
+
+        <input
+            type="hidden"
+            name="class_id"
+            value="<?php echo (int)$class_id; ?>">
 
         <input
             type="hidden"
@@ -349,8 +457,7 @@ require_once(
                             echo class_share_escape(
                                 $form_values['subject']
                             );
-                            ?>"
-                    placeholder="예: 수학">
+                            ?>">
             </div>
 
             <div class="admin-field">
@@ -403,8 +510,7 @@ require_once(
                             echo class_share_escape(
                                 $form_values['target']
                             );
-                            ?>"
-                    placeholder="예: 중학교 3학년">
+                            ?>">
             </div>
 
             <div class="admin-field">
@@ -421,8 +527,7 @@ require_once(
                             echo class_share_escape(
                                 $form_values['place']
                             );
-                            ?>"
-                    placeholder="예: 수학실">
+                            ?>">
             </div>
 
             <div class="admin-field">
@@ -485,13 +590,22 @@ require_once(
                     id="capacity"
                     name="capacity"
                     required
-                    min="1"
+                    min="<?php
+                            echo (int)$minimum_capacity;
+                            ?>"
                     max="1000"
                     value="<?php
                             echo class_share_escape(
                                 $form_values['capacity']
                             );
                             ?>">
+
+                <small class="admin-muted">
+                    현재 유효 신청
+                    <?php
+                    echo $active_application_count;
+                    ?>명보다 작게 설정할 수 없습니다.
+                </small>
             </div>
 
             <div class="admin-field">
@@ -511,10 +625,6 @@ require_once(
                                 $form_values['sort_order']
                             );
                             ?>">
-
-                <small class="admin-muted">
-                    숫자가 작은 수업부터 먼저 표시됩니다.
-                </small>
             </div>
 
             <div class="admin-field admin-field-full">
@@ -526,12 +636,11 @@ require_once(
                     class="class-share-rich-editor"
                     id="description"
                     name="description"
-                    rows="12"
-                    placeholder="수업 내용과 참관 시 참고할 사항을 입력하세요."><?php
-                                                                echo class_share_escape(
-                                                                    $form_values['description']
-                                                                );
-                                                                ?></textarea>
+                    rows="12"><?php
+                                echo class_share_escape(
+                                    $form_values['description']
+                                );
+                                ?></textarea>
                 <small class="admin-muted">
                     제목, 강조, 목록, 표와 링크를 사용할 수 있습니다.
                     실제 글 내용은 5,000자 이하로 입력해 주세요.
@@ -551,7 +660,7 @@ require_once(
             <button
                 class="admin-primary-button"
                 type="submit">
-                수업 등록
+                변경 내용 저장
             </button>
         </div>
     </form>

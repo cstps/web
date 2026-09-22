@@ -358,7 +358,8 @@ foreach (
     $validation =
         class_share_class_validate_input(
             $input,
-            $event
+            $event,
+            'plain'
         );
 
     $row_errors =

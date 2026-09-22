@@ -421,9 +421,26 @@ require_once(
                             </td>
 
                             <td>
-                                <span class="admin-muted">
-                                    준비 중
-                                </span>
+                                <?php
+                                if (
+                                    class_share_admin_can_edit_school(
+                                        $school_id,
+                                        $admin
+                                    )
+                                ) {
+                                ?>
+                                    <a
+                                        class="admin-table-link"
+                                        href="/class-share/admin/class_edit.php?class_id=<?php
+                                                                                            echo (int)$class_item['id'];
+                                                                                            ?>">
+                                        수정
+                                    </a>
+                                <?php } else { ?>
+                                    <span class="admin-muted">
+                                        -
+                                    </span>
+                                <?php } ?>
                             </td>
                         </tr>
                     <?php } ?>
