@@ -121,19 +121,13 @@ if ($events === false) {
 
 $flash_message =
     isset(
-        $_SESSION[
-            'class_share_admin_flash'
-        ]
+        $_SESSION['class_share_admin_flash']
     )
-    ? (string)$_SESSION[
-        'class_share_admin_flash'
-    ]
+    ? (string)$_SESSION['class_share_admin_flash']
     : '';
 
 unset(
-    $_SESSION[
-        'class_share_admin_flash'
-    ]
+    $_SESSION['class_share_admin_flash']
 );
 
 $status_names =
@@ -177,12 +171,12 @@ require_once(
             $admin
         )
     ) {
-        ?>
+    ?>
         <a
             class="admin-primary-link"
             href="/class-share/admin/event_form.php?school_id=<?php
-            echo (int)$school_id;
-            ?>">
+                                                                echo (int)$school_id;
+                                                                ?>">
             행사 추가
         </a>
     <?php } ?>
@@ -244,9 +238,7 @@ require_once(
                             <td>
                                 <?php
                                 echo
-                                    (int)$event[
-                                        'academic_year'
-                                    ];
+                                (int)$event['academic_year'];
                                 ?>
                             </td>
 
@@ -263,41 +255,35 @@ require_once(
                             <td>
                                 <code>
                                     /class-share/<?php
-                                    echo class_share_escape(
-                                        $school['slug']
-                                    );
-                                    ?>/<?php
-                                    echo class_share_escape(
-                                        $event['slug']
-                                    );
-                                    ?>
+                                                    echo class_share_escape(
+                                                        $school['slug']
+                                                    );
+                                                    ?>/<?php
+                                        echo class_share_escape(
+                                            $event['slug']
+                                        );
+                                        ?>
                                 </code>
                             </td>
 
                             <td>
                                 <?php
                                 echo
-                                    (int)$event[
-                                        'class_count'
-                                    ];
+                                (int)$event['class_count'];
                                 ?>
                             </td>
 
                             <td>
                                 <?php
                                 echo
-                                    (int)$event[
-                                        'notice_count'
-                                    ];
+                                (int)$event['notice_count'];
                                 ?>
                             </td>
 
                             <td>
                                 <?php
                                 echo
-                                    (int)$event[
-                                        'application_count'
-                                    ];
+                                (int)$event['application_count'];
                                 ?>
                             </td>
 
@@ -312,9 +298,15 @@ require_once(
                             </td>
 
                             <td>
-                                <span class="admin-muted">
-                                    준비 중
-                                </span>
+                                <div class="admin-table-actions">
+                                    <a
+                                        class="admin-table-action"
+                                        href="/class-share/admin/classes.php?event_id=<?php
+                                                                                        echo (int)$event['id'];
+                                                                                        ?>">
+                                        수업 관리
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     <?php } ?>
