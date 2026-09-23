@@ -301,6 +301,13 @@ require_once(
                                 <div class="admin-table-actions">
                                     <a
                                         class="admin-table-action"
+                                        href="/class-share/admin/event_edit.php?event_id=<?php
+                                                                                            echo (int)$event['id'];
+                                                                                            ?>">
+                                        행사 수정
+                                    </a>
+                                    <a
+                                        class="admin-table-action"
                                         href="/class-share/admin/classes.php?event_id=<?php
                                                                                         echo (int)$event['id'];
                                                                                         ?>">

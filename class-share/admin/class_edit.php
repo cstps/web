@@ -219,7 +219,10 @@ $default_values =
         (string)$class_item['description'],
 
         'sort_order' =>
-        (string)$class_item['sort_order']
+        (string)$class_item['sort_order'],
+
+        'status' =>
+        (string)$class_item['status']
     );
 
 $saved_class_id =
@@ -270,6 +273,13 @@ $status_names =
         'closed' => '신청 마감',
         'cancelled' => '취소',
         'archived' => '보관'
+    );
+
+$editable_status_names =
+    array(
+        'draft' => '작성 중',
+        'published' => '공개',
+        'closed' => '신청 마감'
     );
 
 $status =
@@ -625,6 +635,49 @@ require_once(
                                 $form_values['sort_order']
                             );
                             ?>">
+            </div>
+
+            <div class="admin-field">
+                <label for="status">
+                    공개 상태 *
+                </label>
+
+                <select
+                    id="status"
+                    name="status"
+                    required>
+
+                    <?php
+                    foreach (
+                        $editable_status_names as
+                        $status_value => $status_label
+                    ) {
+                    ?>
+                        <option
+                            value="<?php
+                                    echo class_share_escape(
+                                        $status_value
+                                    );
+                                    ?>"
+                            <?php
+                            echo (string)$form_values['status'] === $status_value
+                                ? 'selected'
+                                : '';
+                            ?>>
+
+                            <?php
+                            echo class_share_escape(
+                                $status_label
+                            );
+                            ?>
+                        </option>
+                    <?php } ?>
+                </select>
+
+                <small class="admin-muted">
+                    공개 상태에서만 공개 행사 페이지에 표시됩니다.
+                    신청 마감 상태에서는 새로운 신청을 받지 않습니다.
+                </small>
             </div>
 
             <div class="admin-field admin-field-full">

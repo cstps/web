@@ -39,6 +39,20 @@ $posted_event_id =
     ? (int)$_POST['event_id']
     : 0;
 
+$requested_status =
+    isset($_POST['status'])
+    ? trim(
+        (string)$_POST['status']
+    )
+    : '';
+
+$allowed_statuses =
+    array(
+        'draft',
+        'published',
+        'closed'
+    );
+
 if (
     $admin_id <= 0 ||
     $class_id <= 0 ||
@@ -187,6 +201,20 @@ $validation =
         $_POST,
         $current_class
     );
+
+$validation['form_values']['status'] =
+    $requested_status;
+
+if (
+    !in_array(
+        $requested_status,
+        $allowed_statuses,
+        true
+    )
+) {
+    $validation['errors'][] =
+        '수업 공개 상태가 올바르지 않습니다.';
+}
 
 if (
     count(
@@ -390,9 +418,19 @@ try {
         ) > 0
     ) {
         throw new DomainException(
-            (string)$locked_validation[
-                'errors'
-            ][0]
+            (string)$locked_validation['errors'][0]
+        );
+    }
+
+    if (
+        !in_array(
+            $requested_status,
+            $allowed_statuses,
+            true
+        )
+    ) {
+        throw new DomainException(
+            '수업 공개 상태가 올바르지 않습니다.'
         );
     }
 
@@ -573,7 +611,7 @@ try {
                 $data['sort_order'],
 
             'status' =>
-                (string)$locked_class['status']
+            $requested_status
         );
 
     $changed_fields =
@@ -603,7 +641,7 @@ try {
     } else {
         $update_result =
             pdo_query(
-                "
+            "
                 UPDATE class_share_class
 
                 SET
@@ -618,6 +656,7 @@ try {
                     capacity = ?,
                     description = ?,
                     sort_order = ?,
+                    status = ?,
                     updated_by = ?
 
                 WHERE id = ?
@@ -636,6 +675,7 @@ try {
                 $data['capacity'],
                 $data['description'],
                 $data['sort_order'],
+                $requested_status,
                 $admin_id,
                 $class_id,
                 $event_id
