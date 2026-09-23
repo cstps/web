@@ -259,10 +259,10 @@ require_once(
                                                         $school['slug']
                                                     );
                                                     ?>/<?php
-                                        echo class_share_escape(
-                                            $event['slug']
-                                        );
-                                        ?>
+                                                        echo class_share_escape(
+                                                            $event['slug']
+                                                        );
+                                                        ?>
                                 </code>
                             </td>
 
@@ -305,6 +305,14 @@ require_once(
                                                                                         echo (int)$event['id'];
                                                                                         ?>">
                                         수업 관리
+                                    </a>
+
+                                    <a
+                                        class="admin-table-action"
+                                        href="/class-share/admin/notices.php?event_id=<?php
+                                                                                        echo (int)$event['id'];
+                                                                                        ?>">
+                                        공지 관리
                                     </a>
                                 </div>
                             </td>
