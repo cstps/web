@@ -178,6 +178,9 @@ function class_share_event_validate_input($source)
     $field_names =
         array(
             'academic_year',
+            'event_type',
+            'application_mode',
+            'application_capacity',
             'slug',
             'title',
             'subtitle',
@@ -242,6 +245,84 @@ function class_share_event_validate_input($source)
         }
     }
 
+    $allowed_event_types =
+        array(
+            'class_share',
+            'school_event',
+            'briefing',
+            'experience',
+            'training',
+            'other'
+        );
+
+    if (
+        !in_array(
+            $form_values['event_type'],
+            $allowed_event_types,
+            true
+        )
+    ) {
+        $errors[] =
+            '행사 유형을 정확히 선택해 주세요.';
+    }
+
+    $allowed_application_modes =
+        array(
+            'none',
+            'event',
+            'program'
+        );
+
+    if (
+        !in_array(
+            $form_values[
+                'application_mode'
+            ],
+            $allowed_application_modes,
+            true
+        )
+    ) {
+        $errors[] =
+            '신청 방식을 정확히 선택해 주세요.';
+    }
+
+    $application_capacity =
+        null;
+
+    if (
+        $form_values['application_mode'] !==
+        'event'
+    ) {
+        $form_values[
+            'application_capacity'
+        ] =
+            '';
+    } elseif (
+        $form_values[
+            'application_capacity'
+        ] !== ''
+    ) {
+        if (
+            !preg_match(
+                '/^[1-9][0-9]*$/D',
+                $form_values[
+                    'application_capacity'
+                ]
+            ) ||
+            (int)$form_values[
+                'application_capacity'
+            ] > 1000000
+        ) {
+            $errors[] =
+                '행사 직접 신청 정원은 1~1,000,000명 사이로 입력해 주세요.';
+        } else {
+            $application_capacity =
+                (int)$form_values[
+                    'application_capacity'
+                ];
+        }
+    }
+
     if (
         !preg_match(
             '/^[a-z0-9]+(?:-[a-z0-9]+)*$/D',
@@ -249,13 +330,13 @@ function class_share_event_validate_input($source)
         ) ||
         class_share_event_text_length(
             $form_values['slug']
-        ) < 2 ||
+        ) < 3 ||
         class_share_event_text_length(
             $form_values['slug']
-        ) > 100
+        ) > 80
     ) {
         $errors[] =
-            '행사 주소 식별자는 2~100자의 영문 소문자, 숫자와 가운데 하이픈만 사용할 수 있습니다.';
+            '행사 주소 식별자는 3~80자의 영문 소문자, 숫자와 가운데 하이픈만 사용할 수 있습니다.';
     }
 
     if ($form_values['title'] === '') {
@@ -379,9 +460,32 @@ function class_share_event_validate_input($source)
         $label => $datetime_values
     ) {
         if ($datetime_values[0] === '') {
-            $errors[] =
-                $label .
-                '를 입력해 주세요.';
+            $is_event_datetime =
+                $label === '행사 시작일시' ||
+                $label === '행사 종료일시';
+
+            $is_application_datetime =
+                $label === '전체 신청 시작일시' ||
+                $label === '전체 신청 종료일시';
+
+            $is_required =
+                $form_values['status'] ===
+                    'published' &&
+                (
+                    $is_event_datetime ||
+                    (
+                        $is_application_datetime &&
+                        $form_values[
+                            'application_mode'
+                        ] !== 'none'
+                    )
+                );
+
+            if ($is_required) {
+                $errors[] =
+                    $label .
+                    '를 입력해 주세요.';
+            }
         } elseif ($datetime_values[1] === false) {
             $errors[] =
                 $label .
@@ -444,9 +548,20 @@ function class_share_event_validate_input($source)
             $form_values['retention_until']
         );
 
-    if ($form_values['retention_until'] === '') {
-        $errors[] =
-            '개인정보 보관 기한을 입력해 주세요.';
+    if (
+        $form_values['retention_until'] ===
+        ''
+    ) {
+        if (
+            $form_values['status'] ===
+                'published' &&
+            $form_values[
+                'application_mode'
+            ] !== 'none'
+        ) {
+            $errors[] =
+                '개인정보 보관 기한을 입력해 주세요.';
+        }
     } elseif ($retention_until === false) {
         $errors[] =
             '개인정보 보관 기한의 형식이 올바르지 않습니다.';
@@ -500,6 +615,19 @@ function class_share_event_validate_input($source)
                     isset($academic_year)
                     ? $academic_year
                     : 0,
+
+                'event_type' =>
+                    $form_values[
+                        'event_type'
+                    ],
+
+                'application_mode' =>
+                    $form_values[
+                        'application_mode'
+                    ],
+
+                'application_capacity' =>
+                    $application_capacity,
 
                 'slug' =>
                     $form_values['slug'],

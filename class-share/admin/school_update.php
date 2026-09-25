@@ -8,15 +8,6 @@ require_once(
 $admin =
     class_share_admin_require_login();
 
-if (
-    !class_share_admin_is_super_admin(
-        $admin
-    )
-) {
-    http_response_code(403);
-    exit('학교 관리 권한이 없습니다.');
-}
-
 class_share_admin_require_post_csrf();
 
 $school_id =
@@ -27,6 +18,18 @@ $school_id =
 if ($school_id <= 0) {
     http_response_code(400);
     exit('학교 번호가 올바르지 않습니다.');
+}
+
+if (
+    !class_share_admin_can_manage_school(
+        $school_id,
+        $admin
+    )
+) {
+    http_response_code(403);
+    exit(
+        '해당 학교의 설정을 관리할 권한이 없습니다.'
+    );
 }
 
 $school_code =
@@ -393,6 +396,99 @@ try {
 
     $dbh->beginTransaction();
 
+    if (
+        $before['slug'] !== $after['slug'] &&
+        !class_share_admin_is_super_admin(
+            $admin
+        )
+    ) {
+        $event_rows =
+            pdo_query(
+                "
+                SELECT
+                    id,
+                    status
+
+                FROM class_share_event
+
+                WHERE school_id = ?
+
+                ORDER BY id
+
+                FOR UPDATE
+                ",
+                $school_id
+            );
+
+        if ($event_rows === false) {
+            throw new RuntimeException(
+                '학교 행사 상태를 확인할 수 없습니다.'
+            );
+        }
+
+        $has_protected_event =
+            false;
+
+        foreach ($event_rows as $event) {
+            if (
+                in_array(
+                    (string)$event['status'],
+                    array(
+                        'published',
+                        'closed',
+                        'archived'
+                    ),
+                    true
+                )
+            ) {
+                $has_protected_event =
+                    true;
+
+                break;
+            }
+        }
+
+        $application_rows =
+            pdo_query(
+                "
+                SELECT
+                    COUNT(*) AS application_count
+
+                FROM class_share_application AS application
+
+                INNER JOIN class_share_event AS event
+                    ON event.id =
+                       application.event_id
+
+                WHERE event.school_id = ?
+                ",
+                $school_id
+            );
+
+        if (
+            $application_rows === false ||
+            !isset($application_rows[0])
+        ) {
+            throw new RuntimeException(
+                '학교 행사 신청 자료를 확인할 수 없습니다.'
+            );
+        }
+
+        $application_count =
+            (int)$application_rows[0][
+                'application_count'
+            ];
+
+        if (
+            $has_protected_event ||
+            $application_count > 0
+        ) {
+            throw new DomainException(
+                '공개·종료·보관 행사 또는 신청 자료가 있는 학교의 공개 주소는 학교 관리자가 변경할 수 없습니다. 최고관리자에게 요청해 주세요.'
+            );
+        }
+    }
+
     $update_result =
         pdo_query(
             "
@@ -469,6 +565,20 @@ try {
     }
 
     $dbh->commit();
+} catch (DomainException $e) {
+    if (
+        isset($dbh) &&
+        $dbh instanceof PDO &&
+        $dbh->inTransaction()
+    ) {
+        $dbh->rollBack();
+    }
+
+    $redirect_with_errors(
+        array(
+            $e->getMessage()
+        )
+    );
 } catch (Throwable $e) {
     if (
         isset($dbh) &&

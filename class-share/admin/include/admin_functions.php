@@ -225,7 +225,8 @@ function class_share_admin_require_login()
                 login_id,
                 display_name,
                 is_super_admin,
-                status
+                status,
+                password_changed_at
             FROM class_share_admin
             WHERE id = ?
             LIMIT 1
@@ -244,7 +245,23 @@ function class_share_admin_require_login()
 
     if (
         !isset($rows[0]) ||
-        (string)$rows[0]['status'] !== 'active'
+        (string)$rows[0]['status'] !== 'active' ||
+        !isset(
+            $admin[
+                'password_changed_at'
+            ]
+        ) ||
+        (string)$admin[
+            'password_changed_at'
+        ] === '' ||
+        !hash_equals(
+            (string)$rows[0][
+                'password_changed_at'
+            ],
+            (string)$admin[
+                'password_changed_at'
+            ]
+        )
     ) {
         class_share_admin_clear_session();
 
@@ -265,6 +282,13 @@ function class_share_admin_require_login()
 
     $_SESSION[CLASS_SHARE_ADMIN_SESSION_KEY]['is_super_admin'] =
         (int)$rows[0]['is_super_admin'] === 1;
+
+    $_SESSION[
+        CLASS_SHARE_ADMIN_SESSION_KEY
+    ][
+        'password_changed_at'
+    ] =
+        (string)$rows[0]['password_changed_at'];
 
     return
         $_SESSION[CLASS_SHARE_ADMIN_SESSION_KEY];

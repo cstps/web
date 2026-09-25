@@ -35,6 +35,21 @@ $academic_year =
     ? (int)$_POST['academic_year']
     : 0;
 
+$event_type =
+    isset($_POST['event_type'])
+    ? strtolower(trim((string)$_POST['event_type']))
+    : '';
+
+$application_mode =
+    isset($_POST['application_mode'])
+    ? strtolower(trim((string)$_POST['application_mode']))
+    : '';
+
+$application_capacity_input =
+    isset($_POST['application_capacity'])
+    ? trim((string)$_POST['application_capacity'])
+    : '';
+
 $slug =
     isset($_POST['slug'])
     ? strtolower(trim((string)$_POST['slug']))
@@ -89,6 +104,15 @@ $form_values =
     array(
         'academic_year' =>
             (string)$academic_year,
+
+        'event_type' =>
+            $event_type,
+
+        'application_mode' =>
+            $application_mode,
+
+        'application_capacity' =>
+            $application_capacity_input,
 
         'slug' => $slug,
         'title' => $title,
@@ -270,6 +294,70 @@ if (
 ) {
     $errors[] =
         '학년도는 2020~2100 사이여야 합니다.';
+}
+
+$allowed_event_types =
+    array(
+        'class_share',
+        'school_event',
+        'briefing',
+        'experience',
+        'training',
+        'other'
+    );
+
+if (
+    !in_array(
+        $event_type,
+        $allowed_event_types,
+        true
+    )
+) {
+    $errors[] =
+        '행사 유형을 정확히 선택해 주세요.';
+}
+
+$allowed_application_modes =
+    array(
+        'none',
+        'event',
+        'program'
+    );
+
+if (
+    !in_array(
+        $application_mode,
+        $allowed_application_modes,
+        true
+    )
+) {
+    $errors[] =
+        '신청 방식을 정확히 선택해 주세요.';
+}
+
+$application_capacity =
+    null;
+
+if ($application_mode !== 'event') {
+    $form_values['application_capacity'] =
+        '';
+} elseif (
+    $application_capacity_input !== ''
+) {
+    if (
+        !preg_match(
+            '/^[1-9][0-9]*$/D',
+            $application_capacity_input
+        ) ||
+        (int)$application_capacity_input >
+            1000000
+    ) {
+        $errors[] =
+            '행사 직접 신청 정원은 1~1,000,000명 사이로 입력해 주세요.';
+    } else {
+        $application_capacity =
+            (int)$application_capacity_input;
+    }
 }
 
 if (
@@ -464,6 +552,9 @@ try {
                 title,
                 subtitle,
                 academic_year,
+                event_type,
+                application_mode,
+                application_capacity,
                 event_start_at,
                 event_end_at,
                 application_start_at,
@@ -491,6 +582,9 @@ try {
                 ?,
                 ?,
                 ?,
+                ?,
+                ?,
+                ?,
                 'draft',
                 ?,
                 ?,
@@ -505,6 +599,9 @@ try {
             ? $subtitle
             : null,
             $academic_year,
+            $event_type,
+            $application_mode,
+            $application_capacity,
             $event_start_at,
             $event_end_at,
             $application_start_at,
@@ -536,6 +633,15 @@ try {
 
                 'academic_year' =>
                     $academic_year,
+
+                'event_type' =>
+                    $event_type,
+
+                'application_mode' =>
+                    $application_mode,
+
+                'application_capacity' =>
+                    $application_capacity,
 
                 'event_start_at' =>
                     $event_start_at,

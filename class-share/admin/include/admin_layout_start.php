@@ -11,7 +11,7 @@ if (
 $page_title =
     isset($page_title)
     ? (string)$page_title
-    : '수업나눔 관리';
+    : '학교 행사 관리';
 
 $active_menu =
     isset($active_menu)
@@ -46,7 +46,7 @@ header(
             $page_title
         );
         ?>
-        · 수업나눔 관리
+        · 학교 행사 관리
     </title>
 
     <link
@@ -67,7 +67,7 @@ header(
             </span>
 
             <span>
-                수업나눔 관리
+                학교 행사 관리
             </span>
         </a>
 
@@ -117,28 +117,43 @@ header(
                     대시보드
                 </a>
 
-                <?php
-                if (
+                <a
+                    class="admin-menu-link<?php
+                    echo
+                        $active_menu === 'schools'
+                        ? ' active'
+                        : '';
+                    ?>"
+                    href="/class-share/admin/schools.php"
+                    <?php
+                    if ($active_menu === 'schools') {
+                        echo 'aria-current="page"';
+                    }
+                    ?>>
+
+                    학교·행사
+                </a>
+
+                <?php if (
                     class_share_admin_is_super_admin(
                         $admin
                     )
-                ) {
-                    ?>
+                ) { ?>
                     <a
                         class="admin-menu-link<?php
                         echo
-                            $active_menu === 'schools'
+                            $active_menu === 'admins'
                             ? ' active'
                             : '';
                         ?>"
-                        href="/class-share/admin/schools.php"
+                        href="/class-share/admin/admins.php"
                         <?php
-                        if ($active_menu === 'schools') {
+                        if ($active_menu === 'admins') {
                             echo 'aria-current="page"';
                         }
                         ?>>
 
-                        학교 관리
+                        관리자 계정
                     </a>
                 <?php } ?>
             </nav>

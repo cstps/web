@@ -8,19 +8,31 @@ require_once(
 $admin =
     class_share_admin_require_login();
 
+$school_id =
+    isset($_GET['id'])
+    ? (int)$_GET['id']
+    : 0;
+
 if (
+    $school_id <= 0 &&
     !class_share_admin_is_super_admin(
         $admin
     )
 ) {
     http_response_code(403);
-    exit('학교 관리 권한이 없습니다.');
+    exit('학교를 등록할 권한이 없습니다.');
 }
 
-$school_id =
-    isset($_GET['id'])
-    ? (int)$_GET['id']
-    : 0;
+if (
+    $school_id > 0 &&
+    !class_share_admin_can_manage_school(
+        $school_id,
+        $admin
+    )
+) {
+    http_response_code(403);
+    exit('해당 학교의 설정을 관리할 권한이 없습니다.');
+}
 
 $school =
     null;
@@ -110,7 +122,7 @@ if ($has_saved_form_values) {
             'school_code' => '',
             'school_name' => '',
             'slug' => '',
-            'page_title' => '수업나눔한마당',
+            'page_title' => '학교 행사 안내',
             'introduction' => '',
             'status' => 'active'
         );

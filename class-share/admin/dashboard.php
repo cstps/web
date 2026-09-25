@@ -8,18 +8,61 @@ require_once(
 $admin =
     class_share_admin_require_login();
 
+$is_super_admin =
+    class_share_admin_is_super_admin(
+        $admin
+    );
+
+$school_assignments =
+    array();
+
+if (!$is_super_admin) {
+    $school_assignments =
+        pdo_query(
+            "
+            SELECT
+                school.school_name,
+                assignment.role
+
+            FROM class_share_admin_school AS assignment
+
+            INNER JOIN class_share_school AS school
+                ON school.id =
+                   assignment.school_id
+
+            WHERE assignment.admin_id = ?
+              AND assignment.active = 1
+
+            ORDER BY
+                school.school_name,
+                school.id
+            ",
+            (int)$admin['id']
+        );
+
+    if ($school_assignments === false) {
+        http_response_code(500);
+        exit('관리자 학교 권한을 불러올 수 없습니다.');
+    }
+}
+
+$role_names =
+    array(
+        'school_admin' =>
+            '학교 관리자',
+
+        'editor' =>
+            '편집자',
+
+        'viewer' =>
+            '조회자'
+    );
+
 $page_title =
     '대시보드';
 
 $active_menu =
     'dashboard';
-
-$role_name =
-    class_share_admin_is_super_admin(
-        $admin
-    )
-    ? '최고 관리자'
-    : '학교 관리자';
 
 require_once(
     __DIR__ .
@@ -60,11 +103,42 @@ require_once(
         <label>권한</label>
 
         <p>
-            <?php
-            echo class_share_escape(
-                $role_name
-            );
-            ?>
+            <?php if ($is_super_admin) { ?>
+                최고관리자
+            <?php } elseif (
+                count($school_assignments) === 0
+            ) { ?>
+                <span class="admin-muted">
+                    배정된 학교 없음
+                </span>
+            <?php } else { ?>
+                <?php foreach (
+                    $school_assignments as
+                    $assignment
+                ) { ?>
+                    <span>
+                        <?php
+                        echo class_share_escape(
+                            $assignment[
+                                'school_name'
+                            ]
+                        );
+                        ?>
+                        ·
+                        <?php
+                        $role =
+                            (string)$assignment['role'];
+
+                        echo class_share_escape(
+                            isset($role_names[$role])
+                            ? $role_names[$role]
+                            : $role
+                        );
+                        ?>
+                    </span>
+                    <br>
+                <?php } ?>
+            <?php } ?>
         </p>
     </div>
 </section>
@@ -72,7 +146,7 @@ require_once(
 <section class="admin-panel admin-panel-spaced">
 
     <h2>
-        수업나눔 관리
+        학교 행사 관리
     </h2>
 
     <p class="admin-muted">
@@ -81,14 +155,10 @@ require_once(
     </p>
 
     <?php
-    if (
-        class_share_admin_is_super_admin(
-            $admin
-        )
-    ) {
+    if ($is_super_admin) {
     ?>
         <p class="admin-muted">
-            왼쪽의 ‘학교 관리’ 메뉴에서
+            왼쪽의 ‘학교·행사’ 메뉴에서
             첫 번째 학교를 등록할 수 있습니다.
         </p>
     <?php } ?>

@@ -57,7 +57,7 @@ unset(
         name="viewport"
         content="width=device-width, initial-scale=1">
 
-    <title>수업나눔 관리자 로그인</title>
+    <title>학교 행사 관리자 로그인</title>
 
     <link
         rel="stylesheet"
@@ -79,7 +79,7 @@ unset(
 
                 <div>
                     <h1 id="login-title">
-                        수업나눔 관리자
+                        학교 행사 관리자
                     </h1>
 
                     <p>

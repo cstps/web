@@ -63,6 +63,8 @@ $events =
             event.id,
             event.slug,
             event.title,
+            event.event_type,
+            event.application_mode,
             event.academic_year,
             event.event_start_at,
             event.event_end_at,
@@ -84,12 +86,19 @@ $events =
             (
                 SELECT COUNT(*)
                 FROM class_share_application AS application
-                INNER JOIN class_share_class AS application_class
-                    ON application_class.id =
-                       application.class_id
-                WHERE application_class.event_id =
-                      event.id
-            ) AS application_count
+                WHERE application.event_id = event.id
+            ) AS application_count,
+
+            (
+                SELECT COUNT(*)
+                FROM class_share_application AS application
+                WHERE application.event_id = event.id
+                  AND application.status IN (
+                      'applied',
+                      'approved',
+                      'waiting'
+                  )
+            ) AS active_application_count
 
         FROM class_share_event AS event
 
@@ -213,16 +222,45 @@ require_once(
                     <tr>
                         <th>학년도</th>
                         <th>행사명</th>
+                        <th>행사 유형</th>
+                        <th>신청 방식</th>
                         <th>공개 주소</th>
-                        <th>수업</th>
+                        <th>프로그램</th>
                         <th>공지</th>
-                        <th>신청</th>
+                        <th>유효 / 전체</th>
                         <th>상태</th>
                         <th>관리</th>
                     </tr>
                 </thead>
 
+                <?php
+                $event_type_names =
+                    array(
+                        'class_share' => '수업나눔',
+                        'school_event' => '학교행사',
+                        'briefing' => '설명회',
+                        'experience' => '체험행사',
+                        'training' => '연수',
+                        'other' => '기타'
+                    );
+
+                $application_mode_names =
+                    array(
+                        'none' => '안내만',
+                        'event' => '행사 직접 신청',
+                        'program' => '프로그램 선택'
+                    );
+                ?>
+
                 <tbody>
+                    <?php
+                    $can_edit_events =
+                        class_share_admin_can_edit_school(
+                            $school_id,
+                            $admin
+                        );
+                    ?>
+
                     <?php foreach ($events as $event) { ?>
                         <?php
                         $status =
@@ -232,6 +270,38 @@ require_once(
                             isset($status_names[$status])
                             ? $status_names[$status]
                             : $status;
+
+                        $event_type =
+                            (string)$event[
+                                'event_type'
+                            ];
+
+                        $event_type_name =
+                            isset(
+                                $event_type_names[
+                                    $event_type
+                                ]
+                            )
+                            ? $event_type_names[
+                                $event_type
+                            ]
+                            : $event_type;
+
+                        $application_mode =
+                            (string)$event[
+                                'application_mode'
+                            ];
+
+                        $application_mode_name =
+                            isset(
+                                $application_mode_names[
+                                    $application_mode
+                                ]
+                            )
+                            ? $application_mode_names[
+                                $application_mode
+                            ]
+                            : $application_mode;
                         ?>
 
                         <tr>
@@ -253,6 +323,24 @@ require_once(
                             </td>
 
                             <td>
+                                <span class="admin-status-badge">
+                                    <?php
+                                    echo class_share_escape(
+                                        $event_type_name
+                                    );
+                                    ?>
+                                </span>
+                            </td>
+
+                            <td>
+                                <?php
+                                echo class_share_escape(
+                                    $application_mode_name
+                                );
+                                ?>
+                            </td>
+
+                            <td>
                                 <code>
                                     /class-share/<?php
                                                     echo class_share_escape(
@@ -268,8 +356,15 @@ require_once(
 
                             <td>
                                 <?php
-                                echo
-                                (int)$event['class_count'];
+                                if (
+                                    $application_mode ===
+                                    'program'
+                                ) {
+                                    echo
+                                    (int)$event['class_count'];
+                                } else {
+                                    echo '—';
+                                }
                                 ?>
                             </td>
 
@@ -282,8 +377,15 @@ require_once(
 
                             <td>
                                 <?php
-                                echo
-                                (int)$event['application_count'];
+                                echo (int)$event[
+                                    'active_application_count'
+                                ];
+                                ?>
+                                /
+                                <?php
+                                echo (int)$event[
+                                    'application_count'
+                                ];
                                 ?>
                             </td>
 
@@ -299,20 +401,28 @@ require_once(
 
                             <td>
                                 <div class="admin-table-actions">
-                                    <a
-                                        class="admin-table-action"
-                                        href="/class-share/admin/event_edit.php?event_id=<?php
+                                    <?php if ($can_edit_events) { ?>
+                                        <a
+                                            class="admin-table-action"
+                                            href="/class-share/admin/event_edit.php?event_id=<?php
+                                            echo (int)$event['id'];
+                                            ?>">
+                                            행사 수정
+                                        </a>
+                                    <?php } ?>
+
+                                    <?php if (
+                                        $application_mode ===
+                                        'program'
+                                    ) { ?>
+                                        <a
+                                            class="admin-table-action"
+                                            href="/class-share/admin/classes.php?event_id=<?php
                                                                                             echo (int)$event['id'];
                                                                                             ?>">
-                                        행사 수정
-                                    </a>
-                                    <a
-                                        class="admin-table-action"
-                                        href="/class-share/admin/classes.php?event_id=<?php
-                                                                                        echo (int)$event['id'];
-                                                                                        ?>">
-                                        수업 관리
-                                    </a>
+                                            프로그램 관리
+                                        </a>
+                                    <?php } ?>
 
                                     <a
                                         class="admin-table-action"
@@ -320,6 +430,14 @@ require_once(
                                                                                         echo (int)$event['id'];
                                                                                         ?>">
                                         공지 관리
+                                    </a>
+
+                                    <a
+                                        class="admin-table-action"
+                                        href="/class-share/admin/applications.php?event_id=<?php
+                                        echo (int)$event['id'];
+                                        ?>">
+                                        신청자 관리
                                     </a>
                                 </div>
                             </td>

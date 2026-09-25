@@ -95,10 +95,19 @@ if ($has_saved_values) {
             'academic_year' =>
                 (string)date('Y'),
 
+            'event_type' =>
+                'class_share',
+
+            'application_mode' =>
+                'program',
+
+            'application_capacity' =>
+                '',
+
             'slug' => '',
             'title' =>
                 date('Y') .
-                '학년도 수업나눔한마당',
+                '학년도 학교 행사',
 
             'subtitle' => '',
             'event_start_at' => '',
@@ -111,12 +120,27 @@ if ($has_saved_values) {
 
             'privacy_notice' =>
                 "수집 항목: 성명, 소속학교, 연락처\n" .
-                "수집 목적: 수업 참관 신청 확인과 안내\n" .
+                "수집 목적: 행사 신청 확인과 안내\n" .
                 "보유 기간: 아래 개인정보 보관 기한까지\n" .
-                "동의를 거부할 수 있으나 참관 신청이 제한될 수 있습니다.",
+                "동의를 거부할 수 있으나 행사 신청이 제한될 수 있습니다.",
 
             'retention_until' => ''
         );
+}
+
+if (!isset($form_values['event_type'])) {
+    $form_values['event_type'] =
+        'class_share';
+}
+
+if (!isset($form_values['application_mode'])) {
+    $form_values['application_mode'] =
+        'program';
+}
+
+if (!isset($form_values['application_capacity'])) {
+    $form_values['application_capacity'] =
+        '';
 }
 
 unset(
@@ -234,6 +258,160 @@ require_once(
 
                 <small>
                     학교 주소 뒤에 추가되는 영문 주소입니다.
+                </small>
+            </div>
+        </div>
+
+        <div class="admin-form-grid">
+            <div class="admin-field">
+                <label for="event_type">
+                    행사 유형 *
+                </label>
+
+                <select
+                    id="event_type"
+                    name="event_type"
+                    required>
+
+                    <option
+                        value="class_share"<?php
+                        echo
+                        $form_values['event_type'] ===
+                        'class_share'
+                        ? ' selected'
+                        : '';
+                        ?>>
+                        수업나눔
+                    </option>
+
+                    <option
+                        value="school_event"<?php
+                        echo
+                        $form_values['event_type'] ===
+                        'school_event'
+                        ? ' selected'
+                        : '';
+                        ?>>
+                        학교행사
+                    </option>
+
+                    <option
+                        value="briefing"<?php
+                        echo
+                        $form_values['event_type'] ===
+                        'briefing'
+                        ? ' selected'
+                        : '';
+                        ?>>
+                        설명회
+                    </option>
+
+                    <option
+                        value="experience"<?php
+                        echo
+                        $form_values['event_type'] ===
+                        'experience'
+                        ? ' selected'
+                        : '';
+                        ?>>
+                        체험행사
+                    </option>
+
+                    <option
+                        value="training"<?php
+                        echo
+                        $form_values['event_type'] ===
+                        'training'
+                        ? ' selected'
+                        : '';
+                        ?>>
+                        연수
+                    </option>
+
+                    <option
+                        value="other"<?php
+                        echo
+                        $form_values['event_type'] ===
+                        'other'
+                        ? ' selected'
+                        : '';
+                        ?>>
+                        기타
+                    </option>
+                </select>
+            </div>
+
+            <div class="admin-field">
+                <label for="application_mode">
+                    신청 방식 *
+                </label>
+
+                <select
+                    id="application_mode"
+                    name="application_mode"
+                    required>
+
+                    <option
+                        value="none"<?php
+                        echo
+                        $form_values['application_mode'] ===
+                        'none'
+                        ? ' selected'
+                        : '';
+                        ?>>
+                        안내만 제공
+                    </option>
+
+                    <option
+                        value="event"<?php
+                        echo
+                        $form_values['application_mode'] ===
+                        'event'
+                        ? ' selected'
+                        : '';
+                        ?>>
+                        행사에 직접 신청
+                    </option>
+
+                    <option
+                        value="program"<?php
+                        echo
+                        $form_values['application_mode'] ===
+                        'program'
+                        ? ' selected'
+                        : '';
+                        ?>>
+                        세부 프로그램 선택
+                    </option>
+                </select>
+
+                <small>
+                    세부 프로그램은 수업, 강좌, 체험 부스 등을 의미합니다.
+                </small>
+            </div>
+
+            <div class="admin-field">
+                <label for="application_capacity">
+                    행사 직접 신청 정원
+                </label>
+
+                <input
+                    type="number"
+                    id="application_capacity"
+                    name="application_capacity"
+                    min="1"
+                    max="1000000"
+                    placeholder="비워 두면 제한 없음"
+                    value="<?php
+                    echo class_share_escape(
+                        $form_values[
+                            'application_capacity'
+                        ]
+                    );
+                    ?>">
+
+                <small>
+                    행사에 직접 신청 방식을 선택한 경우에만 사용합니다.
                 </small>
             </div>
         </div>
@@ -419,6 +597,10 @@ require_once(
         </div>
     </form>
 </section>
+
+<script
+    src="/class-share/admin/assets/event-form.js?v=20260923"
+    defer></script>
 
 <?php
 

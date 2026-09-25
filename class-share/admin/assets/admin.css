@@ -479,8 +479,43 @@ input {
     text-decoration: underline;
 }
 
+.admin-filter-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.admin-filter-form .admin-field {
+    flex: 1 1 280px;
+    margin-top: 0;
+}
+
+.admin-filter-form .admin-form-actions {
+    flex: 0 0 auto;
+    margin-top: 0;
+}
+
+.admin-filter-form .admin-submit-button {
+    min-height: 44px;
+    white-space: nowrap;
+}
+
 
 @media (max-width: 760px) {
+    .admin-filter-form {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-filter-form .admin-form-actions {
+        width: 100%;
+    }
+
+    .admin-filter-form .admin-submit-button {
+        width: 100%;
+    }
+
     .admin-form-grid {
         grid-template-columns: 1fr;
     }

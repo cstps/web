@@ -1,0 +1,765 @@
+<?php
+
+require_once(
+    dirname(__DIR__) .
+    '/include/db_info.inc.php'
+);
+
+require_once(
+    dirname(__DIR__) .
+    '/include/pdo.php'
+);
+
+require_once(
+    __DIR__ .
+    '/include/public_functions.php'
+);
+
+require_once(
+    __DIR__ .
+    '/include/application_functions.php'
+);
+
+header(
+    "Content-Security-Policy: " .
+        "default-src 'self'; " .
+        "style-src 'self'; " .
+        "img-src 'self' data:; " .
+        "script-src 'self'; " .
+        "form-action 'self'; " .
+        "frame-ancestors 'none'; " .
+        "base-uri 'self'; " .
+        "object-src 'none'"
+);
+
+header(
+    'X-Content-Type-Options: nosniff'
+);
+
+header(
+    'Referrer-Policy: same-origin'
+);
+
+header(
+    'Cache-Control: no-store, max-age=0'
+);
+
+$school_slug =
+    isset($_GET['school'])
+    ? trim((string)$_GET['school'])
+    : '';
+
+$event_slug =
+    isset($_GET['event'])
+    ? trim((string)$_GET['event'])
+    : '';
+
+$page_error =
+    '';
+
+$event =
+    null;
+
+if (
+    !class_share_public_valid_slug(
+        $school_slug
+    ) ||
+    !class_share_public_valid_slug(
+        $event_slug
+    )
+) {
+    http_response_code(404);
+    $page_error =
+        '신청 주소가 올바르지 않습니다.';
+}
+
+if ($page_error === '') {
+    $event_rows =
+        pdo_query(
+            "
+            SELECT
+                event.id,
+                event.school_id,
+                event.slug,
+                event.title,
+                event.subtitle,
+                event.event_type,
+                event.application_mode,
+                event.application_capacity,
+                event.event_start_at,
+                event.event_end_at,
+                event.application_start_at,
+                event.application_end_at,
+                event.privacy_policy_version,
+                event.privacy_notice,
+                event.retention_until,
+                event.status,
+
+                school.school_name,
+                school.slug AS school_slug
+
+            FROM class_share_event AS event
+
+            INNER JOIN class_share_school AS school
+                ON school.id = event.school_id
+
+            WHERE school.slug = ?
+              AND school.status = 'active'
+              AND event.slug = ?
+              AND event.status = 'published'
+              AND event.application_mode = 'event'
+
+            LIMIT 1
+            ",
+            $school_slug,
+            $event_slug
+        );
+
+    if (
+        $event_rows === false ||
+        !isset($event_rows[0])
+    ) {
+        http_response_code(404);
+        $page_error =
+            '현재 직접 신청할 수 있는 행사를 찾을 수 없습니다.';
+    } else {
+        $event =
+            $event_rows[0];
+    }
+}
+
+$active_count =
+    0;
+
+if ($event !== null) {
+    $count_rows =
+        pdo_query(
+            "
+            SELECT
+                COUNT(*) AS active_count
+
+            FROM class_share_application
+
+            WHERE event_id = ?
+              AND application_scope = 'event'
+              AND status IN (
+                  'applied',
+                  'approved',
+                  'waiting'
+              )
+            ",
+            (int)$event['id']
+        );
+
+    if (
+        $count_rows === false ||
+        !isset($count_rows[0])
+    ) {
+        http_response_code(500);
+        $page_error =
+            '신청 현황을 불러올 수 없습니다.';
+    } else {
+        $active_count =
+            (int)$count_rows[0][
+                'active_count'
+            ];
+    }
+}
+
+$capacity =
+    $event !== null &&
+    $event['application_capacity'] !== null
+    ? (int)$event['application_capacity']
+    : null;
+
+$remaining =
+    $capacity === null
+    ? null
+    : max(
+        0,
+        $capacity - $active_count
+    );
+
+$is_open =
+    $event !== null &&
+    class_share_application_event_is_open(
+        $event
+    );
+
+$is_available =
+    $is_open &&
+    (
+        $capacity === null ||
+        $active_count < $capacity
+    );
+
+$form_errors =
+    array();
+
+$form_values =
+    array(
+        'name' => '',
+        'school' => '',
+        'phone' => '',
+        'privacy_agreed' => ''
+    );
+
+if (
+    isset(
+        $_SESSION[
+            'class_share_application_form'
+        ]
+    ) &&
+    is_array(
+        $_SESSION[
+            'class_share_application_form'
+        ]
+    )
+) {
+    $saved_form =
+        $_SESSION[
+            'class_share_application_form'
+        ];
+
+    if (
+        $event !== null &&
+        (
+            (int)$saved_form['event_id'] ===
+                0 ||
+            (int)$saved_form['event_id'] ===
+                (int)$event['id']
+        )
+    ) {
+        $form_errors =
+            isset($saved_form['errors']) &&
+            is_array($saved_form['errors'])
+            ? $saved_form['errors']
+            : array();
+
+        $saved_values =
+            isset($saved_form['values']) &&
+            is_array($saved_form['values'])
+            ? $saved_form['values']
+            : array();
+
+        $form_values =
+            array_merge(
+                $form_values,
+                $saved_values
+            );
+    }
+
+    unset(
+        $_SESSION[
+            'class_share_application_form'
+        ]
+    );
+}
+
+$success =
+    null;
+
+if (
+    isset($_GET['success']) &&
+    (string)$_GET['success'] === '1' &&
+    isset(
+        $_SESSION[
+            'class_share_application_success'
+        ]
+    ) &&
+    is_array(
+        $_SESSION[
+            'class_share_application_success'
+        ]
+    )
+) {
+    $saved_success =
+        $_SESSION[
+            'class_share_application_success'
+        ];
+
+    if (
+        $event !== null &&
+        (int)$saved_success['event_id'] ===
+            (int)$event['id']
+    ) {
+        $success =
+            $saved_success;
+    }
+
+    unset(
+        $_SESSION[
+            'class_share_application_success'
+        ]
+    );
+}
+
+$csrf_token =
+    class_share_application_csrf_token();
+
+$page_title =
+    $event !== null
+    ? (string)$event['title'] .
+        ' 신청'
+    : '행사 신청';
+
+$event_url =
+    class_share_public_event_url(
+        $school_slug,
+        $event_slug
+    );
+
+$applications_url =
+    '/class-share/applications.php?school=' .
+    rawurlencode($school_slug) .
+    '&event=' .
+    rawurlencode($event_slug);
+
+?>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1">
+
+    <link
+        rel="stylesheet"
+        href="/class-share/assets/public.css?v=20260923">
+
+    <title>
+        <?php
+        echo class_share_public_escape(
+            $page_title
+        );
+        ?>
+    </title>
+</head>
+
+<body class="class-share-public">
+    <header>
+        <h1>학교 행사 신청</h1>
+
+        <?php if ($event !== null) { ?>
+            <p>
+                <?php
+                echo class_share_public_escape(
+                    $event['school_name']
+                );
+                ?>
+            </p>
+        <?php } ?>
+    </header>
+
+    <main>
+        <?php if ($page_error !== '') { ?>
+            <section>
+                <h2>신청할 수 없습니다.</h2>
+
+                <p>
+                    <?php
+                    echo class_share_public_escape(
+                        $page_error
+                    );
+                    ?>
+                </p>
+            </section>
+
+        <?php } elseif ($success !== null) { ?>
+            <section>
+                <h2>행사 신청이 완료되었습니다.</h2>
+
+                <p>
+                    <?php
+                    echo class_share_public_escape(
+                        $success['event_title']
+                    );
+                    ?>
+                </p>
+
+                <dl>
+                    <dt>신청번호</dt>
+                    <dd>
+                        <code>
+                            <?php
+                            echo class_share_public_escape(
+                                $success[
+                                    'application_code'
+                                ]
+                            );
+                            ?>
+                        </code>
+                    </dd>
+
+                    <dt>신청 상태</dt>
+                    <dd>신청 완료</dd>
+                </dl>
+
+                <p>
+                    신청 확인과 취소에는 입력한 연락처와 신청 비밀번호가 필요합니다.
+                </p>
+
+                <div class="public-form-actions">
+                    <a
+                        href="<?php
+                        echo class_share_public_escape(
+                            $event_url
+                        );
+                        ?>">
+                        행사 안내로 돌아가기
+                    </a>
+
+                    <a
+                        class="public-button"
+                        href="<?php
+                        echo class_share_public_escape(
+                            $applications_url
+                        );
+                        ?>">
+                        내 신청 확인
+                    </a>
+                </div>
+            </section>
+
+        <?php } else { ?>
+            <section>
+                <p>
+                    <?php
+                    echo class_share_public_escape(
+                        $event['school_name']
+                    );
+                    ?>
+                </p>
+
+                <h2>
+                    <?php
+                    echo class_share_public_escape(
+                        $event['title']
+                    );
+                    ?>
+                </h2>
+
+                <?php if (
+                    trim(
+                        (string)$event['subtitle']
+                    ) !== ''
+                ) { ?>
+                    <p>
+                        <?php
+                        echo class_share_public_escape(
+                            $event['subtitle']
+                        );
+                        ?>
+                    </p>
+                <?php } ?>
+
+                <dl>
+                    <dt>신청기간</dt>
+                    <dd>
+                        <?php
+                        echo class_share_public_escape(
+                            class_share_public_format_datetime(
+                                $event[
+                                    'application_start_at'
+                                ]
+                            )
+                        );
+                        ?>
+                        ~
+                        <?php
+                        echo class_share_public_escape(
+                            class_share_public_format_datetime(
+                                $event[
+                                    'application_end_at'
+                                ]
+                            )
+                        );
+                        ?>
+                    </dd>
+
+                    <dt>신청 현황</dt>
+                    <dd>
+                        <?php echo $active_count; ?>명
+                        <?php if ($capacity !== null) { ?>
+                            /
+                            <?php echo $capacity; ?>명
+                            · 잔여
+                            <?php echo $remaining; ?>명
+                        <?php } else { ?>
+                            · 정원 제한 없음
+                        <?php } ?>
+                    </dd>
+                </dl>
+            </section>
+
+            <?php if (count($form_errors) > 0) { ?>
+                <section
+                    class="public-error"
+                    role="alert">
+
+                    <h2>입력 내용을 확인해 주세요.</h2>
+
+                    <ul>
+                        <?php foreach (
+                            $form_errors as $form_error
+                        ) { ?>
+                            <li>
+                                <?php
+                                echo class_share_public_escape(
+                                    $form_error
+                                );
+                                ?>
+                            </li>
+                        <?php } ?>
+                    </ul>
+                </section>
+            <?php } ?>
+
+            <?php if (!$is_available) { ?>
+                <section>
+                    <h2>현재 신청할 수 없습니다.</h2>
+
+                    <p>
+                        <?php
+                        echo $is_open
+                            ? '행사 신청 정원이 마감되었습니다.'
+                            : '현재 행사 신청 기간이 아닙니다.';
+                        ?>
+                    </p>
+
+                    <p>
+                        <a
+                            href="<?php
+                            echo class_share_public_escape(
+                                $event_url
+                            );
+                            ?>">
+                            행사 안내로 돌아가기
+                        </a>
+                    </p>
+                </section>
+
+            <?php } else { ?>
+                <section>
+                    <h2>신청자 정보</h2>
+
+                    <form
+                        method="post"
+                        action="/class-share/apply_process.php"
+                        autocomplete="on">
+
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            value="<?php
+                            echo class_share_public_escape(
+                                $csrf_token
+                            );
+                            ?>">
+
+                        <input
+                            type="hidden"
+                            name="school_slug"
+                            value="<?php
+                            echo class_share_public_escape(
+                                $school_slug
+                            );
+                            ?>">
+
+                        <input
+                            type="hidden"
+                            name="event_slug"
+                            value="<?php
+                            echo class_share_public_escape(
+                                $event_slug
+                            );
+                            ?>">
+
+                        <div
+                            class="public-honeypot"
+                            hidden
+                            aria-hidden="true">
+                            <label for="website">
+                                웹사이트
+                            </label>
+
+                            <input
+                                type="text"
+                                id="website"
+                                name="website"
+                                tabindex="-1"
+                                autocomplete="off">
+                        </div>
+
+                        <div class="public-field">
+                            <label for="name">
+                                성명 *
+                            </label>
+
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                required
+                                minlength="2"
+                                maxlength="60"
+                                autocomplete="name"
+                                value="<?php
+                                echo class_share_public_escape(
+                                    $form_values['name']
+                                );
+                                ?>">
+                        </div>
+
+                        <div class="public-field">
+                            <label for="school">
+                                소속 학교 또는 기관 *
+                            </label>
+
+                            <input
+                                type="text"
+                                id="school"
+                                name="school"
+                                required
+                                minlength="2"
+                                maxlength="100"
+                                autocomplete="organization"
+                                value="<?php
+                                echo class_share_public_escape(
+                                    $form_values['school']
+                                );
+                                ?>">
+                        </div>
+
+                        <div class="public-field">
+                            <label for="phone">
+                                연락처 *
+                            </label>
+
+                            <input
+                                type="tel"
+                                id="phone"
+                                name="phone"
+                                required
+                                maxlength="20"
+                                inputmode="tel"
+                                autocomplete="tel"
+                                placeholder="010-1234-5678"
+                                value="<?php
+                                echo class_share_public_escape(
+                                    $form_values['phone']
+                                );
+                                ?>">
+                        </div>
+
+                        <div class="public-field">
+                            <label for="password">
+                                신청 비밀번호 *
+                            </label>
+
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                required
+                                minlength="6"
+                                maxlength="72"
+                                autocomplete="new-password">
+
+                            <small>
+                                신청 확인과 취소에 사용할 6자 이상의 비밀번호입니다.
+                            </small>
+                        </div>
+
+                        <div class="public-field">
+                            <label for="password_confirm">
+                                신청 비밀번호 확인 *
+                            </label>
+
+                            <input
+                                type="password"
+                                id="password_confirm"
+                                name="password_confirm"
+                                required
+                                minlength="6"
+                                maxlength="72"
+                                autocomplete="new-password">
+                        </div>
+
+                        <div class="public-privacy">
+                            <h3>개인정보 수집·이용 안내</h3>
+
+                            <p>
+                                안내 버전:
+                                <?php
+                                echo class_share_public_escape(
+                                    $event[
+                                        'privacy_policy_version'
+                                    ]
+                                );
+                                ?>
+                            </p>
+
+                            <p>
+                                <?php
+                                echo nl2br(
+                                    class_share_public_escape(
+                                        $event[
+                                            'privacy_notice'
+                                        ]
+                                    ),
+                                    false
+                                );
+                                ?>
+                            </p>
+
+                            <p>
+                                개인정보 보관 기한:
+                                <?php
+                                echo class_share_public_escape(
+                                    $event[
+                                        'retention_until'
+                                    ]
+                                );
+                                ?>
+                            </p>
+
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    name="privacy_agreed"
+                                    value="1"
+                                    required<?php
+                                    echo
+                                    $form_values[
+                                        'privacy_agreed'
+                                    ] === '1'
+                                    ? ' checked'
+                                    : '';
+                                    ?>>
+                                개인정보 수집·이용에 동의합니다.
+                            </label>
+                        </div>
+
+                        <div class="public-form-actions">
+                            <a
+                                href="<?php
+                                echo class_share_public_escape(
+                                    $event_url
+                                );
+                                ?>">
+                                취소
+                            </a>
+
+                            <button type="submit">
+                                행사 신청
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            <?php } ?>
+        <?php } ?>
+    </main>
+</body>
+</html>

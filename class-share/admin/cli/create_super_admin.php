@@ -85,7 +85,7 @@ function class_share_cli_read_password(
 }
 
 
-echo "수업나눔 최고 관리자 계정 생성\n";
+echo "학교 행사 최고 관리자 계정 생성\n";
 echo "--------------------------------\n";
 
 $login_id =

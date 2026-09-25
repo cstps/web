@@ -25,6 +25,9 @@ $event_rows =
             event.id,
             event.school_id,
             event.academic_year,
+            event.event_type,
+            event.application_mode,
+            event.application_capacity,
             event.slug,
             event.title,
             event.subtitle,
@@ -155,6 +158,22 @@ $default_values =
         'academic_year' =>
             (string)$event['academic_year'],
 
+        'event_type' =>
+            (string)$event['event_type'],
+
+        'application_mode' =>
+            (string)$event[
+                'application_mode'
+            ],
+
+        'application_capacity' =>
+            $event['application_capacity'] ===
+                null
+            ? ''
+            : (string)$event[
+                'application_capacity'
+            ],
+
         'slug' =>
             (string)$event['slug'],
 
@@ -267,6 +286,23 @@ unset(
         'class_share_event_edit_values'
     ]
 );
+
+$event_type_names =
+    array(
+        'class_share' => '수업나눔',
+        'school_event' => '학교행사',
+        'briefing' => '설명회',
+        'experience' => '체험행사',
+        'training' => '연수',
+        'other' => '기타'
+    );
+
+$application_mode_names =
+    array(
+        'none' => '안내만 제공',
+        'event' => '행사에 직접 신청',
+        'program' => '세부 프로그램 선택'
+    );
 
 $status_names =
     array(
@@ -487,8 +523,8 @@ require_once(
                     id="slug"
                     name="slug"
                     required
-                    minlength="2"
-                    maxlength="100"
+                    minlength="3"
+                    maxlength="80"
                     pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
                     value="<?php
                     echo class_share_escape(
@@ -498,6 +534,116 @@ require_once(
 
                 <small class="admin-muted">
                     영문 소문자, 숫자와 가운데 하이픈만 사용합니다.
+                </small>
+            </div>
+
+            <div class="admin-field">
+                <label for="event_type">
+                    행사 유형 *
+                </label>
+
+                <select
+                    id="event_type"
+                    name="event_type"
+                    required>
+
+                    <?php
+                    foreach (
+                        $event_type_names as
+                        $event_type_value =>
+                        $event_type_name
+                    ) {
+                    ?>
+                        <option
+                            value="<?php
+                            echo class_share_escape(
+                                $event_type_value
+                            );
+                            ?>"<?php
+                            echo
+                            $form_values[
+                                'event_type'
+                            ] ===
+                            $event_type_value
+                            ? ' selected'
+                            : '';
+                            ?>>
+                            <?php
+                            echo class_share_escape(
+                                $event_type_name
+                            );
+                            ?>
+                        </option>
+                    <?php } ?>
+                </select>
+            </div>
+
+            <div class="admin-field">
+                <label for="application_mode">
+                    신청 방식 *
+                </label>
+
+                <select
+                    id="application_mode"
+                    name="application_mode"
+                    required>
+
+                    <?php
+                    foreach (
+                        $application_mode_names as
+                        $mode_value =>
+                        $mode_name
+                    ) {
+                    ?>
+                        <option
+                            value="<?php
+                            echo class_share_escape(
+                                $mode_value
+                            );
+                            ?>"<?php
+                            echo
+                            $form_values[
+                                'application_mode'
+                            ] === $mode_value
+                            ? ' selected'
+                            : '';
+                            ?>>
+                            <?php
+                            echo class_share_escape(
+                                $mode_name
+                            );
+                            ?>
+                        </option>
+                    <?php } ?>
+                </select>
+
+                <small class="admin-muted">
+                    세부 프로그램은 수업, 강좌, 체험 부스 등을 의미합니다.
+                </small>
+            </div>
+
+            <div class="admin-field">
+                <label for="application_capacity">
+                    행사 직접 신청 정원
+                </label>
+
+                <input
+                    type="number"
+                    id="application_capacity"
+                    name="application_capacity"
+                    min="1"
+                    max="1000000"
+                    placeholder="비워 두면 제한 없음"
+                    value="<?php
+                    echo class_share_escape(
+                        $form_values[
+                            'application_capacity'
+                        ]
+                    );
+                    ?>">
+
+                <small class="admin-muted">
+                    행사에 직접 신청 방식을 선택한 경우에만 사용합니다.
                 </small>
             </div>
 
@@ -545,7 +691,6 @@ require_once(
                     type="datetime-local"
                     id="event_start_at"
                     name="event_start_at"
-                    required
                     value="<?php
                     echo class_share_escape(
                         $form_values['event_start_at']
@@ -562,7 +707,6 @@ require_once(
                     type="datetime-local"
                     id="event_end_at"
                     name="event_end_at"
-                    required
                     value="<?php
                     echo class_share_escape(
                         $form_values['event_end_at']
@@ -579,7 +723,6 @@ require_once(
                     type="datetime-local"
                     id="application_start_at"
                     name="application_start_at"
-                    required
                     value="<?php
                     echo class_share_escape(
                         $form_values[
@@ -598,7 +741,6 @@ require_once(
                     type="datetime-local"
                     id="application_end_at"
                     name="application_end_at"
-                    required
                     value="<?php
                     echo class_share_escape(
                         $form_values[
@@ -637,7 +779,6 @@ require_once(
                     type="date"
                     id="retention_until"
                     name="retention_until"
-                    required
                     value="<?php
                     echo class_share_escape(
                         $form_values[
@@ -728,6 +869,11 @@ require_once(
         </div>
     </form>
 </section>
+
+<script
+    src="/class-share/admin/assets/event-form.js?v=20260923"
+    defer></script>
+
 <?php
 
 require_once(

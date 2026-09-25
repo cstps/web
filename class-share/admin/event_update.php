@@ -214,6 +214,9 @@ try {
                 id,
                 school_id,
                 academic_year,
+                event_type,
+                application_mode,
+                application_capacity,
                 slug,
                 title,
                 subtitle,
@@ -467,6 +470,78 @@ try {
             'published_count'
         ];
 
+    $active_application_rows =
+        pdo_query(
+            "
+            SELECT
+                COUNT(*) AS total_count,
+
+                COALESCE(
+                    SUM(
+                        CASE
+                            WHEN application_scope = 'event'
+                             AND status IN (
+                                 'applied',
+                                 'approved',
+                                 'waiting'
+                             )
+                            THEN 1
+                            ELSE 0
+                        END
+                    ),
+                    0
+                ) AS active_count
+
+            FROM class_share_application
+
+            WHERE event_id = ?
+            ",
+            $event_id
+        );
+
+    if (
+        $active_application_rows === false ||
+        !isset($active_application_rows[0])
+    ) {
+        throw new RuntimeException(
+            '현재 행사 신청자 수를 확인할 수 없습니다.'
+        );
+    }
+
+    $total_application_count =
+        (int)$active_application_rows[0][
+            'total_count'
+        ];
+
+    $active_application_count =
+        (int)$active_application_rows[0][
+            'active_count'
+        ];
+
+    if (
+        (string)$locked_event[
+            'application_mode'
+        ] !== $data['application_mode'] &&
+        $total_application_count > 0
+    ) {
+        throw new DomainException(
+            '신청 내역이 있는 행사는 신청 방식을 변경할 수 없습니다.'
+        );
+    }
+
+    if (
+        $data['application_mode'] === 'event' &&
+        $data['application_capacity'] !== null &&
+        $data['application_capacity'] <
+            $active_application_count
+    ) {
+        throw new DomainException(
+            '행사 직접 신청 정원은 현재 신청자 수(' .
+            $active_application_count .
+            '명)보다 작게 설정할 수 없습니다.'
+        );
+    }
+
     if ($data['status'] === 'published') {
         if ($school_status !== 'active') {
             throw new DomainException(
@@ -474,9 +549,13 @@ try {
             );
         }
 
-        if ($published_class_count < 1) {
+        if (
+            $data['application_mode'] ===
+                'program' &&
+            $published_class_count < 1
+        ) {
             throw new DomainException(
-                '공개 상태의 수업이 최소 1개 있어야 행사를 공개할 수 있습니다.'
+                '세부 프로그램 신청 행사는 공개 상태의 프로그램이 최소 1개 있어야 합니다.'
             );
         }
     }
@@ -486,6 +565,25 @@ try {
             'academic_year' =>
                 (int)$locked_event[
                     'academic_year'
+                ],
+
+            'event_type' =>
+                (string)$locked_event[
+                    'event_type'
+                ],
+
+            'application_mode' =>
+                (string)$locked_event[
+                    'application_mode'
+                ],
+
+            'application_capacity' =>
+                $locked_event[
+                    'application_capacity'
+                ] === null
+                ? null
+                : (int)$locked_event[
+                    'application_capacity'
                 ],
 
             'slug' =>
@@ -544,6 +642,15 @@ try {
         array(
             'academic_year' =>
                 $data['academic_year'],
+
+            'event_type' =>
+                $data['event_type'],
+
+            'application_mode' =>
+                $data['application_mode'],
+
+            'application_capacity' =>
+                $data['application_capacity'],
 
             'slug' =>
                 $data['slug'],
@@ -616,6 +723,9 @@ try {
 
                 SET
                     academic_year = ?,
+                    event_type = ?,
+                    application_mode = ?,
+                    application_capacity = ?,
                     slug = ?,
                     title = ?,
                     subtitle = ?,
@@ -633,6 +743,9 @@ try {
                   AND school_id = ?
                 ",
                 $data['academic_year'],
+                $data['event_type'],
+                $data['application_mode'],
+                $data['application_capacity'],
                 $data['slug'],
                 $data['title'],
                 $data['subtitle'],

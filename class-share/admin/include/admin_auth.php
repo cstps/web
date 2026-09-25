@@ -208,7 +208,8 @@ function class_share_admin_authenticate(
                 is_super_admin,
                 status,
                 failed_login_count,
-                locked_until
+                locked_until,
+                password_changed_at
 
             FROM class_share_admin
 
@@ -470,6 +471,11 @@ function class_share_admin_authenticate(
 
         'is_super_admin' =>
             (int)$admin['is_super_admin'] === 1,
+
+        'password_changed_at' =>
+            (string)$admin[
+                'password_changed_at'
+            ],
 
         'logged_in_at' =>
             time(),
