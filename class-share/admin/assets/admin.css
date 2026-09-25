@@ -220,12 +220,14 @@ input {
     min-height: calc(100vh - 64px);
     display: grid;
     grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
 }
 
 .admin-sidebar {
     padding: 22px 14px;
     border-right: 1px solid var(--border);
     background: #ffffff;
+    grid-row: 1 / 3;
 }
 
 .admin-sidebar nav {
@@ -256,6 +258,19 @@ input {
 .admin-content {
     min-width: 0;
     padding: 28px;
+}
+
+.admin-footer {
+    grid-column: 2;
+    padding: 18px 28px;
+    border-top: 1px solid var(--border);
+    color: #64748b;
+    font-size: 13px;
+    text-align: center;
+}
+
+.admin-footer p {
+    margin: 0;
 }
 
 .admin-page-heading {
@@ -556,6 +571,10 @@ input {
 
     .admin-shell {
         display: block;
+    }
+
+    .admin-footer {
+        padding: 16px 14px;
     }
 
     .admin-sidebar {

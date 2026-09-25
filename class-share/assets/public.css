@@ -464,3 +464,16 @@ body.class-share-public {
         display: block;
     }
 }
+.class-share-public .public-footer {
+    width: min(1100px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 20px 16px 28px;
+    border-top: 1px solid var(--public-border);
+    color: var(--public-muted);
+    font-size: 0.86rem;
+    text-align: center;
+}
+
+.class-share-public .public-footer p {
+    margin: 0;
+}
