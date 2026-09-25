@@ -149,7 +149,7 @@ unset(
             </form>
 
             <p class="admin-login-note">
-                학교별 수업과 신청내역을 관리하는
+                학교별 행사를 관리하는
                 별도 관리자 페이지입니다.
             </p>
         </section>
