@@ -1,0 +1,16 @@
+[Unit]
+Description=Destroy expired class-share application privacy data
+Documentation=file:///home/judge/src/web/class-share/DEPLOYMENT.md
+Wants=mysql.service
+After=mysql.service
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/home/judge/src/web
+ExecStart=/usr/bin/php /home/judge/src/web/class-share/admin/cli/purge_expired_application_privacy.php --execute
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full

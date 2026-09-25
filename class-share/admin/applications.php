@@ -215,6 +215,7 @@ $application_sql =
         application.applicant_name,
         application.applicant_school,
         application.phone_last4,
+        application.privacy_destroyed_at,
         application.status,
         application.created_at,
         application.cancelled_at,
@@ -547,6 +548,40 @@ require_once(
                             (string)$application[
                                 'application_scope'
                             ] === 'program';
+
+                        $privacy_destroyed =
+                            $application[
+                                'privacy_destroyed_at'
+                            ] !== null;
+
+                        $application_code_display =
+                            $privacy_destroyed
+                            ? '—'
+                            : (string)$application[
+                                'application_code'
+                            ];
+
+                        $applicant_name_display =
+                            $privacy_destroyed
+                            ? '개인정보 파기 완료'
+                            : (string)$application[
+                                'applicant_name'
+                            ];
+
+                        $applicant_school_display =
+                            $privacy_destroyed
+                            ? '—'
+                            : (string)$application[
+                                'applicant_school'
+                            ];
+
+                        $phone_display =
+                            $privacy_destroyed
+                            ? '—'
+                            : '***-****-' .
+                                (string)$application[
+                                    'phone_last4'
+                                ];
                         ?>
 
                         <tr>
@@ -578,9 +613,7 @@ require_once(
                                 <code>
                                     <?php
                                     echo class_share_escape(
-                                        $application[
-                                            'application_code'
-                                        ]
+                                        $application_code_display
                                     );
                                     ?>
                                 </code>
@@ -612,9 +645,7 @@ require_once(
                             <td>
                                 <?php
                                 echo class_share_escape(
-                                    $application[
-                                        'applicant_name'
-                                    ]
+                                    $applicant_name_display
                                 );
                                 ?>
                             </td>
@@ -622,19 +653,15 @@ require_once(
                             <td>
                                 <?php
                                 echo class_share_escape(
-                                    $application[
-                                        'applicant_school'
-                                    ]
+                                    $applicant_school_display
                                 );
                                 ?>
                             </td>
 
                             <td>
-                                ***-****-<?php
+                                <?php
                                 echo class_share_escape(
-                                    $application[
-                                        'phone_last4'
-                                    ]
+                                    $phone_display
                                 );
                                 ?>
                             </td>

@@ -63,6 +63,7 @@ $application_rows =
             application.applicant_name,
             application.applicant_school,
             application.phone_ciphertext,
+            application.privacy_destroyed_at,
 
             event.school_id,
             event.title AS event_title,
@@ -110,6 +111,18 @@ if (
 ) {
     http_response_code(403);
     exit('전체 연락처를 확인할 권한이 없습니다.');
+}
+
+if (
+    $application['privacy_destroyed_at'] !== null ||
+    $application['phone_ciphertext'] === null ||
+    $application['phone_ciphertext'] === ''
+) {
+    http_response_code(410);
+    exit(
+        '개인정보 보관 기한이 종료되어 ' .
+        '연락처가 파기되었습니다.'
+    );
 }
 
 try {

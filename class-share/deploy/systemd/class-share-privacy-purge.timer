@@ -1,0 +1,11 @@
+[Unit]
+Description=Run class-share privacy destruction daily
+
+[Timer]
+OnCalendar=*-*-* 03:20:00 Asia/Seoul
+Persistent=true
+AccuracySec=1min
+Unit=class-share-privacy-purge.service
+
+[Install]
+WantedBy=timers.target

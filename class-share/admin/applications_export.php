@@ -136,6 +136,7 @@ $sql =
         application.status,
         application.privacy_policy_version,
         application.privacy_agreed_at,
+        application.privacy_destroyed_at,
         application.created_at,
         application.cancelled_at,
         application.admin_note,
@@ -231,12 +232,39 @@ $export_rows =
 
 try {
     foreach ($applications as $application) {
-        $phone =
-            class_share_decrypt_phone(
-                $application[
-                    'phone_ciphertext'
-                ]
-            );
+        $privacy_destroyed =
+            $application[
+                'privacy_destroyed_at'
+            ] !== null;
+
+        if ($privacy_destroyed) {
+            $application_code = '';
+            $applicant_name = '개인정보 파기 완료';
+            $applicant_school = '';
+            $phone = '';
+        } else {
+            $application_code =
+                (string)$application[
+                    'application_code'
+                ];
+
+            $applicant_name =
+                (string)$application[
+                    'applicant_name'
+                ];
+
+            $applicant_school =
+                (string)$application[
+                    'applicant_school'
+                ];
+
+            $phone =
+                class_share_decrypt_phone(
+                    $application[
+                        'phone_ciphertext'
+                    ]
+                );
+        }
 
         $scope =
             (string)$application[
@@ -266,26 +294,12 @@ try {
 
         $export_rows[] =
             array(
-                $csv_safe(
-                    $application[
-                        'application_code'
-                    ]
-                ),
+                $csv_safe($application_code),
                 $csv_safe($scope_name),
                 $csv_safe($target_name),
-                $csv_safe(
-                    $application[
-                        'applicant_name'
-                    ]
-                ),
-                $csv_safe(
-                    $application[
-                        'applicant_school'
-                    ]
-                ),
-                $csv_safe(
-                    $format_phone($phone)
-                ),
+                $csv_safe($applicant_name),
+                $csv_safe($applicant_school),
+                $csv_safe($format_phone($phone)),
                 $csv_safe(
                     isset(
                         $status_names[

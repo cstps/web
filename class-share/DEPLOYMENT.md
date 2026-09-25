@@ -85,3 +85,60 @@ curl -I https://1024.kr/include/db_info.inc.php
 curl -I https://1024.kr/saasinit.php
 curl -I https://1024.kr/sae/install.php
 ```
+
+## 개인정보 보관 기한 자동 파기
+
+행사의 `retention_until`이 현재 날짜보다 지난 신청을 매일 확인한다.
+신청 행 자체는 통계 유지를 위해 남기고 다음 개인정보와 인증 자료를
+`NULL`로 변경한다.
+
+- 신청번호
+- 신청자 성명과 소속
+- 암호화 연락처와 검색용 연락처 자료
+- 신청 확인 비밀번호
+- 관리자 메모
+
+파기 후에는 `privacy_destroyed_at`에 파기 일시를 기록한다.
+행사·프로그램·신청 상태·신청 및 취소 일시는 통계용으로 유지한다.
+신청 대상 감사 로그의 JSON 자료와 IP 주소도 함께 비식별화한다.
+
+### 최초 스키마 적용
+
+DB 백업을 먼저 만든 뒤 다음 마이그레이션을 한 번만 실행한다.
+
+```bash
+sudo mysql \
+    --default-character-set=utf8mb4 \
+    jol \
+    < sql/migrations/2026-09-25-class-share-privacy-retention.sql
+```
+
+파기 대상을 변경 없이 확인하려면 다음 명령을 사용한다.
+
+```bash
+php class-share/admin/cli/purge_expired_application_privacy.php --dry-run
+```
+
+### systemd 자동 실행
+
+```bash
+sudo install -m 644 \
+    class-share/deploy/systemd/class-share-privacy-purge.service \
+    /etc/systemd/system/class-share-privacy-purge.service
+
+sudo install -m 644 \
+    class-share/deploy/systemd/class-share-privacy-purge.timer \
+    /etc/systemd/system/class-share-privacy-purge.timer
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now class-share-privacy-purge.timer
+```
+
+타이머는 매일 오전 `03:20` 한국 시간에 실행된다.
+서버가 꺼져 있던 동안 실행 시각이 지나간 경우에는 부팅 후 실행된다.
+
+```bash
+sudo systemctl start class-share-privacy-purge.service
+sudo systemctl list-timers class-share-privacy-purge.timer --all
+sudo journalctl -u class-share-privacy-purge.service -n 20 --no-pager
+```

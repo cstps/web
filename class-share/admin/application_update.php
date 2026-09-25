@@ -133,6 +133,7 @@ $current_rows =
         SELECT
             application.id,
             application.event_id,
+            application.privacy_destroyed_at,
             event.school_id
 
         FROM class_share_application AS application
@@ -175,6 +176,13 @@ if (
 ) {
     http_response_code(403);
     exit('해당 신청 정보를 변경할 권한이 없습니다.');
+}
+
+if (
+    $current_rows[0]['privacy_destroyed_at'] !== null
+) {
+    http_response_code(410);
+    exit('개인정보가 파기된 신청은 변경할 수 없습니다.');
 }
 
 if (!($dbh instanceof PDO)) {
@@ -238,7 +246,8 @@ try {
                 class_id,
                 phone_lookup_hash,
                 status,
-                admin_note
+                admin_note,
+                privacy_destroyed_at
 
             FROM class_share_application
 
@@ -269,6 +278,14 @@ try {
     ) {
         throw new RuntimeException(
             '행사와 신청 정보가 일치하지 않습니다.'
+        );
+    }
+
+    if (
+        $current['privacy_destroyed_at'] !== null
+    ) {
+        throw new DomainException(
+            '개인정보가 파기된 신청은 변경할 수 없습니다.'
         );
     }
 

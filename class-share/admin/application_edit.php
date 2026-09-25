@@ -33,6 +33,7 @@ $application_rows =
             application.status,
             application.privacy_policy_version,
             application.privacy_agreed_at,
+            application.privacy_destroyed_at,
             application.cancelled_at,
             application.processed_by,
             application.admin_note,
@@ -82,6 +83,40 @@ if (!isset($application_rows[0])) {
 $application =
     $application_rows[0];
 
+$privacy_destroyed =
+    $application[
+        'privacy_destroyed_at'
+    ] !== null;
+
+$application_code_display =
+    $privacy_destroyed
+    ? '—'
+    : (string)$application[
+        'application_code'
+    ];
+
+$applicant_name_display =
+    $privacy_destroyed
+    ? '개인정보 파기 완료'
+    : (string)$application[
+        'applicant_name'
+    ];
+
+$applicant_school_display =
+    $privacy_destroyed
+    ? '—'
+    : (string)$application[
+        'applicant_school'
+    ];
+
+$phone_display =
+    $privacy_destroyed
+    ? '—'
+    : '***-****-' .
+        (string)$application[
+            'phone_last4'
+        ];
+
 $event_id =
     (int)$application['event_id'];
 
@@ -99,12 +134,14 @@ if (
 }
 
 $can_edit =
+    !$privacy_destroyed &&
     class_share_admin_can_edit_school(
         $school_id,
         $admin
     );
 
 $can_view_sensitive =
+    !$privacy_destroyed &&
     class_share_admin_can_view_sensitive_school(
         $school_id,
         $admin
@@ -232,6 +269,26 @@ require_once(
     </div>
 <?php } ?>
 
+<?php if ($privacy_destroyed) { ?>
+    <div
+        class="admin-flash"
+        role="status">
+
+        개인정보 보관 기한이 종료되어
+        신청자의 개인정보가 파기되었습니다.
+        파기 일시:
+        <?php
+        echo class_share_escape(
+            $format_datetime(
+                $application[
+                    'privacy_destroyed_at'
+                ]
+            )
+        );
+        ?>
+    </div>
+<?php } ?>
+
 <section class="admin-panel">
     <dl>
         <dt>신청번호</dt>
@@ -239,9 +296,7 @@ require_once(
             <code>
                 <?php
                 echo class_share_escape(
-                    $application[
-                        'application_code'
-                    ]
+                    $application_code_display
                 );
                 ?>
             </code>
@@ -251,9 +306,7 @@ require_once(
         <dd>
             <?php
             echo class_share_escape(
-                $application[
-                    'applicant_name'
-                ]
+                $applicant_name_display
             );
             ?>
         </dd>
@@ -262,20 +315,16 @@ require_once(
         <dd>
             <?php
             echo class_share_escape(
-                $application[
-                    'applicant_school'
-                ]
+                $applicant_school_display
             );
             ?>
         </dd>
 
         <dt>연락처</dt>
         <dd>
-            ***-****-<?php
+            <?php
             echo class_share_escape(
-                $application[
-                    'phone_last4'
-                ]
+                $phone_display
             );
             ?>
 
