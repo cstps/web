@@ -341,17 +341,32 @@ require_once(
                             </td>
 
                             <td>
-                                <code>
-                                    /class-share/<?php
-                                                    echo class_share_escape(
-                                                        $school['slug']
-                                                    );
-                                                    ?>/<?php
-                                                        echo class_share_escape(
-                                                            $event['slug']
-                                                        );
-                                                        ?>
-                                </code>
+                                <a
+                                    href="/class-share/<?php
+                                    echo rawurlencode(
+                                        (string)$school['slug']
+                                    );
+                                    ?>/<?php
+                                    echo rawurlencode(
+                                        (string)$event['slug']
+                                    );
+                                    ?>"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="새 창에서 공개 페이지 열기">
+
+                                    <code>
+                                        /class-share/<?php
+                                        echo class_share_escape(
+                                            $school['slug']
+                                        );
+                                        ?>/<?php
+                                        echo class_share_escape(
+                                            $event['slug']
+                                        );
+                                        ?>
+                                    </code>
+                                </a>
                             </td>
 
                             <td>
