@@ -141,8 +141,6 @@ $header_is_course_manage_page =
                 href="<?php echo $path_fix ?>problemset.php"><?php echo $MSG_PROBLEMS ?> </a>
             <a class="item <?php if ($url == "drawproblemset.php") echo "active"; ?>"
                 href="<?php echo $path_fix ?>drawproblemset.php"><?php echo $MSG_DRAWPROBLEMS ?> </a>
-            <a class="item <?php if ($url == "category.php") echo "active"; ?>"
-                href="<?php echo $path_fix ?>category.php"><?php echo $MSG_SOURCE ?></a>
 
             <div
                 id="course-contest-dropdown"
@@ -213,6 +211,13 @@ $header_is_course_manage_page =
             <a class="item <?php if ($url == "status.php") echo "active"; ?>" href="<?php echo $path_fix ?>status.php"><?php echo $MSG_STATUS ?></a>
             <a class="item <?php if ($url == "ranklist.php") echo "active"; ?>"
                 href="<?php echo $path_fix ?>ranklist.php"><?php echo $MSG_RANKLIST ?></a>
+
+            <a
+                class="item"
+                href="/class-share/admin/login.php">
+                <i class="calendar icon"></i>행사관리
+            </a>
+
             <!-- 유틸리티 추가 -->
             <!-- 기존 드롭다운 영역 대체 -->
             <a class="item <?php if ($url == "tools.php" || $url == "pc.php" || $url == "charcount.php" || $url == "seat_assign.php" || $url == "sadari.php") echo "active"; ?>" href="<?php echo $path_fix ?>tools.php">

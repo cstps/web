@@ -45,12 +45,10 @@ function class_share_public_event_url(
     $event_slug
 ) {
     return
-        '/class-share/index.php' .
-        '?school=' .
+        '/class-share/' .
         rawurlencode(
             (string)$school_slug
-        ) .
-        '&event=' .
+        ) . '/' .
         rawurlencode(
             (string)$event_slug
         );

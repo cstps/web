@@ -394,9 +394,11 @@ $now_timestamp =
 <body class="class-share-public">
     <header>
         <div>
-            <a href="/class-share/index.php?school=<?php
-                                                    echo rawurlencode($school_slug);
-                                                    ?>">
+            <a href="/class-share/<?php
+            echo rawurlencode(
+                $school_slug
+            );
+            ?>">
                 학교 행사 안내
             </a>
 
