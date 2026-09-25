@@ -71,6 +71,12 @@ if (
     exit('해당 행사의 신청자를 조회할 권한이 없습니다.');
 }
 
+$can_export =
+    class_share_admin_can_view_sensitive_school(
+        $school_id,
+        $admin
+    );
+
 $status_names =
     array(
         'applied' => '신청 완료',
@@ -388,6 +394,38 @@ require_once(
             ← 행사 목록
         </a>
     </div>
+
+    <?php if ($can_export) { ?>
+        <form
+            method="post"
+            action="/class-share/admin/applications_export.php"
+            class="admin-inline-form">
+
+            <?php
+            echo class_share_admin_csrf_input();
+            ?>
+
+            <input
+                type="hidden"
+                name="event_id"
+                value="<?php echo (int)$event_id; ?>">
+
+            <input
+                type="hidden"
+                name="status"
+                value="<?php
+                echo class_share_escape(
+                    $status_filter
+                );
+                ?>">
+
+            <button
+                type="submit"
+                class="admin-submit-button">
+                신청자 CSV 내려받기
+            </button>
+        </form>
+    <?php } ?>
 </div>
 
 <section class="admin-panel">
@@ -479,8 +517,9 @@ require_once(
             <table class="admin-table">
                 <thead>
                     <tr>
+                        <th>관리</th>
                         <th>신청일시</th>
-                        <th>신청번호</th>
+                        <th>신청 고유번호</th>
                         <th>구분</th>
                         <th>행사·프로그램</th>
                         <th>성명</th>
@@ -488,7 +527,6 @@ require_once(
                         <th>연락처</th>
                         <th>상태</th>
                         <th>취소일시</th>
-                        <th>관리</th>
                     </tr>
                 </thead>
 
@@ -512,6 +550,18 @@ require_once(
                         ?>
 
                         <tr>
+                            <td>
+                                <a
+                                    class="admin-table-action"
+                                    href="/class-share/admin/application_edit.php?application_id=<?php
+                                    echo (int)$application[
+                                        'id'
+                                    ];
+                                    ?>">
+                                    상세
+                                </a>
+                            </td>
+
                             <td>
                                 <?php
                                 echo class_share_escape(
@@ -609,18 +659,6 @@ require_once(
                                     )
                                 );
                                 ?>
-                            </td>
-
-                            <td>
-                                <a
-                                    class="admin-table-action"
-                                    href="/class-share/admin/application_edit.php?application_id=<?php
-                                    echo (int)$application[
-                                        'id'
-                                    ];
-                                    ?>">
-                                    상세
-                                </a>
                             </td>
                         </tr>
                     <?php } ?>

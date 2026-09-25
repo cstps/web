@@ -104,6 +104,12 @@ $can_edit =
         $admin
     );
 
+$can_view_sensitive =
+    class_share_admin_can_view_sensitive_school(
+        $school_id,
+        $admin
+    );
+
 $status_names =
     array(
         'applied' => '신청 완료',
@@ -272,6 +278,31 @@ require_once(
                 ]
             );
             ?>
+
+            <?php if ($can_view_sensitive) { ?>
+                <form
+                    class="admin-inline-form"
+                    method="post"
+                    action="/class-share/admin/application_phone_reveal.php">
+
+                    <?php
+                    echo class_share_admin_csrf_input();
+                    ?>
+
+                    <input
+                        type="hidden"
+                        name="application_id"
+                        value="<?php
+                        echo (int)$application_id;
+                        ?>">
+
+                    <button
+                        type="submit"
+                        class="admin-table-action">
+                        전체 연락처 확인
+                    </button>
+                </form>
+            <?php } ?>
         </dd>
 
         <dt>신청일시</dt>

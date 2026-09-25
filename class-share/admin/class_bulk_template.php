@@ -127,6 +127,14 @@ foreach ($utf8_headers as $header_text) {
         $converted;
 }
 
+session_write_close();
+
+while (ob_get_level() > 0) {
+    if (!ob_end_clean()) {
+        break;
+    }
+}
+
 header(
     'Content-Type: text/csv; charset=CP949'
 );

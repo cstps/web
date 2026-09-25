@@ -459,3 +459,32 @@ function class_share_admin_can_manage_school(
             $school_id
         ) === 'school_admin';
 }
+
+
+function class_share_admin_can_view_sensitive_school(
+    $school_id,
+    $admin = null
+) {
+    if ($admin === null) {
+        $admin =
+            class_share_admin_current();
+    }
+
+    if (!is_array($admin)) {
+        return false;
+    }
+
+    if (
+        class_share_admin_is_super_admin(
+            $admin
+        )
+    ) {
+        return true;
+    }
+
+    return
+        class_share_admin_school_role(
+            $admin['id'],
+            $school_id
+        ) === 'school_admin';
+}
