@@ -54,10 +54,24 @@ $event_slug =
     ? trim((string)$_GET['event'])
     : '';
 
+$class_public_id =
+    isset($_GET['class'])
+    ? strtolower(
+        trim(
+            (string)$_GET[
+                'class'
+            ]
+        )
+    )
+    : '';
+
 $page_error =
     '';
 
 $event =
+    null;
+
+$class_item =
     null;
 
 if (
@@ -66,6 +80,16 @@ if (
     ) ||
     !class_share_public_valid_slug(
         $event_slug
+    )
+) {
+    http_response_code(404);
+    $page_error =
+        '신청 주소가 올바르지 않습니다.';
+} elseif (
+    $class_public_id !== '' &&
+    !preg_match(
+        '/^[a-f0-9]{32}$/D',
+        $class_public_id
     )
 ) {
     http_response_code(404);
@@ -107,7 +131,6 @@ if ($page_error === '') {
               AND school.status = 'active'
               AND event.slug = ?
               AND event.status = 'published'
-              AND event.application_mode = 'event'
 
             LIMIT 1
             ",
@@ -125,31 +148,123 @@ if ($page_error === '') {
     } else {
         $event =
             $event_rows[0];
+
+        if ($class_public_id === '') {
+            if (
+                (string)$event[
+                    'application_mode'
+                ] !== 'event'
+            ) {
+                http_response_code(404);
+                $page_error =
+                    '현재 직접 신청할 수 있는 행사를 찾을 수 없습니다.';
+            }
+        } elseif (
+            (string)$event[
+                'application_mode'
+            ] !== 'program'
+        ) {
+            http_response_code(404);
+            $page_error =
+                '현재 신청할 수 있는 프로그램을 찾을 수 없습니다.';
+        } else {
+            $class_rows =
+                pdo_query(
+                    "
+                    SELECT
+                        id,
+                        event_id,
+                        public_id,
+                        subject,
+                        title,
+                        teacher_name,
+                        target,
+                        class_start_at,
+                        class_end_at,
+                        place,
+                        application_deadline,
+                        capacity,
+                        status
+
+                    FROM class_share_class
+
+                    WHERE event_id = ?
+                      AND public_id = ?
+                      AND status = 'published'
+
+                    LIMIT 1
+                    ",
+                    (int)$event['id'],
+                    $class_public_id
+                );
+
+            if (
+                $class_rows === false ||
+                !isset($class_rows[0])
+            ) {
+                http_response_code(404);
+                $page_error =
+                    '현재 신청할 수 있는 프로그램을 찾을 수 없습니다.';
+            } else {
+                $class_item =
+                    $class_rows[0];
+            }
+        }
     }
 }
+
+$is_program_application =
+    $class_item !== null;
 
 $active_count =
     0;
 
-if ($event !== null) {
-    $count_rows =
-        pdo_query(
-            "
-            SELECT
-                COUNT(*) AS active_count
-
-            FROM class_share_application
-
-            WHERE event_id = ?
+if (
+    $event !== null &&
+    $page_error === ''
+) {
+    $count_condition =
+        $is_program_application
+        ? "
+              AND class_id = ?
+              AND application_scope = 'program'
+          "
+        : "
               AND application_scope = 'event'
-              AND status IN (
-                  'applied',
-                  'approved',
-                  'waiting'
-              )
-            ",
-            (int)$event['id']
-        );
+          ";
+
+    $count_sql =
+        "
+        SELECT
+            COUNT(*) AS active_count
+
+        FROM class_share_application
+
+        WHERE event_id = ?
+        " .
+        $count_condition .
+        "
+          AND status IN (
+              'applied',
+              'approved',
+              'waiting'
+          )
+        ";
+
+    if ($is_program_application) {
+        $count_rows =
+            pdo_query(
+                $count_sql,
+                (int)$event['id'],
+                (int)$class_item['id']
+            );
+    } else {
+        $count_rows =
+            pdo_query(
+                $count_sql,
+                (int)$event['id']
+            );
+    }
 
     if (
         $count_rows === false ||
@@ -166,11 +281,16 @@ if ($event !== null) {
     }
 }
 
-$capacity =
-    $event !== null &&
-    $event['application_capacity'] !== null
-    ? (int)$event['application_capacity']
-    : null;
+if ($is_program_application) {
+    $capacity =
+        (int)$class_item['capacity'];
+} else {
+    $capacity =
+        $event !== null &&
+        $event['application_capacity'] !== null
+        ? (int)$event['application_capacity']
+        : null;
+}
 
 $remaining =
     $capacity === null
@@ -182,8 +302,16 @@ $remaining =
 
 $is_open =
     $event !== null &&
-    class_share_application_event_is_open(
-        $event
+    $page_error === '' &&
+    (
+        $is_program_application
+        ? class_share_application_program_is_open(
+            $event,
+            $class_item
+        )
+        : class_share_application_event_is_open(
+            $event
+        )
     );
 
 $is_available =
@@ -221,6 +349,16 @@ if (
             'class_share_application_form'
         ];
 
+    $saved_class_id =
+        isset($saved_form['class_id'])
+        ? (int)$saved_form['class_id']
+        : 0;
+
+    $current_class_id =
+        $is_program_application
+        ? (int)$class_item['id']
+        : 0;
+
     if (
         $event !== null &&
         (
@@ -228,6 +366,11 @@ if (
                 0 ||
             (int)$saved_form['event_id'] ===
                 (int)$event['id']
+        ) &&
+        (
+            $saved_class_id === 0 ||
+            $saved_class_id ===
+                $current_class_id
         )
     ) {
         $form_errors =
@@ -278,10 +421,22 @@ if (
             'class_share_application_success'
         ];
 
+    $saved_success_class_id =
+        isset($saved_success['class_id'])
+        ? (int)$saved_success['class_id']
+        : 0;
+
+    $current_class_id =
+        $is_program_application
+        ? (int)$class_item['id']
+        : 0;
+
     if (
         $event !== null &&
         (int)$saved_success['event_id'] ===
-            (int)$event['id']
+            (int)$event['id'] &&
+        $saved_success_class_id ===
+            $current_class_id
     ) {
         $success =
             $saved_success;
@@ -299,8 +454,13 @@ $csrf_token =
 
 $page_title =
     $event !== null
-    ? (string)$event['title'] .
-        ' 신청'
+    ? (
+        $is_program_application
+        ? (string)$class_item['title'] .
+            ' 신청'
+        : (string)$event['title'] .
+            ' 신청'
+    )
     : '행사 신청';
 
 $event_url =
@@ -368,18 +528,26 @@ $applications_url =
 
         <?php } elseif ($success !== null) { ?>
             <section>
-                <h2>행사 신청이 완료되었습니다.</h2>
+                <h2>
+                    <?php
+                    echo $is_program_application
+                        ? '프로그램 신청이 완료되었습니다.'
+                        : '행사 신청이 완료되었습니다.';
+                    ?>
+                </h2>
 
                 <p>
                     <?php
                     echo class_share_public_escape(
-                        $success['event_title']
+                        $is_program_application
+                        ? $success['class_title']
+                        : $success['event_title']
                     );
                     ?>
                 </p>
 
                 <dl>
-                    <dt>신청번호</dt>
+                    <dt>신청 고유번호</dt>
                     <dd>
                         <code>
                             <?php
@@ -440,6 +608,87 @@ $applications_url =
                     ?>
                 </h2>
 
+                <?php if ($is_program_application) { ?>
+                    <p>신청 프로그램</p>
+
+                    <h3>
+                        <?php
+                        echo class_share_public_escape(
+                            $class_item['title']
+                        );
+                        ?>
+                    </h3>
+
+                    <dl>
+                        <dt>교과</dt>
+                        <dd>
+                            <?php
+                            echo class_share_public_escape(
+                                $class_item['subject']
+                            );
+                            ?>
+                        </dd>
+
+                        <dt>교사</dt>
+                        <dd>
+                            <?php
+                            echo class_share_public_escape(
+                                $class_item[
+                                    'teacher_name'
+                                ]
+                            );
+                            ?>
+                        </dd>
+
+                        <dt>대상</dt>
+                        <dd>
+                            <?php
+                            echo class_share_public_escape(
+                                $class_item['target']
+                            );
+                            ?>
+                        </dd>
+
+                        <dt>수업일시</dt>
+                        <dd>
+                            <?php
+                            echo class_share_public_escape(
+                                class_share_public_format_datetime(
+                                    $class_item[
+                                        'class_start_at'
+                                    ]
+                                )
+                            );
+                            ?>
+                            <?php if (
+                                $class_item[
+                                    'class_end_at'
+                                ] !== null
+                            ) { ?>
+                                ~
+                                <?php
+                                echo class_share_public_escape(
+                                    class_share_public_format_datetime(
+                                        $class_item[
+                                            'class_end_at'
+                                        ]
+                                    )
+                                );
+                                ?>
+                            <?php } ?>
+                        </dd>
+
+                        <dt>장소</dt>
+                        <dd>
+                            <?php
+                            echo class_share_public_escape(
+                                $class_item['place']
+                            );
+                            ?>
+                        </dd>
+                    </dl>
+                <?php } ?>
+
                 <?php if (
                     trim(
                         (string)$event['subtitle']
@@ -477,6 +726,21 @@ $applications_url =
                         );
                         ?>
                     </dd>
+
+                    <?php if ($is_program_application) { ?>
+                        <dt>프로그램 신청 마감</dt>
+                        <dd>
+                            <?php
+                            echo class_share_public_escape(
+                                class_share_public_format_datetime(
+                                    $class_item[
+                                        'application_deadline'
+                                    ]
+                                )
+                            );
+                            ?>
+                        </dd>
+                    <?php } ?>
 
                     <dt>신청 현황</dt>
                     <dd>
@@ -523,8 +787,16 @@ $applications_url =
                     <p>
                         <?php
                         echo $is_open
-                            ? '행사 신청 정원이 마감되었습니다.'
-                            : '현재 행사 신청 기간이 아닙니다.';
+                            ? (
+                                $is_program_application
+                                ? '프로그램 신청 정원이 마감되었습니다.'
+                                : '행사 신청 정원이 마감되었습니다.'
+                            )
+                            : (
+                                $is_program_application
+                                ? '현재 프로그램 신청 기간이 아닙니다.'
+                                : '현재 행사 신청 기간이 아닙니다.'
+                            );
                         ?>
                     </p>
 
@@ -573,6 +845,15 @@ $applications_url =
                             value="<?php
                             echo class_share_public_escape(
                                 $event_slug
+                            );
+                            ?>">
+
+                        <input
+                            type="hidden"
+                            name="class_public_id"
+                            value="<?php
+                            echo class_share_public_escape(
+                                $class_public_id
                             );
                             ?>">
 
@@ -753,7 +1034,11 @@ $applications_url =
                             </a>
 
                             <button type="submit">
-                                행사 신청
+                                <?php
+                                echo $is_program_application
+                                    ? '프로그램 신청'
+                                    : '행사 신청';
+                                ?>
                             </button>
                         </div>
                     </form>

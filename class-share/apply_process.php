@@ -56,6 +56,17 @@ $event_slug =
     ? trim((string)$_POST['event_slug'])
     : '';
 
+$class_public_id =
+    isset($_POST['class_public_id'])
+    ? strtolower(
+        trim(
+            (string)$_POST[
+                'class_public_id'
+            ]
+        )
+    )
+    : '';
+
 if (
     !class_share_public_valid_slug(
         $school_slug
@@ -68,15 +79,35 @@ if (
     exit('신청 주소가 올바르지 않습니다.');
 }
 
+if (
+    $class_public_id !== '' &&
+    !preg_match(
+        '/^[a-f0-9]{32}$/D',
+        $class_public_id
+    )
+) {
+    http_response_code(400);
+    exit('프로그램 신청 주소가 올바르지 않습니다.');
+}
+
 $redirect_url =
     '/class-share/apply.php?school=' .
     rawurlencode($school_slug) .
     '&event=' .
     rawurlencode($event_slug);
 
+if ($class_public_id !== '') {
+    $redirect_url .=
+        '&class=' .
+        rawurlencode(
+            $class_public_id
+        );
+}
+
 $store_error_and_redirect =
     function (
         $event_id,
+        $class_id,
         $errors,
         $form_values
     ) use ($redirect_url) {
@@ -86,6 +117,9 @@ $store_error_and_redirect =
             array(
                 'event_id' =>
                     (int)$event_id,
+
+                'class_id' =>
+                    (int)$class_id,
 
                 'errors' =>
                     array_values(
@@ -123,6 +157,7 @@ if (
     )
 ) {
     $store_error_and_redirect(
+        0,
         0,
         array(
             '보안 확인에 실패했습니다. 페이지를 새로고침한 뒤 다시 신청해 주세요.'
@@ -168,6 +203,46 @@ if (
 $event =
     $event_rows[0];
 
+$class_item =
+    null;
+
+if ($class_public_id !== '') {
+    $class_rows =
+        pdo_query(
+            "
+            SELECT
+                id,
+                event_id,
+                title
+
+            FROM class_share_class
+
+            WHERE event_id = ?
+              AND public_id = ?
+
+            LIMIT 1
+            ",
+            (int)$event['id'],
+            $class_public_id
+        );
+
+    if (
+        $class_rows === false ||
+        !isset($class_rows[0])
+    ) {
+        http_response_code(404);
+        exit('신청할 프로그램을 찾을 수 없습니다.');
+    }
+
+    $class_item =
+        $class_rows[0];
+}
+
+$class_id =
+    $class_item !== null
+    ? (int)$class_item['id']
+    : 0;
+
 $validation =
     class_share_application_validate(
         $_POST
@@ -178,18 +253,29 @@ if (
 ) {
     $store_error_and_redirect(
         (int)$event['id'],
+        $class_id,
         $validation['errors'],
         $validation['form_values']
     );
 }
 
 try {
-    $result =
-        class_share_create_event_application(
-            (int)$event['school_id'],
-            (int)$event['id'],
-            $validation['data']
-        );
+    if ($class_item === null) {
+        $result =
+            class_share_create_event_application(
+                (int)$event['school_id'],
+                (int)$event['id'],
+                $validation['data']
+            );
+    } else {
+        $result =
+            class_share_create_program_application(
+                (int)$event['school_id'],
+                (int)$event['id'],
+                $class_id,
+                $validation['data']
+            );
+    }
 
     class_share_application_rotate_csrf();
 
@@ -202,6 +288,19 @@ try {
 
             'event_title' =>
                 (string)$event['title'],
+
+            'class_id' =>
+                $class_id,
+
+            'class_title' =>
+                $class_item !== null
+                ? (string)$class_item['title']
+                : '',
+
+            'application_scope' =>
+                $class_item !== null
+                ? 'program'
+                : 'event',
 
             'application_code' =>
                 (string)$result[
@@ -229,6 +328,7 @@ try {
 } catch (DomainException $e) {
     $store_error_and_redirect(
         (int)$event['id'],
+        $class_id,
         array(
             $e->getMessage()
         ),
@@ -242,6 +342,7 @@ try {
 
     $store_error_and_redirect(
         (int)$event['id'],
+        $class_id,
         array(
             '신청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.'
         ),

@@ -376,7 +376,7 @@ $now_timestamp =
     <meta charset="UTF-8">
     <link
         rel="stylesheet"
-        href="/class-share/assets/public.css?v=20260923">
+        href="/class-share/assets/public.css?v=20260925-1">
 
     <meta
         name="viewport"
@@ -758,6 +758,7 @@ $now_timestamp =
                         ?>이 없습니다.
                     </p>
                 <?php } else { ?>
+                    <div class="public-program-grid">
                     <?php foreach ($classes as $class_item) { ?>
                         <?php
                         $is_available =
@@ -775,8 +776,8 @@ $now_timestamp =
                             );
                         ?>
 
-                        <article>
-                            <p>
+                        <article class="public-program-card">
+                            <p class="public-program-subject">
                                 <?php
                                 echo class_share_public_escape(
                                     $class_item['subject']
@@ -891,7 +892,7 @@ $now_timestamp =
                                 ) !== ''
                             ) {
                             ?>
-                                <div>
+                                <div class="public-program-description">
                                     <?php
                                     echo class_share_content_sanitize_html(
                                         $class_item['description']
@@ -900,16 +901,36 @@ $now_timestamp =
                                 </div>
                             <?php } ?>
 
-                            <p>
-                                <?php if ($is_available) { ?>
-                                    신청 가능
-                                    · 신청 화면 준비 중
-                                <?php } else { ?>
+                            <?php if ($is_available) { ?>
+                                <p class="public-program-action">
+                                    <a
+                                        class="public-button"
+                                        href="/class-share/apply.php?school=<?php
+                                        echo rawurlencode(
+                                            $school['slug']
+                                        );
+                                        ?>&amp;event=<?php
+                                        echo rawurlencode(
+                                            $event['slug']
+                                        );
+                                        ?>&amp;class=<?php
+                                        echo rawurlencode(
+                                            $class_item[
+                                                'public_id'
+                                            ]
+                                        );
+                                        ?>">
+                                        프로그램 신청
+                                    </a>
+                                </p>
+                            <?php } else { ?>
+                                <p class="public-program-action">
                                     신청 마감
-                                <?php } ?>
-                            </p>
+                                </p>
+                            <?php } ?>
                         </article>
                     <?php } ?>
+                    </div>
                 <?php } ?>
             </section>
 

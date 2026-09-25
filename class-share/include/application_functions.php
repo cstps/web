@@ -177,6 +177,88 @@ function class_share_application_event_is_open(
 }
 
 
+function class_share_application_program_is_open(
+    $event,
+    $class_item,
+    $now_timestamp = null
+) {
+    if (
+        !is_array($event) ||
+        !is_array($class_item)
+    ) {
+        return false;
+    }
+
+    if (
+        !isset(
+            $event['status'],
+            $event['application_mode'],
+            $event['application_start_at'],
+            $event['application_end_at'],
+            $class_item['status'],
+            $class_item[
+                'application_deadline'
+            ]
+        )
+    ) {
+        return false;
+    }
+
+    if (
+        (string)$event['status'] !==
+            'published' ||
+        (string)$event['application_mode'] !==
+            'program' ||
+        (string)$class_item['status'] !==
+            'published'
+    ) {
+        return false;
+    }
+
+    $start_timestamp =
+        strtotime(
+            (string)$event[
+                'application_start_at'
+            ]
+        );
+
+    $end_timestamp =
+        strtotime(
+            (string)$event[
+                'application_end_at'
+            ]
+        );
+
+    $deadline_timestamp =
+        strtotime(
+            (string)$class_item[
+                'application_deadline'
+            ]
+        );
+
+    if (
+        $start_timestamp === false ||
+        $end_timestamp === false ||
+        $deadline_timestamp === false
+    ) {
+        return false;
+    }
+
+    if ($now_timestamp === null) {
+        $now_timestamp =
+            time();
+    }
+
+    $now_timestamp =
+        (int)$now_timestamp;
+
+    return
+        $now_timestamp >= $start_timestamp &&
+        $now_timestamp <= $end_timestamp &&
+        $now_timestamp <= $deadline_timestamp;
+}
+
+
 function class_share_application_validate(
     $source
 ) {

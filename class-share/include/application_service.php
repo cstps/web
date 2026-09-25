@@ -401,6 +401,444 @@ function class_share_create_event_application(
 }
 
 
+function class_share_create_program_application(
+    $school_id,
+    $event_id,
+    $class_id,
+    $data
+) {
+    global $dbh;
+
+    $school_id =
+        (int)$school_id;
+
+    $event_id =
+        (int)$event_id;
+
+    $class_id =
+        (int)$class_id;
+
+    if (
+        $school_id < 1 ||
+        $event_id < 1 ||
+        $class_id < 1 ||
+        !is_array($data)
+    ) {
+        throw new InvalidArgumentException(
+            '신청 대상 정보가 올바르지 않습니다.'
+        );
+    }
+
+    $name =
+        isset($data['name'])
+        ? (string)$data['name']
+        : '';
+
+    $school =
+        isset($data['school'])
+        ? (string)$data['school']
+        : '';
+
+    $phone =
+        isset($data['phone'])
+        ? class_share_normalize_phone(
+            $data['phone']
+        )
+        : '';
+
+    $password =
+        isset($data['password'])
+        ? (string)$data['password']
+        : '';
+
+    $phone_ciphertext =
+        class_share_encrypt_phone(
+            $phone
+        );
+
+    $phone_lookup_hash =
+        class_share_phone_lookup_hash(
+            $phone
+        );
+
+    $phone_last4 =
+        class_share_phone_last4(
+            $phone
+        );
+
+    $password_hash =
+        password_hash(
+            $password,
+            PASSWORD_DEFAULT
+        );
+
+    if ($password_hash === false) {
+        throw new RuntimeException(
+            '신청 비밀번호를 안전하게 저장할 수 없습니다.'
+        );
+    }
+
+    $application_code =
+        class_share_application_code();
+
+    $ip_address =
+        class_share_application_ip_address();
+
+    $connection_result =
+        pdo_query(
+            'SELECT 1 AS ready'
+        );
+
+    if (
+        $connection_result === false ||
+        !($dbh instanceof PDO)
+    ) {
+        throw new RuntimeException(
+            'DB 연결이 준비되지 않았습니다.'
+        );
+    }
+
+    try {
+        $dbh->beginTransaction();
+
+        $event_rows =
+            pdo_query(
+                "
+                SELECT
+                    event.id,
+                    event.school_id,
+                    event.status,
+                    event.application_mode,
+                    event.application_start_at,
+                    event.application_end_at,
+                    event.privacy_policy_version
+
+                FROM class_share_event AS event
+
+                INNER JOIN class_share_school AS school
+                    ON school.id = event.school_id
+                   AND school.status = 'active'
+
+                WHERE event.id = ?
+                  AND event.school_id = ?
+
+                LIMIT 1
+
+                FOR UPDATE
+                ",
+                $event_id,
+                $school_id
+            );
+
+        if (
+            $event_rows === false ||
+            !isset($event_rows[0])
+        ) {
+            throw new DomainException(
+                '신청할 수 있는 행사를 찾을 수 없습니다.'
+            );
+        }
+
+        $event =
+            $event_rows[0];
+
+        $class_rows =
+            pdo_query(
+                "
+                SELECT
+                    id,
+                    event_id,
+                    title,
+                    application_deadline,
+                    capacity,
+                    status
+
+                FROM class_share_class
+
+                WHERE id = ?
+                  AND event_id = ?
+
+                LIMIT 1
+
+                FOR UPDATE
+                ",
+                $class_id,
+                $event_id
+            );
+
+        if (
+            $class_rows === false ||
+            !isset($class_rows[0])
+        ) {
+            throw new DomainException(
+                '신청할 수 있는 프로그램을 찾을 수 없습니다.'
+            );
+        }
+
+        $class_item =
+            $class_rows[0];
+
+        if (
+            !class_share_application_program_is_open(
+                $event,
+                $class_item
+            )
+        ) {
+            throw new DomainException(
+                '현재 프로그램 신청 기간이 아닙니다.'
+            );
+        }
+
+        $duplicate_rows =
+            pdo_query(
+                "
+                SELECT
+                    id
+
+                FROM class_share_application
+
+                WHERE event_id = ?
+                  AND class_id = ?
+                  AND application_scope = 'program'
+                  AND phone_lookup_hash = ?
+                  AND status IN (
+                      'applied',
+                      'approved',
+                      'waiting'
+                  )
+
+                LIMIT 1
+                ",
+                $event_id,
+                $class_id,
+                $phone_lookup_hash
+            );
+
+        if ($duplicate_rows === false) {
+            throw new RuntimeException(
+                '중복 신청 정보를 확인할 수 없습니다.'
+            );
+        }
+
+        if (isset($duplicate_rows[0])) {
+            throw new DomainException(
+                '같은 연락처로 이미 신청한 프로그램입니다.'
+            );
+        }
+
+        $count_rows =
+            pdo_query(
+                "
+                SELECT
+                    COUNT(*) AS active_count
+
+                FROM class_share_application
+
+                WHERE event_id = ?
+                  AND class_id = ?
+                  AND application_scope = 'program'
+                  AND status IN (
+                      'applied',
+                      'approved',
+                      'waiting'
+                  )
+                ",
+                $event_id,
+                $class_id
+            );
+
+        if (
+            $count_rows === false ||
+            !isset($count_rows[0])
+        ) {
+            throw new RuntimeException(
+                '프로그램 신청 인원을 확인할 수 없습니다.'
+            );
+        }
+
+        $active_count =
+            (int)$count_rows[0][
+                'active_count'
+            ];
+
+        $capacity =
+            (int)$class_item['capacity'];
+
+        if ($active_count >= $capacity) {
+            throw new DomainException(
+                '프로그램 신청 정원이 마감되었습니다.'
+            );
+        }
+
+        $application_id =
+            pdo_query(
+                "
+                INSERT INTO class_share_application
+                (
+                    event_id,
+                    class_id,
+                    application_scope,
+                    application_code,
+                    applicant_name,
+                    applicant_school,
+                    phone_ciphertext,
+                    phone_lookup_hash,
+                    phone_last4,
+                    password_hash,
+                    status,
+                    privacy_policy_version,
+                    privacy_agreed_at,
+                    cancelled_at,
+                    processed_by,
+                    admin_note,
+                    created_at,
+                    updated_at
+                )
+                VALUES
+                (
+                    ?,
+                    ?,
+                    'program',
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    'applied',
+                    ?,
+                    NOW(),
+                    NULL,
+                    NULL,
+                    NULL,
+                    NOW(),
+                    NOW()
+                )
+                ",
+                $event_id,
+                $class_id,
+                $application_code,
+                $name,
+                $school,
+                $phone_ciphertext,
+                $phone_lookup_hash,
+                $phone_last4,
+                $password_hash,
+                (string)$event[
+                    'privacy_policy_version'
+                ]
+            );
+
+        if ($application_id === false) {
+            throw new RuntimeException(
+                '프로그램 신청을 저장할 수 없습니다.'
+            );
+        }
+
+        $after_json =
+            json_encode(
+                array(
+                    'event_id' =>
+                        $event_id,
+
+                    'class_id' =>
+                        $class_id,
+
+                    'application_scope' =>
+                        'program',
+
+                    'application_code' =>
+                        $application_code,
+
+                    'status' =>
+                        'applied',
+
+                    'privacy_policy_version' =>
+                        (string)$event[
+                            'privacy_policy_version'
+                        ]
+                ),
+                JSON_UNESCAPED_UNICODE |
+                JSON_UNESCAPED_SLASHES
+            );
+
+        if ($after_json === false) {
+            throw new RuntimeException(
+                '신청 감사 자료를 만들 수 없습니다.'
+            );
+        }
+
+        $audit_result =
+            pdo_query(
+                "
+                INSERT INTO class_share_audit_log
+                (
+                    school_id,
+                    admin_id,
+                    actor_type,
+                    action,
+                    target_type,
+                    target_id,
+                    before_data,
+                    after_data,
+                    ip_address,
+                    created_at
+                )
+                VALUES
+                (
+                    ?,
+                    NULL,
+                    'applicant',
+                    'application.create',
+                    'application',
+                    ?,
+                    NULL,
+                    ?,
+                    ?,
+                    NOW()
+                )
+                ",
+                $school_id,
+                (int)$application_id,
+                $after_json,
+                $ip_address
+            );
+
+        if ($audit_result === false) {
+            throw new RuntimeException(
+                '신청 감사 기록을 저장할 수 없습니다.'
+            );
+        }
+
+        $dbh->commit();
+
+        return array(
+            'application_id' =>
+                (int)$application_id,
+
+            'application_code' =>
+                $application_code,
+
+            'class_id' =>
+                $class_id,
+
+            'status' =>
+                'applied'
+        );
+    } catch (Throwable $e) {
+        if (
+            $dbh instanceof PDO &&
+            $dbh->inTransaction()
+        ) {
+            $dbh->rollBack();
+        }
+
+        throw $e;
+    }
+}
+
+
 function class_share_find_applications(
     $school_id,
     $event_id,
