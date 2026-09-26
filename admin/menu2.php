@@ -263,14 +263,14 @@ if (!function_exists("admin_menu_link_class")) {
           <a
             href="problem_import.php"
             target="<?php echo $admin_internal_target; ?>"
-            class="admin-nav-link">
+            class="<?php echo admin_menu_link_class('problem-import'); ?>">
             문제 가져오기
           </a>
 
           <a
             href="problem_export.php"
             target="<?php echo $admin_internal_target; ?>"
-            class="admin-nav-link">
+            class="<?php echo admin_menu_link_class('problem-export'); ?>">
             문제 내보내기
           </a>
 
@@ -433,7 +433,7 @@ if (!function_exists("admin_menu_link_class")) {
             접속 사용자
           </a>
 
-          <a class="admin-nav-link" href="shorturl_list.php">단축 URL 관리</a>
+          <a class="<?php echo admin_menu_link_class('system'); ?>" href="shorturl_list.php">단축 URL 관리</a>
 
           <a
             class="admin-nav-link"

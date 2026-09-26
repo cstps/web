@@ -4,6 +4,20 @@
 
         <div class="admin-topbar-left">
 
+            <button
+                type="button"
+                class="admin-menu-toggle"
+                id="admin-menu-toggle"
+                aria-controls="admin-sidebar"
+                aria-expanded="true">
+
+                <span
+                    class="admin-menu-toggle-icon"
+                    aria-hidden="true">☰</span>
+
+                <span>메뉴</span>
+            </button>
+
             <a
                 class="admin-brand"
                 href="<?php echo $OJ_HOME; ?>"

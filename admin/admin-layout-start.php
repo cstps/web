@@ -62,6 +62,15 @@ if (!isset($admin_active_menu)) {
 
         </aside>
 
+        <button
+            type="button"
+            class="admin-sidebar-backdrop"
+            id="admin-sidebar-backdrop"
+            aria-label="관리자 메뉴 닫기"
+            aria-hidden="true"
+            tabindex="-1">
+        </button>
+
         <main
             class="admin-main"
             id="admin-main-content"
