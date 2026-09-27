@@ -141,6 +141,24 @@ include("header.php");
             </div>
         </div>
 
+        <!-- 휴먼벤치마크 카드 -->
+        <div class="ui card link" onclick="location.href='<?php echo isset($path_fix) ? $path_fix : ''; ?>humanbenchmark.php';">
+            <div class="content">
+                <div class="header">
+                    <i class="gamepad teal icon"></i>
+                    휴먼벤치마크
+                </div>
+                <div class="meta">인지능력 측정</div>
+                <div class="description">
+                    반응속도(ms), 순서 기억하기, 숫자 암기 테스트로 뇌의 인지 성능을 측정합니다.
+                </div>
+            </div>
+            <div class="extra content">
+                <span class="right floated">바로가기 <i class="right chevron icon"></i></span>
+                <span class="ui teal label">신규</span>
+            </div>
+        </div>
+
         <!-- 6. 준비 중 카드 -->
         <div class="ui card disabled" style="opacity: 0.65; background-color: #f9fafb;">
             <div class="content">
