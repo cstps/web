@@ -1346,6 +1346,15 @@ body.admin-layout-page {
    Problem visibility status
    ============================================================ */
 
+.admin-status-form {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    margin: 0;
+}
+
+
 .admin-status {
     display: inline-flex;
     align-items: center;
@@ -1418,6 +1427,46 @@ button.admin-status {
 .admin-col-manage {
     width: 220px;
 }
+
+.admin-news-table {
+    table-layout: fixed;
+
+    min-width: 900px;
+}
+
+.admin-news-col-id {
+    width: 76px;
+}
+
+.admin-news-col-title {
+    text-align: left !important;
+    overflow-wrap: anywhere;
+}
+
+.admin-news-col-writer {
+    width: 110px;
+
+    white-space: nowrap;
+}
+
+.admin-news-col-date {
+    width: 170px;
+
+    white-space: nowrap;
+}
+
+.admin-news-col-status {
+    width: 100px;
+
+    white-space: nowrap;
+}
+
+.admin-news-col-actions {
+    width: 135px;
+
+    white-space: nowrap;
+}
+
 
 .admin-manage-cell {
     white-space: nowrap;

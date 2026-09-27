@@ -393,16 +393,16 @@ require(
 
         <div class="admin-table-wrap">
 
-            <table class="admin-table">
+            <table class="admin-table admin-news-table">
 
                 <thead>
                     <tr>
-                        <th>번호</th>
-                        <th>제목</th>
-                        <th>작성자</th>
-                        <th>수정일시</th>
-                        <th>공개 상태</th>
-                        <th>관리</th>
+                        <th class="admin-news-col-id">번호</th>
+                        <th class="admin-news-col-title">제목</th>
+                        <th class="admin-news-col-writer">작성자</th>
+                        <th class="admin-news-col-date">수정일시</th>
+                        <th class="admin-news-col-status">공개 상태</th>
+                        <th class="admin-news-col-actions">관리</th>
                     </tr>
                 </thead>
 
@@ -426,11 +426,11 @@ require(
                         ?>
 
                         <tr>
-                            <td>
+                            <td class="admin-news-col-id">
                                 <?php echo $news_id; ?>
                             </td>
 
-                            <td>
+                            <td class="admin-news-col-title">
                                 <a
                                     href="news_edit.php?id=<?php
                                     echo $news_id;
@@ -443,7 +443,7 @@ require(
                                 </a>
                             </td>
 
-                            <td>
+                            <td class="admin-news-col-writer">
                                 <?php
                                 echo $escape(
                                     $news["user_id"]
@@ -451,7 +451,7 @@ require(
                                 ?>
                             </td>
 
-                            <td>
+                            <td class="admin-news-col-date">
                                 <?php
                                 echo $escape(
                                     $news["time"]
@@ -459,10 +459,11 @@ require(
                                 ?>
                             </td>
 
-                            <td>
+                            <td class="admin-news-col-status">
                                 <form
                                     method="post"
-                                    action="news_df_change.php">
+                                    action="news_df_change.php"
+                                    class="admin-status-form">
 
                                     <div class="admin-csrf-fields">
                                         <?php
@@ -512,7 +513,7 @@ require(
                                 </form>
                             </td>
 
-                            <td>
+                            <td class="admin-manage-cell admin-news-col-actions">
                                 <div class="admin-row-actions">
 
                                     <a

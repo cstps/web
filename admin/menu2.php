@@ -128,7 +128,11 @@ if (!function_exists("admin_menu_link_class")) {
       <div class="admin-nav-items">
 
         <a
-          class="admin-nav-link"
+          class="<?php
+          echo admin_menu_link_class(
+            "coding_news_list"
+          );
+          ?>"
           href="coding_news_list.php"
           target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_NEWS_LIST; ?>">
@@ -136,7 +140,11 @@ if (!function_exists("admin_menu_link_class")) {
         </a>
 
         <a
-          class="admin-nav-link"
+          class="<?php
+          echo admin_menu_link_class(
+            "coding_news_add"
+          );
+          ?>"
           href="coding_news_add_page.php"
           target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_ADD_NEWS; ?>">

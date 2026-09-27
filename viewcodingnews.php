@@ -2,7 +2,10 @@
 ////////////////////////////Common head
 $cache_time = 30;
 $OJ_CACHE_SHARE = true;
-$news_id=$_GET["id"];
+$news_id =
+        isset($_GET["id"])
+        ? intval($_GET["id"])
+        : 0;
 require_once( './include/cache_start.php' );
 require_once( './include/db_info.inc.php' );
 require_once( './include/memcache.php' );
@@ -16,15 +19,18 @@ if ( isset( $OJ_ON_SITE_CONTEST_ID ) ) {
 ///////////////////////////MAIN	
 
 $view_news = "";
+$news_title = "게시글이 없음!";
+$news_content = "게시글이 없음!";
+$news_writer = "";
+$news_date = "";
+
 $sql = "select * "
 . "FROM `coding_news` "
-. "WHERE `defunct`!='Y' && `news_id`='$news_id'"
-. "ORDER BY `importance` ASC,`time` DESC "
-. "LIMIT 50";
+. "WHERE `defunct`!='Y' AND `news_id`=" . $news_id . " "
+. "LIMIT 1";
 $result = mysql_query_cache( $sql ); //mysql_escape_string($sql));
-if ( !$result ) {
-	$new_title = $news_content = "게시글이 없음!";
-} else {
+
+if ( !empty( $result ) ) {
 	foreach ( $result as $row ) {
 		$news_title=$row['title'];
 		$news_content=$row['content'];
