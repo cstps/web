@@ -1,4 +1,4 @@
-<?php 
+<?php
 $OJ_CACHE_SHARE = false;
 $cache_time = 0;
 
