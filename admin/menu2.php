@@ -83,15 +83,11 @@ if (!function_exists("admin_menu_link_class")) {
       <div class="admin-nav-items">
 
         <a
-          class="admin-nav-link"
-          href="setmsg.php"
-          target="<?php echo $admin_internal_target; ?>"
-          title="<?php echo $MSG_HELP_SETMESSAGE; ?>">
-          공지 메시지 설정
-        </a>
-
-        <a
-          class="admin-nav-link"
+          class="<?php
+          echo admin_menu_link_class(
+            "news_list"
+          );
+          ?>"
           href="news_list.php"
           target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_NEWS_LIST; ?>">
@@ -99,7 +95,11 @@ if (!function_exists("admin_menu_link_class")) {
         </a>
 
         <a
-          class="admin-nav-link"
+          class="<?php
+          echo admin_menu_link_class(
+            "news_add"
+          );
+          ?>"
           href="news_add_page.php"
           target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_ADD_NEWS; ?>">

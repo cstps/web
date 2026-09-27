@@ -11,6 +11,13 @@ if (!oj_can_view_admin_problems()) {
 $can_create_contest_from_problems =
   oj_can_manage_admin_contests();
 
+$can_create_notice_from_problems =
+  oj_can_manage_admin_notice();
+
+$can_select_problems =
+  $can_create_contest_from_problems ||
+  $can_create_notice_from_problems;
+
 $admin_page_title = '문제 관리';
 $admin_active_menu = 'problem_list';
 
@@ -320,11 +327,11 @@ require_once __DIR__ . '/admin-layout-start.php';
   <div class="admin-card admin-table-card">
 
     <?php
-    if ($can_create_contest_from_problems) {
+    if ($can_select_problems) {
     ?>
 
       <form
-        id="problem-contest-form"
+        id="problem-selection-form"
         method="post"
         action="contest_add.php">
 
@@ -356,12 +363,35 @@ require_once __DIR__ . '/admin-layout-start.php';
             선택한 문제
           </span>
 
-          <button
-            type="submit"
-            name="problem2contest"
-            class="admin-btn admin-btn-secondary">
-            새 대회 만들기
-          </button>
+          <?php
+          if ($can_create_contest_from_problems) {
+          ?>
+
+            <button
+              type="submit"
+              name="problem2contest"
+              class="admin-btn admin-btn-secondary">
+              새 대회 만들기
+            </button>
+
+          <?php
+          }
+
+          if ($can_create_notice_from_problems) {
+          ?>
+
+            <button
+              type="submit"
+              name="problem2notice"
+              value="1"
+              formaction="news_add_page.php"
+              class="admin-btn admin-btn-secondary">
+              선택 문제로 공지 작성
+            </button>
+
+          <?php
+          }
+          ?>
 
         </div>
 
@@ -503,7 +533,7 @@ require_once __DIR__ . '/admin-layout-start.php';
           <tr>
 
             <?php
-            if ($can_create_contest_from_problems) {
+            if ($can_select_problems) {
             ?>
 
               <th class="admin-col-check">
@@ -516,7 +546,7 @@ require_once __DIR__ . '/admin-layout-start.php';
 
         document
           .querySelectorAll(
-            'input[name=&quot;pid[]&quot;][form=&quot;problem-contest-form&quot;]'
+            'input[name=&quot;pid[]&quot;][form=&quot;problem-selection-form&quot;]'
           )
           .forEach(function (input) {
             input.checked = checked;
@@ -570,7 +600,7 @@ require_once __DIR__ . '/admin-layout-start.php';
             <tr>
               <td
                 colspan="<?php
-                          echo $can_create_contest_from_problems
+                          echo $can_select_problems
                             ? 8
                             : 7;
                           ?>"
@@ -593,7 +623,7 @@ require_once __DIR__ . '/admin-layout-start.php';
               <tr>
 
                 <?php
-                if ($can_create_contest_from_problems) {
+                if ($can_select_problems) {
                 ?>
 
                   <td class="admin-col-check">
@@ -602,7 +632,7 @@ require_once __DIR__ . '/admin-layout-start.php';
                       type="checkbox"
                       name="pid[]"
                       value="<?php echo $pid; ?>"
-                      form="problem-contest-form"
+                      form="problem-selection-form"
                       aria-label="<?php echo $pid; ?>번 문제 선택">
 
                   </td>

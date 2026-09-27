@@ -1431,6 +1431,22 @@ button.admin-status {
     gap: 5px;
 }
 
+.admin-row-actions form {
+    display: inline-flex;
+    align-items: center;
+
+    margin: 0;
+}
+
+.admin-row-actions button.admin-row-action {
+    margin: 0;
+
+    font-family: inherit;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
 .admin-row-action {
     display: inline-flex;
     align-items: center;
