@@ -48,7 +48,8 @@ function isProtectedPasswordUser($user_id){
 		AND rightstr IN (
 			'administrator',
 			'contest_creator',
-			'problem_editor'
+			'problem_editor',
+			'system_config_manager'
 		)
 		LIMIT 1
 	";
@@ -223,7 +224,8 @@ if(isset($_POST['do'])){
 						AND privilege.rightstr IN (
 							'administrator',
 							'contest_creator',
-							'problem_editor'
+							'problem_editor',
+							'system_config_manager'
 						)
 
 					)

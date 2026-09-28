@@ -173,29 +173,37 @@ if (!function_exists("admin_menu_link_class")) {
       <div class="admin-nav-items">
 
         <a
-          class="admin-nav-link"
+          class="<?php
+            echo admin_menu_link_class(
+              "user_list"
+            );
+            ?>"
           href="user_list.php"
           target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_USER_LIST; ?>">
           사용자 목록
         </a>
-        <a
-          class="admin-nav-link"
-          href="changepass.php"
-          target="<?php echo $admin_internal_target; ?>"
-          title="<?php echo $MSG_HELP_SETPASSWORD; ?>">
-          비밀번호 변경
-        </a>
+          <?php
+          if (oj_can_create_admin_users()) {
+          ?>
+            <a
+              class="<?php
+              echo admin_menu_link_class(
+                "user_add"
+              );
+              ?>"
+              href="user_add.php"
+              target="<?php echo $admin_internal_target; ?>"
+              title="<?php echo $MSG_HELP_USER_ADD; ?>">
+              사용자 추가
+            </a>
+          <?php
+          }
+          ?>
+
         <?php
         if (oj_can_manage_admin_users()) {
         ?>
-          <a
-            class="admin-nav-link"
-            href="user_add.php"
-            target="<?php echo $admin_internal_target; ?>"
-            title="<?php echo $MSG_HELP_USER_ADD; ?>">
-            사용자 추가
-          </a>
           <a
             class="admin-nav-link"
             href="school_admin.php"

@@ -15,7 +15,7 @@ if (
 
 if (!oj_can_manage_admin_users()) {
     http_response_code(403);
-    exit("사용자 상태를 변경할 권한이 없습니다.");
+    exit("사용자 정보를 수정할 권한이 없습니다.");
 }
 
 require_once(
@@ -25,6 +25,16 @@ require_once(
 $user_id =
     isset($_POST["user_id"])
     ? trim((string)$_POST["user_id"])
+    : "";
+
+$nick =
+    isset($_POST["nick"])
+    ? trim((string)$_POST["nick"])
+    : "";
+
+$school =
+    isset($_POST["school"])
+    ? trim((string)$_POST["school"])
     : "";
 
 $return_page =
@@ -45,6 +55,22 @@ if (
     exit("사용자 ID가 올바르지 않습니다.");
 }
 
+if (
+    !mb_check_encoding($nick, "UTF-8") ||
+    mb_strlen($nick, "UTF-8") > 20
+) {
+    http_response_code(400);
+    exit("별명은 20자 이하로 입력해 주세요.");
+}
+
+if (
+    !mb_check_encoding($school, "UTF-8") ||
+    mb_strlen($school, "UTF-8") > 20
+) {
+    http_response_code(400);
+    exit("학교명은 20자 이하로 입력해 주세요.");
+}
+
 if ($return_page < 1) {
     $return_page = 1;
 }
@@ -54,23 +80,10 @@ if (strlen($return_keyword) > 200) {
     exit("검색어가 너무 깁니다.");
 }
 
-$current_user_id =
-    isset($_SESSION[$OJ_NAME . "_user_id"])
-    ? (string)$_SESSION[$OJ_NAME . "_user_id"]
-    : "";
-
-if (
-    $current_user_id !== "" &&
-    $user_id === $current_user_id
-) {
-    http_response_code(400);
-    exit("현재 로그인한 관리자 계정의 상태는 변경할 수 없습니다.");
-}
-
 $user_rows =
     pdo_query(
         "
-        SELECT user_id, defunct
+        SELECT user_id, nick
         FROM users
         WHERE user_id = ?
         LIMIT 1
@@ -80,7 +93,7 @@ $user_rows =
 
 if ($user_rows === false) {
     http_response_code(500);
-    exit("사용자 상태를 확인할 수 없습니다.");
+    exit("사용자 정보를 확인할 수 없습니다.");
 }
 
 if (!isset($user_rows[0])) {
@@ -88,35 +101,48 @@ if (!isset($user_rows[0])) {
     exit("사용자를 찾을 수 없습니다.");
 }
 
-$current_defunct =
-    (string)$user_rows[0]["defunct"];
-
-$new_defunct =
-    $current_defunct === "Y"
-    ? "N"
-    : "Y";
+$previous_nick =
+    (string)$user_rows[0]["nick"];
 
 $update_result =
     pdo_query(
         "
         UPDATE users
-        SET defunct = ?
+        SET nick = ?,
+            school = ?
         WHERE user_id = ?
-          AND defunct = ?
         ",
-        $new_defunct,
-        $user_id,
-        $current_defunct
+        $nick,
+        $school,
+        $user_id
     );
 
 if ($update_result === false) {
     http_response_code(500);
-    exit("사용자 상태를 변경할 수 없습니다.");
+    exit("사용자 정보를 수정할 수 없습니다.");
+}
+
+if ($previous_nick !== $nick) {
+    $solution_update_result =
+        pdo_query(
+            "
+            UPDATE solution
+            SET nick = ?
+            WHERE user_id = ?
+            ",
+            $nick,
+            $user_id
+        );
+
+    if ($solution_update_result === false) {
+        http_response_code(500);
+        exit("제출 기록의 별명을 동기화할 수 없습니다.");
+    }
 }
 
 $return_query =
     array(
-        "updated" => "1",
+        "edited" => "1",
         "page" => (string)$return_page
     );
 

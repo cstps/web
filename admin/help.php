@@ -104,7 +104,7 @@ require(__DIR__ . "/admin-layout-start.php");
             </h2>
 
             <p class="admin-dashboard-card-description">
-              공지 메시지와 게시물을 관리합니다.
+              공지사항과 IT NEWS를 관리합니다.
             </p>
           </div>
 
@@ -112,14 +112,6 @@ require(__DIR__ . "/admin-layout-start.php");
 
         <div class="admin-dashboard-actions">
 
-          <a class="admin-dashboard-action" href="setmsg.php">
-            <span class="admin-dashboard-action-title">
-              공지 메시지 설정
-            </span>
-            <span class="admin-dashboard-action-description">
-              사이트 상단의 안내 메시지를 설정합니다.
-            </span>
-          </a>
 
           <a class="admin-dashboard-action" href="news_list.php">
             <span class="admin-dashboard-action-title">
@@ -181,18 +173,10 @@ require(__DIR__ . "/admin-layout-start.php");
               사용자 목록
             </span>
             <span class="admin-dashboard-action-description">
-              등록된 사용자 정보를 확인합니다.
+              사용자 정보와 비밀번호를 관리합니다.
             </span>
           </a>
 
-          <a class="admin-dashboard-action" href="changepass.php">
-            <span class="admin-dashboard-action-title">
-              비밀번호 변경
-            </span>
-            <span class="admin-dashboard-action-description">
-              사용자 비밀번호를 변경합니다.
-            </span>
-          </a>
 
           <?php if (oj_can_manage_admin_users()) { ?>
 
