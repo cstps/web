@@ -319,9 +319,17 @@ $school_is_active =
 $published_class_count =
     (int)$event['published_class_count'];
 
+$requires_published_class =
+    (string)$event['application_mode'] ===
+    'program';
+
+$has_required_published_class =
+    !$requires_published_class ||
+    $published_class_count > 0;
+
 $ready_to_publish =
     $school_is_active &&
-    $published_class_count > 0 &&
+    $has_required_published_class &&
     trim(
         (string)$event[
             'privacy_policy_version'
@@ -467,9 +475,13 @@ require_once(
         </div>
     <?php } ?>
 
-    <?php if ($published_class_count < 1) { ?>
+    <?php if (
+        $requires_published_class &&
+        $published_class_count < 1
+    ) { ?>
         <div class="admin-error">
-            행사를 공개하려면 공개 상태의 수업이 최소 1개 필요합니다.
+            세부 프로그램 신청 행사는 공개 상태의 프로그램이
+            최소 1개 필요합니다.
         </div>
     <?php } ?>
 </section>
