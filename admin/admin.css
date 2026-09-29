@@ -1651,6 +1651,84 @@ button.admin-status {
     gap: 18px;
 }
 
+/* 권한 검색: 실제 카드 너비에 맞춰 입력칸 배치 */
+.admin-privilege-filter .admin-form-grid-2 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+
+.admin-privilege-filter .admin-form-field {
+    box-sizing: border-box;
+    flex: 0 1 420px;
+    width: 100%;
+    min-width: 0;
+    max-width: 420px;
+    margin-bottom: 0;
+}
+
+.admin-privilege-filter .admin-form-field:last-child {
+    flex-basis: 320px;
+    max-width: 320px;
+}
+
+.admin-privilege-filter input.admin-form-input,
+.admin-privilege-filter select.admin-form-input {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.admin-privilege-filter input.admin-form-input {
+    height: 42px;
+    min-height: 42px;
+    padding: 0 11px;
+    line-height: normal;
+}
+
+.admin-privilege-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 18px;
+}
+
+.admin-privilege-filter .admin-form-grid-2 {
+    flex: 1 1 760px;
+    min-width: 0;
+}
+
+.admin-privilege-filter .admin-form-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-self: flex-end;
+    justify-content: flex-start;
+    gap: 8px;
+    margin: 0 0 4px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+}
+
+.admin-privilege-filter .admin-btn {
+    min-height: 42px;
+}
+
+.admin-privilege-filter .admin-btn-secondary {
+    background: #edf2f8;
+    border-color: #d6e0eb;
+    color: #334155;
+}
+
+.admin-privilege-filter .admin-btn-secondary:hover {
+    background: #e2eaf4;
+    color: #1f2937;
+}
+
+
 .admin-form-input,
 .admin-form-textarea {
     box-sizing: border-box;
@@ -2623,5 +2701,44 @@ body.admin-modal-open {
 .admin-privilege-remove:hover {
     background: #fef2f2;
     border-color: #fca5a5;
+    color: #991b1b;
+}
+
+/* 권한 목록의 관리 표시 */
+.admin-privilege-action {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 96px;
+    min-height: 38px;
+    padding: 0 12px;
+    border: 1px solid;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.admin-privilege-action-link {
+    background: #15803d;
+    border-color: #15803d;
+    color: #ffffff;
+}
+
+.admin-privilege-action-link:hover,
+.admin-privilege-action-link:focus {
+    background: #166534;
+    border-color: #166534;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.admin-privilege-action-missing {
+    background: #fee2e2;
+    border-color: #fecaca;
     color: #991b1b;
 }

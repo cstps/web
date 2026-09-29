@@ -217,7 +217,11 @@ if (!function_exists("admin_menu_link_class")) {
           </a>
 
           <a
-            class="admin-nav-link"
+            class="<?php
+            echo admin_menu_link_class(
+              "privilege_list"
+            );
+            ?>"
             href="privilege_list.php"
             target="<?php echo $admin_internal_target; ?>"
             title="<?php echo $MSG_HELP_PRIVILEGE_LIST; ?>">
