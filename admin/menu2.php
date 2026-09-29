@@ -205,7 +205,11 @@ if (!function_exists("admin_menu_link_class")) {
         if (oj_can_manage_admin_users()) {
         ?>
           <a
-            class="admin-nav-link"
+            class="<?php
+            echo admin_menu_link_class(
+              "school_admin"
+            );
+            ?>"
             href="school_admin.php"
             target="<?php echo $admin_internal_target; ?>"
             title="<?php echo $MSG_SCHOOL_MANAGE; ?>">
