@@ -207,14 +207,6 @@ require(__DIR__ . "/admin-layout-start.php");
               </span>
             </a>
 
-            <a class="admin-dashboard-action" href="privilege_add.php">
-              <span class="admin-dashboard-action-title">
-                권한 추가
-              </span>
-              <span class="admin-dashboard-action-description">
-                사용자에게 새로운 권한을 부여합니다.
-              </span>
-            </a>
 
           <?php } ?>
 

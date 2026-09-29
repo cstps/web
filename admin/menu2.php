@@ -228,13 +228,6 @@ if (!function_exists("admin_menu_link_class")) {
             권한 목록
           </a>
 
-          <a
-            class="admin-nav-link"
-            href="privilege_add.php"
-            target="<?php echo $admin_internal_target; ?>"
-            title="<?php echo $MSG_HELP_ADD_PRIVILEGE; ?>">
-            권한 추가
-          </a>
         <?php
         }
         ?>
