@@ -14,29 +14,56 @@ require_once("./include/const.inc.php");
 
 
 
-$pid=0;
-// check the top arg
+$pid = isset($_GET['pid'])
+    ? (int)$_GET['pid']
+    : 0;
 
-if (isset($_GET['pid'])){
-        $pid=intval($_GET['pid']);
+if ($pid <= 0) {
+    http_response_code(400);
+    exit('문제 번호가 올바르지 않습니다.');
 }
-	if($OJ_MEMCACHE){
-		$sql="select user_id from privilege where rightstr='p$pid'  LIMIT 1";
-		require("./include/memcache.php");
-		$result = mysql_query_cache($sql);
-		
-	}else{
-		$sql="select user_id from privilege where rightstr=?  LIMIT 1";
-		$result = pdo_query($sql,"p".$pid);
-		
-	}
 
-	if ($result){
-		$row=$result[0];
-		echo "<a href='userinfo.php?user=".htmlentities($row['user_id'],ENT_QUOTES,'utf-8')."'>".htmlentities($row['user_id'],ENT_QUOTES,'utf-8')."</a>";
-	}else{
-		echo "$MSG_IMPORTED";
-	}
+$problem_rows = pdo_query(
+    'SELECT creator FROM problem WHERE problem_id = ? LIMIT 1',
+    $pid
+);
 
+if ($problem_rows === false) {
+    http_response_code(500);
+    exit('문제 정보를 조회하지 못했습니다.');
+}
 
+if (!isset($problem_rows[0])) {
+    http_response_code(404);
+    exit('문제를 찾을 수 없습니다.');
+}
+
+$creator = trim((string)$problem_rows[0]['creator']);
+
+// 표시 문구가 없는 기존 문제만 이전 권한 보유자 값을 사용한다.
+if ($creator === '') {
+    $grant_rows = pdo_query(
+        "SELECT user_id
+         FROM privilege
+         WHERE rightstr = ?
+           AND defunct = 'N'
+         LIMIT 1",
+        'p' . $pid
+    );
+
+    if ($grant_rows === false) {
+        http_response_code(500);
+        exit('출제자 정보를 조회하지 못했습니다.');
+    }
+
+    $creator = isset($grant_rows[0])
+        ? (string)$grant_rows[0]['user_id']
+        : (string)$MSG_IMPORTED;
+}
+
+echo htmlspecialchars(
+    $creator,
+    ENT_QUOTES,
+    'UTF-8'
+);
 ?>

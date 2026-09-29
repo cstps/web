@@ -2,11 +2,6 @@
 
 require_once __DIR__ . '/admin-init.php';
 
-if (!oj_is_admin()) {
-  http_response_code(403);
-  exit('문제를 내보낼 권한이 없습니다.');
-}
-
 require_once __DIR__ . '/../include/const.inc.php';
 
 function fixcdata($content) {
@@ -186,60 +181,181 @@ function fixImageURL(&$html,&$did) {
 }
 
 
-if (!(isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']))) {
-  echo "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">";
-  echo "<a href='../loginpage.php'>Please Login First!</a>";
-  exit ( 1 );
+if (
+  !oj_can_create_admin_problems() &&
+  !oj_can_manage_admin_contests()
+) {
+  http_response_code(403);
+  exit('문제를 내보낼 권한이 없습니다.');
 }
 
+if (isset($_GET['cid'])) {
+  require_once __DIR__ . '/../include/check_get_key.php';
 
-if (isset($_POST['do']) || isset($_GET['cid'])) {
-  if (isset($_POST['in']) && strlen($_POST['in'])>0) {
-    require_once("../include/check_post_key.php");
-    $in = $_POST['in'];
-    $ins = explode(",",$in);
-    $in = "";
+  $cid = filter_var(
+    $_GET['cid'],
+    FILTER_VALIDATE_INT,
+    array('options' => array('min_range' => 1))
+  );
 
-    foreach ($ins as $pid) {
-      $pid = intval($pid);
+  if (!is_int($cid)) {
+    http_response_code(400);
+    exit('대회 번호가 올바르지 않습니다.');
+  }
 
-      if ($in)
-        $in .= ",";
+  $contest_rows = pdo_query(
+    'SELECT contest_id FROM contest WHERE contest_id = ? LIMIT 1',
+    $cid
+  );
 
-      $in .= $pid;
+  if ($contest_rows === false) {
+    http_response_code(500);
+    exit('대회 정보를 조회하지 못했습니다.');
+  }
+
+  if (count($contest_rows) === 0) {
+    http_response_code(404);
+    exit('대회를 찾을 수 없습니다.');
+  }
+
+  $filename = '-contest-' . $cid;
+  $result = pdo_query(
+    'SELECT problem.*
+     FROM problem
+     INNER JOIN contest_problem
+       ON contest_problem.problem_id = problem.problem_id
+     WHERE contest_problem.contest_id = ?
+     ORDER BY contest_problem.num, problem.problem_id
+     LIMIT 101',
+    $cid
+  );
+} elseif (
+  $_SERVER['REQUEST_METHOD'] === 'POST' &&
+  isset($_POST['do']) &&
+  $_POST['do'] === 'do'
+) {
+  require_once __DIR__ . '/../include/check_post_key.php';
+
+  $in = isset($_POST['in']) ? trim((string)$_POST['in']) : '';
+
+  if ($in !== '') {
+    $parts = explode(',', $in);
+    $ids = array();
+
+    foreach ($parts as $part) {
+      $part = trim($part);
+
+      if (!preg_match('/^[1-9][0-9]*$/D', $part)) {
+        http_response_code(400);
+        exit('문제 번호 목록이 올바르지 않습니다.');
+      }
+
+      $pid = filter_var(
+        $part,
+        FILTER_VALIDATE_INT,
+        array('options' => array('min_range' => 1))
+      );
+
+      if ($pid === false) {
+        http_response_code(400);
+        exit('문제 번호가 너무 큽니다.');
+      }
+
+      $ids[$pid] = $pid;
     }
 
-    $sql = "SELECT * FROM problem WHERE problem_id IN($in)";
-    $result = pdo_query($sql);
+    $ids = array_values($ids);
 
-    $filename = "-$in";
+    if (count($ids) > 100) {
+      http_response_code(400);
+      exit('한 번에 최대 100개 문제를 선택할 수 있습니다.');
+    }
+
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $result = pdo_query(
+      'SELECT * FROM problem WHERE problem_id IN (' .
+      $placeholders . ') ORDER BY problem_id',
+      ...$ids
+    );
+
+    $filename = '-selected';
+
+    if (
+      is_array($result) &&
+      count($result) !== count($ids)
+    ) {
+      http_response_code(404);
+      exit('선택한 문제 중 존재하지 않는 번호가 있습니다.');
+    }
+  } else {
+    $start = filter_var(
+      isset($_POST['start']) ? $_POST['start'] : null,
+      FILTER_VALIDATE_INT,
+      array('options' => array('min_range' => 1))
+    );
+    $end = filter_var(
+      isset($_POST['end']) ? $_POST['end'] : null,
+      FILTER_VALIDATE_INT,
+      array('options' => array('min_range' => 1))
+    );
+
+    if (
+      !is_int($start) ||
+      !is_int($end) ||
+      $start > $end ||
+      $end - $start >= 100
+    ) {
+      http_response_code(400);
+      exit('시작·끝 문제 번호를 확인해 주세요. 범위는 최대 100개입니다.');
+    }
+
+    $result = pdo_query(
+      'SELECT * FROM problem
+       WHERE problem_id >= ? AND problem_id <= ?
+       ORDER BY problem_id',
+      $start,
+      $end
+    );
+
+    $filename = '-' . $start . '-' . $end;
   }
-  else if (isset($_GET['cid'])) {
-    require_once("../include/check_get_key.php");
-
-    $cid = intval($_GET['cid']);
-    $sql = "SELECT title FROM contest WHERE contest_id=?";
-    $result = pdo_query($sql,$cid);
-
-    $row = $result[0];
-    $filename = '-'.$row['title'];
-    
-    $sql = "SELECT * FROM problem WHERE problem_id IN(SELECT problem_id FROM contest_problem WHERE contest_id=?)";
-    $result = pdo_query($sql,$cid);
-  }
-  else {
-    require_once("../include/check_post_key.php");
-
-    $start = intval($_POST['start']);
-    $end = intval($_POST['end']);
-
-    $sql = "SELECT * FROM problem WHERE problem_id>=? AND problem_id<=? ORDER BY problem_id ";
-    $result = pdo_query($sql,$start,$end);
-
-    $filename = "-$start-$end";
+} else {
+  http_response_code(400);
+  exit('내보내기 요청이 올바르지 않습니다.');
 }
 
-//echo $sql;
+if ($result === false) {
+  http_response_code(500);
+  exit('문제를 조회하지 못했습니다.');
+}
+
+if (!is_array($result)) {
+  http_response_code(500);
+  exit('문제 조회 결과가 올바르지 않습니다.');
+}
+
+if (count($result) > 100) {
+  http_response_code(400);
+  exit('한 번에 최대 100개 문제를 내보낼 수 있습니다.');
+}
+
+if (count($result) === 0) {
+  http_response_code(404);
+  exit('내보낼 문제가 없습니다.');
+}
+
+// 문제의 표시용 출제자와 별개로 실제 p{문제번호} 권한을 검사한다.
+// 일부만 허용된 선택도 전체 요청을 중단한다.
+foreach ($result as $problem_row) {
+  if (
+    !oj_can_manage_problem(
+      (int)$problem_row['problem_id']
+    )
+  ) {
+    http_response_code(403);
+    exit('선택한 문제 중 내보낼 권한이 없는 문제가 있습니다.');
+  }
+}
 
 if (isset($_POST['submit']) && $_POST['submit']== "Export")
   header('Content-Type:text/xml');
@@ -347,5 +463,4 @@ else {
 
 <?php }
 echo "</fps>";
-}
 ?>

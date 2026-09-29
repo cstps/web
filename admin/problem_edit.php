@@ -80,25 +80,9 @@ $admin_page_access_allowed = true;
 
       $row = $result[0];
 
-      $sqltmp = "
-        SELECT `user_id`
-        FROM `privilege`
-        WHERE `rightstr` = ?
-          AND `defunct` = 'N'
-        LIMIT 1
-    ";
-
-      $resulttmp = pdo_query(
-        $sqltmp,
-        "p" . $id
-      );
-
       $creator_value =
-        (
-          is_array($resulttmp) &&
-          count($resulttmp) > 0
-        )
-        ? $resulttmp[0]['user_id']
+        isset($row['creator'])
+        ? (string)$row['creator']
         : '';
 
       $allow_reuse =
@@ -1073,8 +1057,17 @@ $admin_page_access_allowed = true;
 
       $creator =
         isset($_POST['creator'])
-        ? trim($_POST['creator'])
+        ? trim((string)$_POST['creator'])
         : '';
+
+      $creator_length = function_exists('mb_strlen')
+        ? mb_strlen($creator, 'UTF-8')
+        : strlen($creator);
+
+      if ($creator_length > 200) {
+        http_response_code(400);
+        exit('표시용 출제자 이름은 200자 이하여야 합니다.');
+      }
 
       $spj =
         isset($_POST['spj'])
@@ -1286,26 +1279,19 @@ $admin_page_access_allowed = true;
           '언어별 코드 템플릿 동기화에 실패했습니다.');
       }
 
-      // 출제자 정보 수정
-      if ($creator !== '') {
+      // 표시용 출제자 정보만 수정한다. p{pid} 권한은 변경하지 않는다.
+      $creator_update_result =
+        pdo_query(
+          "UPDATE problem
+           SET creator = ?
+           WHERE problem_id = ?",
+          $creator,
+          $id
+        );
 
-        $sql_creator = "
-            UPDATE `privilege`
-            SET `user_id` = ?
-            WHERE `rightstr` = ?
-        ";
-
-        $creator_update_result =
-          pdo_query(
-            $sql_creator,
-            $creator,
-            "p" . $id
-          );
-
-        if ($creator_update_result === false) {
-          http_response_code(500);
-          exit('문제 출제자 정보를 수정하지 못했습니다.');
-        }
+      if ($creator_update_result === false) {
+        http_response_code(500);
+        exit('문제 출제자 정보를 수정하지 못했습니다.');
       }
 
 

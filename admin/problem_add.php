@@ -40,7 +40,7 @@ $sample_input = $_POST['sample_input'];
 $sample_output = $_POST['sample_output'];
 $test_input = $_POST['test_input'];
 $test_output = $_POST['test_output'];
-/* don't do this , we will left them empty for not generating invalid test data files 
+/* don't do this , we will left them empty for not generating invalid test data files
 if ($sample_input=="") $sample_input="\n";
 if ($sample_output=="") $sample_output="\n";
 if ($test_input=="") $test_input="\n";
@@ -55,38 +55,22 @@ $source = $_POST['source'];
 $current_user_id =
     (string)$_SESSION[$OJ_NAME . '_user_id'];
 
-$requested_creator =
+$creator_label =
     isset($_POST['creator'])
     ? trim((string)$_POST['creator'])
     : '';
 
-$owner_user_id = $current_user_id;
+if ($creator_label === '') {
+    $creator_label = $current_user_id;
+}
 
-// 관리자만 다른 사용자를 제작자로 지정할 수 있다.
-if (
-    $requested_creator !== '' &&
-    $requested_creator !== $current_user_id
-) {
-    if (!oj_is_admin()) {
-        http_response_code(403);
-        exit('다른 사용자를 문제 제작자로 지정할 수 없습니다.');
-    }
+$creator_length = function_exists('mb_strlen')
+    ? mb_strlen($creator_label, 'UTF-8')
+    : strlen($creator_label);
 
-    $owner_rows = pdo_query(
-        'SELECT user_id
-         FROM users
-         WHERE user_id=?
-         LIMIT 1',
-        $requested_creator
-    );
-
-    if (!$owner_rows || !isset($owner_rows[0])) {
-        http_response_code(400);
-        exit('지정한 문제 제작자 계정을 찾을 수 없습니다.');
-    }
-
-    $owner_user_id =
-        (string)$owner_rows[0]['user_id'];
+if ($creator_length > 200) {
+    http_response_code(400);
+    exit('표시용 출제자 이름은 200자 이하여야 합니다.');
 }
 
 $spj = $_POST['spj'];
@@ -174,7 +158,7 @@ $hint = RemoveXSS($hint);
 //$rear_code = RemoveXSS($rear_code);
 $ban_code = RemoveXSS($ban_code);
 
-//echo "->".$OJ_DATA."<-"; 
+//echo "->".$OJ_DATA."<-";
 $pid = addproblem(
     $title,
     $time_limit,
@@ -205,6 +189,20 @@ if (
 $pid =
     intval($pid);
 
+// 표시용 출제자는 계정이나 문제 관리 권한과 별도로 저장한다.
+$creator_result = pdo_query(
+    "UPDATE problem
+     SET creator = ?
+     WHERE problem_id = ?",
+    $creator_label,
+    $pid
+);
+
+if ($creator_result === false) {
+    http_response_code(500);
+    exit('문제 출제자 표시 정보를 저장하지 못했습니다.');
+}
+
 // ------------------------------------------------------------
 // 문제 재사용 정책 저장
 // ------------------------------------------------------------
@@ -228,23 +226,22 @@ if (strlen($test_output) && !strlen($test_input)) $test_input = "0";
 if (strlen($test_input)) mkdata($pid, "test.in", $test_input, $OJ_DATA);
 if (strlen($test_output)) mkdata($pid, "test.out", $test_output, $OJ_DATA);
 
-// 만든 사람 정보 추가하기 없으면 로그인 정보 
-
-pdo_query(
+// 관리 권한은 표시용 출제자 이름과 무관하게 실제 등록자에게 부여한다.
+$grant_result = pdo_query(
     "INSERT INTO privilege
         (user_id, rightstr, defunct)
      VALUES
         (?, ?, 'N')",
-    $owner_user_id,
+    $current_user_id,
     'p' . $pid
 );
 
-// 현재 사용자가 실제 제작자인 경우에만 세션 소유권 부여
-if ($owner_user_id === $current_user_id) {
-    $_SESSION[$OJ_NAME . '_p' . $pid] = true;
-} else {
-    unset($_SESSION[$OJ_NAME . '_p' . $pid]);
+if ($grant_result === false) {
+    http_response_code(500);
+    exit('문제는 저장됐지만 관리 권한을 부여하지 못했습니다.');
 }
+
+$_SESSION[$OJ_NAME . '_p' . $pid] = true;
 
 header(
     'Location: problem_testdata.php?id=' .
