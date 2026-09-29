@@ -972,17 +972,6 @@ $applications_url =
                             <h3>개인정보 수집·이용 안내</h3>
 
                             <p>
-                                안내 버전:
-                                <?php
-                                echo class_share_public_escape(
-                                    $event[
-                                        'privacy_policy_version'
-                                    ]
-                                );
-                                ?>
-                            </p>
-
-                            <p>
                                 <?php
                                 echo nl2br(
                                     class_share_public_escape(

@@ -188,7 +188,6 @@ function class_share_event_validate_input($source)
             'event_end_at',
             'application_start_at',
             'application_end_at',
-            'privacy_policy_version',
             'privacy_notice',
             'retention_until',
             'status'
@@ -208,6 +207,17 @@ function class_share_event_validate_input($source)
             )
             : '';
     }
+
+    $form_values['privacy_policy_version'] =
+        'sha256:' .
+        substr(
+            hash(
+                'sha256',
+                $form_values['privacy_notice']
+            ),
+            0,
+            40
+        );
 
     $form_values['privacy_notice'] =
         str_replace(

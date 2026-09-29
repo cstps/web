@@ -10,6 +10,7 @@ User=www-data
 Group=www-data
 WorkingDirectory=/home/judge/src/web
 ExecStart=/usr/bin/php /home/judge/src/web/class-share/admin/cli/purge_expired_application_privacy.php --execute
+ExecStart=/usr/bin/php /home/judge/src/web/class-share/admin/cli/purge_expired_observations.php --execute
 UMask=0077
 NoNewPrivileges=true
 PrivateTmp=true

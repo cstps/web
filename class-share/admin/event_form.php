@@ -523,26 +523,6 @@ require_once(
 
         <div class="admin-form-grid">
             <div class="admin-field">
-                <label for="privacy_policy_version">
-                    개인정보 처리 문구 버전 *
-                </label>
-
-                <input
-                    type="text"
-                    id="privacy_policy_version"
-                    name="privacy_policy_version"
-                    required
-                    maxlength="50"
-                    value="<?php
-                    echo class_share_escape(
-                        $form_values[
-                            'privacy_policy_version'
-                        ]
-                    );
-                    ?>">
-            </div>
-
-            <div class="admin-field">
                 <label for="retention_until">
                     개인정보 보관 기한
                 </label>

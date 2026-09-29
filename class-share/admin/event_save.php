@@ -85,15 +85,18 @@ $application_end_input =
     ? trim((string)$_POST['application_end_at'])
     : '';
 
-$privacy_policy_version =
-    isset($_POST['privacy_policy_version'])
-    ? trim((string)$_POST['privacy_policy_version'])
-    : '';
-
 $privacy_notice =
     isset($_POST['privacy_notice'])
     ? trim((string)$_POST['privacy_notice'])
     : '';
+
+$privacy_policy_version =
+    'sha256:' .
+    substr(
+        hash('sha256', $privacy_notice),
+        0,
+        40
+    );
 
 $retention_input =
     isset($_POST['retention_until'])

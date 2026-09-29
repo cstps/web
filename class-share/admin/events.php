@@ -454,6 +454,21 @@ require_once(
                                         ?>">
                                         신청자 관리
                                     </a>
+
+                                    <?php if (
+                                        class_share_admin_can_view_sensitive_school(
+                                            $school_id,
+                                            $admin
+                                        )
+                                    ) { ?>
+                                        <a
+                                            class="admin-table-action"
+                                            href="/class-share/admin/observations.php?event_id=<?php
+                                            echo (int)$event['id'];
+                                            ?>">
+                                            참관록 관리
+                                        </a>
+                                    <?php } ?>
                                 </div>
                             </td>
                         </tr>

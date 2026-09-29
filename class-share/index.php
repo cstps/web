@@ -346,6 +346,34 @@ if (
     }
 }
 
+$observation_accepting = false;
+
+if ($page_error === '' && $event !== null) {
+    $observation_rows = pdo_query(
+        "
+        SELECT event_id
+        FROM class_share_observation_setting
+        WHERE event_id = ?
+          AND enabled = 1
+          AND (open_at IS NULL OR open_at <= NOW())
+          AND (close_at IS NULL OR close_at >= NOW())
+          AND retention_until >= CURRENT_DATE()
+        LIMIT 1
+        ",
+        (int)$event['id']
+    );
+
+    if ($observation_rows === false) {
+        error_log(
+            '[class-share] 참관록 접수 상태 조회 실패: 행사 ' .
+            (int)$event['id']
+        );
+    } else {
+        $observation_accepting =
+            isset($observation_rows[0]);
+    }
+}
+
 $page_title =
     $school !== null
     ? (string)$school['school_name']
@@ -1002,42 +1030,26 @@ $now_timestamp =
                 </section>
             <?php } ?>
 
-            <?php if (
-                $current_application_mode !==
-                'none'
-            ) { ?>
-            <section>
-                <h2>개인정보 수집·이용 안내</h2>
+            <?php if ($observation_accepting) { ?>
+                <section>
+                    <h2>참관록 작성</h2>
 
-                <p>
-                    안내 버전:
-                    <?php
-                    echo class_share_public_escape(
-                        $event['privacy_policy_version']
-                    );
-                    ?>
-                </p>
+                    <p>
+                        행사 신청 여부와 관계없이 참관 내용을 기록할 수 있습니다.
+                    </p>
 
-                <p>
-                    <?php
-                    echo nl2br(
-                        class_share_public_escape(
-                            $event['privacy_notice']
-                        ),
-                        false
-                    );
-                    ?>
-                </p>
-
-                <p>
-                    개인정보 보관 기한:
-                    <?php
-                    echo class_share_public_escape(
-                        $event['retention_until']
-                    );
-                    ?>
-                </p>
-            </section>
+                    <p>
+                        <a
+                            class="public-button"
+                            href="/class-share/observation.php?school=<?php
+                            echo rawurlencode($school['slug']);
+                            ?>&amp;event=<?php
+                            echo rawurlencode($event['slug']);
+                            ?>">
+                            참관록 작성
+                        </a>
+                    </p>
+                </section>
             <?php } ?>
         <?php } ?>
     </main>
