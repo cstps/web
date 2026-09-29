@@ -1,18 +1,16 @@
-<?php require_once("admin-header.php");?>
-<?php require_once("../include/check_get_key.php");
-if (!(isset($_SESSION[$OJ_NAME.'_'.'administrator']))){
-	echo "<a href='../loginpage.php'>Please Login First!</a>";
-	exit(1);
-}
-if(isset($_GET['uid'])){
-	$user_id=$_GET['uid'];
-	$rightstr =$_GET['rightstr'];
-	$sql="delete from `privilege` where user_id=? and rightstr=?";
-	$rows=pdo_query($sql,$user_id,$rightstr);
-	echo "$user_id $rightstr deleted!";
-}
-?>
+<?php
 
-<script language=javascript>
-	window.setTimeOut(1000,"history.go(-1)");
-</script>
+require_once(__DIR__ . "/admin-init.php");
+
+if (!oj_can_manage_admin_users()) {
+    http_response_code(403);
+    exit("권한을 관리할 권한이 없습니다.");
+}
+
+header("Content-Type: text/plain; charset=UTF-8");
+http_response_code(410);
+
+exit(
+    "기존 권한 삭제 기능은 종료되었습니다. " .
+    "사용자 목록에서 해당 사용자의 권한 관리 화면을 이용해 주세요."
+);

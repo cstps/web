@@ -80,16 +80,20 @@ if(isset($_GET['keyword']) && $_GET['keyword']!=""){
     <tr>
       <td>ID</td>
       <td>PRIVILEGE</td>
-      <td>REMOVE</td>
+      <td>관리</td>
     </tr>
     <?php
     foreach($result as $row){
       echo "<tr>";
-        echo "<td>".$row['user_id']."</td>";
-        echo "<td>".$row['rightstr'];
-	if($row['valuestr']!="true") echo ":".$row['valuestr'];
+        echo "<td>" . htmlspecialchars((string)$row['user_id'], ENT_QUOTES, "UTF-8") . "</td>";
+        echo "<td>" . htmlspecialchars((string)$row['rightstr'], ENT_QUOTES, "UTF-8");
+	if ($row['valuestr'] != "true") {
+          echo ":" . htmlspecialchars((string)$row['valuestr'], ENT_QUOTES, "UTF-8");
+        }
 	echo "</td>";
-        echo "<td><a href='privilege_delete.php?uid=".htmlentities($row['user_id'],ENT_QUOTES,"UTF-8")."&rightstr={$row['rightstr']}&getkey=".$_SESSION[$OJ_NAME.'_'.'getkey']."'>Delete</a></td>";
+        echo "<td><a href='user_privilege_manage.php?uid=" .
+            rawurlencode((string)$row['user_id']) .
+            "'>권한 관리</a></td>";
       echo "</tr>";
     }
     ?>
