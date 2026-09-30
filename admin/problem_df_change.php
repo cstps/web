@@ -81,7 +81,7 @@ if (
 
 $problem_rows =
   pdo_query(
-    "SELECT problem_id
+    "SELECT problem_id, is_archived
          FROM problem
          WHERE problem_id=?",
     $problem_id
@@ -104,11 +104,16 @@ if (count($problem_rows) === 0) {
 // 공개 상태 변경
 // ============================================================
 
+if ((int)$problem_rows[0]['is_archived'] === 1) {
+  http_response_code(409);
+  exit('보관된 문제의 공개 상태는 변경할 수 없습니다. 먼저 복원해 주세요.');
+}
+
 $update_result =
   pdo_query(
     "UPDATE problem
          SET defunct=?
-         WHERE problem_id=?",
+         WHERE problem_id=? AND is_archived=0",
     $defunct,
     $problem_id
   );

@@ -70,8 +70,16 @@ require_once __DIR__ . '/admin-layout-start.php';
     ? trim($_GET['keyword'])
     : '';
 
-  $where = array();
-  $params = array();
+  $show_archived =
+    isset($_GET['archived']) &&
+    $_GET['archived'] === '1';
+
+  // 보관 목록에서는 대회·공지에 문제를 선택해 추가하지 않습니다.
+  $can_select_problems =
+    $can_select_problems && !$show_archived;
+
+  $where = array('p.is_archived = ?');
+  $params = array($show_archived ? 1 : 0);
 
 
   // ============================================================
@@ -198,7 +206,8 @@ require_once __DIR__ . '/admin-layout-start.php';
             p.accepted,
             p.in_date,
             p.defunct,
-            p.allow_reuse
+            p.allow_reuse,
+            p.is_archived
         FROM problem p
         $where_sql
         ORDER BY p.problem_id DESC
@@ -216,6 +225,10 @@ require_once __DIR__ . '/admin-layout-start.php';
   // ============================================================
 
   $pagination_params = array();
+
+  if ($show_archived) {
+    $pagination_params['archived'] = '1';
+  }
 
   if (!$show_my) {
     $pagination_params['scope'] = 'all';
@@ -267,6 +280,10 @@ require_once __DIR__ . '/admin-layout-start.php';
       }
       ?>
 
+      <?php if ($show_archived) { ?>
+        <input type="hidden" name="archived" value="1">
+      <?php } ?>
+
       <div class="admin-search-input-wrap">
 
         <input
@@ -294,27 +311,31 @@ require_once __DIR__ . '/admin-layout-start.php';
 
 
     <div class="admin-filter-tabs">
-
       <a
-        class="admin-filter-tab <?php
-                                echo $show_my
-                                  ? 'active'
-                                  : '';
-                                ?>"
-        href="problem_list.php">
+        class="admin-filter-tab <?php echo $show_my ? 'active' : ''; ?>"
+        href="problem_list.php<?php echo $show_archived ? '?archived=1' : ''; ?>">
         내가 만든 문제
       </a>
 
       <a
-        class="admin-filter-tab <?php
-                                echo !$show_my
-                                  ? 'active'
-                                  : '';
-                                ?>"
-        href="problem_list.php?scope=all">
+        class="admin-filter-tab <?php echo !$show_my ? 'active' : ''; ?>"
+        href="problem_list.php?scope=all<?php echo $show_archived ? '&amp;archived=1' : ''; ?>">
         전체 문제
       </a>
+    </div>
 
+    <div class="admin-filter-tabs">
+      <a
+        class="admin-filter-tab <?php echo !$show_archived ? 'active' : ''; ?>"
+        href="problem_list.php<?php echo !$show_my ? '?scope=all' : ''; ?>">
+        일반 목록
+      </a>
+
+      <a
+        class="admin-filter-tab <?php echo $show_archived ? 'active' : ''; ?>"
+        href="problem_list.php?archived=1<?php echo !$show_my ? '&amp;scope=all' : ''; ?>">
+        보관 목록
+      </a>
     </div>
 
   </div>
@@ -789,6 +810,28 @@ require_once __DIR__ . '/admin-layout-start.php';
                         href="problem_testdata.php?id=<?php echo $pid; ?>">
                         테스트 데이터
                       </a>
+                      <button
+                        type="submit"
+                        class="admin-row-action"
+                        form="problem-archive-form"
+                        name="archive_change"
+                        value="<?php
+                          echo ($show_archived ? 'restore:' : 'archive:') .
+                            (int)$pid;
+                        ?>">
+                        <?php echo $show_archived ? '복원' : '보관'; ?>
+                      </button>
+
+                      <a
+                        class="admin-row-action"
+                        href="problem_delete.php?id=<?php
+                          echo (int)$pid;
+                        ?><?php
+                          echo $show_my ? '' : '&amp;scope=all';
+                          echo $show_archived ? '&amp;archived=1' : '';
+                        ?>">
+                        영구 삭제
+                      </a>
 
                     </div>
 
@@ -813,6 +856,27 @@ require_once __DIR__ . '/admin-layout-start.php';
 
     </div>
 
+
+    <form
+      id="problem-archive-form"
+      method="post"
+      action="problem_archive.php"
+      hidden>
+
+      <?php
+      require __DIR__ . '/../include/set_post_key.php';
+      ?>
+
+      <input
+        type="hidden"
+        name="return_scope"
+        value="<?php echo $show_my ? '' : 'all'; ?>">
+
+      <input
+        type="hidden"
+        name="return_archived"
+        value="<?php echo $show_archived ? '1' : '0'; ?>">
+    </form>
 
     <form
       id="problem-visibility-form"

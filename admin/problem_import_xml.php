@@ -129,6 +129,20 @@ if (
   exit('업로드 파일은 15MB 이하만 허용됩니다.');
 }
 
+// ============================================================
+// 검사에 통과한 업로드 임시 파일 경로
+// ============================================================
+
+$tempfile =
+  (string)$_FILES['fps']['tmp_name'];
+
+// ============================================================
+// 검사에 통과한 업로드 임시 파일 경로
+// ============================================================
+
+$tempfile =
+  (string)$_FILES['fps']['tmp_name'];
+
 require_once("../include/const.inc.php");
 
 function image_save_file(
@@ -258,22 +272,23 @@ function image_save_file(
   return true;
 }
 
-require_once ("../include/problem.php");
+require_once("../include/problem.php");
 
-function getLang($language) {  
+function getLang($language)
+{
   $language_name = $GLOBALS['language_name'];
   $language_ext = $GLOBALS['language_ext'];
 
-  for ($i=0; $i<count($language_name); $i++) {
+  for ($i = 0; $i < count($language_name); $i++) {
     //echo "$language=$language_name[$i]=".($language==$language_name[$i]);
     // compatibility with other onlinejudge FPS implementation might using extension name as language 
 
-    if ($language==$language_ext[$i]) {
+    if ($language == $language_ext[$i]) {
       return $i;
     }
 
     // HUSTOJ classic using language_name
-    if ($language==$language_name[$i]) {
+    if ($language == $language_name[$i]) {
       return $i;
     }
   }
@@ -295,23 +310,22 @@ function submitSolution(
 
   $language =
     getLang($language);
-  $len = mb_strlen($solution,'utf-8');
-  $user_id=$_SESSION[$OJ_NAME.'_'.'user_id'];
+  $len = mb_strlen($solution, 'utf-8');
+  $user_id = $_SESSION[$OJ_NAME . '_' . 'user_id'];
   $sql = "SELECT nick FROM users WHERE user_id=?";
   $nick = pdo_query($sql, $user_id);
   if ($nick) {
     $nick = $nick[0][0];
-  }
-  else {
+  } else {
     $nick = "Guest";
   }
 
   $sql = "INSERT INTO solution(problem_id,user_id,nick,in_date,language,ip,code_length,result) VALUES(?,?,?,NOW(),?,'127.0.0.1',?,14)";
-  $insert_id = pdo_query($sql, $pid,$_SESSION[$OJ_NAME.'_'.'user_id'],$nick, $language, $len);
-//  echo "submiting$language.....$insert_id";
+  $insert_id = pdo_query($sql, $pid, $_SESSION[$OJ_NAME . '_' . 'user_id'], $nick, $language, $len);
+  //  echo "submiting$language.....$insert_id";
 
   $sql = "INSERT INTO `source_code`(`solution_id`,`source`) VALUES(?,?)";
-  pdo_query($sql ,$insert_id, $solution);
+  pdo_query($sql, $insert_id, $solution);
 
   $sql = "INSERT INTO source_code_user
   (
@@ -391,25 +405,29 @@ function submitSolution(
   }
 }
 
-function getValue($Node, $TagName) {
+function getValue($Node, $TagName)
+{
   return $Node->$TagName;
 }
 
-function getAttribute($Node, $TagName,$attribute) {
+function getAttribute($Node, $TagName, $attribute)
+{
   return $Node->children()->$TagName->attributes()->$attribute;
 }
 
-function hasProblem($title) {
+function hasProblem($title)
+{
   //return false;	
   $md5 = md5($title);
-  $sql = "SELECT 1 FROM problem WHERE md5(title)=?";  
+  $sql = "SELECT 1 FROM problem WHERE md5(title)=?";
   $result = pdo_query($sql, $md5);
-  $rows_cnt = count($result);		
+  $rows_cnt = count($result);
   //echo "row->$rows_cnt";			
-  return ($rows_cnt>0);
+  return ($rows_cnt > 0);
 }
 
-function mkpta($pid,$prepends,$node) {
+function mkpta($pid, $prepends, $node)
+{
   $language_ext = $GLOBALS['language_ext'];
   $OJ_DATA = $GLOBALS['OJ_DATA'];
 
@@ -419,11 +437,12 @@ function mkpta($pid,$prepends,$node) {
     $file_ext = $language_ext[$lang];
     $basedir = "$OJ_DATA/$pid";
     $file_name = "$basedir/$node.$file_ext";
-    file_put_contents($file_name,$prepend);
+    file_put_contents($file_name, $prepend);
   }
 }
 
-function get_extension($file) {
+function get_extension($file)
+{
   $info = pathinfo($file);
   return $info['extension'];
 }
@@ -489,6 +508,8 @@ function import_fps($tempfile)
       LIBXML_NONET
     );
 
+  $xml_errors = libxml_get_errors();
+
   libxml_clear_errors();
 
   libxml_use_internal_errors(
@@ -498,7 +519,24 @@ function import_fps($tempfile)
   if ($xmlDoc === false) {
     http_response_code(400);
 
-    exit('올바른 FPS/XML 파일이 아닙니다.');
+    echo '올바른 FPS/XML 파일이 아닙니다.';
+
+    if (!empty($xml_errors)) {
+      $xml_error = $xml_errors[0];
+
+      echo '<br>XML 오류: ' .
+        htmlspecialchars(
+          trim((string)$xml_error->message),
+          ENT_QUOTES,
+          'UTF-8'
+        );
+
+      echo '<br>오류 위치: ' .
+        (int)$xml_error->line .
+        '행';
+    }
+
+    exit;
   }
 
   $searchNodes =
@@ -510,46 +548,46 @@ function import_fps($tempfile)
     exit('FPS/XML 구조를 확인하지 못했습니다.');
   }
   $spid = 0;
-  
+
   foreach ($searchNodes as $searchNode) {
     //echo $searchNode->title,"\n";
 
     $title = $searchNode->title;
 
     $time_limit = $searchNode->time_limit;
-    $unit = getAttribute($searchNode,'time_limit','unit');
+    $unit = getAttribute($searchNode, 'time_limit', 'unit');
     //echo $unit;
 
-    if ($unit=='ms')
+    if ($unit == 'ms')
       $time_limit /= 1000;
 
-    $memory_limit = getValue($searchNode,'memory_limit');
-    $unit = getAttribute($searchNode,'memory_limit','unit');
+    $memory_limit = getValue($searchNode, 'memory_limit');
+    $unit = getAttribute($searchNode, 'memory_limit', 'unit');
 
-    if ($unit=='kb')
+    if ($unit == 'kb')
       $memory_limit /= 1024;
 
-    $description = getValue($searchNode,'description');
-    $input = getValue($searchNode,'input');
-    $output = getValue($searchNode,'output');
-    $sample_input = getValue($searchNode,'sample_input');
-    $sample_output = getValue($searchNode,'sample_output');
+    $description = getValue($searchNode, 'description');
+    $input = getValue($searchNode, 'input');
+    $output = getValue($searchNode, 'output');
+    $sample_input = getValue($searchNode, 'sample_input');
+    $sample_output = getValue($searchNode, 'sample_output');
     //$test_input = getValue($searchNode,'test_input');
     //$test_output = getValue($searchNode,'test_output');
-    $hint = getValue ($searchNode,'hint');
-    $source = getValue ($searchNode,'source');				
+    $hint = getValue($searchNode, 'hint');
+    $source = getValue($searchNode, 'source');
     $creator = getValue($searchNode, 'creator'); // ✅ 추가
 
-    $front_code = getValue ($searchNode,'front_code');				
-    $rear_code = getValue ($searchNode,'rear_code');				
-    $ban_code = getValue ($searchNode,'ban_code');				
-    $pro_point = getValue ($searchNode,'pro_point');				
+    $front_code = getValue($searchNode, 'front_code');
+    $rear_code = getValue($searchNode, 'rear_code');
+    $ban_code = getValue($searchNode, 'ban_code');
+    $pro_point = getValue($searchNode, 'pro_point');
 
-    $spjcode = getValue ($searchNode,'spj');
-    if($spjcode) $spjlang=getAttribute($searchNode,'spj','language');
-    $tpjcode = getValue ($searchNode,'tpj');
-    if($tpjcode) $tpjlang=getAttribute($searchNode,'tpj','language');
-    $spj = trim($spjcode.$tpjcode)?1:0;
+    $spjcode = getValue($searchNode, 'spj');
+    if ($spjcode) $spjlang = getAttribute($searchNode, 'spj', 'language');
+    $tpjcode = getValue($searchNode, 'tpj');
+    if ($tpjcode) $tpjlang = getAttribute($searchNode, 'tpj', 'language');
+    $spj = trim($spjcode . $tpjcode) ? 1 : 0;
 
     if (!hasProblem($title)) {
       $pid = addproblem(
@@ -568,7 +606,8 @@ function import_fps($tempfile)
         $front_code,
         $rear_code,
         $ban_code,
-        $pro_point
+        $pro_point,
+        $creator
       );
 
       if (
@@ -594,14 +633,9 @@ function import_fps($tempfile)
          VALUES (?, ?)";
 
       $privilege_user =
-        trim((string)$creator);
-
-      if ($privilege_user === '') {
-        $privilege_user =
-          isset($_SESSION[$OJ_NAME . '_user_id'])
-          ? (string)$_SESSION[$OJ_NAME . '_user_id']
-          : '';
-      }
+        isset($_SESSION[$OJ_NAME . '_user_id'])
+        ? trim((string)$_SESSION[$OJ_NAME . '_user_id'])
+        : '';
 
       if ($privilege_user === '') {
         echo '<br>&nbsp;&nbsp;- 권한 등록 실패: 사용자 정보를 확인할 수 없습니다.';
@@ -959,11 +993,11 @@ function import_fps($tempfile)
       $testno = 0;
 
       foreach ($images as $img) {
-      //	
-        $src = getValue($img,"src");
+        //
+        $src = getValue($img, "src");
 
-        if (!in_array($src,$did)) {
-          $base64 = getValue($img,"base64");
+        if (!in_array($src, $did)) {
+          $base64 = getValue($img, "base64");
           $ext = pathinfo($src);
           $ext = strtolower($ext['extension']);
 
@@ -1010,10 +1044,10 @@ function import_fps($tempfile)
             $testno .
             "_" .
             $new_file_name;
-        if ($OJ_SAE)
-            $newpath = "saestor://web/upload/".$newpath;
-        else
-            $newpath="../upload/".$newpath;
+          if ($OJ_SAE)
+            $newpath = "saestor://web/upload/" . $newpath;
+          else
+            $newpath = "../upload/" . $newpath;
 
           $image_saved =
             image_save_file(
@@ -1032,65 +1066,61 @@ function import_fps($tempfile)
               SET description=replace(description,?,?)
               WHERE problem_id=?";
 
-          pdo_query($sql,$src,$newpath,$pid);
+          pdo_query($sql, $src, $newpath, $pid);
 
-          $sql = "UPDATE problem SET input=replace(input,?,?) WHERE problem_id=?";  
-          pdo_query($sql,$src,$newpath,$pid);
+          $sql = "UPDATE problem SET input=replace(input,?,?) WHERE problem_id=?";
+          pdo_query($sql, $src, $newpath, $pid);
 
-          $sql = "UPDATE problem SET output=replace(output,?,?) WHERE problem_id=?";  
-          pdo_query($sql,$src,$newpath,$pid);
+          $sql = "UPDATE problem SET output=replace(output,?,?) WHERE problem_id=?";
+          pdo_query($sql, $src, $newpath, $pid);
 
-          $sql = "UPDATE problem SET hint=replace(hint,?,?) WHERE problem_id=?";  
-          pdo_query($sql,$src,$newpath,$pid);
-          array_push($did,$src);
+          $sql = "UPDATE problem SET hint=replace(hint,?,?) WHERE problem_id=?";
+          pdo_query($sql, $src, $newpath, $pid);
+          array_push($did, $src);
         }
       }
 
       if (!isset($OJ_SAE) || !$OJ_SAE) {
         if ($spj) {
-		if($spjcode){
-		  if($spjlang=="C++"){
-			  $basedir = "$OJ_DATA/$pid";
-			  $fp = fopen("$basedir/spj.cc","w");
-			  fputs($fp, $spjcode);
-			  fclose($fp);
-			  ////system( " g++ -o $basedir/spj $basedir/spj.cc  ");
-		  }else{
-			    $fp = fopen("$basedir/spj.c","w");
-			    fputs($fp, $spjcode);
-			    fclose($fp);
-			    ////system( " gcc -o $basedir/spj $basedir/spj.c  ");
+          if ($spjcode) {
+            if ($spjlang == "C++") {
+              $basedir = "$OJ_DATA/$pid";
+              $fp = fopen("$basedir/spj.cc", "w");
+              fputs($fp, $spjcode);
+              fclose($fp);
+              ////system( " g++ -o $basedir/spj $basedir/spj.cc  ");
+            } else {
+              $fp = fopen("$basedir/spj.c", "w");
+              fputs($fp, $spjcode);
+              fclose($fp);
+              ////system( " gcc -o $basedir/spj $basedir/spj.c  ");
 
-		  }
-		    if (!file_exists("$basedir/spj")) {
-		      echo "you need to compile $basedir/spj.cc for spj[  g++ -o $basedir/spj $basedir/spj.cc   ]<br> and rejudge $pid";
-		    }
-		    else {
-		      //unlink("$basedir/spj.cc");
-		    }
-  
-		}
+            }
+            if (!file_exists("$basedir/spj")) {
+              echo "you need to compile $basedir/spj.cc for spj[  g++ -o $basedir/spj $basedir/spj.cc   ]<br> and rejudge $pid";
+            } else {
+              //unlink("$basedir/spj.cc");
+            }
+          }
           $basedir = "$OJ_DATA/$pid";
-	  if($tpjcode){
-		  if($tpjlang=="C++"){
-			  $fp = fopen("$basedir/tpj.cc","w");
-			  fputs($fp, $tpjcode);
-			  fclose($fp);
-			  ////system( " g++ -o $basedir/spj $basedir/spj.cc  ");
-		  }else{
-			    $fp = fopen("$basedir/tpj.c","w");
-			    fputs($fp, $spjcode);
-			    fclose($fp);
-			    ////system( " gcc -o $basedir/spj $basedir/spj.c  ");
-		  }
-	    if (!file_exists("$basedir/tpj")) {
-	      echo "you need to compile $basedir/tpj.cc for tpj[  g++ -o $basedir/tpj $basedir/tpj.cc   ]<br> and rejudge $pid";
-	    }
-	    else {
-	      //unlink("$basedir/spj.cc");
-	    }
-		  
-	  }
+          if ($tpjcode) {
+            if ($tpjlang == "C++") {
+              $fp = fopen("$basedir/tpj.cc", "w");
+              fputs($fp, $tpjcode);
+              fclose($fp);
+              ////system( " g++ -o $basedir/spj $basedir/spj.cc  ");
+            } else {
+              $fp = fopen("$basedir/tpj.c", "w");
+              fputs($fp, $spjcode);
+              fclose($fp);
+              ////system( " gcc -o $basedir/spj $basedir/spj.c  ");
+            }
+            if (!file_exists("$basedir/tpj")) {
+              echo "you need to compile $basedir/tpj.cc for tpj[  g++ -o $basedir/tpj $basedir/tpj.cc   ]<br> and rejudge $pid";
+            } else {
+              //unlink("$basedir/spj.cc");
+            }
+          }
         }
       }
 
@@ -1098,15 +1128,15 @@ function import_fps($tempfile)
 
       foreach ($solutions as $solution) {
         $language = $solution->attributes()->language;
-        submitSolution($pid,$solution,$language);
+        submitSolution($pid, $solution, $language);
       }
       unset($solutions);
 
       $prepends = $searchNode->children()->prepend;
-      mkpta($pid,$prepends,"prepend");
+      mkpta($pid, $prepends, "prepend");
 
       $prepends = $searchNode->children()->template;
-      mkpta($pid,$prepends,"template");
+      mkpta($pid, $prepends, "template");
 
       $prepends = $searchNode->children()->append;
       mkpta($pid, $prepends, "append");
@@ -1128,11 +1158,14 @@ function import_fps($tempfile)
   unlink($tempfile);
 
 
-  if ($spid>0) {
+  if ($spid > 0) {
     require_once("../include/set_get_key.php");
   }
 }
 
+
+// 처리 결과를 모아 관리자 결과 카드에 표시합니다.
+ob_start();
 
 if ($uploaded_extension === 'zip') {
 
@@ -1361,6 +1394,68 @@ if ($uploaded_extension === 'zip') {
   );
 }
 
+$import_output = ob_get_clean();
 
+$admin_page_title = '문제 가져오기 결과';
+$admin_active_menu = 'problem-import';
 
+require_once __DIR__ . '/admin-layout-start.php';
 ?>
+
+<div class="admin-page">
+
+  <div class="admin-page-header">
+    <div>
+      <h1 class="admin-page-title">
+        문제 가져오기 결과
+      </h1>
+
+      <div class="admin-page-description">
+        문제 생성, 중복 건너뛰기 및 경고 내용을 확인합니다.
+      </div>
+    </div>
+
+    <a
+      href="problem_list.php"
+      class="admin-btn admin-btn-secondary">
+      문제 목록
+    </a>
+  </div>
+
+  <div class="admin-form-card">
+    <div class="admin-form-card-header">
+      <span class="admin-form-step">1</span>
+
+      <div>
+        <div class="admin-form-card-title">
+          처리 결과
+        </div>
+
+        <div class="admin-form-card-desc">
+          이미 존재하는 제목의 문제는 가져오지 않습니다.
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <?php echo $import_output; ?>
+    </div>
+
+    <div class="admin-form-actions">
+      <a
+        href="problem_list.php"
+        class="admin-btn admin-btn-secondary">
+        문제 목록
+      </a>
+
+      <a
+        href="problem_import.php"
+        class="admin-btn admin-btn-primary">
+        문제 가져오기로 돌아가기
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<?php require_once __DIR__ . '/admin-layout-end.php'; ?>

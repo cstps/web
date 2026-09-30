@@ -731,6 +731,21 @@ button a:hover {
 
     color: #b91c1c;
 }
+/* 비활성화 버튼 */
+.admin-btn:disabled,
+.admin-btn:disabled:hover,
+.admin-btn:disabled:focus,
+.admin-btn:disabled:active {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+    color: #6b7280;
+
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+    opacity: 1;
+}
+
 
 @media (max-width: 768px) {
 
