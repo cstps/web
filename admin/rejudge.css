@@ -1,0 +1,250 @@
+.rejudge-page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px;
+    color: #1e293b;
+    font-family: inherit;
+}
+
+.rejudge-page .admin-page-header {
+    margin-bottom: 24px;
+}
+
+.rejudge-page .admin-page-title {
+    margin: 0 0 10px;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.rejudge-page .admin-page-description {
+    color: #64748b;
+    line-height: 1.7;
+}
+
+.rejudge-page > table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #dbe3ee;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, .04);
+}
+
+.rejudge-page th,
+.rejudge-page td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    vertical-align: top;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.rejudge-page th {
+    width: 160px;
+    background: #f8fafc;
+    font-weight: 600;
+}
+
+.rejudge-page tr:last-child th,
+.rejudge-page tr:last-child td {
+    border-bottom: 0;
+}
+
+.rejudge-page > p {
+    margin: 20px 0;
+    padding: 16px 20px;
+    border: 1px solid #dbe3ee;
+    border-radius: 10px;
+    background: #f8fafc;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+}
+
+.rejudge-page > p[role="alert"] {
+    border-color: #fcd34d;
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.rejudge-page > form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-top: 24px;
+}
+
+.rejudge-page > form button,
+.rejudge-page > form a {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 11px 18px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.5;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.rejudge-page > form button {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #fff;
+}
+
+.rejudge-page > form button:hover {
+    border-color: #1d4ed8;
+    background: #1d4ed8;
+}
+
+.rejudge-page > form a {
+    background: #fff;
+    color: #334155;
+}
+
+.rejudge-page > form a:hover {
+    background: #f1f5f9;
+}
+
+.rejudge-page > p a {
+    color: #1d4ed8;
+    text-underline-offset: 3px;
+}
+
+.rejudge-page button:focus-visible,
+.rejudge-page a:focus-visible {
+    outline: 3px solid #60a5fa;
+    outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+    .rejudge-page {
+        padding: 16px 8px;
+    }
+
+    .rejudge-page .admin-page-title {
+        font-size: 22px;
+    }
+
+    .rejudge-page th {
+        width: 32%;
+    }
+
+    .rejudge-page th,
+    .rejudge-page td {
+        padding: 12px;
+    }
+
+    .rejudge-page > form button,
+    .rejudge-page > form a {
+        width: 100%;
+    }
+}
+
+
+/* 재채점 입력 화면 */
+.rejudge-input-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.rejudge-input-card {
+    min-width: 0;
+    padding: 24px;
+    border: 1px solid #dbe3ee;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, .04);
+}
+
+.rejudge-input-card h2 {
+    margin: 0 0 12px;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.rejudge-input-card > p {
+    margin: 0 0 20px;
+    color: #64748b;
+    line-height: 1.7;
+}
+
+.rejudge-input-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.rejudge-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rejudge-field label {
+    font-weight: 600;
+}
+
+.rejudge-field input,
+.rejudge-field select {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #1e293b;
+    font: inherit;
+}
+
+.rejudge-field-help {
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.rejudge-input-card button {
+    min-height: 44px;
+    padding: 11px 18px;
+    border: 1px solid #2563eb;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.rejudge-input-card button:hover {
+    border-color: #1d4ed8;
+    background: #1d4ed8;
+}
+
+.rejudge-field input:focus-visible,
+.rejudge-field select:focus-visible {
+    outline: 3px solid #60a5fa;
+    outline-offset: 3px;
+}
+
+@media (max-width: 700px) {
+    .rejudge-input-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .rejudge-input-card {
+        padding: 20px;
+    }
+}

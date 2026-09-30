@@ -1,118 +1,196 @@
-<?php require("admin-header.php");
-require_once("../include/const.inc.php");
-if (!(isset($_SESSION[$OJ_NAME.'_'.'administrator']))){
-        echo "<a href='../loginpage.php'>Please Login First!</a>";
-        exit(1);
-}?>
-<?php if(isset($_POST['do'])){
-        require_once("../include/check_post_key.php");
-        if (isset($_POST['rjpid'])){
-                $rjpid=intval($_POST['rjpid']);
-                if($rjpid == 0) {
-                    echo "Rejudge Problem ID should not equal to 0";
-                    exit(1);
-                }
-                $sql="UPDATE `solution` SET `result`=1 WHERE `problem_id`=? and problem_id>0";
-                pdo_query($sql,$rjpid) ;
-                $sql="delete from `sim` WHERE `s_id` in (select solution_id from solution where `problem_id`=?)";
-                pdo_query($sql,$rjpid) ;
-                $url="../status.php?problem_id=".$rjpid;
-                echo "Rejudged Problem ".$rjpid;
-                echo "<script>location.href='$url';</script>";
-        }else if (isset($_POST['rjsid'])){
-                $rjsid=intval($_POST['rjsid']);
-                $sql="delete from `sim` WHERE `s_id`=?";
-                pdo_query($sql,$rjsid) ;
-                $sql="UPDATE `solution` SET `result`=1 WHERE `solution_id`=? and problem_id>0" ;
-                pdo_query($sql,$rjsid) ;
-                $sql="select contest_id from `solution` WHERE `solution_id`=? " ;
-                $data=pdo_query($sql,$rjsid);
-                $row=$data[0];
-                $cid=intval($row[0]);
-                if ($cid>0)
-                        $url="../status.php?cid=".$cid."&top=".($rjsid+1);
-                else
-                        $url="../status.php?top=".($rjsid+1);
-                echo "Rejudged Runid ".$rjsid;
-                echo "<script>location.href='$url';</script>";
-        }else if (isset($_POST['result'])){
-                $result=intval($_POST['result']);
-                $sql="UPDATE `solution` SET `result`=1 WHERE `result`=? and problem_id>0" ;
-                pdo_query($sql,$result) ;
-                $url="../status.php?jresult=1";
-                echo "<script>location.href='$url';</script>";
-        }else if (isset($_POST['rjcid'])){
-                $rjcid=intval($_POST['rjcid']);
-                if(isset($_POST['pid'])){
-                        $pid=intval($_POST['pid']);
-                        $sql="UPDATE `solution` SET `result`=1 WHERE `contest_id`=? and num=?";
-                        pdo_query($sql,$rjcid,$pid) ;
-                }else{
-                        $sql="UPDATE `solution` SET `result`=1 WHERE `contest_id`=? and problem_id>0";
-                        pdo_query($sql,$rjcid) ;
-                }
-                $url="../status.php?cid=".($rjcid);
-                echo "Rejudged Contest id :".$rjcid;
-                echo "<script>location.href='$url';</script>";
-        }
-        echo str_repeat(" ",4096);
-        flush();
-        if($OJ_REDIS){
-           $redis = new Redis();
-           $redis->connect($OJ_REDISSERVER, $OJ_REDISPORT);
-           if(isset($OJ_REDISAUTH)) $redis->auth($OJ_REDISAUTH);
-                $sql="select solution_id from solution where result=1 and problem_id>0";
-                 $result=pdo_query($sql);
-                 foreach($result as $row){
-                        echo $row['solution_id']."\n";
-                        $redis->lpush($OJ_REDISQNAME,$row['solution_id']);
-                }
-           $redis->close();
-        }
-        if (isset($OJ_UDP) && $OJ_UDP) {
-           trigger_judge();
-        }
+<?php
+if (
+    isset($_SERVER["REQUEST_METHOD"]) &&
+    $_SERVER["REQUEST_METHOD"] === "POST"
+) {
+    require(__DIR__ . "/rejudge_update.php");
+    exit;
 }
 ?>
-<div class="container">
-<b>Rejudge</b>
-        <ol>
-        <li><?php echo $MSG_PROBLEM?>
-        <form action='rejudge.php' method=post>
-                <input type=input name='rjpid' placeholder="1001">      <input type='hidden' name='do' value='do'>
-                <input type=submit value=submit>
-                <?php require_once("../include/set_post_key.php");?>
-        </form>
-        <li><?php echo $MSG_SUBMIT?>
-        <form action='rejudge.php' method=post>
-                <input type=input name='rjsid' placeholder="1002">      <input type='hidden' name='do' value='do'>
-                <input type=hidden name="postkey" value="<?php echo $_SESSION[$OJ_NAME.'_'.'postkey']?>">
-                <input type=submit value=submit>
-        </form>
-        <li><?php echo "Stuck on running "?>
-        <form action='rejudge.php' method=post>
-                <input type=input name='result' placeholder="3" value="3">      <input type='hidden' name='do' value='do'>
-                <input type=hidden name="postkey" value="<?php echo $_SESSION[$OJ_NAME.'_'.'postkey']?>">
-                <input type=submit value=submit>
-        </form>
-        <li><?php echo $MSG_CONTEST?>
-        <form action='rejudge.php' method=post>
-                <input type=input name='rjcid' placeholder="1003">      <input type='hidden' name='do' value='do'>
-                <input type=hidden name="postkey" value="<?php echo $_SESSION[$OJ_NAME.'_'.'postkey']?>">
-                <input type=submit value=submit>
-        </form>
-        <form action='rejudge.php' method=post>
-                <input type=input name='rjcid' placeholder="1004">
-                <select name=pid >
 <?php
-                foreach($PID as $i=>$id){
-                        echo "<option value='$i'>$id</option>";
-                }
+require_once(__DIR__ . "/admin-init.php");
+require_once(__DIR__ . "/../include/const.inc.php");
 
-                ?>
-                </select>
-                <input type='hidden' name='do' value='do'>
-                <input type=hidden name="postkey" value="<?php echo $_SESSION[$OJ_NAME.'_'.'postkey']?>">
-                <input type=submit value=submit>
-        </form>
+if (!isset($_SESSION[$OJ_NAME . "_administrator"])) {
+    http_response_code(403);
+    exit("관리자만 재채점을 요청할 수 있습니다.");
+}
+
+$admin_page_title = "재채점";
+$admin_active_menu = "rejudge";
+$admin_page_head_file = __DIR__ . "/rejudge-head.php";
+
+$rejudge_forms = array(
+    array(
+        "title" => "문제별 재채점",
+        "description" => "해당 문제에 제출된 코드를 재채점합니다.",
+        "field" => "rjpid",
+        "label" => "문제 번호",
+        "placeholder" => "예: 1001",
+        "contest_problem" => false
+    ),
+    array(
+        "title" => "제출별 재채점",
+        "description" => "제출 번호 하나를 지정하여 재채점합니다.",
+        "field" => "rjsid",
+        "label" => "제출 번호",
+        "placeholder" => "예: 153888",
+        "contest_problem" => false
+    ),
+    array(
+        "title" => "채점 상태별 재채점",
+        "description" => "지정한 채점 상태에 해당하는 제출을 조회합니다. 실행 전 대상 건수를 확인해 주세요.",
+        "field" => "result",
+        "label" => "채점 상태값",
+        "placeholder" => "0~14",
+        "contest_problem" => false
+    ),
+    array(
+        "title" => "대회 전체 재채점",
+        "description" => "해당 대회의 전체 제출을 재채점합니다.",
+        "field" => "rjcid",
+        "label" => "대회 번호",
+        "placeholder" => "예: 1003",
+        "contest_problem" => false
+    ),
+    array(
+        "title" => "대회 내 문제별 재채점",
+        "description" => "대회 번호와 대회 내 문제 위치를 지정합니다.",
+        "field" => "rjcid",
+        "label" => "대회 번호",
+        "placeholder" => "예: 1003",
+        "contest_problem" => true
+    )
+);
+
+require(__DIR__ . "/admin-layout-start.php");
+?>
+
+<div class="admin-page rejudge-page">
+    <div class="admin-page-header">
+        <h1 class="admin-page-title">재채점</h1>
+        <div class="admin-page-description">
+            재채점 범위를 선택하고 번호를 입력해 주세요.
+            대상 확인 화면에서 내용을 확인한 뒤 실행합니다.
+        </div>
+    </div>
+
+    <div class="rejudge-input-grid">
+        <?php foreach ($rejudge_forms as $index => $form): ?>
+            <?php
+            $input_id = "rejudge-input-" . $index;
+            $heading_id = "rejudge-heading-" . $index;
+            $description_id = "rejudge-description-" . $index;
+            ?>
+            <section
+                class="rejudge-input-card"
+                aria-labelledby="<?php echo $heading_id; ?>">
+
+                <h2 id="<?php echo $heading_id; ?>">
+                    <?php echo htmlspecialchars(
+                        $form["title"],
+                        ENT_QUOTES,
+                        "UTF-8"
+                    ); ?>
+                </h2>
+
+                <p id="<?php echo $description_id; ?>">
+                    <?php echo htmlspecialchars(
+                        $form["description"],
+                        ENT_QUOTES,
+                        "UTF-8"
+                    ); ?>
+                </p>
+
+                <form action="rejudge.php" method="post">
+                    <input type="hidden" name="do" value="do">
+
+                    <?php if ($index === 0): ?>
+                        <?php
+                        require_once(
+                            __DIR__ . "/../include/set_post_key.php"
+                        );
+                        ?>
+                    <?php else: ?>
+                        <input
+                            type="hidden"
+                            name="postkey"
+                            value="<?php echo htmlspecialchars(
+                                (string)$_SESSION[$OJ_NAME . "_postkey"],
+                                ENT_QUOTES,
+                                "UTF-8"
+                            ); ?>">
+                    <?php endif; ?>
+
+                    <div class="rejudge-field">
+                        <label for="<?php echo $input_id; ?>">
+                            <?php echo htmlspecialchars(
+                                $form["label"],
+                                ENT_QUOTES,
+                                "UTF-8"
+                            ); ?>
+                        </label>
+
+                        <input
+                            type="number"
+                            id="<?php echo $input_id; ?>"
+                            name="<?php echo $form["field"]; ?>"
+                            min="<?php echo $form["field"] === "result" ? "0" : "1"; ?>"
+                            <?php if ($form["field"] === "result"): ?>
+                                max="14"
+                                value="3"
+                            <?php endif; ?>
+                            step="1"
+                            inputmode="numeric"
+                            placeholder="<?php echo htmlspecialchars(
+                                $form["placeholder"],
+                                ENT_QUOTES,
+                                "UTF-8"
+                            ); ?>"
+                            aria-describedby="<?php echo $description_id; ?>"
+                            required>
+                    </div>
+
+                    <?php if ($form["field"] === "result"): ?>
+                        <div class="rejudge-field-help">
+                            3은 실행 중 상태입니다. 상태값은 0~14까지 입력할 수 있습니다.
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($form["contest_problem"]): ?>
+                        <div class="rejudge-field">
+                            <label for="rejudge-contest-position">
+                                대회 내 문제 위치
+                            </label>
+                            <select
+                                id="rejudge-contest-position"
+                                name="pid"
+                                required>
+                                <?php foreach ($PID as $position => $label): ?>
+                                    <option value="<?php echo htmlspecialchars(
+                                        (string)$position,
+                                        ENT_QUOTES,
+                                        "UTF-8"
+                                    ); ?>">
+                                        <?php echo htmlspecialchars(
+                                            (string)$label,
+                                            ENT_QUOTES,
+                                            "UTF-8"
+                                        ); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="rejudge-field-help">
+                            문제 번호가 아닌 대회 내 위치를 선택합니다.
+                        </div>
+                    <?php endif; ?>
+
+                    <button type="submit">재채점 대상 확인</button>
+                </form>
+            </section>
+        <?php endforeach; ?>
+    </div>
 </div>
+
+<?php require(__DIR__ . "/admin-layout-end.php"); ?>
