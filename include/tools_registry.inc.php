@@ -110,4 +110,12 @@ return [
             '반응속도와 순서 기억, 숫자 기억 등 간단한 인지 테스트를 제공합니다.',
         'category' => '학습 도구',
     ],
+
+    'graph_explorer' => [
+        'name' => '함수 그래프 시각화',
+        'description' => '다항함수, 삼각함수, 지수함수의 계수 변화에 따른 그래프 성질을 시각적으로 탐구합니다.',
+        'icon' => 'chart line teal',
+        'url' => '/tools/graph_explorer.php',
+        'category' => 'math',
+    ],
 ];

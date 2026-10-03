@@ -1,0 +1,941 @@
+<?php
+
+// ============================================================
+// Course 공통 권한 함수
+//
+// 전제:
+// - 이 파일을 include하기 전에 db_info.inc.php가 로드되어 있어야 함
+// - $_SESSION, $OJ_NAME, pdo_query() 사용 가능 상태
+//
+// 권한 원칙:
+// - administrator : 모든 수업 접근 가능
+// - owner         : 해당 수업 접근 가능
+// - teacher       : 해당 수업 접근 가능
+// - assistant     : 해당 수업 접근 가능
+// - 그 외 HUSTOJ 전역 권한은 course 접근권한으로 사용하지 않음
+// ============================================================
+
+
+// ============================================================
+// 현재 로그인 사용자의 Course 역할 반환
+//
+// 반환값:
+// administrator
+// owner
+// teacher
+// assistant
+// null
+// ============================================================
+
+function course_get_role($course_id) {
+
+    global $OJ_NAME;
+
+    $course_id = intval($course_id);
+
+    if ($course_id <= 0) {
+        return null;
+    }
+
+
+    // --------------------------------------------------------
+    // 로그인 확인
+    // --------------------------------------------------------
+
+    if (!isset($_SESSION[$OJ_NAME.'_user_id'])) {
+        return null;
+    }
+
+    $user_id = $_SESSION[$OJ_NAME.'_user_id'];
+
+
+    // --------------------------------------------------------
+    // 사이트 관리자는 모든 Course에 대한 관리자 권한
+    // --------------------------------------------------------
+
+    if (isset($_SESSION[$OJ_NAME.'_administrator'])) {
+        return 'administrator';
+    }
+
+
+    // --------------------------------------------------------
+    // 해당 Course에 등록된 현재 담당교사 확인
+    // --------------------------------------------------------
+
+    $rows = pdo_query(
+        "SELECT role
+           FROM course_teacher
+          WHERE course_id = ?
+            AND user_id = ?
+            AND status = 1
+          LIMIT 1",
+        $course_id,
+        $user_id
+    );
+
+
+    if (!$rows || !isset($rows[0]['role'])) {
+        return null;
+    }
+
+    $role = $rows[0]['role'];
+
+
+    // DB에 예상하지 못한 role 값이 들어가더라도
+    // 권한으로 인정하지 않음
+    if (!in_array(
+        $role,
+        array('owner', 'teacher', 'assistant'),
+        true
+    )) {
+        return null;
+    }
+
+
+    return $role;
+}
+
+
+// ============================================================
+// 현재 사용자가 해당 Course에 접근 가능한지 확인
+// ============================================================
+
+function course_can_access($course_id) {
+
+    $role = course_get_role($course_id);
+
+    return (
+        $role === 'administrator' ||
+        $role === 'owner' ||
+        $role === 'teacher' ||
+        $role === 'assistant'
+    );
+}
+
+// ============================================================
+// 현재 사용자가 해당 Course의 활성 수강생인지 확인
+//
+// Course가 종료됐더라도 수강 기록 열람을 위해 접근을 허용한다.
+// 개별 학생의 수강 상태가 status=0이면 접근을 허용하지 않는다.
+// ============================================================
+
+// ============================================================
+// 지정한 사용자가 해당 Course의 활성 수강생인지 확인
+//
+// 학생 수행모드 판정뿐 아니라,
+// 교사가 특정 학생의 수강 상태를 확인할 때도 사용할 수 있다.
+// ============================================================
+
+function course_is_active_student_user(
+    $course_id,
+    $user_id
+) {
+
+    $course_id = intval($course_id);
+    $user_id = trim((string)$user_id);
+
+    if (
+        $course_id <= 0 ||
+        $user_id === ''
+    ) {
+        return false;
+    }
+
+
+    $rows = pdo_query(
+        "SELECT user_id
+           FROM course_student
+          WHERE course_id = ?
+            AND user_id = ?
+            AND status = 1
+          LIMIT 1",
+        $course_id,
+        $user_id
+    );
+
+
+    return (
+        $rows &&
+        isset($rows[0]['user_id'])
+    );
+}
+
+
+// ============================================================
+// 현재 사용자가 해당 Course의 활성 수강생인지 확인
+//
+// Course가 종료됐더라도 수강 기록 열람을 위해 접근을 허용한다.
+// 개별 학생의 수강 상태가 status=0이면 접근을 허용하지 않는다.
+// ============================================================
+
+function course_is_active_student($course_id) {
+
+    global $OJ_NAME;
+
+    if (!isset($_SESSION[$OJ_NAME.'_user_id'])) {
+        return false;
+    }
+
+
+    return course_is_active_student_user(
+        $course_id,
+        $_SESSION[$OJ_NAME.'_user_id']
+    );
+}
+
+
+// ============================================================
+// 지정한 학생에게 현재 적용 중인 Course 수행평가 세션 조회
+//
+// 적용 조건:
+// - course_performance_session.status = 1
+// - 해당 Course에 학생이 status = 1로 등록되어 있음
+//
+// 중요:
+// - Contest 참가 여부나 제출 여부는 검사하지 않는다.
+// - 서로 다른 Course에서 동시에 수행모드가 진행될 수 있으므로
+//   단일 행이 아니라 전체 활성 세션 목록을 반환한다.
+// ============================================================
+
+function course_get_user_active_performance_sessions(
+    $user_id
+) {
+
+    $user_id = trim((string)$user_id);
+
+    if ($user_id === '') {
+        return array();
+    }
+
+
+    $rows = pdo_query(
+        "SELECT
+             cps.id,
+             cps.course_id,
+             cps.contest_id,
+             cps.started_at,
+             cps.started_by
+           FROM course_performance_session cps
+           INNER JOIN course_student cs
+                   ON cs.course_id = cps.course_id
+                  AND cs.user_id = ?
+                  AND cs.status = 1
+          WHERE cps.status = 1
+          ORDER BY cps.started_at ASC,
+                   cps.id ASC",
+        $user_id
+    );
+
+
+    if (!$rows) {
+        return array();
+    }
+
+
+    return $rows;
+}
+
+
+// ============================================================
+// 지정한 학생이 현재 Course 수행모드 적용 대상인지 확인
+// ============================================================
+
+function course_is_user_in_performance_mode(
+    $user_id
+) {
+
+    $sessions =
+        course_get_user_active_performance_sessions(
+            $user_id
+        );
+
+
+    return count($sessions) > 0;
+}
+
+// ============================================================
+// Course 기본 정보 수정 권한
+//
+// administrator / owner
+// ============================================================
+
+function course_can_edit($course_id) {
+
+    $role = course_get_role($course_id);
+
+    return (
+        $role === 'administrator' ||
+        $role === 'owner'
+    );
+}
+
+
+// ============================================================
+// Course 담당교사 관리 권한
+//
+// administrator / owner
+// ============================================================
+
+function course_can_manage_teachers($course_id) {
+
+    $role = course_get_role($course_id);
+
+    return (
+        $role === 'administrator' ||
+        $role === 'owner'
+    );
+}
+
+
+// ============================================================
+// Course 학생 관리 권한
+//
+// administrator / owner / teacher
+// ============================================================
+
+function course_can_manage_students($course_id) {
+
+    $role = course_get_role($course_id);
+
+    return (
+        $role === 'administrator' ||
+        $role === 'owner' ||
+        $role === 'teacher'
+    );
+}
+
+
+// ============================================================
+// Course 대회 연결 관리 권한
+//
+// administrator / owner / teacher
+// ============================================================
+
+function course_can_manage_contests($course_id) {
+
+    $role = course_get_role($course_id);
+
+    return (
+        $role === 'administrator' ||
+        $role === 'owner' ||
+        $role === 'teacher'
+    );
+}
+
+
+// ============================================================
+// Course 수행모드 관리 권한
+//
+// 허용:
+// - administrator
+// - owner
+// - teacher
+//
+// assistant는 수행평가 시작·종료 권한에서 제외한다.
+// ============================================================
+
+function course_can_manage_performance($course_id) {
+
+    $role = course_get_role($course_id);
+
+    return (
+        $role === 'administrator' ||
+        $role === 'owner' ||
+        $role === 'teacher'
+    );
+}
+
+// ============================================================
+// Course 차시의 문제 해결 과정 현황 열람 권한
+//
+// 허용:
+// - administrator
+// - 활성 Course의 owner
+// - 활성 Course의 teacher
+//
+// assistant는 차시 관리 권한이 없으므로 제외한다.
+// 종료된 Course도 기존 학습 기록은 열람할 수 있으므로
+// course.status는 검사하지 않는다.
+// ============================================================
+
+function course_can_view_contest_process($contest_id) {
+
+    $contest_id = intval($contest_id);
+
+    if ($contest_id <= 0) {
+        return false;
+    }
+
+
+    $course_rows = pdo_query(
+        "SELECT course_id
+           FROM course_contest
+          WHERE contest_id = ?
+            AND status = 1
+          LIMIT 1",
+        $contest_id
+    );
+
+
+    if (
+        !$course_rows ||
+        !isset($course_rows[0]['course_id'])
+    ) {
+        return false;
+    }
+
+
+    $course_id =
+        intval($course_rows[0]['course_id']);
+
+
+    return course_can_manage_contests($course_id);
+}
+
+
+// ============================================================
+// linked Contest 학생 참가권한 부여
+//
+// 적용 조건:
+// - Course 활성
+// - 학생 활성
+// - 차시 활성
+// - 차시 공개
+// - link_type = linked
+//
+// 기존 privilege가 있으면 수동 권한으로 보고 그대로 유지한다.
+// 권한이 없을 때만 Course가 privilege를 추가하고 추적한다.
+// ============================================================
+
+function course_grant_linked_student_right(
+    $course_id,
+    $contest_id,
+    $user_id
+) {
+
+    $course_id =
+        intval($course_id);
+
+    $contest_id =
+        intval($contest_id);
+
+    $user_id =
+        trim($user_id);
+
+
+    if (
+        $course_id <= 0 ||
+        $contest_id <= 0 ||
+        $user_id === '' ||
+        strlen($user_id) > 48
+    ) {
+        return false;
+    }
+
+
+    $rightstr =
+        "c".$contest_id;
+
+
+    // --------------------------------------------------------
+    // 실제 권한 부여 대상인지 서버에서 재확인
+    // --------------------------------------------------------
+
+    $eligible_rows = pdo_query(
+        "SELECT
+            cc.id
+
+         FROM course_contest cc
+
+         INNER JOIN course c
+           ON c.course_id = cc.course_id
+
+         INNER JOIN course_student cs
+           ON cs.course_id = cc.course_id
+          AND cs.user_id = ?
+
+         WHERE cc.course_id = ?
+           AND cc.contest_id = ?
+           AND cc.link_type = 'linked'
+           AND cc.status = 1
+           AND cc.visible = 1
+           AND c.status = 1
+           AND cs.status = 1
+
+         LIMIT 1",
+        $user_id,
+        $course_id,
+        $contest_id
+    );
+
+
+    if (
+        !$eligible_rows ||
+        !isset($eligible_rows[0]['id'])
+    ) {
+        return false;
+    }
+
+
+    // --------------------------------------------------------
+    // Course 권한 추적 기록 확인
+    // --------------------------------------------------------
+
+    $grant_rows = pdo_query(
+        "SELECT
+            id,
+            status
+         FROM course_contest_student_grant
+         WHERE course_id = ?
+           AND contest_id = ?
+           AND user_id = ?
+           AND rightstr = ?
+         LIMIT 1",
+        $course_id,
+        $contest_id,
+        $user_id,
+        $rightstr
+    );
+
+
+    // DB 조회 실패
+    if (
+        $grant_rows === false ||
+        $grant_rows === null
+    ) {
+        return false;
+    }
+
+
+    $grant_id = 0;
+    $grant_status = 0;
+
+
+    if (
+        $grant_rows &&
+        isset($grant_rows[0]['id'])
+    ) {
+
+        $grant_id =
+            intval($grant_rows[0]['id']);
+
+        $grant_status =
+            intval($grant_rows[0]['status']);
+    }
+
+
+    // --------------------------------------------------------
+    // 현재 활성 privilege 확인
+    // --------------------------------------------------------
+
+    $privilege_rows = pdo_query(
+        "SELECT
+            user_id
+         FROM privilege
+         WHERE user_id = ?
+           AND rightstr = ?
+           AND valuestr = 'true'
+           AND defunct = 'N'
+         LIMIT 1",
+        $user_id,
+        $rightstr
+    );
+
+
+    // DB 조회 실패
+    if (
+        $privilege_rows === false ||
+        $privilege_rows === null
+    ) {
+        return false;
+    }
+
+
+    $privilege_exists = (
+        $privilege_rows &&
+        isset($privilege_rows[0]['user_id'])
+    );
+
+
+    // --------------------------------------------------------
+    // 이미 Course가 관리 중이며 실제 권한도 존재하면 완료
+    // --------------------------------------------------------
+
+    if (
+        $grant_status === 1 &&
+        $privilege_exists
+    ) {
+        return true;
+    }
+
+
+    // --------------------------------------------------------
+    // Course 추적 기록은 활성인데 실제 privilege가 없다면 복구
+    // --------------------------------------------------------
+
+    if (
+        $grant_status === 1 &&
+        !$privilege_exists
+    ) {
+
+        $repair_result =
+            pdo_query(
+                "INSERT INTO privilege
+        (
+            user_id,
+            rightstr,
+            valuestr,
+            defunct
+        )
+        VALUES (?, ?, 'true', 'N')",
+                $user_id,
+                $rightstr
+            );
+
+        if (
+            $repair_result === false ||
+            $repair_result === null
+        ) {
+            return false;
+        }
+
+        return true;
+
+    }
+
+
+    // --------------------------------------------------------
+    // Course가 관리하지 않는 기존 권한이 이미 있으면 보존
+    //
+    // 추적 행을 활성화하지 않는다.
+    // 나중에 Course에서 학생을 제외해도 이 권한은 삭제하지 않는다.
+    // --------------------------------------------------------
+
+    if ($privilege_exists) {
+        return true;
+    }
+
+
+    // --------------------------------------------------------
+    // 권한이 없으므로 Course가 새로 생성
+    // --------------------------------------------------------
+
+    $privilege_inserted = false;
+
+
+    try {
+
+        $privilege_result =
+            pdo_query(
+                "INSERT INTO privilege
+        (
+            user_id,
+            rightstr,
+            valuestr,
+            defunct
+        )
+        VALUES (?, ?, 'true', 'N')",
+                $user_id,
+                $rightstr
+            );
+
+        if (
+            $privilege_result === false ||
+            $privilege_result === null
+        ) {
+            throw new RuntimeException(
+                "학생의 Contest 참가권한 부여에 실패했습니다."
+            );
+        }
+
+        $privilege_inserted = true;
+
+
+        // ------------------------------------------------------------
+        // Course 권한 추적 기록 저장
+        // ------------------------------------------------------------
+
+        if ($grant_id > 0) {
+
+            // 기존 추적 기록을 다시 활성화
+            $grant_result =
+                pdo_query(
+                    "UPDATE course_contest_student_grant
+             SET
+                status = 1,
+                granted_at = NOW(),
+                revoked_at = NULL
+             WHERE id = ?",
+                    $grant_id
+                );
+        } else {
+
+            // 새로운 추적 기록 생성
+            $grant_result =
+                pdo_query(
+                    "INSERT INTO course_contest_student_grant
+            (
+                course_id,
+                contest_id,
+                user_id,
+                rightstr,
+                status,
+                granted_at,
+                revoked_at
+            )
+            VALUES
+            (
+                ?, ?, ?, ?, 1, NOW(), NULL
+            )",
+                    $course_id,
+                    $contest_id,
+                    $user_id,
+                    $rightstr
+                );
+        }
+
+
+        // ------------------------------------------------------------
+        // 추적 기록 저장 실패 확인
+        // ------------------------------------------------------------
+
+        if (
+            $grant_result === false ||
+            $grant_result === null
+        ) {
+            throw new RuntimeException(
+                "Course 권한 추적 기록 저장에 실패했습니다."
+            );
+        }
+    } catch (Exception $e) {
+
+        /*
+         * privilege는 MyISAM이므로 트랜잭션 rollback이 되지 않는다.
+         * 추적 기록 저장에 실패하면 방금 추가한 권한 한 행을 정리한다.
+         */
+
+        if ($privilege_inserted) {
+
+            try {
+
+                pdo_query(
+                    "DELETE FROM privilege
+                     WHERE user_id = ?
+                       AND rightstr = ?
+                       AND valuestr = 'true'
+                       AND defunct = 'N'
+                     LIMIT 1",
+                    $user_id,
+                    $rightstr
+                );
+
+            }
+            catch (Exception $cleanup_error) {
+
+                // 정리 실패는 여기서 별도 출력하지 않는다.
+            }
+        }
+
+
+        throw $e;
+    }
+
+
+    return true;
+}
+
+
+// ============================================================
+// linked Contest 학생 참가권한 회수
+//
+// Course가 실제 생성하여 추적 중인 권한만 한 행 회수한다.
+// 기존 수동 권한은 추적 기록이 없으므로 삭제하지 않는다.
+//
+// 회수 함수는 학생 제외·숨김·차시 제거·Course 종료 후에도
+// 호출해야 하므로 현재 Course/차시 상태를 검사하지 않는다.
+// ============================================================
+
+function course_revoke_linked_student_right(
+    $course_id,
+    $contest_id,
+    $user_id
+) {
+
+    $course_id =
+        intval($course_id);
+
+    $contest_id =
+        intval($contest_id);
+
+    $user_id =
+        trim($user_id);
+
+
+    if (
+        $course_id <= 0 ||
+        $contest_id <= 0 ||
+        $user_id === '' ||
+        strlen($user_id) > 48
+    ) {
+        return false;
+    }
+
+
+    $rightstr =
+        "c".$contest_id;
+
+
+    // --------------------------------------------------------
+    // Course가 활성 상태로 추적 중인 권한인지 확인
+    // --------------------------------------------------------
+
+    $grant_rows = pdo_query(
+        "SELECT
+            id
+         FROM course_contest_student_grant
+         WHERE course_id = ?
+           AND contest_id = ?
+           AND user_id = ?
+           AND rightstr = ?
+           AND status = 1
+         LIMIT 1",
+        $course_id,
+        $contest_id,
+        $user_id,
+        $rightstr
+    );
+
+
+    if (
+        $grant_rows === false ||
+        $grant_rows === null
+    ) {
+        return false;
+    }
+
+    if (
+        !$grant_rows ||
+        !isset($grant_rows[0]['id'])
+    ) {
+        // Course가 생성한 권한이 아니므로 삭제하지 않는다.
+        return true;
+    }
+
+
+    $grant_id =
+        intval($grant_rows[0]['id']);
+
+
+    /*
+     * privilege가 MyISAM이므로 두 테이블을 하나의 트랜잭션으로
+     * 처리할 수 없다.
+     *
+     * 먼저 추적 상태를 비활성화한 뒤 privilege 한 행을 삭제한다.
+     * 삭제 실패 시 추적 상태를 가능한 범위에서 복구한다.
+     */
+
+    $tracking_result =
+        pdo_query(
+            "UPDATE course_contest_student_grant
+         SET
+            status = 0,
+            revoked_at = NOW()
+         WHERE id = ?",
+            $grant_id
+        );
+
+    if (
+        $tracking_result === false ||
+        $tracking_result === null
+    ) {
+        return false;
+    }
+
+
+    try {
+
+        $delete_result =
+            pdo_query(
+                "DELETE FROM privilege
+         WHERE user_id = ?
+           AND rightstr = ?
+           AND valuestr = 'true'
+           AND defunct = 'N'
+         LIMIT 1",
+                $user_id,
+                $rightstr
+            );
+
+        if (
+            $delete_result === false ||
+            $delete_result === null
+        ) {
+            throw new RuntimeException(
+                "학생의 Contest 참가권한 회수에 실패했습니다."
+            );
+        }
+
+    }
+    catch (Exception $e) {
+
+        try {
+
+            pdo_query(
+                "UPDATE course_contest_student_grant
+                 SET
+                    status = 1,
+                    revoked_at = NULL
+                 WHERE id = ?",
+                $grant_id
+            );
+
+        }
+        catch (Exception $restore_error) {
+
+            // 복구 실패는 여기서 별도 출력하지 않는다.
+        }
+
+
+        throw $e;
+    }
+
+
+    return true;
+}
+
+
+// 학생 학습기록 조회
+// administrator / owner / teacher / assistant
+function course_can_view_student_records($course_id) {
+
+    $role = course_get_role($course_id);
+
+    return in_array(
+        $role,
+        array(
+            'administrator',
+            'owner',
+            'teacher',
+            'assistant'
+        ),
+        true
+    );
+}
+
+
+// 학생 학습기록 작성·변경
+// administrator / owner / teacher
+function course_can_manage_student_records($course_id) {
+
+    $role = course_get_role($course_id);
+
+    return in_array(
+        $role,
+        array(
+            'administrator',
+            'owner',
+            'teacher'
+        ),
+        true
+    );
+}
