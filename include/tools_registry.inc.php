@@ -112,10 +112,12 @@ return [
     ],
 
     'graph_explorer' => [
-        'name' => '함수 그래프 시각화',
-        'description' => '다항함수, 삼각함수, 지수함수의 계수 변화에 따른 그래프 성질을 시각적으로 탐구합니다.',
-        'icon' => 'chart line teal',
+        'id' => 'graph_explorer',
         'url' => '/tools/graph_explorer.php',
-        'category' => 'math',
+        'icon' => 'chart line',
+        'title' => '함수 그래프 시각화',
+        'meta' => '고교 수학 함수 성질 탐구',
+        'description' => '다항, 유리, 무리, 삼각, 지수, 로그 등 10종 함수의 계수 변화에 따른 그래프 성질을 시각적으로 탐구합니다.',
+        'category' => '학습 도구',
     ],
 ];
