@@ -1,0 +1,218 @@
+/* ============================================================
+ * 개별 유틸리티 공통 스타일
+ * ============================================================ */
+
+.tools-detail-page {
+    max-width: 1180px !important;
+    margin-top: 2rem !important;
+    margin-bottom: 4rem !important;
+}
+
+.tools-detail-header {
+    margin-bottom: 1.5rem;
+    padding: 1.5rem 1.7rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.tools-detail-title {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1.65rem;
+    font-weight: 700;
+}
+
+.tools-detail-description {
+    margin-top: 0.6rem;
+    margin-bottom: 0;
+    color: #6b7280;
+    line-height: 1.7;
+}
+
+.tools-detail-page .ui.segment {
+    border-radius: 12px !important;
+    border-color: #e5e7eb !important;
+    box-shadow: none !important;
+}
+
+.tools-detail-page .ui.segment:hover {
+    border-color: #d1d5db !important;
+}
+
+.tools-detail-page .ui.form input,
+.tools-detail-page .ui.form textarea,
+.tools-detail-page .ui.form select {
+    border-radius: 8px !important;
+}
+
+.tools-detail-page .ui.button {
+    border-radius: 8px !important;
+}
+
+.tools-detail-back {
+    margin-top: 1.5rem !important;
+}
+
+.tools-detail-back.ui.button {
+    background: #f3f4f6 !important;
+    color: #374151 !important;
+}
+
+.tools-detail-back.ui.button:hover {
+    background: #e5e7eb !important;
+}
+
+.tools-detail-page .ui.header.teal,
+.tools-detail-page .ui.teal.header {
+    color: #0f766e !important;
+}
+
+.tools-detail-page .ui.teal.button,
+.tools-detail-page .ui.primary.button {
+    background: #0f766e !important;
+}
+
+.tools-detail-page .ui.teal.button:hover,
+.tools-detail-page .ui.primary.button:hover {
+    background: #115e59 !important;
+}
+
+@media (max-width: 768px) {
+    .tools-detail-page {
+        margin-top: 1rem !important;
+    }
+
+    .tools-detail-header {
+        padding: 1.2rem;
+    }
+
+    .tools-detail-title {
+        font-size: 1.4rem;
+    }
+
+    .tools-detail-page .ui.segment {
+        padding: 1rem !important;
+    }
+}
+
+/* ============================================================
+ * 개별 도구 제목 영역
+ * ============================================================ */
+
+/* 컨테이너 바로 아래에 있는 일반 제목 */
+.tools-detail-page > h1.ui.header,
+.tools-detail-page > h2.ui.header {
+    margin: 0 0 1.5rem !important;
+    padding: 1.45rem 1.6rem !important;
+    border: 1px solid #dbe7e5 !important;
+    border-radius: 14px !important;
+    background:
+        linear-gradient(
+            135deg,
+            #f8fffe 0%,
+            #f8fafc 100%
+        ) !important;
+    color: #1f2937 !important;
+    text-align: left !important;
+}
+
+/* charcount, pc처럼 첫 segment 내부에 제목이 있는 도구 */
+.tools-detail-page > .ui.segment:first-child
+    > h1.ui.header:first-child,
+.tools-detail-page > .ui.segment:first-child
+    > h2.ui.header:first-child {
+    margin: -0.35rem -0.35rem 1.4rem !important;
+    padding: 1.25rem 1.35rem !important;
+    border: 1px solid #dbe7e5 !important;
+    border-radius: 12px !important;
+    background:
+        linear-gradient(
+            135deg,
+            #f8fffe 0%,
+            #f8fafc 100%
+        ) !important;
+    color: #1f2937 !important;
+    text-align: left !important;
+}
+
+/* 제목 아이콘 */
+.tools-detail-page > h1.ui.header > i.icon,
+.tools-detail-page > h2.ui.header > i.icon,
+.tools-detail-page > .ui.segment:first-child
+    > h1.ui.header:first-child > i.icon,
+.tools-detail-page > .ui.segment:first-child
+    > h2.ui.header:first-child > i.icon {
+    color: #0f766e !important;
+}
+
+/* 제목 본문 */
+.tools-detail-page h1.ui.header > .content,
+.tools-detail-page h2.ui.header > .content {
+    color: #1f2937 !important;
+}
+
+/* 제목 아래 설명 */
+.tools-detail-page h1.ui.header .sub.header,
+.tools-detail-page h2.ui.header .sub.header {
+    margin-top: 0.4rem !important;
+    color: #64748b !important;
+    font-size: 0.95rem !important;
+    line-height: 1.55 !important;
+    font-weight: 400 !important;
+}
+
+
+/* ------------------------------------------------------------
+ * 타이머 제목 + 전체화면 버튼 영역
+ * ------------------------------------------------------------ */
+
+.tools-detail-page >
+.ui.clearing.basic.segment:first-child {
+    margin-bottom: 1.5rem !important;
+    padding: 1.35rem 1.5rem !important;
+    border: 1px solid #dbe7e5 !important;
+    border-radius: 14px !important;
+    background:
+        linear-gradient(
+            135deg,
+            #f8fffe 0%,
+            #f8fafc 100%
+        ) !important;
+}
+
+.tools-detail-page >
+.ui.clearing.basic.segment:first-child
+h2.ui.header {
+    color: #1f2937 !important;
+}
+
+.tools-detail-page >
+.ui.clearing.basic.segment:first-child
+h2.ui.header > i.icon {
+    color: #0f766e !important;
+}
+
+
+/* ------------------------------------------------------------
+ * 모바일
+ * ------------------------------------------------------------ */
+
+@media (max-width: 768px) {
+    .tools-detail-page > h1.ui.header,
+    .tools-detail-page > h2.ui.header {
+        padding: 1.15rem !important;
+    }
+
+    .tools-detail-page >
+    .ui.clearing.basic.segment:first-child {
+        padding: 1.1rem !important;
+    }
+
+    .tools-detail-page >
+    .ui.clearing.basic.segment:first-child
+    .right.floated.button {
+        float: none !important;
+        margin-top: 1rem !important;
+    }
+}

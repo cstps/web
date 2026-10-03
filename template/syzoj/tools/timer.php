@@ -1,7 +1,11 @@
 <?php
 $show_title = $view_title;
-include($path_fix . "header.php");
+include(__DIR__ . "/../header.php");
 ?>
+<link
+    rel="stylesheet"
+    href="/template/syzoj/tools/tools-common.css?v=20261003-2">
+
 
 <style>
     /* 대형 타이머 전용 가독성 스타일 */
@@ -60,7 +64,7 @@ include($path_fix . "header.php");
     }
 </style>
 
-<div class="ui container" style="margin-top: 2em; margin-bottom: 3em;">
+<div class="ui container tools-detail-page" style="margin-top: 2em; margin-bottom: 3em;">
     <div class="ui clearing basic segment" style="padding: 0; margin-bottom: 1em;">
         <h2 class="ui left floated header" style="margin: 0;">
             <i class="stopwatch teal icon"></i>
@@ -83,7 +87,7 @@ include($path_fix . "header.php");
             시간을 설정하고 시작을 눌러주세요
         </div>
 
-        <!--超 대형 시계 디스플레이 -->
+        <!--대형 시계 디스플레이 -->
         <div id="timer-display" class="timer-huge-display">
             00:00
         </div>
@@ -117,7 +121,7 @@ include($path_fix . "header.php");
     </div>
 
     <div style="margin-top: 1.5em;">
-        <a href="<?php echo $path_fix; ?>tools.php" class="ui button"><i class="arrow left icon"></i> 유틸리티 목록으로 돌아가기</a>
+        <a href="/tools/" class="ui button tools-detail-back"><i class="arrow left icon"></i> 유틸리티 목록으로 돌아가기</a>
     </div>
 </div>
 
@@ -226,4 +230,4 @@ include($path_fix . "header.php");
     updateDisplay();
 </script>
 
-<?php include($path_fix . "footer.php"); ?>
+<?php include(__DIR__ . "/../footer.php"); ?>

@@ -92,7 +92,7 @@ $header_is_course_manage_page =
     <div class="ui fixed borderless menu" style="position: fixed; height: 49px; ">
         <div class="left menu">
             <?php if (isset($_SESSION[$OJ_NAME . '_' . 'user_id'])) { ?>
-                <a href="<?php echo $path_fix ?>/userinfo.php?user=<?php echo $_SESSION[$OJ_NAME . '_' . 'user_id'] ?>"
+                <a href="/userinfo.php?user=<?php echo $_SESSION[$OJ_NAME . '_' . 'user_id'] ?>"
                     style="color: inherit; ">
                     <div
                         id="user-account-dropdown"
@@ -100,8 +100,8 @@ $header_is_course_manage_page =
                         <?php echo $_SESSION[$OJ_NAME . '_' . 'user_id']; ?>
                         <i class="dropdown icon"></i>
                         <div class="menu">
-                            <a class="item" href="<?php echo $path_fix ?>mail.php"><?php echo $MSG_Message_Send; ?></a>
-                            <a class="item" href="<?php echo $path_fix ?>modifypage.php"><i
+                            <a class="item" href="/mail.php"><?php echo $MSG_Message_Send; ?></a>
+                            <a class="item" href="/modifypage.php"><i
                                     class="edit icon"></i><?php echo $MSG_REG_INFO; ?></a>
                             <?php if ($OJ_SaaS_ENABLE) { ?>
                                 <?php if ($_SERVER['HTTP_HOST'] == $DOMAIN)
@@ -138,9 +138,9 @@ $header_is_course_manage_page =
 
             <a class="item <?php if ($url == "") echo "active"; ?>" href="/"><?php echo $MSG_HOME ?></a>
             <a class="item <?php if ($url == "problemset.php") echo "active"; ?>"
-                href="<?php echo $path_fix ?>problemset.php"><?php echo $MSG_PROBLEMS ?> </a>
+                href="/problemset.php"><?php echo $MSG_PROBLEMS ?> </a>
             <a class="item <?php if ($url == "drawproblemset.php") echo "active"; ?>"
-                href="<?php echo $path_fix ?>drawproblemset.php"><?php echo $MSG_DRAWPROBLEMS ?> </a>
+                href="/drawproblemset.php"><?php echo $MSG_DRAWPROBLEMS ?> </a>
 
             <div
                 id="course-contest-dropdown"
@@ -160,7 +160,7 @@ $header_is_course_manage_page =
                                             echo 'active';
                                         }
                                         ?>"
-                            href="<?php echo $path_fix; ?>my_course_list.php">
+                            href="/my_course_list.php">
                             <i class="book icon"></i>
                             내 수업
                         </a>
@@ -175,7 +175,7 @@ $header_is_course_manage_page =
                                         echo 'active';
                                     }
                                     ?>"
-                        href="<?php echo $path_fix; ?>contest.php<?php
+                        href="/contest.php<?php
                                                                     if ($header_logged_in) {
                                                                         echo '?my';
                                                                     }
@@ -196,7 +196,7 @@ $header_is_course_manage_page =
                                             echo 'active';
                                         }
                                         ?>"
-                            href="<?php echo $path_fix; ?>course_list.php">
+                            href="/course_list.php">
                             <i class="settings icon"></i>
                             수업 관리
                         </a>
@@ -208,9 +208,9 @@ $header_is_course_manage_page =
                 </div>
 
             </div>
-            <a class="item <?php if ($url == "status.php") echo "active"; ?>" href="<?php echo $path_fix ?>status.php"><?php echo $MSG_STATUS ?></a>
+            <a class="item <?php if ($url == "status.php") echo "active"; ?>" href="/status.php"><?php echo $MSG_STATUS ?></a>
             <a class="item <?php if ($url == "ranklist.php") echo "active"; ?>"
-                href="<?php echo $path_fix ?>ranklist.php"><?php echo $MSG_RANKLIST ?></a>
+                href="/ranklist.php"><?php echo $MSG_RANKLIST ?></a>
 
             <a
                 class="item"
@@ -218,10 +218,38 @@ $header_is_course_manage_page =
                 <i class="calendar icon"></i>행사관리
             </a>
 
-            <!-- 유틸리티 추가 -->
-            <!-- 기존 드롭다운 영역 대체 -->
-            <a class="item <?php if ($url == "tools.php" || $url == "pc.php" || $url == "charcount.php" || $url == "seat_assign.php" || $url == "sadari.php") echo "active"; ?>" href="<?php echo $path_fix ?>tools.php">
-                <i class="wrench icon"></i><?php echo isset($MSG_ULTILIST) ? $MSG_ULTILIST : "유틸리티"; ?>
+            <?php
+            // ------------------------------------------------------------
+            // 유틸리티 메뉴 활성 상태
+            //
+            // /tools/ 아래의 모든 유틸리티 페이지를 같은 메뉴로 처리한다.
+            // 기존 /tools.php 주소도 호환을 위해 활성 상태로 인정한다.
+            // ------------------------------------------------------------
+
+            $tools_request_path =
+                parse_url(
+                    isset($_SERVER['REQUEST_URI'])
+                        ? $_SERVER['REQUEST_URI']
+                        : '',
+                    PHP_URL_PATH
+                );
+
+            $is_tools_page =
+                $url === 'tools.php' ||
+                strpos(
+                    (string)$tools_request_path,
+                    '/tools/'
+                ) === 0;
+            ?>
+
+            <a
+                class="item <?php echo $is_tools_page ? 'active' : ''; ?>"
+                href="/tools/">
+                <i class="wrench icon"></i><?php
+                    echo isset($MSG_ULTILIST)
+                        ? $MSG_ULTILIST
+                        : "유틸리티";
+                ?>
             </a>
 
             <!--<a class="item <?php //if ($url=="contest.php") echo "active";
@@ -234,7 +262,7 @@ $header_is_course_manage_page =
             <?php if (isset($_GET['cid'])) {
                 $cid = intval($_GET['cid']);
             ?>
-                <a id="back_to_contest" class="item active" href="<?php echo $path_fix ?>contest.php?cid=<?php echo $cid ?>"><i
+                <a id="back_to_contest" class="item active" href="/contest.php?cid=<?php echo $cid ?>"><i
                         class="arrow left icon"></i><?php echo $MSG_CONTEST . $MSG_PROBLEMS . $MSG_LIST ?></a>
             <?php } ?>
 

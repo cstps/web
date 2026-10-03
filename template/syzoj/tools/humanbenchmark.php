@@ -1,7 +1,11 @@
 <?php
 $show_title = $view_title;
-include("header.php");
+include(__DIR__ . "/../header.php");
 ?>
+<link
+    rel="stylesheet"
+    href="/template/syzoj/tools/tools-common.css?v=20261003-2">
+
 
 <style>
     /* 반응속도 테스트 전용 영역 */
@@ -182,7 +186,7 @@ include("header.php");
     }
 </style>
 
-<div class="ui container" style="margin-top: 2em; margin-bottom: 3em;">
+<div class="ui container tools-detail-page" style="margin-top: 2em; margin-bottom: 3em;">
     <h2 class="ui dividing header">
         <i class="gamepad teal icon"></i>
         <div class="content">
@@ -339,7 +343,7 @@ include("header.php");
     </div>
 
     <div style="margin-top: 2em;">
-        <a href="<?php echo isset($path_fix) ? $path_fix : ''; ?>tools.php" class="ui button"><i class="arrow left icon"></i> 유틸리티 목록으로 돌아가기</a>
+        <a href="/tools/" class="ui button tools-detail-back"><i class="arrow left icon"></i> 유틸리티 목록으로 돌아가기</a>
     </div>
 </div>
 
@@ -691,4 +695,4 @@ include("header.php");
     }
 </script>
 
-<?php include("footer.php"); ?>
+<?php include(__DIR__ . "/../footer.php"); ?>

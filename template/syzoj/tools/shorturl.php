@@ -1,9 +1,13 @@
 <?php
 $show_title = $view_title;
-include("header.php");
+include(__DIR__ . "/../header.php");
 ?>
+<link
+    rel="stylesheet"
+    href="/template/syzoj/tools/tools-common.css?v=20261003-2">
 
-<div class="ui container" style="margin-top: 2em; margin-bottom: 3em;">
+
+<div class="ui container tools-detail-page" style="margin-top: 2em; margin-bottom: 3em;">
     <h2 class="ui dividing header">
         <i class="linkify teal icon"></i>
         <div class="content">
@@ -143,7 +147,7 @@ include("header.php");
     <?php } ?>
 
     <div style="margin-top: 1.5em;">
-        <a href="tools.php" class="ui button"><i class="arrow left icon"></i> 유틸리티 목록으로 돌아가기</a>
+        <a href="/tools/" class="ui button tools-detail-back"><i class="arrow left icon"></i> 유틸리티 목록으로 돌아가기</a>
     </div>
 </div>
 
@@ -159,4 +163,4 @@ include("header.php");
     }
 </script>
 
-<?php include("footer.php"); ?>
+<?php include(__DIR__ . "/../footer.php"); ?>

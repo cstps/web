@@ -1,7 +1,13 @@
 </div>
 </div>
-<script src="<?php echo $OJ_CDN_URL.$path_fix."template/$OJ_TEMPLATE"?>/css/semantic.min.js"></script>
-<script src="<?php echo $path_fix."template/$OJ_TEMPLATE"?>/css/Chart.min.js"></script>
+<?php
+$footer_asset_base =
+    rtrim((string)$OJ_CDN_URL, '/') .
+    '/template/' .
+    $OJ_TEMPLATE;
+?>
+<script src="<?php echo $footer_asset_base; ?>/css/semantic.min.js"></script>
+<script src="<?php echo $footer_asset_base; ?>/css/Chart.min.js"></script>
 <footer>
     <style>
     .footer {
