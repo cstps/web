@@ -31,7 +31,10 @@
                     // ============================================================
 
                     if (
-                        $exam_mode == 0 ||
+                        (
+                            $exam_mode == 0 &&
+                            !$is_course_performance_student
+                        ) ||
                         isset($_SESSION[$OJ_NAME.'_administrator']) ||
                         isset($_SESSION[$OJ_NAME.'_contest_creator']) ||
                         isset($_SESSION[$OJ_NAME.'_source_browser']) ||
@@ -136,7 +139,16 @@
         <?php } ?>
 
         <?php
-            if ($exam_mode == 1 && !isset($_SESSION[$OJ_NAME.'_administrator']) && !isset($_SESSION[$OJ_NAME.'_contest_creator']) && !isset($_SESSION[$OJ_NAME.'_source_browser']) && !isset($_SESSION[$OJ_NAME.'_m'.$view_cid])) {
+            if (
+                (
+                    $exam_mode == 1 ||
+                    $is_course_performance_student
+                ) &&
+                !isset($_SESSION[$OJ_NAME.'_administrator']) &&
+                !isset($_SESSION[$OJ_NAME.'_contest_creator']) &&
+                !isset($_SESSION[$OJ_NAME.'_source_browser']) &&
+                !isset($_SESSION[$OJ_NAME.'_m'.$view_cid])
+            ) {
                 $th_status = "-";
                 $th_accepted = "-";
                 $th_submit = "-";

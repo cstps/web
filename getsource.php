@@ -5,13 +5,31 @@
     require_once('./include/db_info.inc.php');
 	require_once('./include/setlang.php');
 	$view_title= "Source Code";
-   
+
 require_once("./include/const.inc.php");
+require_once("./include/course_functions.inc.php");
 if (!isset($_GET['id'])){
 	$view_errors= "No such code!\n";
 	require("template/".$OJ_TEMPLATE."/error.php");
 	exit(0);
 }
+// ============================================================
+// Course 수행모드 학생 기록 차단
+// ============================================================
+
+if (
+    isset($_SESSION[$OJ_NAME.'_user_id']) &&
+    course_should_restrict_student_history(
+        $_SESSION[$OJ_NAME.'_user_id']
+    ) &&
+    !isset($_SESSION[$OJ_NAME.'_source_browser'])
+) {
+
+    echo "수행모드에서는 기존 제출 코드를 볼 수 없습니다.";
+    exit(0);
+}
+
+
 $ok=false;
 $id=intval($_GET['id']);
 $sql="SELECT * FROM `solution` WHERE `solution_id`=?";
@@ -28,11 +46,11 @@ $view_user_id=$suser_id=$row['user_id'];
 
 
 if (isset($OJ_AUTO_SHARE)&&$OJ_AUTO_SHARE&&isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
-	$sql="SELECT 1 FROM solution where 
+	$sql="SELECT 1 FROM solution where
 			result=4 and problem_id=$sproblem_id and user_id=?";
 	$rrs=pdo_query($sql,$_SESSION[$OJ_NAME.'_'.'user_id']);
 	$ok=(count($rrs)>0);
-	
+
 }
 $view_source="No source code available!";
 if (isset($_SESSION[$OJ_NAME.'_'.'user_id'])&&$row && $row['user_id']==$_SESSION[$OJ_NAME.'_'.'user_id']) $ok=true;
@@ -62,9 +80,9 @@ if (isset($_SESSION[$OJ_NAME.'_'.'source_browser'])) $ok=true;
 		ob_end_clean();
 
 		echo (str_replace("\n\r","\n",$view_source))."\n".$auth;
-		
+
 	}else{
-		
+
 		echo "I am sorry, You could not view this code!";
 	}
 if(file_exists('./include/cache_end.php'))

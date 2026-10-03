@@ -260,7 +260,41 @@ if (isset($_GET['sid'])) {
             ]
         );
 
-	$view_source_readonly = false;
+
+
+    // --------------------------------------------------------
+    // Course 수행모드 학생의 기존 제출 소스 재사용 차단
+    //
+    // 수행모드 중에는 본인 제출이라도 sid를 이용하여
+    // 과거 제출 코드를 다시 불러올 수 없다.
+    // source_browser 권한은 기존대로 허용한다.
+    // --------------------------------------------------------
+
+    $is_course_performance_student =
+        course_should_restrict_student_history(
+            $session_user_id
+        );
+
+    if (
+        $is_source_owner &&
+        $is_course_performance_student &&
+        !$has_source_browser
+    ) {
+
+        $view_errors =
+            "<h2>수행모드에서는 기존 제출 코드를 불러올 수 없습니다.</h2>";
+
+        require(
+            "template/".
+            $OJ_TEMPLATE.
+            "/error.php"
+        );
+
+        exit(0);
+    }
+
+
+    $view_source_readonly = false;
 
 
 	if (

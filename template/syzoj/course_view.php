@@ -222,7 +222,247 @@ include("template/$OJ_TEMPLATE/header.php");
         ?>
     </div>
 
-    
+
+    <!-- ======================================================
+    Course 수행모드
+    ====================================================== -->
+
+    <div class="ui segment">
+
+        <div
+            class="ui stackable grid middle aligned"
+            style="margin:0;"
+        >
+
+            <div class="ten wide column">
+
+                <h3
+                    class="ui header"
+                    style="margin-top:0;"
+                >
+                    <i class="shield alternate icon"></i>
+
+                    <div class="content">
+                        수행모드
+
+                        <div class="sub header">
+                            활성 수강생의 기존 제출 코드와
+                            문제 해결 과정 열람을 제한합니다.
+                        </div>
+                    </div>
+                </h3>
+
+
+                <?php
+                if (
+                    isset($view_performance_session) &&
+                    is_array($view_performance_session)
+                ) {
+                ?>
+
+                    <div class="ui red message">
+
+                        <div class="header">
+                            수행모드가 진행 중입니다.
+                        </div>
+
+                        <div
+                            style="margin-top:0.6rem;"
+                        >
+                            대상 학생:
+                            활성 수강생
+                            <?php
+                            echo intval(
+                                $view_student_count
+                            );
+                            ?>명
+                        </div>
+
+                        <div>
+                            시작 시각:
+                            <?php
+                            echo htmlspecialchars(
+                                isset(
+                                    $view_performance_session[
+                                        'started_at'
+                                    ]
+                                )
+                                    ? $view_performance_session[
+                                        'started_at'
+                                    ]
+                                    : '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+                        </div>
+
+                        <div>
+                            시작 사용자:
+                            <?php
+                            echo htmlspecialchars(
+                                isset(
+                                    $view_performance_session[
+                                        'started_by'
+                                    ]
+                                )
+                                    ? $view_performance_session[
+                                        'started_by'
+                                    ]
+                                    : '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+                        </div>
+
+                    </div>
+
+                <?php
+                }
+                else {
+                ?>
+
+                    <div class="ui message">
+
+                        현재 수행모드를 사용하고 있지 않습니다.
+
+                        <div
+                            style="margin-top:0.5rem;"
+                        >
+                            대상 학생:
+                            활성 수강생
+                            <?php
+                            echo intval(
+                                $view_student_count
+                            );
+                            ?>명
+                        </div>
+
+                    </div>
+
+                <?php
+                }
+                ?>
+
+            </div>
+
+
+            <div
+                class="six wide column right aligned"
+            >
+
+                <?php
+                if ($view_can_manage_performance) {
+
+                    if (
+                        isset($view_performance_session) &&
+                        is_array($view_performance_session)
+                    ) {
+                ?>
+
+                        <form
+                            method="post"
+                            action="/course_performance_end.php"
+                            style="display:inline;"
+                            onsubmit="return confirm(
+                                '현재 수행모드를 종료하시겠습니까?'
+                            );"
+                        >
+
+                            <?php echo $view_csrf_input; ?>
+
+                            <input
+                                type="hidden"
+                                name="course_id"
+                                value="<?php
+                                    echo intval(
+                                        $course_id
+                                    );
+                                ?>"
+                            >
+
+                            <button
+                                type="submit"
+                                class="ui red button"
+                            >
+                                <i class="stop icon"></i>
+                                수행모드 종료
+                            </button>
+
+                        </form>
+
+                <?php
+                    }
+                    elseif (
+                        intval($view_course['status']) === 1
+                    ) {
+                ?>
+
+                        <form
+                            method="post"
+                            action="/course_performance_start.php"
+                            style="display:inline;"
+                            onsubmit="return confirm(
+                                '이 수업의 활성 학생 전체를 수행모드로 전환하시겠습니까?'
+                            );"
+                        >
+
+                            <?php echo $view_csrf_input; ?>
+
+                            <input
+                                type="hidden"
+                                name="course_id"
+                                value="<?php
+                                    echo intval(
+                                        $course_id
+                                    );
+                                ?>"
+                            >
+
+                            <button
+                                type="submit"
+                                class="ui orange button"
+                            >
+                                <i class="play icon"></i>
+                                수행모드 시작
+                            </button>
+
+                        </form>
+
+                <?php
+                    }
+                    else {
+                ?>
+
+                        <span
+                            class="ui grey basic label"
+                        >
+                            종료된 수업에서는 시작할 수 없습니다.
+                        </span>
+
+                <?php
+                    }
+                }
+                else {
+                ?>
+
+                    <span
+                        class="ui grey basic label"
+                    >
+                        수행모드 관리 권한이 없습니다.
+                    </span>
+
+                <?php
+                }
+                ?>
+
+            </div>
+
+        </div>
+
+    </div>
+
 
     <!-- ======================================================
     요약
@@ -618,6 +858,7 @@ include("template/$OJ_TEMPLATE/header.php");
                         ?>
 
                     </td>
+
                     <td class="center aligned">
 
                         <a

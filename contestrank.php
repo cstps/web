@@ -6,6 +6,7 @@ require_once('./include/db_info.inc.php');
 require_once('./include/setlang.php');
 require_once("./include/const.inc.php");
 require_once("./include/my_func.inc.php");
+require_once('./include/course_functions.inc.php');
 
 $view_title = $MSG_CONTEST.$MSG_RANKLIST;
 
@@ -59,6 +60,56 @@ function s_cmp($A, $B) {
 // contest start
 if (!isset($_GET['cid'])) die("No Such Contest!");
 $cid = intval($_GET['cid']);
+
+
+// ============================================================
+// Course 수행모드 학생의 순위 열람 차단
+//
+// 수행모드 학생은 순위 정보를 볼 수 없다.
+//
+// 예외:
+// - administrator
+// - source_browser
+// - 해당 Contest 관리자
+// - contest_creator
+// ============================================================
+
+$current_user =
+    isset($_SESSION[$OJ_NAME.'_'.'user_id'])
+        ? trim(
+            (string)$_SESSION[
+                $OJ_NAME.'_'.'user_id'
+            ]
+        )
+        : '';
+
+$is_rank_privileged = (
+    isset($_SESSION[$OJ_NAME.'_administrator']) ||
+    isset($_SESSION[$OJ_NAME.'_source_browser']) ||
+    isset($_SESSION[$OJ_NAME.'_m'.$cid]) ||
+    isset($_SESSION[$OJ_NAME.'_contest_creator'])
+);
+
+if (
+    $current_user !== '' &&
+    $current_user !== 'Guest' &&
+    !$is_rank_privileged &&
+    course_should_restrict_student_history(
+        $current_user
+    )
+) {
+
+    $view_errors =
+        "<h2>수행모드에서는 순위 정보를 볼 수 없습니다.</h2>";
+
+    require(
+        "template/".
+        $OJ_TEMPLATE.
+        "/error.php"
+    );
+
+    exit(0);
+}
 
 // ============================================================
 // 랭킹 상세정보 확인 권한

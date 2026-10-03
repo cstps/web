@@ -1,6 +1,7 @@
 <?php
 ////////////////////////////Common head
-require_once( './include/db_info.inc.php' );
+require_once('./include/db_info.inc.php');
+require_once('./include/course_functions.inc.php');
 if((!isset($OJ_DOWNLOAD))||!$OJ_DOWNLOAD){
     $view_errors="Download Disabled!";
     require("template/".$OJ_TEMPLATE."/error.php");
@@ -24,6 +25,43 @@ if(count($data)>0){
 	    require("template/".$OJ_TEMPLATE."/error.php");
 	    exit(0);
    }
+   // 수행모드 학생에게는 문제의 입력/출력 테스트 데이터를 제공하지 않는다.
+   // 관리자와 source_browser는 기존 관리 권한을 유지한다.
+   $current_user =
+       isset($_SESSION[$OJ_NAME.'_user_id'])
+           ? trim((string)$_SESSION[$OJ_NAME.'_user_id'])
+           : '';
+
+    $is_download_privileged = (
+        isset($_SESSION[$OJ_NAME . '_administrator']) ||
+        isset($_SESSION[$OJ_NAME . '_source_browser']) ||
+        (
+            $cid > 0 &&
+            isset($_SESSION[$OJ_NAME . '_m' . $cid])
+        ) ||
+        (
+            $cid > 0 &&
+            course_can_view_contest_process($cid)
+        )
+    );
+
+   if (
+       $current_user !== '' &&
+       !$is_download_privileged &&
+       course_should_restrict_student_history($current_user)
+   ) {
+       $view_errors =
+           "<h2>수행모드에서는 테스트 데이터를 다운로드할 수 없습니다.</h2>";
+
+       require(
+           "template/".
+           $OJ_TEMPLATE.
+           "/error.php"
+       );
+
+       exit(0);
+   }
+
    if(isset($OJ_NOIP_KEYWORD)&&$OJ_NOIP_KEYWORD){
 	$now = strftime("%Y-%m-%d %H:%M",time());
 	$sql = "select 1 from `contest` where contest_id=? and `start_time` < ? and `end_time` > ? and `title` like ?";
@@ -38,13 +76,11 @@ if(count($data)>0){
    }
    $infile="$OJ_DATA/$pid/$name.in"; 
    $outfile="$OJ_DATA/$pid/$name.out"; 
-   $out=file_get_contents($filename.".in");
-   echo $filename;
-   $zipname = tempnam(__dir__.'/upload', '');
+   $zipname = tempnam(__DIR__.'/upload', '');
    $zip = new ZipArchive();
 
         if ($zip->open($zipname, ZIPARCHIVE::CREATE) !== TRUE) {
-            exit ('无法打开文件，或者文件创建失败');
+            exit('파일을 열거나 생성할 수 없습니다.');
         }
         $files = [ $infile,$outfile ];
 

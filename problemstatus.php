@@ -5,6 +5,7 @@ $OJ_CACHE_SHARE = false;
 require_once('./include/cache_start.php');
 require_once('./include/db_info.inc.php');
 require_once('./include/setlang.php');
+require_once('./include/course_functions.inc.php');
 
 $view_title = "Welcome To Online Judge";
 
@@ -26,6 +27,20 @@ if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
     }
 }
 
+// Course 수행모드 학생 여부
+$current_user =
+    isset($_SESSION[$OJ_NAME.'_'.'user_id'])
+        ? $_SESSION[$OJ_NAME.'_'.'user_id']
+        : '';
+
+$is_course_performance_student =
+    (
+        $current_user !== '' &&
+        $current_user !== 'Guest' &&
+        course_should_restrict_student_history(
+            $current_user
+        )
+    );
 
 
 if (isset($_GET['id']))
@@ -194,12 +209,50 @@ foreach ($result as $row) {
   else
     $view_solution[$j][4] = "------";
 
-  if (!(isset($_SESSION[$OJ_NAME.'_'.'user_id']) && !strcasecmp($row['user_id'], $_SESSION[$OJ_NAME.'_'.'user_id']) ||
- isset($_SESSION[$OJ_NAME.'_'.'source_browser'])|| (isset($OJ_AUTO_SHARE)&&$OJ_AUTO_SHARE&&$AC))) {
-    $view_solution[$j][5] = $language_name[$row['language']];
+  $is_source_browser =
+      isset($_SESSION[$OJ_NAME.'_'.'source_browser']);
+
+  $can_show_source_link =
+      (
+          (
+              isset($_SESSION[$OJ_NAME.'_'.'user_id']) &&
+              !strcasecmp(
+                  $row['user_id'],
+                  $_SESSION[$OJ_NAME.'_'.'user_id']
+              )
+          ) ||
+          $is_source_browser ||
+          (
+              isset($OJ_AUTO_SHARE) &&
+              $OJ_AUTO_SHARE &&
+              $AC
+          )
+      );
+
+  // 수행모드 학생은 본인 제출이나 자동 공유 상태라도
+  // 소스코드 링크를 제공하지 않는다.
+  // source_browser 권한은 기존대로 유지한다.
+  if (
+      $is_course_performance_student &&
+      !$is_source_browser
+  ) {
+      $can_show_source_link = false;
+  }
+
+  if ($can_show_source_link) {
+
+      $view_solution[$j][5] =
+          "<a target=_blank href=showsource.php?id=".
+          $row['solution_id'].
+          ">".
+          $language_name[$row['language']].
+          "</a>";
+
   }
   else {
-    $view_solution[$j][5] = "<a target=_blank href=showsource.php?id=".$row['solution_id'].">".$language_name[$row['language']]."</a>";
+
+      $view_solution[$j][5] =
+          $language_name[$row['language']];
   }
 
   if ($flag)

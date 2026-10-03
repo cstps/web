@@ -5,6 +5,7 @@
 <link href='<?php echo $OJ_CDN_URL?>highlight/styles/shCore.css' rel='stylesheet' type='text/css'/>
 <link href='<?php echo $OJ_CDN_URL?>highlight/styles/shThemeDefault.css' rel='stylesheet' type='text/css'/>
 <div class="padding">
+<?php if (empty($is_course_performance_student)) { ?>
     <div style="margin-top: 0px; margin-bottom: 14px; padding-bottom: 0px; " >
         <p class="transition visible">
            <strong >소스코드</strong>
@@ -13,6 +14,7 @@
           <pre v-if="escape" style="margin-top: 0; margin-bottom: 0; "><code><div class="brush:c" id='source' name="source"></div></code></pre>
         </div>
     </div>
+<?php } ?>
     <div style="margin-top: 0px; margin-bottom: 14px; " >
         <p class="transition visible">
            <strong >컴파일정보</strong>
@@ -198,17 +200,26 @@ document.getElementById("errexp").innerHTML=expmsg;
 
 <script>
 $(document).ready(function(){
-	$("#source").load("showsource2.php?id=<?php echo $id?>",function(response,status,xhr){
 
-   	if(status=="success"){
-		SyntaxHighlighter.config.bloggerMode = false;
-		SyntaxHighlighter.config.clipboardSwf = '<?php echo $OJ_CDN_URL?>highlight/scripts/clipboard.swf';
-		SyntaxHighlighter.highlight();
-		explain();
-   	}
+<?php if (empty($is_course_performance_student)) { ?>
 
-	});
+    $("#source").load(
+        "showsource2.php?id=<?php echo $id?>",
+        function(response,status,xhr){
 
+            if(status=="success"){
+                SyntaxHighlighter.config.bloggerMode = false;
+                SyntaxHighlighter.config.clipboardSwf =
+                    '<?php echo $OJ_CDN_URL?>highlight/scripts/clipboard.swf';
+
+                SyntaxHighlighter.highlight();
+            }
+        }
+    );
+
+<?php } ?>
+
+    explain();
 });
 </script>
 

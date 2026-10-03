@@ -443,6 +443,33 @@ $can_view_process = (
     $is_course_process_viewer
 );
 
+
+// ============================================================
+// Course 수행모드 학생 본인의 과거 해결과정 열람 차단
+//
+// 수행모드 학생 본인은 자신의 기존 해결과정을 볼 수 없다.
+//
+// 단, 다음 감독/관리 권한은 그대로 유지한다.
+// - administrator
+// - source_browser
+// - 해당 Contest 관리자
+// - Course owner / teacher / assistant
+// ============================================================
+
+if (
+    $is_owner &&
+    course_should_restrict_student_history(
+        $current_user
+    ) &&
+    !$is_admin &&
+    !$is_source_browser &&
+    !$is_contest_manager &&
+    !$is_course_process_viewer
+) {
+    $can_view_process = false;
+}
+
+
 if (!$can_view_process) {
 
     $view_errors =

@@ -212,7 +212,6 @@ function course_get_user_active_performance_sessions(
         "SELECT
              cps.id,
              cps.course_id,
-             cps.contest_id,
              cps.started_at,
              cps.started_by
            FROM course_performance_session cps
@@ -253,6 +252,90 @@ function course_is_user_in_performance_mode(
     return count($sessions) > 0;
 }
 
+
+
+// ============================================================
+// 현재 학생에게 적용되는 수행모드 기준 시작시각
+//
+// 여러 Course 수행모드에 동시에 참여 중인 경우
+// 가장 최근에 시작된 수행모드의 시작시각을 사용한다.
+// ============================================================
+
+function course_get_user_performance_cutoff(
+    $user_id
+) {
+
+    $sessions =
+        course_get_user_active_performance_sessions(
+            $user_id
+        );
+
+    if (!$sessions) {
+        return null;
+    }
+
+    $cutoff = null;
+
+    foreach ($sessions as $session) {
+
+        if (
+            !isset($session['started_at']) ||
+            trim((string)$session['started_at']) === ''
+        ) {
+            continue;
+        }
+
+        $started_at =
+            trim(
+                (string)$session['started_at']
+            );
+
+        if (
+            $cutoff === null ||
+            $started_at > $cutoff
+        ) {
+            $cutoff = $started_at;
+        }
+    }
+
+    return $cutoff;
+}
+
+
+// ============================================================
+// 특정 기록이 현재 수행모드 시작 전 기록인지 확인
+// ============================================================
+
+function course_should_restrict_student_record(
+    $user_id,
+    $record_time
+) {
+
+    $user_id =
+        trim((string)$user_id);
+
+    $record_time =
+        trim((string)$record_time);
+
+    if (
+        $user_id === '' ||
+        $record_time === ''
+    ) {
+        return false;
+    }
+
+    $cutoff =
+        course_get_user_performance_cutoff(
+            $user_id
+        );
+
+    if ($cutoff === null) {
+        return false;
+    }
+
+    return $record_time < $cutoff;
+}
+
 // ============================================================
 // Course 기본 정보 수정 권한
 //
@@ -283,6 +366,35 @@ function course_can_manage_teachers($course_id) {
     return (
         $role === 'administrator' ||
         $role === 'owner'
+    );
+}
+
+
+
+// ============================================================
+// Course 수행모드 중 학생의 기존 학습 기록 열람 제한 여부
+//
+// 현재는 활성 수행모드 Course의 활성 학생이면 제한한다.
+//
+// 향후 다음 기록 차단에서도 같은 함수를 사용한다.
+// - 제출 소스
+// - 제출 목록
+// - 문제 해결 과정
+// - AJAX / SSE 기록 조회
+// ============================================================
+
+function course_should_restrict_student_history(
+    $user_id
+) {
+
+    $user_id = trim((string)$user_id);
+
+    if ($user_id === '') {
+        return false;
+    }
+
+    return course_is_user_in_performance_mode(
+        $user_id
     );
 }
 
@@ -344,6 +456,320 @@ function course_can_manage_performance($course_id) {
         $role === 'teacher'
     );
 }
+
+
+// ============================================================
+// Course 수행모드 시작
+//
+// 같은 Course에서는 동시에 하나의 수행모드만 진행할 수 있다.
+//
+// 반환:
+// - 성공: 생성된 session id
+// - 실패: false
+// ============================================================
+
+function course_start_performance_session(
+    $course_id
+) {
+
+    global $dbh, $OJ_NAME;
+
+    $course_id = intval($course_id);
+
+    if ($course_id <= 0) {
+        return false;
+    }
+
+    if (!course_can_manage_performance($course_id)) {
+        return false;
+    }
+
+    if (
+        !isset($dbh) ||
+        !($dbh instanceof PDO)
+    ) {
+        return false;
+    }
+
+    $user_id =
+        isset($_SESSION[$OJ_NAME . '_user_id'])
+            ? trim(
+                (string)$_SESSION[
+                    $OJ_NAME . '_user_id'
+                ]
+            )
+            : '';
+
+    if ($user_id === '') {
+        return false;
+    }
+
+    $transaction_started = false;
+
+    try {
+
+        if (!$dbh->inTransaction()) {
+            $dbh->beginTransaction();
+            $transaction_started = true;
+        }
+
+
+        // ----------------------------------------------------
+        // Course 행 자체를 잠근다.
+        //
+        // 활성 수행모드 행이 아직 없는 경우에도
+        // 같은 Course에 대한 동시 시작 요청을 직렬화하기 위해
+        // Course 행을 기준 잠금으로 사용한다.
+        // ----------------------------------------------------
+
+        $stmt = $dbh->prepare(
+            "SELECT course_id
+               FROM course
+              WHERE course_id = ?
+              FOR UPDATE"
+        );
+
+        $stmt->execute([$course_id]);
+
+        if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+            throw new RuntimeException(
+                'Course not found.'
+            );
+        }
+
+
+        // ----------------------------------------------------
+        // 같은 Course에서 이미 진행 중인 수행모드가 있는지 확인
+        // ----------------------------------------------------
+
+        $stmt = $dbh->prepare(
+            "SELECT id
+               FROM course_performance_session
+              WHERE course_id = ?
+                AND status = 1
+              ORDER BY id DESC
+              LIMIT 1"
+        );
+
+        $stmt->execute([$course_id]);
+
+        if ($stmt->fetch(PDO::FETCH_ASSOC)) {
+            throw new RuntimeException(
+                'Performance session already active.'
+            );
+        }
+
+
+        // ----------------------------------------------------
+        // Course 수행모드 시작
+        // ----------------------------------------------------
+
+        $stmt = $dbh->prepare(
+            "INSERT INTO course_performance_session
+                (
+                    course_id,
+                    status,
+                    started_at,
+                    started_by
+                )
+             VALUES
+                (
+                    ?,
+                    1,
+                    NOW(),
+                    ?
+                )"
+        );
+
+        $stmt->execute([
+            $course_id,
+            $user_id
+        ]);
+
+        $session_id =
+            intval($dbh->lastInsertId());
+
+
+        if ($transaction_started) {
+            $dbh->commit();
+        }
+
+        return $session_id;
+
+    } catch (Throwable $e) {
+
+        if (
+            $transaction_started &&
+            $dbh->inTransaction()
+        ) {
+            $dbh->rollBack();
+        }
+
+        error_log(
+            'course_start_performance_session: ' .
+            $e->getMessage()
+        );
+
+        return false;
+    }
+}
+
+
+// ============================================================
+// Course 수행모드 종료
+//
+// 해당 Course의 현재 진행 중인 수행모드를 종료한다.
+//
+// 반환:
+// - 성공: true
+// - 실패: false
+// ============================================================
+
+function course_end_performance_session($course_id) {
+
+    global $dbh, $OJ_NAME;
+
+    $course_id = intval($course_id);
+
+    if ($course_id <= 0) {
+        return false;
+    }
+
+    if (!course_can_manage_performance($course_id)) {
+        return false;
+    }
+
+    if (
+        !isset($dbh) ||
+        !($dbh instanceof PDO)
+    ) {
+        return false;
+    }
+
+    $user_id =
+        isset($_SESSION[$OJ_NAME . '_user_id'])
+            ? trim(
+                (string)$_SESSION[
+                    $OJ_NAME . '_user_id'
+                ]
+            )
+            : '';
+
+    if ($user_id === '') {
+        return false;
+    }
+
+    $transaction_started = false;
+
+    try {
+
+        if (!$dbh->inTransaction()) {
+            $dbh->beginTransaction();
+            $transaction_started = true;
+        }
+
+
+        // ----------------------------------------------------
+        // 시작 함수와 동일하게 Course 행을 잠근다.
+        // ----------------------------------------------------
+
+        $stmt = $dbh->prepare(
+            "SELECT course_id
+               FROM course
+              WHERE course_id = ?
+              FOR UPDATE"
+        );
+
+        $stmt->execute([$course_id]);
+
+        if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+            throw new RuntimeException(
+                'Course not found.'
+            );
+        }
+
+
+        // ----------------------------------------------------
+        // 현재 진행 중인 수행모드 확인
+        // ----------------------------------------------------
+
+        $stmt = $dbh->prepare(
+            "SELECT id
+               FROM course_performance_session
+              WHERE course_id = ?
+                AND status = 1
+              ORDER BY id DESC
+              LIMIT 1
+              FOR UPDATE"
+        );
+
+        $stmt->execute([$course_id]);
+
+        $session =
+            $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (
+            !$session ||
+            !isset($session['id'])
+        ) {
+            throw new RuntimeException(
+                'Active performance session not found.'
+            );
+        }
+
+        $session_id =
+            intval($session['id']);
+
+
+        // ----------------------------------------------------
+        // 수행모드 종료
+        // ----------------------------------------------------
+
+        $stmt = $dbh->prepare(
+            "UPDATE course_performance_session
+                SET status = 0,
+                    ended_at = NOW(),
+                    ended_by = ?
+              WHERE id = ?
+                AND status = 1"
+        );
+
+        $stmt->execute([
+            $user_id,
+            $session_id
+        ]);
+
+        if ($stmt->rowCount() !== 1) {
+            throw new RuntimeException(
+                'Failed to end performance session.'
+            );
+        }
+
+
+        if ($transaction_started) {
+            $dbh->commit();
+        }
+
+        return true;
+
+    } catch (Throwable $e) {
+
+        if (
+            $transaction_started &&
+            $dbh->inTransaction()
+        ) {
+            $dbh->rollBack();
+        }
+
+        error_log(
+            'course_end_performance_session: ' .
+            $e->getMessage()
+        );
+
+        return false;
+    }
+}
+
 
 // ============================================================
 // Course 차시의 문제 해결 과정 현황 열람 권한

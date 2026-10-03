@@ -116,6 +116,9 @@ $view_can_manage_students =
 $view_can_manage_contests =
     course_can_manage_contests($course_id);
 
+$view_can_manage_performance =
+    course_can_manage_performance($course_id);
+
 
 // ============================================================
 // 6. 담당 교사 목록
@@ -215,8 +218,46 @@ if (!is_array($view_contests)) {
     $view_contests = array();
 }
 
+
 // ============================================================
-// 9. 제거된 차시 목록
+// 9. 현재 진행 중인 수행모드
+//
+// 한 Course에서는 동시에 하나의 수행모드만 진행한다.
+// ============================================================
+
+$view_performance_session = null;
+
+$performance_rows = pdo_query(
+    "SELECT
+        id,
+        course_id,
+        status,
+        started_at,
+        started_by
+
+     FROM course_performance_session
+
+     WHERE course_id = ?
+       AND status = 1
+
+     ORDER BY id DESC
+
+     LIMIT 1",
+    $course_id
+);
+
+
+if (
+    is_array($performance_rows) &&
+    isset($performance_rows[0]['id'])
+) {
+    $view_performance_session =
+        $performance_rows[0];
+}
+
+
+// ============================================================
+// 10. 제거된 차시 목록
 // ============================================================
 
 $view_removed_contests = pdo_query(
@@ -257,7 +298,7 @@ if (!is_array($view_removed_contests)) {
 
 
 // ============================================================
-// 10. 화면 출력
+// 11. 화면 출력
 // ============================================================
 
 // 이 페이지의 모든 관리 폼이 공유할 CSRF 필드 1개 생성

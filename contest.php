@@ -27,6 +27,32 @@ if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
 		exit(0);
 	}
 }
+// ============================================================
+// Course 수행모드 학생 여부
+//
+// Course 수행모드에 참여 중인 학생은 대회 화면에서도
+// 정답 수, 제출 수, 순위 등 세부 정보를 제한한다.
+// ============================================================
+
+$current_user =
+    isset($_SESSION[$OJ_NAME.'_'.'user_id'])
+        ? trim(
+            (string)$_SESSION[
+                $OJ_NAME.'_'.'user_id'
+            ]
+        )
+        : '';
+
+$is_course_performance_student =
+    (
+        $current_user !== '' &&
+        $current_user !== 'Guest' &&
+        course_should_restrict_student_history(
+            $current_user
+        )
+    );
+
+
 function formatTimeLength($length) {
   $hour = 0;
   $minute = 0;
@@ -294,7 +320,16 @@ if (isset($_GET['cid'])) {
 		$view_problemset[$cnt][3] = $row['source'];
 
 		  // 수행평가 모드 체크
-        if ($exam_mode == 0 || isset($_SESSION[$OJ_NAME.'_administrator']) || isset($_SESSION[$OJ_NAME.'_contest_creator']) || isset($_SESSION[$OJ_NAME.'_source_browser']) || isset($_SESSION[$OJ_NAME.'_m'.$cid])) {
+        if (
+            (
+                $exam_mode == 0 &&
+                !$is_course_performance_student
+            ) ||
+            isset($_SESSION[$OJ_NAME.'_administrator']) ||
+            isset($_SESSION[$OJ_NAME.'_contest_creator']) ||
+            isset($_SESSION[$OJ_NAME.'_source_browser']) ||
+            isset($_SESSION[$OJ_NAME.'_m'.$cid])
+        ) {
 			$view_problemset[$cnt][4] = $noip ? "" : $row['accepted'];
 			$view_problemset[$cnt][5] = $row['submit'];
 		} else {

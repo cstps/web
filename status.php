@@ -10,6 +10,7 @@ require_once('./include/cache_start.php');
 require_once('./include/db_info.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
+require_once('./include/course_functions.inc.php');
 
 $view_title = "$MSG_STATUS";
 
@@ -70,6 +71,21 @@ $is_source_browser =
 
 $is_contest_creator =
     isset($_SESSION[$OJ_NAME.'_'.'contest_creator']);
+
+// ============================================================
+// Course 수행모드 학생 여부
+//
+// 페이지당 한 번만 조회하고 각 제출 행에서 재사용한다.
+// ============================================================
+
+$is_course_performance_student =
+    (
+        $current_user !== '' &&
+        $current_user !== 'Guest' &&
+        course_should_restrict_student_history(
+            $current_user
+        )
+    );
 
 
 // ============================================================
@@ -539,6 +555,45 @@ if (
     $OJ_ON_SITE_CONTEST_ID > 0 &&
     !$is_admin &&
     !$is_source_browser
+) {
+
+    $_GET['user_id'] =
+        $current_user;
+}
+
+
+// ============================================================
+// Course 수행모드 학생의 Status 조회 범위 제한
+//
+// 수행모드 학생은 자신의 제출 결과만 볼 수 있다.
+//
+// 허용:
+// - administrator
+// - source_browser
+// - 해당 Contest 관리자 m{cid}
+//
+// contest_creator 권한만으로는 예외 처리하지 않는다.
+// ============================================================
+
+$is_performance_status_privileged =
+    (
+        $is_admin ||
+        $is_source_browser ||
+        (
+            $cid !== null &&
+            intval($cid) > 0 &&
+            isset(
+                $_SESSION[
+                    $OJ_NAME.'_m'.intval($cid)
+                ]
+            )
+        )
+    );
+
+
+if (
+    $is_course_performance_student &&
+    !$is_performance_status_privileged
 ) {
 
     $_GET['user_id'] =
@@ -1614,13 +1669,23 @@ else {
 
     $can_show_source_link = true;
 
+    // Course 수행모드 학생은 제출 시점과 관계없이
+    // 소스코드 링크를 볼 수 없다.
+    // 관리자급 권한은 기존 열람 권한을 유지한다.
+    if (
+        $is_course_performance_student &&
+        !$can_manage_source
+    ) {
+        $can_show_source_link = false;
+    }
+
+    // Contest의 기존 codevisible 정책도 그대로 적용한다.
     if ($row_contest_id > 0) {
 
         if (
             $codevisible == 1 &&
             !$can_manage_source
         ) {
-
             $can_show_source_link = false;
         }
     }
@@ -1643,9 +1708,20 @@ else {
     }
     else {
 
-        // codevisible로 소스 숨김
-        $view_status[$i][6] =
-            "제한";
+        // 수행모드에서는 언어명은 표시하되
+        // 소스코드 링크는 제공하지 않는다.
+        if (
+            $is_course_performance_student &&
+            !$can_manage_source
+        ) {
+            $view_status[$i][6] =
+                $language_name[$row['language']];
+        }
+        else {
+            // 기존 codevisible 정책에 의해 소스가 숨겨진 경우
+            $view_status[$i][6] =
+                "제한";
+        }
     }
 
 
@@ -1672,7 +1748,10 @@ else {
                 ) {
 
                     if (
-                        $codevisible == 0 ||
+                        (
+                            !$is_course_performance_student &&
+                            $codevisible == 0
+                        ) ||
                         $can_manage_source
                     ) {
 
@@ -1702,7 +1781,10 @@ else {
                     // 수행모드에서도 codevisible=1이면
                     // 학생에게 Edit 허용하지 않음
                     if (
-                        $codevisible == 0 ||
+                        (
+                            !$is_course_performance_student &&
+                            $codevisible == 0
+                        ) ||
                         $can_manage_source
                     ) {
 
@@ -1734,7 +1816,10 @@ else {
         else {
 
             if (
-                $is_owner ||
+                (
+                    !$is_course_performance_student &&
+                    $is_owner
+                ) ||
                 $can_manage_source
             ) {
 
@@ -1833,7 +1918,14 @@ else {
 
     if (
         $has_process &&
-        $can_view_process
+        $can_view_process &&
+        !(
+            $is_course_performance_student &&
+            $is_owner &&
+            !$is_admin &&
+            !$is_source_browser &&
+            !$row_is_contest_manager
+        )
     ) {
 
         $view_status[$i][9] =

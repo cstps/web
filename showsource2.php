@@ -5,13 +5,40 @@
     require_once('./include/db_info.inc.php');
 	require_once('./include/setlang.php');
 	$view_title= "Source Code";
-   
+
 require_once("./include/const.inc.php");
+require_once("./include/course_functions.inc.php");
+
 if (!isset($_GET['id'])){
 	$view_errors= "No such code!\n";
 	require("template/".$OJ_TEMPLATE."/error.php");
 	exit(0);
 }
+// ============================================================
+// Course 수행모드 학생 기록 차단
+// ============================================================
+
+if (
+    isset($_SESSION[$OJ_NAME.'_user_id']) &&
+    course_should_restrict_student_history(
+        $_SESSION[$OJ_NAME.'_user_id']
+    ) &&
+    !isset($_SESSION[$OJ_NAME.'_source_browser'])
+) {
+
+    $view_errors =
+        "수행모드에서는 기존 제출 코드를 볼 수 없습니다.";
+
+    require(
+        "template/".
+        $OJ_TEMPLATE.
+        "/error.php"
+    );
+
+    exit(0);
+}
+
+
 $ok=false;
 $id=strval(intval($_GET['id']));
 $sql="SELECT * FROM `solution` WHERE `solution_id`=?";
@@ -38,11 +65,11 @@ if(!isset($_SESSION[$OJ_NAME."_source_browser"])){
 			$now=time();
 			if( $end_time < $now ){ // 当前提交，属于已经结束的比赛，考察是否有进行中的比赛在使用。
 				$need_check_using=true;
-				
+
 			}else{			// 属于进行中的比赛，可以看
-						
+
 				$need_check_using=false;
-			
+
 			}
 		}
 
@@ -52,7 +79,7 @@ if(!isset($_SESSION[$OJ_NAME."_source_browser"])){
 	}
 	// 检查是否使用中
 	$now = strftime("%Y-%m-%d %H:%M", time());
-	$sql="select contest_id from contest where contest_id in (select contest_id from contest_problem where problem_id=?) 
+	$sql="select contest_id from contest where contest_id in (select contest_id from contest_problem where problem_id=?)
 								and start_time < '$now' and end_time > '$now' ";
 	if($need_check_using){
 		//echo $sql;
@@ -86,11 +113,11 @@ if(isset($OJ_EXAM_CONTEST_ID)){
 }
 
 if (isset($OJ_AUTO_SHARE)&&$OJ_AUTO_SHARE&&isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
-	$sql="SELECT 1 FROM solution where 
+	$sql="SELECT 1 FROM solution where
 			result=4 and problem_id=$sproblem_id and user_id=?";
 	$rrs=pdo_query($sql,$_SESSION[$OJ_NAME.'_'.'user_id']);
 	$ok=(count($rrs)>0);
-	
+
 }
 $view_source="No source code available!";
 if (isset($_SESSION[$OJ_NAME.'_'.'user_id'])&&$row && $owner==$_SESSION[$OJ_NAME.'_'.'user_id']) $ok=true;

@@ -5,8 +5,8 @@ ini_set('error_log', '/tmp/php-error.log'); // 또는 다른 경로
 error_reporting(E_ALL);
 
 ini_set("display_errors","Off");
-		header ( "content-type:   application/excel" );
-		
+
+
 ?>
 <?php require_once("./include/db_info.inc.php");
 global $mark_base,$mark_per_problem,$mark_per_punish;
@@ -18,6 +18,7 @@ if(isset($OJ_LANG)){
 }
 require_once("./include/const.inc.php");
 require_once("./include/my_func.inc.php");
+require_once("./include/course_functions.inc.php");
 // 로그인 하기 전에는 작업안됨
 if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
 	if (isset($OJ_GUEST) && $OJ_GUEST) {
@@ -52,7 +53,7 @@ class TM{
 		if (isset($this->p_ac_sec[$pid])&&$this->p_ac_sec[$pid]>0)
 			return;
 		if ($res!=4){
-			if(isset($OJ_CE_PENALTY)&&!$OJ_CE_PENALTY&&$res==11) return;  // ACM WF punish no ce 
+			if(isset($OJ_CE_PENALTY)&&!$OJ_CE_PENALTY&&$res==11) return;  // ACM WF punish no ce
 			if(isset($this->p_wa_num[$pid])){
 				$this->p_wa_num[$pid]++;
 			}else{
@@ -108,29 +109,29 @@ function  getMark($users,  $start,  $end, $s) {
 		 $p=0;
 		 $ret = 0;
 		 $cn=count($users);
-		
-		
+
+
 		for ( $i = $end; $i > $start; $i--) {
-			
+
 		    $prob = $cn
 					* normalDistribution($i, ($start + $end) / 2+10, ($end - $start)
 							/ $s);
 			$accum += $prob;
-			
-		
+
+
 		}
-		
+
 		$p=$accum/$cn;
 		$accum=0;
 		$i=0;
-	
+
 		for ($i = $end; $i > $start; $i--) {
 			$prob = $cn
 					* normalDistribution($i, ($start + $end) / 2+10, ($end - $start)
 							/ $s);
 			$accum += $prob;
 			while ($accum > $p/2) {
-				if ($ret<$cn) 
+				if ($ret<$cn)
 				$users[$ret]->mark=$i;
 				$accum -= $p;
 				$ret++;
@@ -141,7 +142,7 @@ function  getMark($users,  $start,  $end, $s) {
 			$ret++;
 		}
 		return $ret;
-		
+
 	}
 
 
@@ -149,6 +150,41 @@ function  getMark($users,  $start,  $end, $s) {
 // contest start time
 if (!isset($_GET['cid'])) die("No Such Contest!");
 $cid=intval($_GET['cid']);
+
+// Course 수행모드 학생은 순위 파일을 다운로드할 수 없다.
+// 관리자, source_browser, Contest 관리자,
+// 해당 Course 담당교사는 기존 관리 권한을 유지한다.
+$current_user =
+    isset($_SESSION[$OJ_NAME.'_user_id'])
+        ? trim((string)$_SESSION[$OJ_NAME.'_user_id'])
+        : '';
+
+$is_rank_privileged = (
+    isset($_SESSION[$OJ_NAME.'_administrator']) ||
+    isset($_SESSION[$OJ_NAME.'_source_browser']) ||
+    isset($_SESSION[$OJ_NAME.'_m'.$cid]) ||
+    course_can_view_contest_process($cid)
+);
+
+if (
+    $current_user !== '' &&
+    !$is_rank_privileged &&
+    course_should_restrict_student_history(
+        $current_user
+    )
+) {
+    $view_errors =
+        "<h2>수행모드에서는 순위 정보를 볼 수 없습니다.</h2>";
+
+    require(
+        "template/".
+        $OJ_TEMPLATE.
+        "/error.php"
+    );
+
+    exit(0);
+}
+
 // 문제별 score 불러오기
 $score_map = array();
 $sql = "SELECT `num`, `score` FROM `contest_problem` WHERE `contest_id` = ?";
@@ -257,16 +293,16 @@ getMark($U,$mark_start,$mark_end,$mark_sigma);
 for ($i=0;$i<$user_cnt;$i++){
 	if ($i&1) echo "<tr class=oddrow align=center>";
 	else echo "<tr class=evenrow align=center>";
-	// don't count rank while nick start with * 
+	// don't count rank while nick start with *
 	if($U[$i]->nick[0]=='*'){
                 echo "<td>*";
         }else{
                 echo "<td>$rank";
                 $rank++;
         }
-	
+
 	$uuid=$U[$i]->user_id;
-        
+
 	$usolved=$U[$i]->solved;
 	echo "<td>$uuid";
 	if(strpos($_SERVER['HTTP_USER_AGENT'],'MSIE')){
@@ -275,8 +311,8 @@ for ($i=0;$i<$user_cnt;$i++){
 	echo "<td>".$U[$i]->nick."</td>";
 	echo "<td>$usolved</td>";
 	echo "<td>";
-        if($usolved==0) $U[$i]->mark=0;	
-	
+        if($usolved==0) $U[$i]->mark=0;
+
 	echo $U[$i]->mark>0?intval($U[$i]->mark):0;
 	echo "</td>";
 	echo "<td>" . ($U[$i]->score_sum ?? 0) . "</td>"; // ✅ score_sum 출력
@@ -286,7 +322,7 @@ for ($i=0;$i<$user_cnt;$i++){
 		if(isset($U[$i])){
 			if (isset($U[$i]->p_ac_sec[$j])&&$U[$i]->p_ac_sec[$j]>0)
 				echo sec2str($U[$i]->p_ac_sec[$j]);
-			if (isset($U[$i]->p_wa_num[$j])&&$U[$i]->p_wa_num[$j]>0) 
+			if (isset($U[$i]->p_wa_num[$j])&&$U[$i]->p_wa_num[$j]>0)
 				echo "(-".$U[$i]->p_wa_num[$j].")";
 		}
 		echo "</td>";

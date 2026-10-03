@@ -8,6 +8,7 @@
         $title="";
         require_once("./include/const.inc.php");
         require_once("./include/my_func.inc.php");
+        require_once("./include/course_functions.inc.php");
 class TM{
         var $solved=0;
         var $time=0;
@@ -52,6 +53,41 @@ function s_cmp($A,$B){
 // contest start time
 if (!isset($_GET['cid'])) die("No Such Contest!");
 $cid=intval($_GET['cid']);
+
+// Course 수행모드 학생은 순위 정보를 볼 수 없다.
+// 관리자, source_browser, Contest 관리자,
+// 해당 Course 담당교사는 기존 관리 권한을 유지한다.
+$current_user =
+    isset($_SESSION[$OJ_NAME.'_user_id'])
+        ? trim((string)$_SESSION[$OJ_NAME.'_user_id'])
+        : '';
+
+$is_rank_privileged = (
+    isset($_SESSION[$OJ_NAME.'_administrator']) ||
+    isset($_SESSION[$OJ_NAME.'_source_browser']) ||
+    isset($_SESSION[$OJ_NAME.'_m'.$cid]) ||
+    course_can_view_contest_process($cid)
+);
+
+if (
+    $current_user !== '' &&
+    !$is_rank_privileged &&
+    course_should_restrict_student_history(
+        $current_user
+    )
+) {
+    $view_errors =
+        "<h2>수행모드에서는 순위 정보를 볼 수 없습니다.</h2>";
+
+    require(
+        "template/".
+        $OJ_TEMPLATE.
+        "/error.php"
+    );
+
+    exit(0);
+}
+
 
 if($OJ_MEMCACHE){
 		$sql="SELECT `start_time`,`title`,`end_time` FROM `contest` WHERE `contest_id`='$cid'";

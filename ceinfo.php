@@ -12,6 +12,7 @@
 		   exit(0);
 	 }
 require_once("./include/const.inc.php");
+require_once("./include/course_functions.inc.php");
 if (!isset($_GET['sid'])){
 	$view_errors= "No such code!\n";
 	require("template/".$OJ_TEMPLATE."/error.php");
@@ -38,6 +39,22 @@ $id=intval($_GET['sid']);
 $sql="SELECT * FROM `solution` WHERE `solution_id`=?";
 $result=pdo_query($sql,$id);
  $row=$result[0];
+
+$current_user =
+    isset($_SESSION[$OJ_NAME.'_'.'user_id'])
+        ? trim((string)$_SESSION[$OJ_NAME.'_'.'user_id'])
+        : '';
+
+$is_course_performance_student =
+    (
+        $current_user !== '' &&
+        course_should_restrict_student_history(
+            $current_user
+        ) &&
+        !isset($_SESSION[$OJ_NAME.'_'.'source_browser']) &&
+        !isset($_SESSION[$OJ_NAME.'_'.'administrator'])
+    );
+
 if ($row && $row['user_id']==$_SESSION[$OJ_NAME.'_'.'user_id']) $ok=true;
 if (isset($_SESSION[$OJ_NAME.'_'.'source_browser'])) $ok=true;
 $view_reinfo="";
