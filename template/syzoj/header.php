@@ -116,7 +116,7 @@ $header_is_course_manage_page =
                 </a>
             <?php } else { ?>
                 <div class="item">
-                    <a class="ui button" style="margin-right: 0.5em; " href="loginpage.php">
+                    <a class="ui button" style="margin-right: 0.5em; " href="/loginpage.php">
                         <?php echo $MSG_LOGIN ?>
                     </a>
                     <?php    // DB에서 확인하도록 수정
@@ -254,11 +254,45 @@ $header_is_course_manage_page =
 
             <!--<a class="item <?php //if ($url=="contest.php") echo "active";
                                 ?>" href="/discussion/global"><i class="comments icon"></i> 讨论</a>-->
-            <a class="item <?php if ($url == "faqs.php") echo "active"; ?>" href="<?php echo $path_fix ?>faqs.php"></i> <?php echo $MSG_FAQ ?></a>
+            <div
+                id="help-dropdown"
+                class="ui dropdown item"
+                tabindex="0">
 
-            <?php if (isset($OJ_BBS) && $OJ_BBS) { ?>
-                <a class='item' href="discuss.php"> <?php echo $MSG_BBS ?></a>
-            <?php } ?>
+                <i class="question circle icon"></i>
+                도움말
+                <i class="dropdown icon"></i>
+
+                <div class="menu">
+                    <a
+                        class="item <?php
+                                    if ($url === "faqs.php") {
+                                        echo "active";
+                                    }
+                                    ?>"
+                        href="/faqs.php">
+                        <i class="question icon"></i>
+                        자주묻는질문
+                    </a>
+
+                    <?php if (isset($OJ_BBS) && $OJ_BBS): ?>
+                        <a
+                            class="item <?php
+                                        if (
+                                            $url === "discuss.php" ||
+                                            $url === "bbs.php" ||
+                                            $dir === "discuss3"
+                                        ) {
+                                            echo "active";
+                                        }
+                                        ?>"
+                            href="/discuss.php">
+                            <i class="comments icon"></i>
+                            묻고 답하기
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
             <?php if (isset($_GET['cid'])) {
                 $cid = intval($_GET['cid']);
             ?>
@@ -268,18 +302,15 @@ $header_is_course_manage_page =
 
         </div>
         <script>
-            $(function() {
-
-                $('#course-contest-dropdown').dropdown({
+            jQuery(function($) {
+                $(
+                    '#course-contest-dropdown, ' +
+                    '#user-account-dropdown, ' +
+                    '#user-dev-dropdown, ' +
+                    '#help-dropdown'
+                ).dropdown({
                     on: 'click'
                 });
-                $('#user-account-dropdown').dropdown({
-                    on: 'click'
-                });
-                $('#user-dev-dropdown').dropdown({
-                    on: 'click'
-                });
-
             });
         </script>
     </div>

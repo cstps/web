@@ -1,204 +1,173 @@
-<?php $show_title="FAQ - $OJ_NAME"; ?>
-<?php include("template/$OJ_TEMPLATE/header.php");?>
-<div class="padding">
-    <h1 class="ui center aligned header">도움</h1>
-    <h4>FAQS</h4>
-    <div class="faqs-card">
-    <p>Q:이 채점시스템에서 사용하는 코드 컴파일 옵션은?<br>
-  A:채점 시스템은 <a href="http://www.ubuntu.com">Ubuntu Linux</a>기반으로. <a href="http://gcc.gnu.org/">GNU GCC/G++</a>for C/C++ compile,
-				<a href="http://www.freepascal.org">Free Pascal</a> 파스칼 그리고
-				<a href="http://openjdk.java.net">openjdk-7-jdk</a> 자바. 컴파일옵션:<br>
-</p>
-<table class="table table-hover">
-  <tr>
-    <td>C:</td>
-    <td>gcc Main.c -o Main  -fno-asm -Wall -lm --static -std=c99 -DONLINE_JUDGE
-	  </td>
-  </tr>
-  <tr>
-    <td>C++:</td>
-    <td>g++ -fno-asm -Wall -lm --static -std=c++11 -DONLINE_JUDGE -o Main Main.cc</td>
-  </tr>
-  <tr>
-    <td>Pascal:</td>
-    <td>fpc Main.pas -oMain -O1 -Co -Cr -Ct -Ci </td>
-  </tr>
-  <tr>
-    <td>Java:</td>
-    <td><font color="blue">javac -J-Xms32m -J-Xmx256m Main.java
-    <br>
-    <font size="-1" color="red">*Java 코드를 실행하고 채점하는 경우 +2초, +512MB 가 추가됩니다.
-    </td>
-  </tr>
-</table>
-<p>컴파일 버전:<br>
-<table class="table table-hover">
-  <tr>
-    <td>gcc</td>
-    <td>gcc version 9.3.0 (Ubuntu 9.3.0-17ubuntu1~20.04)
-	  </td>
-  </tr>
-  <tr>
-    <td>glibc</td>
-    <td>Ubuntu GLIBC 2.31-0ubuntu9.2</td>
-  </tr>
-  <tr>
-    <td>FPC</td>
-    <td>Free Pascal Compiler version 3.0.4+dfsg-23 [2019/11/25] for x86_64</td>
-  </tr>
-  <tr>
-    <td>openjdk</td>
-    <td>openjdk 1.7.0_151
-    </td>
-  </tr>
-  <tr>
-    <td>python</td>
-    <td>Python 3.8.10
-    </td>
-  </tr>
-</table>
-</p>
-</div>
-<div class="faqs-card">
-<p>Q:코드 작성시 데이터 입출력은 어떻게 하나요?<br>
-  A: stdin('표준입력')에서 입력받고 stdout('표준출력')으로 출력한다.<br>
-  예를 들어, C언어에서는 'scanf', C++ 언어에서는 'cin' 을 이용해서 stdin(입력)을 읽어들입니다. 또한, C언어에서는 'printf', C++언어에서는 'cout'을 이용해 stdout(출력)으로 출력할 수 있습니다.<br>
-  파일 입출력을 사용한 코드를 제출하는 경우에는 "Runtime Error(실행오류)"를 받게된다.<br>
-  <br>
- 1037에 대한 예시코드</p>
-<p> C++:<br>
-</p>
-<pre>
-<code class="cpp">
-#include &lt;iostream&gt;
-using namespace std;
-int main(){
-    int a,b;
-    while(cin >> a >> b)
-        cout << a+b << endl;
-    return 0;
-}
-</code>
-</pre>
-C:<br>
-<pre>
-<code class="c">
-#include &lt;stdio.h&gt;
-int main(){
-    int a,b;
-    while(scanf("%d %d",&amp;a, &amp;b) != EOF)
-        printf("%d\n",a+b);
-    return 0;
-}
-</code>
-</pre>
- PASCAL:<br>
-<pre><code class="delphi">
-program p1037(Input,Output); 
-var 
-  a,b:Integer; 
-begin 
-   while not eof(Input) do 
-     begin 
-       Readln(a,b); 
-       Writeln(a+b); 
-     end; 
-end.
-</code>
-</pre>
-<br>
-Java:<br>
-<pre><code class="java">
-import java.util.*;
-public class Main{
-	public static void main(String args[]){
-		Scanner cin = new Scanner(System.in);
-		int a, b;
-		while (cin.hasNext()){
-			a = cin.nextInt(); b = cin.nextInt();
-			System.out.println(a + b);
-		}
-	}
-}</code></pre>
-<br>
-</div>
-<p><strong>python3 (.py)</strong></p>
-        <div class="ui existing segment">
-            <pre style="margin-top: 0; margin-bottom: 0; ">
-<code class="lang-c">import io
-import sys
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf8')
+<?php
+$show_title = "자주묻는질문 - " . $OJ_NAME;
+include("template/$OJ_TEMPLATE/header.php");
+?>
+<link
+    rel="stylesheet"
+    href="<?php echo $path_fix; ?>template/syzoj/css/faqs.css?v=<?php
+        echo rawurlencode((string)filemtime(__DIR__ . "/css/faqs.css"));
+    ?>">
+
+<section class="oj-faq-page" aria-labelledby="faq-title">
+    <header class="oj-faq-header">
+        <h1 id="faq-title">자주묻는질문</h1>
+        <p>코드 제출과 채점에 관한 기본 안내입니다. 질문을 눌러 내용을 확인해 주세요.</p>
+    </header>
+
+    <div class="oj-faq-list">
+        <details class="oj-faq-item">
+            <summary>어떤 환경에서 코드가 채점되나요?</summary>
+            <div class="oj-faq-content">
+                <p>제출한 코드는 서버의 Linux 채점 환경에서 실행됩니다.
+                개인 컴퓨터와 컴파일러 또는 실행 환경이 다를 수 있습니다.</p>
+                <ul>
+                    <li>제출할 때 코드에 맞는 언어를 선택해 주세요.</li>
+                    <li>문제 화면의 시간 제한과 메모리 제한을 확인해 주세요.</li>
+                    <li>특정 운영체제에서만 사용할 수 있는 기능은 피해주세요.</li>
+                    <li>Python에서는 사용하려는 외부 라이브러리를 채점 환경에서 지원하는지 확인해야 합니다.</li>
+                </ul>
+            </div>
+        </details>
+
+        <details class="oj-faq-item" open>
+            <summary>입력과 출력은 어떻게 작성하나요?</summary>
+            <div class="oj-faq-content">
+                <p>입력은 표준 입력으로 받고, 답은 표준 출력으로 출력합니다.
+                문제에 별도 지시가 없다면 파일에서 입력을 읽지 않습니다.</p>
+                <p>“숫자를 입력하세요” 같은 안내 문구는 출력하지 마세요.
+                문제에서 요구한 답과 출력 형식을 따라야 합니다.</p>
+                <h2>언어별 예제</h2>
+                <p>다음은 각 줄에 정수 두 개가 주어지고, 입력이 끝날 때까지
+                두 수의 합을 한 줄씩 출력하는 예제입니다.
+                실제 문제의 입력 형식에 맞게 수정해 주세요.</p>
+                <details class="faq-example"><summary>Python 3</summary><pre><code>import sys
+
 for line in sys.stdin:
-    a = line.split()
-    print(int(a[0]) + int(a[1]))</code></pre>
-        </div>
-<div class="faqs-card">
-Q: 문제가 없는데 컴파일 에러가 발생한다?<br>
-A: GNU 와 MS-VC++ 는 다음과 같이 다릅니다. 내용:<br>
-					<pre><code class="cpp">main()는 int main()으로 해야 합니다.
-"for(int i=0...){...}" 와 같이 선언되어있는 상태인데 for 코드블록 밖에서 i를 참조되는 경우
-itoa는 ANSI 함수가 아니다.
-__int64 는 VC에서만, long long 을 사용해야 합니다.
-VC코드를 그대로 사용하고 싶다면 #define __int64 long long </code></pre>
-</div><div class="faqs-card">
-Q:채점 코드 제출 후 받게 되는 메시지들은 어떤 의미인가요?<br>
-A:채점 코드 제출 후 받게 되는 메시지들의 의미는 다음과 같습니다.<br>
-<table class="table table-hover">
-<tr>
-<td><?php echo $MSG_Pending;?></td>
-<td>코드가 제출되고 채점을 기다리고 있는 상태입니다. 대부분의 경우 조금만 기다리면 채점이 진행됩니다.</td>
-</tr>
-<tr>
-<td><?php echo $MSG_Pending_Rejudging;?></td>
-<td>채점 데이터가 갱신되어 재채점을 기다리고 있는 상태입니다.</td>
-</tr>
-<tr>
-<td><?php echo $MSG_Compiling;?></td>
-<td>제출된 코드를 컴파일 중이라는 의미입니다.</td>
-</tr>
-<tr>
-<td><?php echo $MSG_Running_Judging;?></td>
-<td>채점이 진행되고 있는 상태라는 의미입니다.</td>
-</tr>
-<tr>
-<td><?php echo $MSG_Accepted;?></td>
-<td>정답입니다.</td>
-</tr>
-<tr>
-<td><?php echo $MSG_Presentation_Error;?></td>
-<td>출력된 결과가 문제에서 출력해야하는 출력형식과 다르게 출력되었다는 의미입니다. 문제의 출력형식에서 요구하는 형식과 똑같아야 합니다. 답 출력 후 출력형식에는 없는 공백문자나 줄 바꿈이 더 출력되지는 않았는지 확인해 보아야 합니다.</td>
-</tr>
-<tr>
-<td><?php echo $MSG_Wrong_Answer;?></td>
-<td>틀린 답을 출력한 것을 의미합니다. 채점 시스템에 등록하는 채점 데이터들은 외부로 공개하지 않는 것이 일반적입니다. 제출한 코드가 틀린 답을 출력하는 경우가 어떤 경우일지 더 생각해 보아야 합니다. ;-).</td>
-</tr>
-<tr>
-<td><?php echo $MSG_Time_Limit_Exceed;?></td>
-<td>제한시간 이내에 답을 출력하지 못했다는 것을 의미합니다. 좀 더 빠르면서도 정확한 결과를 출력하도록 소스 코드를 수정해야합니다.</td>
-</tr>
-<tr>
-<td><?php echo $MSG_Memory_Limit_Exceed;?></td>
-<td>제출한 프로그램이 제한된 메모리용량보다 더 많은 기억공간을 사용했다는 것을 의미합니다. 일반적으로는 메모리를 더 적게 사용하는 코드로 수정해야합니다.</td>
-</tr>
-<tr>
-<td><?php echo $MSG_Output_Limit_Exceed;?></td>
-<td>제출한 프로그램이 제한된 출력량 이상으로 결과를 출력했다는 것을 의미합니다. 대부분의 경우 무한 반복 실행 구조에 의해 발생합니다. 채점 시스템의 출력 제한 바이트 수는 1M bytes 입니다.</td>
-</tr>
-<tr>
-<td><?php echo $MSG_Runtime_Error;?></td>
-<td>제출한 프로그램이 실행되는 도중에 오류가 발생했다는 것을 의미합니다. 예를 들어, 'segmentation fault(허용되지 않는 메모리 영역에 접근하는 경우: 배열 인덱스 초과 등)','floating point exception(실수 계산 예외: 0 으로 나누는 등)','used forbidden functions(제한된 함수를 사용한 경우: 파일 처리 함수 등이 사용된 경우 등)', 'tried to access forbidden memories(허용되지 않는 시스템 메모리 영역 등에 접근하는 경우 등)' 등에 의해 발생합니다.</td>
-</tr>
-<tr>
-<td><?php echo $MSG_Compile_Error;?></td>
-<td>제출한 소스코드를 ANSI 표준(gcc/g++/gpc) 컴파일러로 컴파일하지 못했다는 것을 의미합니다. 컴파일 오류 메시지가 아닌 오류 경고(warning)는 이 메시지를 출력하지 않습니다. 메시지 부분을 누르면 컴파일 오류 메시지를 확인할 수도 있습니다.
-</td>
-</tr>
-</table>
-</div><div class="faqs-card">
-Q:온라인 대회(Online Contests)는 어떻게 참가하나요?<br>
-A:회원가입부터 하세요 <a href=registerpage.php>회원가입</a><br>
-</div>
+    a, b = map(int, line.split())
+    print(a + b)</code></pre></details>
+<details class="faq-example"><summary>C</summary><pre><code>#include &lt;stdio.h&gt;
 
-</div>
+int main(void) {
+    int a, b;
 
-<?php include("template/$OJ_TEMPLATE/footer.php");?>
+    while (scanf(&quot;%d %d&quot;, &amp;a, &amp;b) == 2) {
+        printf(&quot;%d\n&quot;, a + b);
+    }
+
+    return 0;
+}</code></pre></details>
+<details class="faq-example"><summary>C++</summary><pre><code>#include &lt;iostream&gt;
+using namespace std;
+
+int main() {
+    int a, b;
+
+    while (cin &gt;&gt; a &gt;&gt; b) {
+        cout &lt;&lt; a + b &lt;&lt; &#x27;\n&#x27;;
+    }
+
+    return 0;
+}</code></pre></details>
+<details class="faq-example"><summary>Java</summary><pre><code>import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner input = new Scanner(System.in);
+
+        while (input.hasNextInt()) {
+            int a = input.nextInt();
+            int b = input.nextInt();
+            System.out.println(a + b);
+        }
+    }
+}</code></pre></details>
+<details class="faq-example"><summary>Pascal</summary><pre><code>program Sum(Input, Output);
+var
+    a, b: Integer;
+begin
+    while not eof(Input) do
+    begin
+        Readln(a, b);
+        Writeln(a + b);
+    end;
+end.</code></pre></details>
+            </div>
+        </details>
+
+        <details class="oj-faq-item">
+            <summary>내 컴퓨터에서는 실행되는데 컴파일 오류가 발생해요.</summary>
+            <div class="oj-faq-content">
+                <p>먼저 제출 언어가 코드와 일치하는지 확인하고,
+                채점기록에서 컴파일 오류 메시지를 확인해 주세요.</p>
+                <ul>
+                    <li>C와 C++의 시작 함수는 <code>int main()</code> 형태로 작성합니다.</li>
+                    <li>선언한 변수의 사용 범위와 필요한 헤더를 확인합니다.</li>
+                    <li>특정 컴파일러 전용 함수와 자료형은 서버에서 지원되지 않을 수 있습니다.</li>
+                    <li>Java 예제처럼 제출하는 경우 클래스 이름은 <code>Main</code>을 사용합니다.</li>
+                </ul>
+            </div>
+        </details>
+
+        <details class="oj-faq-item">
+            <summary>채점 결과는 어떤 의미인가요?</summary>
+            <div class="oj-faq-content">
+                <div class="oj-faq-table-wrap"
+                     tabindex="0"
+                     role="region"
+                     aria-label="채점 결과 안내 표">
+                    <table class="oj-faq-table">
+                        <caption>채점 상태와 결과 안내</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">채점 결과</th>
+                                <th scope="col">설명</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><th scope="row"><?php echo htmlspecialchars((string)$MSG_Pending, ENT_QUOTES, "UTF-8"); ?></th><td>제출이 접수되어 채점을 기다리고 있습니다.</td></tr>
+<tr><th scope="row"><?php echo htmlspecialchars((string)$MSG_Pending_Rejudging, ENT_QUOTES, "UTF-8"); ?></th><td>재채점을 기다리고 있습니다.</td></tr>
+<tr><th scope="row"><?php echo htmlspecialchars((string)$MSG_Compiling, ENT_QUOTES, "UTF-8"); ?></th><td>제출한 코드를 컴파일하고 있습니다.</td></tr>
+<tr><th scope="row"><?php echo htmlspecialchars((string)$MSG_Running_Judging, ENT_QUOTES, "UTF-8"); ?></th><td>테스트 데이터로 프로그램을 실행하고 있습니다.</td></tr>
+<tr><th scope="row"><?php echo htmlspecialchars((string)$MSG_Accepted, ENT_QUOTES, "UTF-8"); ?></th><td>채점 기준을 통과한 정답입니다.</td></tr>
+<tr><th scope="row"><?php echo htmlspecialchars((string)$MSG_Presentation_Error, ENT_QUOTES, "UTF-8"); ?></th><td>출력 형식을 확인해 주세요. 공백과 줄바꿈 등 문제에서 요구한 형식을 살펴보세요.</td></tr>
+<tr><th scope="row"><?php echo htmlspecialchars((string)$MSG_Wrong_Answer, ENT_QUOTES, "UTF-8"); ?></th><td>일부 테스트에서 기대한 답과 다른 결과를 출력했습니다. 경계값과 예외 상황을 확인해 주세요.</td></tr>
+<tr><th scope="row"><?php echo htmlspecialchars((string)$MSG_Time_Limit_Exceed, ENT_QUOTES, "UTF-8"); ?></th><td>실행 시간이 제한을 초과했습니다. 알고리즘의 효율과 반복문을 확인해 주세요.</td></tr>
+<tr><th scope="row"><?php echo htmlspecialchars((string)$MSG_Memory_Limit_Exceed, ENT_QUOTES, "UTF-8"); ?></th><td>사용한 메모리가 제한을 초과했습니다. 배열 크기와 자료 저장 방식을 확인해 주세요.</td></tr>
+<tr><th scope="row"><?php echo htmlspecialchars((string)$MSG_Output_Limit_Exceed, ENT_QUOTES, "UTF-8"); ?></th><td>출력량이 제한을 초과했습니다. 불필요한 출력과 무한 반복을 확인해 주세요.</td></tr>
+<tr><th scope="row"><?php echo htmlspecialchars((string)$MSG_Runtime_Error, ENT_QUOTES, "UTF-8"); ?></th><td>실행 중 오류가 발생했습니다. 배열 범위, 0으로 나누기, 잘못된 메모리 접근 등을 확인해 주세요.</td></tr>
+<tr><th scope="row"><?php echo htmlspecialchars((string)$MSG_Compile_Error, ENT_QUOTES, "UTF-8"); ?></th><td>컴파일에 실패했습니다. 오류 메시지를 확인하여 문법과 선택한 제출 언어를 점검해 주세요.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </details>
+
+        <details class="oj-faq-item">
+            <summary>수업이나 대회에는 어떻게 참여하나요?</summary>
+            <div class="oj-faq-content">
+                <p>로그인한 뒤 상단의 <strong>수업·대회</strong> 메뉴를 이용합니다.</p>
+                <ul>
+                    <li>수업은 담당 교사가 등록한 수강 권한이 필요합니다.
+                    수강 등록 후 <strong>내 수업</strong>에서 확인할 수 있습니다.</li>
+                    <li>대회는 <strong>대회 목록</strong>에서 확인합니다.
+                    대회마다 참가 권한과 운영 시간이 다를 수 있습니다.</li>
+                </ul>
+                <p>
+                    <a href="<?php echo $path_fix; ?>loginpage.php">로그인</a>
+                    <span aria-hidden="true"> · </span>
+                    <a href="<?php echo $path_fix; ?>contest.php">대회 목록</a>
+                </p>
+            </div>
+        </details>
+    </div>
+
+    <?php if (isset($OJ_BBS) && $OJ_BBS): ?>
+        <aside class="oj-faq-contact">
+            <h2>찾는 답변이 없나요?</h2>
+            <p>질문이나 건의 사항은 묻고 답하기에 남겨 주세요.</p>
+            <a href="<?php echo $path_fix; ?>discuss.php">묻고 답하기</a>
+        </aside>
+    <?php endif; ?>
+</section>
+
+<?php include("template/$OJ_TEMPLATE/footer.php"); ?>

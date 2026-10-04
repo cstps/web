@@ -1,0 +1,78 @@
+.oj-faq-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px 0 40px;
+    color: #1e293b;
+}
+.oj-faq-header { margin-bottom: 24px; }
+.oj-faq-header h1 { margin: 0 0 12px; font-size: 28px; }
+.oj-faq-header p { color: #64748b; line-height: 1.8; }
+.oj-faq-list { display: grid; gap: 14px; }
+.oj-faq-item {
+    border: 1px solid #dbe3ee;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, .04);
+}
+.oj-faq-item > summary {
+    padding: 20px 24px;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.6;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+.oj-faq-item[open] > summary { border-bottom: 1px solid #e2e8f0; }
+.oj-faq-item > summary::marker { color: #2563eb; }
+.oj-faq-content { padding: 20px 24px; line-height: 1.85; }
+.oj-faq-content p { margin: 0 0 16px; }
+.oj-faq-content h2, .oj-faq-contact h2 { font-size: 18px; }
+.oj-faq-content ul { padding-left: 24px; }
+.oj-faq-content li { margin-bottom: 8px; }
+.oj-faq-content a, .oj-faq-contact a { color: #1d4ed8; }
+.oj-faq-content code { font-family: monospace; }
+.faq-example { margin-top: 12px; border: 1px solid #dbe3ee; border-radius: 8px; }
+.faq-example > summary { padding: 12px 16px; font-weight: 600; cursor: pointer; }
+.faq-example pre {
+    margin: 0;
+    padding: 18px;
+    border-radius: 0 0 8px 8px;
+    background: #f8fafc;
+    color: #1e293b;
+    overflow-x: auto;
+    line-height: 1.7;
+    white-space: pre;
+}
+.oj-faq-table-wrap { overflow-x: auto; }
+.oj-faq-table { width: 100%; border-collapse: collapse; }
+.oj-faq-table caption { padding-bottom: 12px; text-align: left; font-weight: 600; }
+.oj-faq-table th, .oj-faq-table td {
+    padding: 13px 16px;
+    border: 1px solid #e2e8f0;
+    text-align: left;
+    vertical-align: top;
+}
+.oj-faq-table thead th { background: #f1f5f9; }
+.oj-faq-table tbody th { width: 190px; background: #f8fafc; }
+.oj-faq-contact {
+    margin-top: 24px;
+    padding: 24px;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    background: #eff6ff;
+    line-height: 1.8;
+}
+.oj-faq-page summary:focus-visible,
+.oj-faq-page a:focus-visible,
+.oj-faq-table-wrap:focus-visible {
+    outline: 3px solid #60a5fa;
+    outline-offset: 3px;
+}
+@media (max-width: 700px) {
+    .oj-faq-page { padding: 16px 0 28px; }
+    .oj-faq-header h1 { font-size: 24px; }
+    .oj-faq-item > summary { padding: 16px; font-size: 16px; }
+    .oj-faq-content, .oj-faq-contact { padding: 16px; }
+    .oj-faq-table th, .oj-faq-table td { padding: 10px; }
+    .oj-faq-table tbody th { width: 120px; }
+}
