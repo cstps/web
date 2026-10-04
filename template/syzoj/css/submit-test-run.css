@@ -1,0 +1,23 @@
+.submit-test-run { margin: 24px 0; padding: 20px; border: 1px solid #dbe3ee; border-radius: 12px; background: #fff; color: #1e293b; }
+.submit-test-run, .submit-test-run * { box-sizing: border-box; }
+.submit-test-run h2 { margin: 0 0 8px; font-size: 20px; }
+.submit-test-run h3 { margin: 20px 0 12px; font-size: 18px; }
+.submit-test-run h4, .submit-test-run label { display: block; margin: 12px 0 8px; font-size: 14px; font-weight: 600; }
+.submit-test-run > p { line-height: 1.7; color: #64748b; }
+.submit-test-run .test-run-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.submit-test-run textarea { width: 100%; min-height: 140px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: monospace; font-size: 14px; line-height: 1.6; resize: vertical; }
+.submit-test-run textarea[readonly] { background: #f8fafc; }
+.submit-test-run .test-run-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.submit-test-run button { min-height: 44px; }
+.submit-test-run .test-run-summary { display: flex; flex-wrap: wrap; gap: 16px 32px; padding: 12px; border-radius: 8px; background: #f8fafc; }
+.submit-test-run dt { color: #64748b; font-size: 13px; }
+.submit-test-run dd { margin: 4px 0 0; font-weight: 600; }
+.submit-test-run pre { min-height: 80px; max-height: 320px; margin: 0; padding: 12px; overflow: auto; border: 1px solid #dbe3ee; border-radius: 8px; background: #f8fafc; font-family: monospace; font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.submit-test-run #test-run-message { margin: 12px 0 0; }
+.submit-test-run #test-run-warnings { color: #92400e; line-height: 1.7; white-space: pre-line; }
+.submit-test-run [hidden] { display: none !important; }
+.submit-test-run button:focus-visible, .submit-test-run textarea:focus-visible, .submit-test-run pre:focus-visible { outline: 3px solid #60a5fa; outline-offset: 2px; }
+@media (max-width: 600px) {
+    .submit-test-run { padding: 16px; }
+    .submit-test-run .test-run-grid { grid-template-columns: 1fr; }
+}

@@ -184,6 +184,42 @@ if (isset($_POST['id'])) {
     $test_run = true;
 }
 
+// 시험 실행 요청 보호
+if ($test_run) {
+    $test_run_reject = static function ($message, $status) {
+        http_response_code($status);
+        header('Content-Type: text/plain; charset=UTF-8');
+        exit($message);
+    };
+
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+        header('Allow: POST');
+        $test_run_reject('시험 실행은 POST 요청만 허용합니다.', 405);
+    }
+
+    if (!isset($OJ_TEST_RUN) || !$OJ_TEST_RUN) {
+        $test_run_reject('시험 실행 기능이 비활성화되어 있습니다.', 403);
+    }
+
+    $test_run_session_key =
+        $_SESSION[$OJ_NAME . '_postkey'] ?? null;
+
+    $test_run_request_key =
+        $_POST['postkey'] ?? null;
+
+    if (
+        !is_string($test_run_session_key) ||
+        strlen($test_run_session_key) < 32 ||
+        !is_string($test_run_request_key) ||
+        !hash_equals($test_run_session_key, $test_run_request_key)
+    ) {
+        $test_run_reject(
+            '요청 확인에 실패했습니다. 제출 화면을 새로고침해 주세요.',
+            403
+        );
+    }
+}
+
 // 언어 인덱스 보정/검증
 if ($language < 0 || $language >= count($language_name)) $language = 0;
 // 비트마스크 차단 언어
@@ -437,8 +473,8 @@ if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
 
 // (10) 제출간격 제한
 if (!$OJ_BENCHMARK_MODE) {
-    $now10 = strftime("%Y-%m-%d %X", time() - 10);
-    $res = pdo_query("SELECT `in_date` FROM `solution` WHERE `user_id`=? AND in_date>? ORDER BY `in_date` DESC LIMIT 1", $user_id, $now10);
+    $submit_interval_cutoff = strftime("%Y-%m-%d %X", time() - 5);
+    $res = pdo_query("SELECT `in_date` FROM `solution` WHERE `user_id`=? AND in_date>? ORDER BY `in_date` DESC LIMIT 1", $user_id, $submit_interval_cutoff);
     if ($res && count($res) == 1) {
         $view_errors = $MSG_BREAK_TIME . "<br>";
         require "template/" . $OJ_TEMPLATE . "/error.php";
@@ -452,11 +488,44 @@ if (~$OJ_LANGMASK & (1 << $language)) {
     $r = pdo_query("SELECT nick FROM users WHERE user_id=?", $user_id);
     if ($r && isset($r[0][0])) $nick = $r[0][0];
 
-    if (!isset($pid)) {
-        // 단일 문제
-        $sql = "INSERT INTO solution(problem_id,user_id,nick,in_date,language,ip,code_length,result)
-            VALUES(?,?,?,NOW(),?,?,?,14)";
-        $insert_id = pdo_query($sql, $id, $user_id, $nick, $language, $ip, $len);
+    if ($test_run || !isset($pid)) {
+
+        // 테스트 실행은 solution.problem_id=0으로 저장한다.
+        // 실제 문제 ID는 이 시점까지 코드 조합 및 검증에만 사용한다.
+        // problem_id=0은 HUSTOJ custom input 실행을 구분하는 값이다.
+        $solution_problem_id =
+            $test_run
+                ? 0
+                : $id;
+
+        $sql =
+            "INSERT INTO solution
+            (
+                problem_id,
+                user_id,
+                nick,
+                in_date,
+                language,
+                ip,
+                code_length,
+                result
+            )
+            VALUES
+            (
+                ?, ?, ?, NOW(), ?, ?, ?, 14
+            )";
+
+        $insert_id =
+            pdo_query(
+                $sql,
+                $solution_problem_id,
+                $user_id,
+                $nick,
+                $language,
+                $ip,
+                $len
+            );
+
     } else {
         // 대회 문제
         $sql = "INSERT INTO solution(problem_id,user_id,nick,in_date,language,ip,code_length,contest_id,num,result)
