@@ -95,7 +95,7 @@
 	$MSG_NO_PLS="허용된 프로그래밍 언어가 아닙니다!";
 	$MSG_TOO_SHORT="코드가 너무 짧습니다!";
 	$MSG_TOO_LONG="코드가 너무 깁니다!";
-	$MSG_BREAK_TIME="1초 이내에 다시 제출 할 수 없습니다. 잠시 기다려주세요.";
+	$MSG_BREAK_TIME = "제출과 시험 실행은 5초 간격으로 요청해 주세요.";
 	$MSG_CODE_USE_BANCODE="금지어가 포함되어 있습니다.";
 
 
@@ -141,7 +141,7 @@
 	$MSG_PRO_POINT="문제 포인트";
 
 	//유용한 기능
-	$MSG_ULTILIST="🔥도구";
+	$MSG_ULTILIST="도구";
 	$MSG_POINTCHECK="평가점수계산";
 	$MSG_CHARCOUNT="글자수계산";
 	$MSG_SEATASSIGN="교실자리배치";
