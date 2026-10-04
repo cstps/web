@@ -132,6 +132,25 @@ include("template/$OJ_TEMPLATE/header.php");
         }
         ?>
         <?php
+        if ($view_can_manage_contests) {
+        ?>
+
+            <a
+                class="ui blue basic button"
+                href="course_code_monitor.php?course_id=<?php
+                    echo intval($course_id);
+                ?>"
+            >
+                <i class="code icon"></i>
+                학생 코드 모니터링
+            </a>
+
+        <?php
+        }
+        ?>
+
+
+        <?php
         if ($view_can_edit) {
         ?>
 

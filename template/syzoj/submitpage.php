@@ -794,6 +794,21 @@
 	<?php
 	$pid_for_key = isset($id) ? $id : (isset($pid) ? $pid : 'unknown');
 	$cid_prefix = isset($cid) ? "contest_" . $cid . "_" : "";
+
+        // 서버 코드 자동저장 전용 CSRF 토큰
+        // 일반 제출의 1회용 csrf와 분리하여 사용한다.
+        if (
+                !isset($_SESSION[$OJ_NAME.'_draft_csrf']) ||
+                !is_string($_SESSION[$OJ_NAME.'_draft_csrf']) ||
+                $_SESSION[$OJ_NAME.'_draft_csrf'] === ''
+        ) {
+                $_SESSION[$OJ_NAME.'_draft_csrf'] =
+                        bin2hex(random_bytes(32));
+        }
+
+        $draft_csrf_token =
+                $_SESSION[$OJ_NAME.'_draft_csrf'];
+
 	?>
 	<script>
 		// ============================================================
@@ -819,6 +834,27 @@
 				? 'true'
 				: 'false';
 			?>;
+
+
+		const draftProblemId =
+		        <?php echo intval($problem_id); ?>;
+
+		const draftContestId =
+		        <?php
+		        echo isset($cid)
+		                ? intval($cid)
+		                : 0;
+		        ?>;
+
+
+		const draftCsrfToken =
+		        <?php
+		        echo json_encode(
+		                $draft_csrf_token,
+		                JSON_UNESCAPED_UNICODE |
+		                JSON_UNESCAPED_SLASHES
+		        );
+		        ?>;
 
 
 		const baseLocalKey =
@@ -907,6 +943,141 @@
 			}
 
 		}, 5000);
+
+
+                // ============================================================
+                // 서버 자동저장
+                //
+                // - 15초마다 확인
+                // - 직전 저장 코드와 다를 때만 전송
+                // - 읽기 전용 화면에서는 저장하지 않음
+                // ============================================================
+
+                let lastServerSavedCode = null;
+                let serverDraftSaving = false;
+
+                async function saveServerDraft() {
+
+                        if (
+                                isReadOnly ||
+                                serverDraftSaving ||
+                                typeof editor === "undefined"
+                        ) {
+                                return;
+                        }
+
+                        const code =
+                                editor.getValue();
+
+                        if (code === lastServerSavedCode) {
+                                return;
+                        }
+
+                        const languageElement =
+                                document.getElementById("language");
+
+                        if (!languageElement) {
+                                return;
+                        }
+
+                        const formData =
+                                new FormData();
+
+                        formData.set(
+                                "problem_id",
+                                String(draftProblemId)
+                        );
+
+                        formData.set(
+                                "contest_id",
+                                String(draftContestId)
+                        );
+
+                        formData.set(
+                                "language",
+                                String(languageElement.value)
+                        );
+
+                        formData.set(
+                                "source",
+                                code
+                        );
+
+
+                        formData.set(
+                                "draft_csrf",
+                                draftCsrfToken
+                        );
+
+                        const solutionForm =
+                                document.getElementById("frmSolution");
+
+                        if (solutionForm) {
+
+                                const hiddenFields =
+                                        solutionForm.querySelectorAll(
+                                                "input[type='hidden']"
+                                        );
+
+                                hiddenFields.forEach((field) => {
+
+                                        if (
+                                                field.name &&
+                                                !formData.has(field.name)
+                                        ) {
+                                                formData.set(
+                                                        field.name,
+                                                        field.value
+                                                );
+                                        }
+                                });
+                        }
+
+                        serverDraftSaving = true;
+
+                        try {
+
+                                const response =
+                                        await fetch(
+                                                "student_code_draft_save.php",
+                                                {
+                                                        method: "POST",
+                                                        body: formData,
+                                                        credentials: "same-origin",
+                                                        cache: "no-store"
+                                                }
+                                        );
+
+                                const data =
+                                        await response.json();
+
+                                if (
+                                        response.ok &&
+                                        data.ok === true
+                                ) {
+                                        lastServerSavedCode =
+                                                code;
+                                }
+
+                        }
+                        catch (error) {
+
+                                console.warn(
+                                        "서버 코드 자동저장 실패",
+                                        error
+                                );
+
+                        }
+                        finally {
+
+                                serverDraftSaving = false;
+                        }
+                }
+
+                setInterval(
+                        saveServerDraft,
+                        15000
+                );
 
 		// 제출 시 삭제
 		const solutionForm = document.getElementById("frmSolution");
