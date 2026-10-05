@@ -324,7 +324,9 @@ code {
   }
 
   #oj-main-menu > .left.menu {
+    width: auto;
     max-width: calc(100% - 54px);
+    margin-right: 54px;
   }
 
   #oj-main-menu .oj-mobile-menu-toggle {
@@ -338,11 +340,17 @@ code {
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    z-index: 1002;
   }
 
   #oj-main-menu .oj-mobile-menu-toggle .icon {
     margin: 0 !important;
     font-size: 1.3em;
+  }
+
+  #oj-main-menu:not(.mobile-open) #oj-main-nav {
+    display: none !important;
+    visibility: hidden !important;
   }
 
   #oj-main-nav {
@@ -355,6 +363,7 @@ code {
     max-height: calc(100vh - 49px);
     margin: 0 !important;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     background: #fff;
     box-shadow:
       0 3px 8px
@@ -364,6 +373,7 @@ code {
 
   #oj-main-menu.mobile-open #oj-main-nav {
     display: flex !important;
+    visibility: visible !important;
     flex-direction: column;
     align-items: stretch;
   }
@@ -374,6 +384,8 @@ code {
     width: 100%;
     min-height: 44px;
     margin: 0 !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
     justify-content: flex-start;
     border-top:
       1px solid
@@ -382,6 +394,10 @@ code {
 
   #oj-main-nav > .ui.dropdown.item {
     flex-wrap: wrap;
+  }
+
+  #oj-main-nav > .ui.dropdown.item > .menu > .item {
+    padding-left: 28px !important;
   }
 
   #oj-main-nav > .ui.dropdown.item > .menu {
