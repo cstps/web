@@ -72,7 +72,7 @@ $header_is_course_manage_page =
     <meta charset="utf-8">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
     <meta name="naver-site-verification" content="866e66a9030a529a02cccfa25e8268f6de840213" />
-    <meta name="viewport" content="width=device-width, initial-scale=0.65">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="online coding judge site for student">
     <!-- naver webmaster 24.10.15 -->
     <meta property="og:type" content="website">
@@ -89,7 +89,10 @@ $header_is_course_manage_page =
 </head>
 
 <body style="position: relative; margin-top: 49px; height: calc(100% - 49px); overflow-y: overlay; ">
-    <div class="ui fixed borderless menu" style="position: fixed; height: 49px; ">
+    <div
+        id="oj-main-menu"
+        class="ui fixed borderless menu"
+        style="position: fixed; height: 49px; ">
         <div class="left menu">
             <?php if (isset($_SESSION[$OJ_NAME . '_' . 'user_id'])) { ?>
                 <a href="/userinfo.php?user=<?php echo $_SESSION[$OJ_NAME . '_' . 'user_id'] ?>"
@@ -132,7 +135,21 @@ $header_is_course_manage_page =
                 </div>
             <?php } ?>
         </div>
-        <div class="ui container">
+
+        <a
+            href="#"
+            id="oj-mobile-menu-toggle"
+            class="item oj-mobile-menu-toggle"
+            role="button"
+            aria-controls="oj-main-nav"
+            aria-expanded="false"
+            aria-label="메뉴 열기">
+            <i class="bars icon"></i>
+        </a>
+
+        <div
+            id="oj-main-nav"
+            class="ui container">
             <!-- <a class="header item" href="/"><span style="font-family: 'Exo 2'; font-size: 1.5em; font-weight: 500; "><?php echo $domain == $DOMAIN ? $OJ_NAME : ucwords($OJ_NAME) . "'s OJ" ?></span></a>
                         -->
 
@@ -311,6 +328,61 @@ $header_is_course_manage_page =
                 ).dropdown({
                     on: 'click'
                 });
+
+                var $mainMenu =
+                    $('#oj-main-menu');
+
+                var $mobileToggle =
+                    $('#oj-mobile-menu-toggle');
+
+                $mobileToggle.on(
+                    'click',
+                    function(event) {
+                        event.preventDefault();
+
+                        $mainMenu.toggleClass(
+                            'mobile-open'
+                        );
+
+                        var isOpen =
+                            $mainMenu.hasClass(
+                                'mobile-open'
+                            );
+
+                        $mobileToggle.attr(
+                            'aria-expanded',
+                            isOpen ? 'true' : 'false'
+                        );
+
+                        $mobileToggle.attr(
+                            'aria-label',
+                            isOpen
+                                ? '메뉴 닫기'
+                                : '메뉴 열기'
+                        );
+                    }
+                );
+
+                $(window).on(
+                    'resize',
+                    function() {
+                        if (window.innerWidth > 767) {
+                            $mainMenu.removeClass(
+                                'mobile-open'
+                            );
+
+                            $mobileToggle.attr(
+                                'aria-expanded',
+                                'false'
+                            );
+
+                            $mobileToggle.attr(
+                                'aria-label',
+                                '메뉴 열기'
+                            );
+                        }
+                    }
+                );
             });
         </script>
     </div>

@@ -1,5 +1,5 @@
 <?php $show_title="에러메시지 - $OJ_NAME"; ?>
-<?php include("template/$OJ_TEMPLATE/header.php");?>
+<?php require_once(__DIR__ . "/../../oj-header.php"); ?>
 <div class="ui negative icon message">
   <i class="remove icon"></i>
   <div class="content">
@@ -14,4 +14,4 @@
   </div>
 </div>
 
-<?php include("template/$OJ_TEMPLATE/footer.php");?>
+<?php require_once(__DIR__ . "/../../oj-footer.php"); ?>

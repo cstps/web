@@ -302,3 +302,99 @@ code {
   padding-left: 0.8rem !important;
   padding-right: 0 !important;
 }
+
+
+/* =========================================================
+ * 1024.kr responsive main navigation
+ * ========================================================= */
+
+#oj-main-menu {
+  z-index: 1000;
+}
+
+#oj-main-menu .oj-mobile-menu-toggle {
+  display: none;
+}
+
+@media only screen and (max-width: 767px) {
+  #oj-main-menu {
+    width: 100%;
+    min-height: 49px;
+    height: 49px !important;
+  }
+
+  #oj-main-menu > .left.menu {
+    max-width: calc(100% - 54px);
+  }
+
+  #oj-main-menu .oj-mobile-menu-toggle {
+    display: flex !important;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 54px;
+    height: 49px;
+    margin: 0 !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  #oj-main-menu .oj-mobile-menu-toggle .icon {
+    margin: 0 !important;
+    font-size: 1.3em;
+  }
+
+  #oj-main-nav {
+    display: none !important;
+    position: fixed;
+    top: 49px;
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    max-height: calc(100vh - 49px);
+    margin: 0 !important;
+    overflow-y: auto;
+    background: #fff;
+    box-shadow:
+      0 3px 8px
+      rgba(0, 0, 0, 0.16);
+    z-index: 999;
+  }
+
+  #oj-main-menu.mobile-open #oj-main-nav {
+    display: flex !important;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #oj-main-nav > .item,
+  #oj-main-nav > .ui.dropdown.item {
+    display: flex !important;
+    width: 100%;
+    min-height: 44px;
+    margin: 0 !important;
+    justify-content: flex-start;
+    border-top:
+      1px solid
+      rgba(34, 36, 38, 0.08);
+  }
+
+  #oj-main-nav > .ui.dropdown.item {
+    flex-wrap: wrap;
+  }
+
+  #oj-main-nav > .ui.dropdown.item > .menu {
+    position: static !important;
+    width: 100%;
+    min-width: 0 !important;
+    margin-top: 0 !important;
+    box-shadow: none !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+  }
+
+  #oj-main-nav #back_to_contest {
+    white-space: normal;
+  }
+}

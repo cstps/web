@@ -1,10 +1,10 @@
 <?php
         require_once("discuss_func.inc.php");
         require_once("include/db_info.inc.php");
+        require_once("include/setlang.php");
         if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
-                require_once("oj-header.php");
-                echo "<a href=loginpage.php>Please Login First</a>";
-                require_once("../oj-footer.php");
+                $view_errors = $MSG_Login;
+                require("template/".$OJ_TEMPLATE."/error.php");
                 exit(0);
         }
 
@@ -12,9 +12,15 @@
                 isset($_POST['content']) &&
                 strlen((string)$_POST['content']) > 5000
         ) {
-                require_once("oj-header.php");
-                echo "내용은 5000자를 초과할 수 없습니다.";
-                require_once("../oj-footer.php");
+                $view_errors =
+                        "내용은 5000자를 초과할 수 없습니다.";
+
+                require(
+                        "template/" .
+                        $OJ_TEMPLATE .
+                        "/error.php"
+                );
+
                 exit(0);
         }
 
@@ -25,9 +31,15 @@
                         'UTF-8'
                 ) > 60
         ) {
-                require_once("oj-header.php");
-                echo "제목은 60자를 초과할 수 없습니다.";
-                require_once("../oj-footer.php");
+                $view_errors =
+                        "제목은 60자를 초과할 수 없습니다.";
+
+                require(
+                        "template/" .
+                        $OJ_TEMPLATE .
+                        "/error.php"
+                );
+
                 exit(0);
         }
 
@@ -326,11 +338,19 @@
                                         exit(0);
                                 }
                                 else {
-                                        echo '답글 등록에 실패했습니다.';
+                                        $view_errors =
+                                                '답글 등록에 실패했습니다.';
+
+                                        require(
+                                                "template/" .
+                                                $OJ_TEMPLATE .
+                                                "/error.php"
+                                        );
+
+                                        exit(0);
                                 }
                         }
                 }
         }
 
-        require_once("../oj-footer.php");
 ?>
