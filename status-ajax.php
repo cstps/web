@@ -109,20 +109,6 @@ if (count($result)>0) {
 
                 $res = intval($row['result']);
 
-                // 수행모드 학생의 정식 제출에서는
-                // 컴파일 오류(CE)만 이 경로에서 허용한다.
-                // RE는 reinfo.php에서 안전하게 정제하여 제공하고,
-                // WA 상세정보는 정답 유출 방지를 위해 차단한다.
-                if (
-                        $is_course_performance_student &&
-                        $solution_problem_id > 0 &&
-                        $res != 11
-                ) {
-                        http_response_code(403);
-                        echo "수행모드에서는 상세 실행정보를 볼 수 없습니다.";
-                        exit(0);
-                }
-
 		if ($res==11) {
 			$sql = "SELECT `error` FROM `compileinfo` WHERE `solution_id`=?";
 		}

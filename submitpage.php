@@ -178,7 +178,9 @@ if (isset($_GET['sid'])) {
                 user_id,
                 problem_id,
                 COALESCE(contest_id, 0) AS contest_id,
-                language
+                language,
+                result,
+                in_date
 
              FROM solution
 
@@ -217,6 +219,15 @@ if (isset($_GET['sid'])) {
 
     $language_num =
         intval($solution_row['language']);
+
+    $solution_result =
+        intval($solution_row['result']);
+
+    $solution_in_date =
+        isset($solution_row['in_date'])
+            ? (string)$solution_row['in_date']
+            : '';
+
 
 
     // --------------------------------------------------------
@@ -263,26 +274,108 @@ if (isset($_GET['sid'])) {
 
 
     // --------------------------------------------------------
-    // Course 수행모드 학생의 기존 제출 소스 재사용 차단
-    //
-    // 수행모드 중에는 본인 제출이라도 sid를 이용하여
-    // 과거 제출 코드를 다시 불러올 수 없다.
-    // source_browser 권한은 기존대로 허용한다.
-    // --------------------------------------------------------
+// Course 수행모드 학생의 제출 소스 재사용 제한
+//
+// 수행모드 시작 전 제출:
+//   기존 코드이므로 열람/재사용 금지
+//
+// 수행모드 시작 후 제출:
+//   해당 문제를 아직 통과하지 않았다면
+//   미통과 제출 코드는 수정·재제출 가능
+//
+// 해당 수행모드에서 문제를 한 번이라도 Accepted(result=4)하면
+// 이전 미통과 제출까지 모두 다시 불러올 수 없다.
+//
+// source_browser 권한은 기존대로 허용한다.
+// --------------------------------------------------------
 
     $is_course_performance_student =
         course_should_restrict_student_history(
             $session_user_id
         );
 
+    $performance_cutoff =
+        course_get_user_performance_cutoff(
+            $session_user_id
+        );
+
+    $is_pre_performance_solution =
+        (
+            $performance_cutoff === null ||
+            $solution_in_date === '' ||
+            course_should_restrict_student_record(
+                $session_user_id,
+                $solution_in_date
+            )
+        );
+
+    $has_performance_accepted =
+        false;
+
     if (
         $is_source_owner &&
         $is_course_performance_student &&
-        !$has_source_browser
+        !$has_source_browser &&
+        $performance_cutoff !== null
     ) {
+        if ($solution_contest_id > 0) {
+            $accepted_rows =
+                pdo_query(
+                    "SELECT solution_id
+                     FROM solution
+                     WHERE user_id=?
+                       AND problem_id=?
+                       AND contest_id=?
+                       AND result=4
+                       AND in_date>=?
+                     LIMIT 1",
+                    $session_user_id,
+                    $sproblem_id,
+                    $solution_contest_id,
+                    $performance_cutoff
+                );
+        }
+        else {
+            $accepted_rows =
+                pdo_query(
+                    "SELECT solution_id
+                     FROM solution
+                     WHERE user_id=?
+                       AND problem_id=?
+                       AND (contest_id=0 OR contest_id IS NULL)
+                       AND result=4
+                       AND in_date>=?
+                     LIMIT 1",
+                    $session_user_id,
+                    $sproblem_id,
+                    $performance_cutoff
+                );
+        }
 
-        $view_errors =
-            "<h2>수행모드에서는 기존 제출 코드를 불러올 수 없습니다.</h2>";
+        $has_performance_accepted =
+            (
+                $accepted_rows &&
+                count($accepted_rows) > 0
+            );
+    }
+
+    if (
+        $is_source_owner &&
+        $is_course_performance_student &&
+        !$has_source_browser &&
+        (
+            $is_pre_performance_solution ||
+            $has_performance_accepted
+        )
+    ) {
+        if ($has_performance_accepted) {
+            $view_errors =
+                "<h2>수행모드에서는 통과한 문제의 코드를 다시 수정할 수 없습니다.</h2>";
+        }
+        else {
+            $view_errors =
+                "<h2>수행모드에서는 기존 제출 코드를 불러올 수 없습니다.</h2>";
+        }
 
         require(
             "template/".

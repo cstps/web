@@ -124,26 +124,6 @@ if (
     exit(0);
 }
 
-// 수행모드에서는 일반 상세 채점정보를 숨긴다.
-// 단, 본인의 실행 오류(RE)는 오류 종류와 메시지만 안전하게 보여준다.
-// 서버 경로, 소스코드 줄, 테스트 데이터 정보는 노출하지 않는다.
-if (
-    $is_course_performance_student &&
-    !($is_own_solution && $isRE)
-) {
-    $view_errors =
-        "<h2>수행모드에서는 상세 실행정보를 볼 수 없습니다.</h2>".
-        "<p>채점 결과는 제출 현황에서 확인할 수 있습니다.</p>";
-
-    require(
-        "template/".
-        $OJ_TEMPLATE.
-        "/error.php"
-    );
-
-    exit(0);
-}
-
 if (
     (
         isset($_SESSION[$OJ_NAME.'_'.'user_id']) &&

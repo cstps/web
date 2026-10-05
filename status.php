@@ -924,6 +924,50 @@ __dbg_headers_log('before-list-loop');
 
 
 // ============================================================
+// ============================================================
+// 수행모드에서 이미 통과한 문제 목록
+//
+// 해당 문제를 한 번이라도 Accepted(result=4)하면
+// 이전 미통과 제출에서도 [코드수정]을 제공하지 않는다.
+// ============================================================
+
+$performance_accepted_problem_map = array();
+
+if (
+    $is_course_performance_student &&
+    !$is_performance_status_privileged &&
+    $performance_status_cutoff !== null &&
+    $current_user !== ''
+) {
+    $accepted_rows =
+        pdo_query(
+            "SELECT DISTINCT
+                COALESCE(contest_id, 0) AS contest_id,
+                problem_id
+             FROM solution
+             WHERE user_id=?
+               AND problem_id>0
+               AND result=4
+               AND in_date>=?",
+            $current_user,
+            $performance_status_cutoff
+        );
+
+    if ($accepted_rows) {
+        foreach ($accepted_rows as $accepted_row) {
+            $accepted_key =
+                intval($accepted_row['contest_id']).
+                ':'.
+                intval($accepted_row['problem_id']);
+
+            $performance_accepted_problem_map[
+                $accepted_key
+            ] = true;
+        }
+    }
+}
+
+
 // Status 목록
 // ============================================================
 
@@ -1624,6 +1668,65 @@ for (
 
             $view_status[$i][3] =
                 "----";
+        }
+    }
+
+
+    // ========================================================
+    // 수행모드 전용 코드수정
+    //
+    // 현재 수행 중 본인의 미통과 제출은 다시 수정할 수 있다.
+    // 해당 문제를 한 번이라도 통과하면 모든 코드수정 링크를 숨긴다.
+    // ========================================================
+
+    if (
+        $is_course_performance_student &&
+        !$is_performance_status_privileged &&
+        $is_owner &&
+        intval($row['problem_id']) > 0 &&
+        intval($row['result']) != 4
+    ) {
+        $performance_problem_key =
+            $row_contest_id.
+            ':'.
+            intval($row['problem_id']);
+
+        $has_problem_accepted =
+            isset(
+                $performance_accepted_problem_map[
+                    $performance_problem_key
+                ]
+            );
+
+        if (!$has_problem_accepted) {
+
+            if ($row_contest_id > 0) {
+                $edit_url =
+                    "submitpage.php?cid=".
+                    intval($row['contest_id']).
+                    "&pid=".
+                    intval($row['num']).
+                    "&sid=".
+                    intval($row['solution_id']);
+            }
+            else {
+                $edit_url =
+                    "submitpage.php?id=".
+                    intval($row['problem_id']).
+                    "&sid=".
+                    intval($row['solution_id']);
+            }
+
+            $view_status[$i][3] .=
+                " <a href=\"".
+                htmlspecialchars(
+                    $edit_url,
+                    ENT_QUOTES,
+                    'UTF-8'
+                ).
+                "\" class=\"label label-info\">".
+                "코드수정".
+                "</a>";
         }
     }
 
