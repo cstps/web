@@ -472,12 +472,57 @@ if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
 }
 
 // (10) 제출간격 제한
+//
+// 시험 실행과 최종 제출은 서로 다른 요청으로 취급한다.
+// - 시험 실행 직후 최종 제출: 허용
+// - 최종 제출 직후 시험 실행: 허용
+// - 시험 실행 연속 요청: 5초 제한
+// - 최종 제출 연속 요청: 5초 제한
 if (!$OJ_BENCHMARK_MODE) {
-    $submit_interval_cutoff = strftime("%Y-%m-%d %X", time() - 5);
-    $res = pdo_query("SELECT `in_date` FROM `solution` WHERE `user_id`=? AND in_date>? ORDER BY `in_date` DESC LIMIT 1", $user_id, $submit_interval_cutoff);
+    $submit_interval_cutoff =
+        strftime(
+            "%Y-%m-%d %X",
+            time() - 5
+        );
+
+    if ($test_run) {
+        $res =
+            pdo_query(
+                "SELECT `in_date`
+                 FROM `solution`
+                 WHERE `user_id`=?
+                   AND `problem_id`=0
+                   AND `in_date`>?
+                 ORDER BY `in_date` DESC
+                 LIMIT 1",
+                $user_id,
+                $submit_interval_cutoff
+            );
+    }
+    else {
+        $res =
+            pdo_query(
+                "SELECT `in_date`
+                 FROM `solution`
+                 WHERE `user_id`=?
+                   AND `problem_id`<>0
+                   AND `in_date`>?
+                 ORDER BY `in_date` DESC
+                 LIMIT 1",
+                $user_id,
+                $submit_interval_cutoff
+            );
+    }
+
     if ($res && count($res) == 1) {
-        $view_errors = $MSG_BREAK_TIME . "<br>";
-        require "template/" . $OJ_TEMPLATE . "/error.php";
+        $view_errors =
+            $MSG_BREAK_TIME . "<br>";
+
+        require
+            "template/" .
+            $OJ_TEMPLATE .
+            "/error.php";
+
         exit(0);
     }
 }
