@@ -791,12 +791,12 @@
 		?>
                 <?php
                 if (
-                        isset($is_course_performance_student) &&
-                        $is_course_performance_student
+                        isset($view_block_code_clipboard) &&
+                        $view_block_code_clipboard
                 ) {
                 ?>
                         // ====================================================
-                        // 수행모드 코드 복사/붙여넣기 차단
+                        // 수행모드 / Course 복붙금지모드 코드 복사·붙여넣기 차단
                         // ====================================================
 
                         (function() {

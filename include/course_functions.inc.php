@@ -185,6 +185,107 @@ function course_is_active_student($course_id) {
 
 
 // ============================================================
+// Course 코드 입력 보안 적용 여부
+//
+// 적용 우선순위:
+//
+// 1. 수행모드 학생
+//    → Course 개별 설정과 관계없이 항상 차단
+//
+// 2. 일반 Course 차시
+//    → course.block_code_clipboard = 1
+//    → 해당 Course의 활성 수강생
+//    → 복사/붙여넣기 차단
+//
+// 일반 문제(problem.php?id=...)처럼 contest_id가 없는 경우에는
+// Course를 특정할 수 없으므로 일반모드에서는 적용하지 않는다.
+// ============================================================
+
+function course_should_block_code_clipboard(
+    $user_id,
+    $contest_id
+) {
+
+    $user_id =
+        trim((string)$user_id);
+
+    $contest_id =
+        intval($contest_id);
+
+
+    if ($user_id === '') {
+        return false;
+    }
+
+
+    // 수행모드는 항상 강제 차단한다.
+    if (
+        course_is_user_in_performance_mode(
+            $user_id
+        )
+    ) {
+        return true;
+    }
+
+
+    // 일반 문제는 Course를 특정할 수 없다.
+    if ($contest_id <= 0) {
+        return false;
+    }
+
+
+    $rows =
+        pdo_query(
+            "SELECT
+                cc.course_id,
+                c.block_code_clipboard
+             FROM course_contest cc
+             INNER JOIN course c
+                ON c.course_id = cc.course_id
+             WHERE cc.contest_id = ?
+               AND cc.status = 1
+               AND c.status = 1
+             LIMIT 1",
+            $contest_id
+        );
+
+
+    if (
+        !$rows ||
+        !isset($rows[0]['course_id'])
+    ) {
+        return false;
+    }
+
+
+    $course_id =
+        intval(
+            $rows[0]['course_id']
+        );
+
+    $block_code_clipboard =
+        isset(
+            $rows[0]['block_code_clipboard']
+        )
+            ? intval(
+                $rows[0]['block_code_clipboard']
+            )
+            : 0;
+
+
+    if ($block_code_clipboard !== 1) {
+        return false;
+    }
+
+
+    return course_is_active_student_user(
+        $course_id,
+        $user_id
+    );
+}
+
+
+// ============================================================
 // 지정한 학생에게 현재 적용 중인 Course 수행평가 세션 조회
 //
 // 적용 조건:
