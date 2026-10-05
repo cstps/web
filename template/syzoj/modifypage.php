@@ -1,7 +1,6 @@
 <?php include("template/$OJ_TEMPLATE/header.php"); ?>
 
 <link rel="stylesheet" href="<?php echo $OJ_CDN_URL . $path_fix . "template/$OJ_TEMPLATE/js/" ?>/jquery-ui.css">
-<script src="<?php echo $OJ_CDN_URL . $path_fix . "template/$OJ_TEMPLATE/js/" ?>/jquery-3.6.0.min.js"></script>
 <script src="<?php echo $OJ_CDN_URL . $path_fix . "template/$OJ_TEMPLATE/js/" ?>/jquery-ui.min.js"></script>
 
 <!-- jQuery UI Autocomplete -->
