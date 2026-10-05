@@ -53,6 +53,17 @@ $new_status =
         : -1;
 
 
+
+$return_to =
+    isset($_POST['return_to'])
+        ? trim((string)$_POST['return_to'])
+        : '';
+
+$return_url =
+    ($return_to === 'course_list')
+        ? '/course_list.php'
+        : '/course_view.php?course_id='.$course_id;
+
 // ============================================================
 // 4. 기본값 검증
 // ============================================================
@@ -138,9 +149,7 @@ $current_status =
 
 if ($current_status === $new_status) {
 
-    header(
-        "Location: course_view.php?course_id=".$course_id
-    );
+    header("Location: ".$return_url);
 
     exit(0);
 }
@@ -454,8 +463,6 @@ elseif ($new_status === 1) {
 // 11. Course 화면으로 복귀
 // ============================================================
 
-header(
-    "Location: course_view.php?course_id=".$course_id
-);
+header("Location: ".$return_url);
 
 exit(0);

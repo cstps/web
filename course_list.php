@@ -62,6 +62,7 @@ if ($is_admin) {
             c.semester,
             c.description,
             c.status,
+            c.block_code_clipboard,
             c.created_by,
             c.created_at,
             c.updated_at,
@@ -88,7 +89,14 @@ if ($is_admin) {
                 WHERE cc.course_id = c.course_id
                   AND cc.status = 1
                   AND cc.visible = 1
-            ) AS visible_contest_count
+            ) AS visible_contest_count,
+
+            (
+                SELECT COUNT(*)
+                FROM course_performance_session cps
+                WHERE cps.course_id = c.course_id
+                  AND cps.status = 1
+            ) AS performance_session_count
 
         FROM course c
 
@@ -117,6 +125,7 @@ if ($is_admin) {
             c.semester,
             c.description,
             c.status,
+            c.block_code_clipboard,
             c.created_by,
             c.created_at,
             c.updated_at,
@@ -143,7 +152,14 @@ if ($is_admin) {
                 WHERE cc.course_id = c.course_id
                   AND cc.status = 1
                   AND cc.visible = 1
-            ) AS visible_contest_count
+            ) AS visible_contest_count,
+
+            (
+                SELECT COUNT(*)
+                FROM course_performance_session cps
+                WHERE cps.course_id = c.course_id
+                  AND cps.status = 1
+            ) AS performance_session_count
 
         FROM course c
 
@@ -172,6 +188,15 @@ if ($is_admin) {
 if (!is_array($view_courses)) {
     $view_courses = array();
 }
+
+
+// ============================================================
+// Course 관리 POST 폼용 CSRF
+// ============================================================
+
+ob_start();
+include("./csrf.php");
+$view_csrf_input = ob_get_clean();
 
 
 // ============================================================

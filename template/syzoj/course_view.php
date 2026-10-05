@@ -96,393 +96,6 @@ include("template/$OJ_TEMPLATE/header.php");
     <?php
     }
     ?>
-    <div class="course-actions">
-
-        <a
-            class="ui blue button"
-            href="course_students.php?course_id=<?php echo intval($course_id); ?>"
-        >
-            <i class="users icon"></i>
-
-            <?php
-            if ($view_can_manage_students) {
-                echo '학생 관리';
-            }
-            else {
-                echo '학생 보기';
-            }
-            ?>
-        </a>
-
-
-
-        <?php
-        if ($view_can_manage_teachers) {
-        ?>
-
-            <a
-                class="ui teal basic button"
-                href="course_teachers.php?course_id=<?php echo intval($course_id); ?>"
-            >
-                <i class="user tie icon"></i>
-                교사 관리
-            </a>
-
-        <?php
-        }
-        ?>
-        <?php
-        if ($view_can_manage_contests) {
-        ?>
-
-            <a
-                class="ui blue basic button"
-                href="course_code_monitor.php?course_id=<?php
-                    echo intval($course_id);
-                ?>"
-            >
-                <i class="code icon"></i>
-                학생 코드 모니터링
-            </a>
-
-        <?php
-        }
-        ?>
-
-
-        <?php
-        if ($view_can_edit) {
-        ?>
-
-            <a
-                class="ui basic button"
-                href="course_edit.php?course_id=<?php echo intval($course_id); ?>"
-            >
-                <i class="edit icon"></i>
-                수업 정보 수정
-            </a>
-
-        <?php
-        }
-        ?>
-        <?php
-        if ($view_can_edit) {
-        ?>
-
-            <form
-                method="post"
-                action="course_status.php"
-                style="display:inline;"
-                onsubmit="return confirm(
-                    '<?php
-                    if (intval($view_course['status']) === 1) {
-                        echo '이 수업을 종료하시겠습니까?';
-                    }
-                    else {
-                        echo '이 수업을 다시 시작하시겠습니까?';
-                    }
-                    ?>'
-                );"
-            >
-
-                <?php echo $view_csrf_input; ?>
-
-                <input
-                    type="hidden"
-                    name="course_id"
-                    value="<?php echo intval($course_id); ?>"
-                >
-
-                <?php
-                if (intval($view_course['status']) === 1) {
-                ?>
-
-                    <input
-                        type="hidden"
-                        name="status"
-                        value="0"
-                    >
-
-                    <button
-                        type="submit"
-                        class="ui red basic button"
-                    >
-                        <i class="stop icon"></i>
-                        수업 종료
-                    </button>
-
-                <?php
-                }
-                else {
-                ?>
-
-                    <input
-                        type="hidden"
-                        name="status"
-                        value="1"
-                    >
-
-                    <button
-                        type="submit"
-                        class="ui green basic button"
-                    >
-                        <i class="play icon"></i>
-                        수업 재개
-                    </button>
-
-                <?php
-                }
-                ?>
-
-            </form>
-
-        <?php
-        }
-        ?>
-    </div>
-
-
-    <!-- ======================================================
-    Course 수행모드
-    ====================================================== -->
-
-    <div class="ui segment">
-
-        <div
-            class="ui stackable grid middle aligned"
-            style="margin:0;"
-        >
-
-            <div class="ten wide column">
-
-                <h3
-                    class="ui header"
-                    style="margin-top:0;"
-                >
-                    <i class="shield alternate icon"></i>
-
-                    <div class="content">
-                        수행모드
-
-                        <div class="sub header">
-                            활성 수강생의 기존 제출 코드와
-                            문제 해결 과정 열람을 제한합니다.
-                        </div>
-                    </div>
-                </h3>
-
-
-                <?php
-                if (
-                    isset($view_performance_session) &&
-                    is_array($view_performance_session)
-                ) {
-                ?>
-
-                    <div class="ui red message">
-
-                        <div class="header">
-                            수행모드가 진행 중입니다.
-                        </div>
-
-                        <div
-                            style="margin-top:0.6rem;"
-                        >
-                            대상 학생:
-                            활성 수강생
-                            <?php
-                            echo intval(
-                                $view_student_count
-                            );
-                            ?>명
-                        </div>
-
-                        <div>
-                            시작 시각:
-                            <?php
-                            echo htmlspecialchars(
-                                isset(
-                                    $view_performance_session[
-                                        'started_at'
-                                    ]
-                                )
-                                    ? $view_performance_session[
-                                        'started_at'
-                                    ]
-                                    : '',
-                                ENT_QUOTES,
-                                'UTF-8'
-                            );
-                            ?>
-                        </div>
-
-                        <div>
-                            시작 사용자:
-                            <?php
-                            echo htmlspecialchars(
-                                isset(
-                                    $view_performance_session[
-                                        'started_by'
-                                    ]
-                                )
-                                    ? $view_performance_session[
-                                        'started_by'
-                                    ]
-                                    : '',
-                                ENT_QUOTES,
-                                'UTF-8'
-                            );
-                            ?>
-                        </div>
-
-                    </div>
-
-                <?php
-                }
-                else {
-                ?>
-
-                    <div class="ui message">
-
-                        현재 수행모드를 사용하고 있지 않습니다.
-
-                        <div
-                            style="margin-top:0.5rem;"
-                        >
-                            대상 학생:
-                            활성 수강생
-                            <?php
-                            echo intval(
-                                $view_student_count
-                            );
-                            ?>명
-                        </div>
-
-                    </div>
-
-                <?php
-                }
-                ?>
-
-            </div>
-
-
-            <div
-                class="six wide column right aligned"
-            >
-
-                <?php
-                if ($view_can_manage_performance) {
-
-                    if (
-                        isset($view_performance_session) &&
-                        is_array($view_performance_session)
-                    ) {
-                ?>
-
-                        <form
-                            method="post"
-                            action="/course_performance_end.php"
-                            style="display:inline;"
-                            onsubmit="return confirm(
-                                '현재 수행모드를 종료하시겠습니까?'
-                            );"
-                        >
-
-                            <?php echo $view_csrf_input; ?>
-
-                            <input
-                                type="hidden"
-                                name="course_id"
-                                value="<?php
-                                    echo intval(
-                                        $course_id
-                                    );
-                                ?>"
-                            >
-
-                            <button
-                                type="submit"
-                                class="ui red button"
-                            >
-                                <i class="stop icon"></i>
-                                수행모드 종료
-                            </button>
-
-                        </form>
-
-                <?php
-                    }
-                    elseif (
-                        intval($view_course['status']) === 1
-                    ) {
-                ?>
-
-                        <form
-                            method="post"
-                            action="/course_performance_start.php"
-                            style="display:inline;"
-                            onsubmit="return confirm(
-                                '이 수업의 활성 학생 전체를 수행모드로 전환하시겠습니까?'
-                            );"
-                        >
-
-                            <?php echo $view_csrf_input; ?>
-
-                            <input
-                                type="hidden"
-                                name="course_id"
-                                value="<?php
-                                    echo intval(
-                                        $course_id
-                                    );
-                                ?>"
-                            >
-
-                            <button
-                                type="submit"
-                                class="ui orange button"
-                            >
-                                <i class="play icon"></i>
-                                수행모드 시작
-                            </button>
-
-                        </form>
-
-                <?php
-                    }
-                    else {
-                ?>
-
-                        <span
-                            class="ui grey basic label"
-                        >
-                            종료된 수업에서는 시작할 수 없습니다.
-                        </span>
-
-                <?php
-                    }
-                }
-                else {
-                ?>
-
-                    <span
-                        class="ui grey basic label"
-                    >
-                        수행모드 관리 권한이 없습니다.
-                    </span>
-
-                <?php
-                }
-                ?>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
     <!-- ======================================================
     요약
     ====================================================== -->
@@ -767,25 +380,71 @@ include("template/$OJ_TEMPLATE/header.php");
 
                     <td>
                         <?php
-                        echo htmlspecialchars(
+                        $start_time_text =
                             isset($contest['start_time'])
-                                ? $contest['start_time']
-                                : '',
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
+                                ? (string)$contest['start_time']
+                                : '';
+
+                        if ($start_time_text !== '') {
+                            $start_parts =
+                                explode(' ', $start_time_text, 2);
+
+                            echo htmlspecialchars(
+                                isset($start_parts[0])
+                                    ? $start_parts[0]
+                                    : '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+
+                            if (
+                                isset($start_parts[1]) &&
+                                $start_parts[1] !== ''
+                            ) {
+                                echo '<br>';
+
+                                echo htmlspecialchars(
+                                    $start_parts[1],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                            }
+                        }
                         ?>
                     </td>
 
                     <td>
                         <?php
-                        echo htmlspecialchars(
+                        $end_time_text =
                             isset($contest['end_time'])
-                                ? $contest['end_time']
-                                : '',
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
+                                ? (string)$contest['end_time']
+                                : '';
+
+                        if ($end_time_text !== '') {
+                            $end_parts =
+                                explode(' ', $end_time_text, 2);
+
+                            echo htmlspecialchars(
+                                isset($end_parts[0])
+                                    ? $end_parts[0]
+                                    : '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+
+                            if (
+                                isset($end_parts[1]) &&
+                                $end_parts[1] !== ''
+                            ) {
+                                echo '<br>';
+
+                                echo htmlspecialchars(
+                                    $end_parts[1],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                            }
+                        }
                         ?>
                     </td>
                     <td class="center aligned">

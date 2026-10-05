@@ -57,6 +57,7 @@ $course_rows = pdo_query(
         semester,
         description,
         status,
+        block_code_clipboard,
         created_by,
         created_at,
         updated_at
@@ -104,20 +105,8 @@ $view_course_role =
 // 5. 기능별 권한
 // ============================================================
 
-$view_can_edit =
-    course_can_edit($course_id);
-
-$view_can_manage_teachers =
-    course_can_manage_teachers($course_id);
-
-$view_can_manage_students =
-    course_can_manage_students($course_id);
-
 $view_can_manage_contests =
     course_can_manage_contests($course_id);
-
-$view_can_manage_performance =
-    course_can_manage_performance($course_id);
 
 
 // ============================================================

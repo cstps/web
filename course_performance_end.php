@@ -71,6 +71,17 @@ if ($course_id <= 0) {
 }
 
 
+
+$return_to =
+    isset($_POST['return_to'])
+        ? trim((string)$_POST['return_to'])
+        : '';
+
+$return_url =
+    ($return_to === 'course_list')
+        ? '/course_list.php'
+        : '/course_view.php?course_id='.$course_id;
+
 // ============================================================
 // 4. Course 존재 확인
 //
@@ -158,9 +169,6 @@ if (!$result) {
 // 7. Course 화면으로 복귀
 // ============================================================
 
-header(
-    'Location: /course_view.php?course_id='.
-    intval($course_id)
-);
+header("Location: ".$return_url);
 
 exit;

@@ -93,6 +93,41 @@ include("template/$OJ_TEMPLATE/header.php");
                         ? intval($course['visible_contest_count'])
                         : 0;
 
+                $clipboard_block_enabled =
+                    isset($course['block_code_clipboard']) &&
+                    intval($course['block_code_clipboard']) === 1;
+
+                $performance_mode_enabled =
+                    isset($course['performance_session_count']) &&
+                    intval($course['performance_session_count']) > 0;
+
+                // --------------------------------------------
+                // Course 역할별 관리 권한
+                // --------------------------------------------
+
+                $can_edit_course =
+                    (
+                        $course_role === 'administrator' ||
+                        $course_role === 'owner'
+                    );
+
+                $can_manage_teachers =
+                    $can_edit_course;
+
+                $can_manage_students =
+                    (
+                        $course_role === 'administrator' ||
+                        $course_role === 'owner' ||
+                        $course_role === 'teacher'
+                    );
+
+                $can_manage_contests =
+                    $can_manage_students;
+
+                $can_manage_performance =
+                    $can_manage_students;
+
+
                 $hidden_contest_count =
                     max(
                         0,
@@ -335,8 +370,305 @@ include("template/$OJ_TEMPLATE/header.php");
                                 class="ui small blue button"
                                 href="course_view.php?course_id=<?php echo $course_id; ?>"
                             >
+                                <i class="eye icon"></i>
                                 수업 보기
                             </a>
+
+
+                            <?php
+                            if ($can_manage_students) {
+                            ?>
+
+                                <a
+                                    class="ui small blue basic button"
+                                    href="course_students.php?course_id=<?php echo $course_id; ?>"
+                                >
+                                    <i class="users icon"></i>
+                                    학생 관리
+                                </a>
+
+                            <?php
+                            }
+                            ?>
+
+
+                            <?php
+                            if ($can_manage_teachers) {
+                            ?>
+
+                                <a
+                                    class="ui small teal basic button"
+                                    href="course_teachers.php?course_id=<?php echo $course_id; ?>"
+                                >
+                                    <i class="user tie icon"></i>
+                                    교사 관리
+                                </a>
+
+                            <?php
+                            }
+                            ?>
+
+
+                            <?php
+                            if ($can_manage_contests) {
+                            ?>
+
+                                <a
+                                    class="ui small basic button"
+                                    href="course_code_monitor.php?course_id=<?php echo $course_id; ?>"
+                                    title="이 수업 학생들의 작성 중인 코드를 확인합니다."
+                                >
+                                    <i class="code icon"></i>
+                                    학생 코드 모니터링
+                                </a>
+
+                            <?php
+                            }
+                            ?>
+
+
+                            <?php
+                            if ($can_edit_course) {
+                            ?>
+
+                                <a
+                                    class="ui small basic button"
+                                    href="course_edit.php?course_id=<?php echo $course_id; ?>"
+                                >
+                                    <i class="edit icon"></i>
+                                    수업 정보 수정
+                                </a>
+
+                            <?php
+                            }
+                            ?>
+
+
+                            <?php
+                            if ($can_manage_performance) {
+                            ?>
+
+                                <form
+                                    method="post"
+                                    action="course_clipboard_setting.php"
+                                    style="display:inline;"
+                                >
+
+                                    <?php echo $view_csrf_input; ?>
+
+                                    <input
+                                        type="hidden"
+                                        name="course_id"
+                                        value="<?php echo $course_id; ?>"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="return_to"
+                                        value="course_list"
+                                    >
+                                    <input
+                                        type="hidden"
+                                        name="block_code_clipboard"
+                                        value="<?php
+                                        echo $clipboard_block_enabled
+                                            ? '0'
+                                            : '1';
+                                        ?>"
+                                    >
+
+                                    <button
+                                        type="submit"
+                                        class="ui small <?php
+                                        echo $clipboard_block_enabled
+                                            ? 'orange'
+                                            : 'basic';
+                                        ?> button"
+                                        title="<?php
+                                        echo $clipboard_block_enabled
+                                            ? '활성화됨: 복사, 잘라내기, 붙여넣기, 드래그앤드롭을 제한합니다.'
+                                            : '클릭하면 이 수업의 코드 작성 화면에서 복사·붙여넣기를 제한합니다.';
+                                        ?>"
+                                        onclick="return confirm(
+                                            '<?php
+                                            echo $clipboard_block_enabled
+                                                ? '복붙금지모드를 해제하시겠습니까?'
+                                                : '복붙금지모드를 활성화하시겠습니까?';
+                                            ?>'
+                                        );"
+                                    >
+                                        <i class="<?php
+                                        echo $clipboard_block_enabled
+                                            ? 'lock'
+                                            : 'unlock';
+                                        ?> icon"></i>
+
+                                        복붙금지모드:
+                                        <?php
+                                        echo $clipboard_block_enabled
+                                            ? 'ON'
+                                            : 'OFF';
+                                        ?>
+                                    </button>
+
+                                </form>
+
+                            <?php
+                            }
+                            ?>
+
+
+                            <?php
+                            if ($can_manage_performance) {
+
+                                if ($performance_mode_enabled) {
+                            ?>
+
+                                    <form
+                                        method="post"
+                                        action="/course_performance_end.php"
+                                        style="display:inline;"
+                                        onsubmit="return confirm(
+                                            '현재 수행모드를 종료하시겠습니까?'
+                                        );"
+                                    >
+
+                                        <?php echo $view_csrf_input; ?>
+
+                                        <input
+                                            type="hidden"
+                                            name="course_id"
+                                            value="<?php echo $course_id; ?>"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="return_to"
+                                        value="course_list"
+                                    >
+
+                                        <button
+                                            type="submit"
+                                            class="ui small red button"
+                                            title="수행모드 진행 중: 기존 제출·해결과정 열람과 코드 복사·붙여넣기를 제한합니다."
+                                        >
+                                            <i class="shield alternate icon"></i>
+                                            수행모드: ON
+                                        </button>
+
+                                    </form>
+
+                            <?php
+                                }
+                                elseif ($course_status === 1) {
+                            ?>
+
+                                    <form
+                                        method="post"
+                                        action="/course_performance_start.php"
+                                        style="display:inline;"
+                                        onsubmit="return confirm(
+                                            '이 수업의 활성 학생 전체를 수행모드로 전환하시겠습니까?'
+                                        );"
+                                    >
+
+                                        <?php echo $view_csrf_input; ?>
+
+                                        <input
+                                            type="hidden"
+                                            name="course_id"
+                                            value="<?php echo $course_id; ?>"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="return_to"
+                                        value="course_list"
+                                    >
+
+                                        <button
+                                            type="submit"
+                                            class="ui small basic button"
+                                            title="활성 수강생의 기존 제출·해결과정 열람과 코드 복사·붙여넣기를 제한합니다."
+                                        >
+                                            <i class="shield alternate icon"></i>
+                                            수행모드: OFF
+                                        </button>
+
+                                    </form>
+
+                            <?php
+                                }
+                            }
+                            ?>
+
+
+                            <?php
+                            if ($can_edit_course) {
+                            ?>
+
+                                <form
+                                    method="post"
+                                    action="course_status.php"
+                                    style="display:inline;"
+                                    onsubmit="return confirm(
+                                        '<?php
+                                        echo $course_status === 1
+                                            ? '이 수업을 종료하시겠습니까?'
+                                            : '이 수업을 다시 시작하시겠습니까?';
+                                        ?>'
+                                    );"
+                                >
+
+                                    <?php echo $view_csrf_input; ?>
+
+                                    <input
+                                        type="hidden"
+                                        name="course_id"
+                                        value="<?php echo $course_id; ?>"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="return_to"
+                                        value="course_list"
+                                    >
+                                    <input
+                                        type="hidden"
+                                        name="status"
+                                        value="<?php
+                                        echo $course_status === 1
+                                            ? '0'
+                                            : '1';
+                                        ?>"
+                                    >
+
+                                    <button
+                                        type="submit"
+                                        class="ui small <?php
+                                        echo $course_status === 1
+                                            ? 'red basic'
+                                            : 'green basic';
+                                        ?> button"
+                                    >
+                                        <i class="<?php
+                                        echo $course_status === 1
+                                            ? 'stop'
+                                            : 'play';
+                                        ?> icon"></i>
+
+                                        <?php
+                                        echo $course_status === 1
+                                            ? '수업 종료'
+                                            : '수업 재개';
+                                        ?>
+                                    </button>
+
+                                </form>
+
+                            <?php
+                            }
+                            ?>
 
                         </div>
 

@@ -37,6 +37,10 @@
 
 .course-actions {
     margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 .course-student-inactive td {
