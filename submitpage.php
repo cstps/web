@@ -696,6 +696,15 @@ $view_previous_reflection = "";
 
 $current_user_id = $_SESSION[$OJ_NAME.'_'.'user_id'];
 
+// 수행모드 학생 여부
+//
+// 재제출 여부는 유지하지만,
+// 기존 풀이계획 / 제출 결과 / 수정메모는 불러오지 않는다.
+$is_course_performance_student =
+    course_should_restrict_student_history(
+        $current_user_id
+    );
+
 
 // ============================================================
 // 현재 일반 문제 / 대회 문제 구분
@@ -764,6 +773,13 @@ else {
 if ($first_process && count($first_process) > 0) {
 
 	$view_is_resubmit = true;
+
+	// 수행모드에서는 재제출 여부만 유지한다.
+
+	// 기존 학습 기록의 상세 내용은 조회하지 않는다.
+
+	if (!$is_course_performance_student) {
+
 
 	$view_previous_plan_text =
 		$first_process[0]['plan_text'];
@@ -865,6 +881,9 @@ if ($first_process && count($first_process) > 0) {
 		}
 
 	}
+
+        // !$is_course_performance_student
+        }
 
 }
 

@@ -732,6 +732,30 @@ else {
 }
 
 
+// ============================================================
+// Course 수행모드 학생의 과거 제출 목록 차단
+//
+// 수행모드 시작 전 제출은 SQL 단계에서 제외한다.
+// 수행모드 시작 후 새로 생성된 제출은 그대로 표시한다.
+// ============================================================
+
+$performance_status_cutoff = null;
+
+if (
+    $is_course_performance_student &&
+    !$is_performance_status_privileged
+) {
+    $performance_status_cutoff =
+        course_get_user_performance_cutoff(
+            $current_user
+        );
+
+    if ($performance_status_cutoff !== null) {
+        $sql .= "AND solution.in_date >= ? ";
+    }
+}
+
+
 $sql =
     $sql.$order_str." LIMIT 50";
 
@@ -742,17 +766,36 @@ $sql =
 
 if (isset($_GET['user_id'])) {
 
-    $result =
-        pdo_query(
-            $sql,
-            $user_id
-        );
+    if ($performance_status_cutoff !== null) {
+        $result =
+            pdo_query(
+                $sql,
+                $user_id,
+                $performance_status_cutoff
+            );
+    }
+    else {
+        $result =
+            pdo_query(
+                $sql,
+                $user_id
+            );
+    }
 
 }
 else {
 
-    $result =
-        pdo_query($sql);
+    if ($performance_status_cutoff !== null) {
+        $result =
+            pdo_query(
+                $sql,
+                $performance_status_cutoff
+            );
+    }
+    else {
+        $result =
+            pdo_query($sql);
+    }
 }
 
 

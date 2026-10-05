@@ -101,6 +101,29 @@ $is_own_solution = (
     $row['user_id'] === $current_user
 );
 
+// 수행모드 학생은 본인의 제출이라도
+// 수행모드 시작 전 Runtime Error 기록은 열람할 수 없다.
+if (
+    $is_course_performance_student &&
+    $is_own_solution &&
+    isset($row['in_date']) &&
+    course_should_restrict_student_record(
+        $current_user,
+        $row['in_date']
+    )
+) {
+    $view_errors =
+        "<h2>수행모드에서는 기존 실행 오류 기록을 볼 수 없습니다.</h2>";
+
+    require(
+        "template/".
+        $OJ_TEMPLATE.
+        "/error.php"
+    );
+
+    exit(0);
+}
+
 // 수행모드에서는 일반 상세 채점정보를 숨긴다.
 // 단, 본인의 실행 오류(RE)는 오류 종류와 메시지만 안전하게 보여준다.
 // 서버 경로, 소스코드 줄, 테스트 데이터 정보는 노출하지 않는다.
@@ -121,9 +144,16 @@ if (
     exit(0);
 }
 
-if((isset($_SESSION[$OJ_NAME.'_'.'user_id']) && $row && ($row['user_id']==$_SESSION[$OJ_NAME.'_'.'user_id']))||isset($_SESSION[$OJ_NAME.'_'.'source_browser']))
-{
-  $ok = true;
+if (
+    (
+        isset($_SESSION[$OJ_NAME.'_'.'user_id']) &&
+        $row &&
+        $row['user_id'] == $_SESSION[$OJ_NAME.'_'.'user_id']
+    ) ||
+    isset($_SESSION[$OJ_NAME.'_'.'source_browser']) ||
+    isset($_SESSION[$OJ_NAME.'_'.'administrator'])
+) {
+    $ok = true;
 }
 
 $view_reinfo = "";

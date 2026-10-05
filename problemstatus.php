@@ -158,24 +158,76 @@ if (isset($_SESSION[$OJ_NAME.'_'.'user_id'])) {
   }
 }
 
-$sql = "SELECT * FROM (
-  SELECT COUNT(*) att, user_id, min(10000000000000000000 + time*100000000000 + memory*100000 + code_length) score
-  FROM solution
-  WHERE problem_id =? AND result =4
-  GROUP BY user_id
-  ORDER BY score 
-  )c
-    inner JOIN (
-    SELECT solution_id, user_id, language, 10000000000000000000 + time*100000000000 + memory*100000 + code_length score, in_date
-    FROM solution 
-    WHERE problem_id =? AND result =4  
+$performance_problem_cutoff = null;
+
+if ($is_course_performance_student) {
+  $performance_problem_cutoff =
+      course_get_user_performance_cutoff(
+          $current_user
+      );
+}
+
+if ($performance_problem_cutoff !== null) {
+
+  $sql = "SELECT * FROM (
+    SELECT COUNT(*) att, user_id, min(10000000000000000000 + time*100000000000 + memory*100000 + code_length) score
+    FROM solution
+    WHERE problem_id =? AND result =4 AND in_date >= ?
+    GROUP BY user_id
     ORDER BY score
-    )b ON b.user_id=c.user_id AND b.score=c.score ORDER BY c.score, solution_id ASC LIMIT $start, $sz;";
+    )c
+      inner JOIN (
+      SELECT solution_id, user_id, language, 10000000000000000000 + time*100000000000 + memory*100000 + code_length score, in_date
+      FROM solution
+      WHERE problem_id =? AND result =4 AND in_date >= ?
+      ORDER BY score
+      )b ON b.user_id=c.user_id AND b.score=c.score ORDER BY c.score, solution_id ASC LIMIT $start, $sz;";
+
+}
+else {
+
+  $sql = "SELECT * FROM (
+    SELECT COUNT(*) att, user_id, min(10000000000000000000 + time*100000000000 + memory*100000 + code_length) score
+    FROM solution
+    WHERE problem_id =? AND result =4
+    GROUP BY user_id
+    ORDER BY score
+    )c
+      inner JOIN (
+      SELECT solution_id, user_id, language, 10000000000000000000 + time*100000000000 + memory*100000 + code_length score, in_date
+      FROM solution
+      WHERE problem_id =? AND result =4
+      ORDER BY score
+      )b ON b.user_id=c.user_id AND b.score=c.score ORDER BY c.score, solution_id ASC LIMIT $start, $sz;";
+
+}
 
 //echo $sql;
 
-$result = pdo_query("SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
-$result = pdo_query($sql, $id, $id);
+$result = pdo_query(
+    "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))"
+);
+
+if ($performance_problem_cutoff !== null) {
+
+  $result = pdo_query(
+      $sql,
+      $id,
+      $performance_problem_cutoff,
+      $id,
+      $performance_problem_cutoff
+  );
+
+}
+else {
+
+  $result = pdo_query(
+      $sql,
+      $id,
+      $id
+  );
+
+}
 
 $view_solution = array();
 $j = 0;

@@ -55,8 +55,34 @@ $is_course_performance_student =
         !isset($_SESSION[$OJ_NAME.'_'.'administrator'])
     );
 
+// 수행모드 학생은 본인의 제출이라도
+// 수행모드 시작 전 CE 기록은 다시 열람할 수 없다.
+if (
+    $is_course_performance_student &&
+    $row &&
+    isset($row['user_id']) &&
+    $row['user_id'] === $current_user &&
+    isset($row['in_date']) &&
+    course_should_restrict_student_record(
+        $current_user,
+        $row['in_date']
+    )
+) {
+    $view_errors =
+        "<h2>수행모드에서는 기존 컴파일 오류 기록을 볼 수 없습니다.</h2>";
+
+    require(
+        "template/".
+        $OJ_TEMPLATE.
+        "/error.php"
+    );
+
+    exit(0);
+}
+
 if ($row && $row['user_id']==$_SESSION[$OJ_NAME.'_'.'user_id']) $ok=true;
 if (isset($_SESSION[$OJ_NAME.'_'.'source_browser'])) $ok=true;
+if (isset($_SESSION[$OJ_NAME.'_'.'administrator'])) $ok=true;
 $view_reinfo="";
 if ($ok==true){
 	if($row['user_id']!=$_SESSION[$OJ_NAME.'_'.'user_id'])

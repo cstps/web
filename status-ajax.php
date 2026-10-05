@@ -72,6 +72,26 @@ if (count($result)>0) {
                 exit(0);
         }
 
+        // 수행모드 학생은 본인의 제출이라도
+        // 수행모드 시작 전에 생성된 기존 제출은 직접 조회할 수 없다.
+        //
+        // custom test(problem_id=0)는 현재 시험 실행 결과 확인에
+        // 사용되므로 이 제한 대상에서 제외한다.
+        if (
+                $is_course_performance_student &&
+                $is_solution_owner &&
+                $solution_problem_id > 0 &&
+                isset($row['in_date']) &&
+                course_should_restrict_student_record(
+                        $current_user,
+                        $row['in_date']
+                )
+        ) {
+                http_response_code(403);
+                echo "수행모드에서는 기존 제출정보를 볼 수 없습니다.";
+                exit(0);
+        }
+
         if (isset($_GET['tr'])) {
 
                 // 상세정보는 제출자 본인 또는 관리 권한 사용자만 볼 수 있다.

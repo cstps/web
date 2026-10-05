@@ -176,6 +176,7 @@
 					재제출
 					================================================= -->
 
+                                        <?php if (!$is_course_performance_student) { ?>
 					<div class="submit-history-card">
 
 						<strong class="submit-history-title">
@@ -258,6 +259,7 @@
 						?>
 
 					</div>
+                                        <?php } ?>
 
 
 					<div class="submit-process-section">
