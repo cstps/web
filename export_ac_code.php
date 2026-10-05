@@ -24,7 +24,8 @@ if (
     course_should_restrict_student_history(
         $current_user
     ) &&
-    !isset($_SESSION[$OJ_NAME.'_'.'source_browser'])
+    !isset($_SESSION[$OJ_NAME.'_'.'source_browser']) &&
+    !isset($_SESSION[$OJ_NAME.'_'.'administrator'])
 ) {
 
     $view_errors =
