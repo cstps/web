@@ -814,16 +814,8 @@
 		// ============================================================
 		// 자동 저장 기능
 		//
-		// 일반 작성과 과거 제출 Edit의 자동저장을 분리한다.
+		// 브라우저 localStorage는 사용하지 않고 서버 draft만 사용한다.
 		// ============================================================
-
-		const isEditMode =
-			<?php
-			echo isset($_GET['sid'])
-				? 'true'
-				: 'false';
-			?>;
-
 
 		const isReadOnly =
 			<?php
@@ -857,98 +849,11 @@
 		        ?>;
 
 
-		const baseLocalKey =
-			"autosave_code_<?php
-							echo $cid_prefix . $pid_for_key;
-							?>";
-
-
-		const editSolutionId =
-			<?php
-			echo isset($_GET['sid'])
-				? intval($_GET['sid'])
-				: 0;
-			?>;
-
-
-		const localKey =
-			isEditMode ?
-			baseLocalKey +
-			"_edit_" +
-			editSolutionId :
-			baseLocalKey;
-
-
-		const savedCode =
-			localStorage.getItem(localKey);
-
-
-		if (
-			!isReadOnly &&
-			savedCode &&
-			typeof editor !== "undefined"
-		) {
-			const shouldRestore = confirm("💾 저장된 코드가 있습니다. 복원하시겠습니까?");
-			if (shouldRestore) {
-				editor.setValue(savedCode, -1);
-
-				// 저장 시간 표시
-				const lastSaved = localStorage.getItem(localKey + "_time");
-				if (lastSaved) {
-					const savedDate = new Date(parseInt(lastSaved));
-					const now = new Date();
-					const diffSec = Math.floor((now - savedDate) / 1000);
-					let timeStr = "";
-					if (diffSec < 60) timeStr = `${diffSec}초 전`;
-					else if (diffSec < 3600) timeStr = `${Math.floor(diffSec / 60)}분 전`;
-					else timeStr = savedDate.toLocaleString();
-
-					const notice = document.createElement("div");
-					notice.innerText = `💾 저장된 코드가 ${timeStr}에 저장되었습니다.`;
-					notice.style.color = "#666";
-					notice.style.marginBottom = "10px";
-					const editorElement =
-						document.getElementById("source");
-
-					if (editorElement) {
-						editorElement.before(notice);
-					}
-				}
-			} else {
-				localStorage.removeItem(localKey);
-				localStorage.removeItem(localKey + "_time");
-			}
-		}
-
-		// 자동 저장: 5초마다
-		setInterval(() => {
-
-			if (
-				!isReadOnly &&
-				typeof editor !== "undefined"
-			) {
-
-				const code =
-					editor.getValue();
-
-				localStorage.setItem(
-					localKey,
-					code
-				);
-
-				localStorage.setItem(
-					localKey + "_time",
-					Date.now()
-				);
-			}
-
-		}, 5000);
-
-
                 // ============================================================
                 // 서버 자동저장
                 //
-                // - 15초마다 확인
+                // - 코드 입력이 2초 동안 멈추면 저장
+                // - 계속 입력하는 경우에도 5초마다 최신 상태 확인
                 // - 직전 저장 코드와 다를 때만 전송
                 // - 읽기 전용 화면에서는 저장하지 않음
                 // ============================================================
@@ -1074,20 +979,47 @@
                         }
                 }
 
+                // ------------------------------------------------------------
+                // 코드 변경 후 2초 동안 추가 입력이 없으면 저장
+                // ------------------------------------------------------------
+                let serverDraftDebounceTimer = null;
+
+                if (
+                        !isReadOnly &&
+                        typeof editor !== "undefined"
+                ) {
+
+                        editor.getSession().on(
+                                "change",
+                                function() {
+
+                                        if (serverDraftDebounceTimer !== null) {
+                                                clearTimeout(
+                                                        serverDraftDebounceTimer
+                                                );
+                                        }
+
+                                        serverDraftDebounceTimer =
+                                                setTimeout(
+                                                        function() {
+                                                                serverDraftDebounceTimer = null;
+                                                                saveServerDraft();
+                                                        },
+                                                        2000
+                                                );
+                                }
+                        );
+                }
+
+                // ------------------------------------------------------------
+                // 계속 타이핑하여 debounce가 미뤄지는 경우를 위한 5초 보정
+                // saveServerDraft() 내부에서 코드 변경 여부를 다시 검사한다.
+                // ------------------------------------------------------------
                 setInterval(
                         saveServerDraft,
-                        15000
+                        5000
                 );
 
-		// 제출 시 삭제
-		const solutionForm = document.getElementById("frmSolution");
-
-		if (solutionForm) {
-			solutionForm.addEventListener("submit", () => {
-				localStorage.removeItem(localKey);
-				localStorage.removeItem(localKey + "_time");
-			});
-		}
 	</script>
 
 <?php } ?>
