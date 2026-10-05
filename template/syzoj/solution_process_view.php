@@ -202,7 +202,51 @@ include(
                 : "";
 
 
-            $ai_used =
+                        $change_type =
+                isset($process['change_type'])
+                    ? trim($process['change_type'])
+                    : "";
+
+            $change_type_labels = array(
+                'input' => '입력',
+                'output' => '출력',
+                'condition' => '조건문',
+                'loop' => '반복문',
+                'variable' => '변수',
+                'function' => '함수',
+                'data' => '배열 / 자료구조',
+                'other' => '기타'
+            );
+
+            $change_type_text = "";
+
+            if ($change_type !== "") {
+
+                $change_type_parts =
+                    explode(",", $change_type);
+
+                $change_type_names = array();
+
+                foreach ($change_type_parts as $type) {
+
+                    $type = trim($type);
+
+                    if (
+                        $type !== "" &&
+                        isset($change_type_labels[$type])
+                    ) {
+                        $change_type_names[] =
+                            $change_type_labels[$type];
+                    }
+                }
+
+                if (!empty($change_type_names)) {
+                    $change_type_text =
+                        implode(" · ", $change_type_names);
+                }
+            }
+
+$ai_used =
                 isset($process['ai_used'])
                 ? intval($process['ai_used'])
                 : 0;
@@ -461,7 +505,31 @@ include(
                  재제출 수정 사유
                  ============================================== -->
 
-                <?php if ($reflection != "") { ?>
+                                <?php if ($change_type_text != "") { ?>
+
+                    <div style="margin-bottom:15px;">
+
+                        <strong>
+                            수정한 부분
+                        </strong>
+
+                        <div style="margin-top:6px;">
+
+                            <?php
+                            echo htmlentities(
+                                $change_type_text,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+
+                        </div>
+
+                    </div>
+
+                <?php } ?>
+
+<?php if ($reflection != "") { ?>
 
 
                     <div style="margin-bottom:15px;">

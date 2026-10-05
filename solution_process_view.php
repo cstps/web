@@ -594,6 +594,7 @@ if ($contest_id > 0) {
             sp.ai_usage_type,
             sp.ai_prompt,
             sp.reflection,
+            sp.change_type,
 
             sp.created_at,
             sp.updated_at,
@@ -639,6 +640,7 @@ else {
             sp.ai_usage_type,
             sp.ai_prompt,
             sp.reflection,
+            sp.change_type,
 
             sp.created_at,
             sp.updated_at,
