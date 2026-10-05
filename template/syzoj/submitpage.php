@@ -789,6 +789,146 @@
 		<?php
 		}
 		?>
+                <?php
+                if (
+                        isset($is_course_performance_student) &&
+                        $is_course_performance_student
+                ) {
+                ?>
+                        // ====================================================
+                        // 수행모드 코드 복사/붙여넣기 차단
+                        // ====================================================
+
+                        (function() {
+                                var editorElement =
+                                        editor.container;
+
+                                function blockClipboardEvent(event) {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+
+                                        if (
+                                                typeof event.stopImmediatePropagation ===
+                                                "function"
+                                        ) {
+                                                event.stopImmediatePropagation();
+                                        }
+
+                                        return false;
+                                }
+
+                                editorElement.addEventListener(
+                                        "copy",
+                                        blockClipboardEvent,
+                                        true
+                                );
+
+                                editorElement.addEventListener(
+                                        "cut",
+                                        blockClipboardEvent,
+                                        true
+                                );
+
+                                editorElement.addEventListener(
+                                        "paste",
+                                        blockClipboardEvent,
+                                        true
+                                );
+
+                                editorElement.addEventListener(
+                                        "contextmenu",
+                                        blockClipboardEvent,
+                                        true
+                                );
+
+                                editorElement.addEventListener(
+                                        "dragstart",
+                                        blockClipboardEvent,
+                                        true
+                                );
+
+                                editorElement.addEventListener(
+                                        "drop",
+                                        blockClipboardEvent,
+                                        true
+                                );
+
+                                editorElement.addEventListener(
+                                        "beforeinput",
+                                        function(event) {
+                                                if (
+                                                        event.inputType ===
+                                                                "insertFromPaste" ||
+                                                        event.inputType ===
+                                                                "insertFromDrop"
+                                                ) {
+                                                        blockClipboardEvent(
+                                                                event
+                                                        );
+                                                }
+                                        },
+                                        true
+                                );
+
+                                editorElement.addEventListener(
+                                        "keydown",
+                                        function(event) {
+                                                var key =
+                                                        (
+                                                                event.key ||
+                                                                ""
+                                                        ).toLowerCase();
+
+                                                var ctrlOrMeta =
+                                                        event.ctrlKey ||
+                                                        event.metaKey;
+
+                                                // Ctrl/Cmd + C/X/V
+                                                if (
+                                                        ctrlOrMeta &&
+                                                        (
+                                                                key === "c" ||
+                                                                key === "x" ||
+                                                                key === "v"
+                                                        )
+                                                ) {
+                                                        blockClipboardEvent(
+                                                                event
+                                                        );
+
+                                                        return;
+                                                }
+
+                                                // Ctrl + Insert
+                                                if (
+                                                        event.ctrlKey &&
+                                                        key === "insert"
+                                                ) {
+                                                        blockClipboardEvent(
+                                                                event
+                                                        );
+
+                                                        return;
+                                                }
+
+                                                // Shift + Insert
+                                                if (
+                                                        event.shiftKey &&
+                                                        key === "insert"
+                                                ) {
+                                                        blockClipboardEvent(
+                                                                event
+                                                        );
+                                                }
+                                        },
+                                        true
+                                );
+                        })();
+
+                <?php
+                }
+                ?>
+
 		reloadtemplate($("#language").val());
 	</script>
 	<?php
