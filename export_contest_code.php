@@ -1,6 +1,7 @@
 <?php
 require_once('./include/db_info.inc.php');
 require_once('./include/setlang.php');
+require_once('./include/permission_functions.inc.php');
  ini_set("display_errors","Off");
  
 if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
@@ -8,12 +9,27 @@ if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
         require_once("template/".$OJ_TEMPLATE."/error.php");
         exit(0);
 }
-$contest_id=intval($_GET['cid']);
-if (!(isset($_SESSION[$OJ_NAME.'_'.'m'.$contest_id]) || isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'contest_creator']))){
-        $view_errors= "<a href=./loginpage.php>No privileges!</a>";
-        require_once("template/".$OJ_TEMPLATE."/error.php");
-        exit(0);
+$contest_id =
+    isset($_GET['cid'])
+        ? intval($_GET['cid'])
+        : 0;
+
+if (
+    $contest_id <= 0 ||
+    !oj_can_manage_contest($contest_id)
+) {
+    $view_errors =
+        "<h2>이 대회의 제출 코드를 내보낼 권한이 없습니다.</h2>";
+
+    require_once(
+        "template/".
+        $OJ_TEMPLATE.
+        "/error.php"
+    );
+
+    exit(0);
 }
+
 header ( "content-type:   application/file" );
                 header ( "content-disposition:   attachment;   filename=\"logs-$contest_id.txt\"" );
 
