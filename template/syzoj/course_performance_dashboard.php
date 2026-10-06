@@ -100,7 +100,7 @@ require_once(
 
         <div>
             <h2>
-                수행평가 현황
+                수업 현황
             </h2>
 
             <div class="course-performance-sub">
@@ -135,6 +135,21 @@ require_once(
                 <i class="code icon"></i>
                 학생 코드 모니터링
             </a>
+
+            <?php if (intval($selected_contest_id) > 0) { ?>
+
+                <a
+                    class="ui small violet basic button"
+                    href="contest_process.php?cid=<?php
+                        echo intval($selected_contest_id);
+                    ?>"
+                    title="현재 선택한 차시의 학생별 문제 해결과정을 자세히 분석합니다."
+                >
+                    <i class="chart bar icon"></i>
+                    차시 상세 분석
+                </a>
+
+            <?php } ?>
 
         </div>
 
@@ -320,9 +335,6 @@ require_once(
                             AI
                         </th>
 
-                        <th class="center aligned">
-                            관리
-                        </th>
 
                     </tr>
                 </thead>
@@ -337,7 +349,7 @@ require_once(
                         <tr>
                             <td
                                 colspan="<?php
-                                    echo count($contest_problems) + 5;
+                                    echo count($contest_problems) + 4;
                                 ?>"
                                 class="center aligned"
                             >
@@ -386,15 +398,24 @@ require_once(
 
                             <td>
 
-                                <strong>
-                                    <?php
-                                    echo htmlspecialchars(
-                                        $user_id,
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    );
-                                    ?>
-                                </strong>
+                                <a
+                                    href="course_student_view.php?course_id=<?php
+                                        echo intval($course_id);
+                                    ?>&user_id=<?php
+                                        echo urlencode($user_id);
+                                    ?>"
+                                    title="학생 학습현황 보기"
+                                >
+                                    <strong>
+                                        <?php
+                                        echo htmlspecialchars(
+                                            $user_id,
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        );
+                                        ?>
+                                    </strong>
+                                </a>
 
                                 <?php
                                 if (
@@ -553,20 +574,6 @@ require_once(
                                 <?php echo $student_ai; ?>
                             </td>
 
-                            <td class="center aligned">
-
-                                <a
-                                    class="ui tiny teal basic button"
-                                    href="course_student_view.php?course_id=<?php
-                                        echo intval($course_id);
-                                    ?>&user_id=<?php
-                                        echo urlencode($user_id);
-                                    ?>"
-                                >
-                                    상세
-                                </a>
-
-                            </td>
 
                         </tr>
 

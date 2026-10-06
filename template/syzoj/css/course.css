@@ -43,6 +43,18 @@
     align-items: center;
 }
 
+.course-actions-label {
+    width: 100%;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #777;
+}
+
+.course-actions-settings {
+    padding-top: 0.75rem;
+    border-top: 1px solid #eee;
+}
+
 .course-student-inactive td {
     opacity: 0.6;
 }

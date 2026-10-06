@@ -6,7 +6,7 @@ require_once('./include/setlang.php');
 require_once('./include/course_functions.inc.php');
 
 $view_title =
-    '수행평가 현황';
+    '수업 현황';
 
 // ============================================================
 // 1. 로그인 확인

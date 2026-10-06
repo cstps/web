@@ -1,7 +1,7 @@
 <?php
 
 $show_title =
-    "학생 문제 해결 과정 현황 - $OJ_NAME";
+    "차시 상세 분석 - $OJ_NAME";
 
 include(
     "template/$OJ_TEMPLATE/header.php"
@@ -61,8 +61,75 @@ include(
     ">
 
     <!-- ======================================================
-         학생별 문제 진행 현황
+         차시 상세 분석
          ====================================================== -->
+
+    <div
+        style="
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            flex-wrap:wrap;
+            gap:12px;
+            margin-bottom:20px;
+        "
+    >
+
+        <div>
+
+            <h2
+                class="ui header"
+                style="margin-bottom:6px;"
+            >
+                차시 상세 분석
+            </h2>
+
+            <div style="color:#666;">
+
+                <?php
+                if (
+                    isset($process_lesson_no) &&
+                    intval($process_lesson_no) > 0
+                ) {
+                    echo intval($process_lesson_no) .
+                        '차시 · ';
+                }
+
+                echo htmlspecialchars(
+                    $contest_title,
+                    ENT_QUOTES,
+                    'UTF-8'
+                );
+                ?>
+
+            </div>
+
+        </div>
+
+
+        <?php
+        if (
+            isset($process_course_id) &&
+            intval($process_course_id) > 0
+        ) {
+        ?>
+
+            <a
+                class="ui small basic button"
+                href="course_performance_dashboard.php?course_id=<?php
+                    echo intval($process_course_id);
+                ?>&contest_id=<?php
+                    echo intval($cid);
+                ?>"
+            >
+                <i class="arrow left icon"></i>
+                수업 현황으로
+            </a>
+
+        <?php } ?>
+
+    </div>
+
 
     <h3 class="ui dividing header">
         학생별 문제 진행 현황
@@ -2537,284 +2604,6 @@ include(
                 };
         }
     </script>
-
-
-    <!-- ======================================================
-         기존 학생 문제 해결 과정 현황
-         ====================================================== -->
-
-    <h2
-        class="ui dividing header"
-        style="
-            margin-top:30px;
-        ">
-        학생 문제 해결 과정 현황
-    </h2>
-
-
-    <div class="ui segment">
-
-        <strong>
-            대회
-        </strong>
-
-        &nbsp;
-
-        <?php
-        echo intval(
-            $cid
-        );
-        ?>
-
-        &nbsp;&nbsp;
-
-        <?php
-        echo htmlentities(
-            $contest_title,
-            ENT_QUOTES,
-            'UTF-8'
-        );
-        ?>
-
-    </div>
-
-
-    <?php if (
-        count(
-            $view_process_list
-        ) == 0
-    ) { ?>
-
-        <div class="ui message">
-
-            기록된 학생 과정이 없습니다.
-
-        </div>
-
-
-    <?php } else { ?>
-
-
-        <table
-            class="ui celled compact table">
-
-            <thead>
-
-                <tr>
-
-                    <th>
-                        학생
-                    </th>
-
-                    <th>
-                        문제
-                    </th>
-
-                    <th>
-                        제출 횟수
-                    </th>
-
-                    <th>
-                        최근 제출 결과
-                    </th>
-
-                    <th>
-                        AI 사용
-                    </th>
-
-                    <th>
-                        최초 계획
-                    </th>
-
-                    <th>
-                        과정
-                    </th>
-
-                </tr>
-
-            </thead>
-
-
-            <tbody>
-
-
-                <?php
-                foreach (
-                    $view_process_list
-                    as
-                    $item
-                ) {
-                ?>
-
-                    <tr>
-
-
-                        <td>
-
-                            <?php
-                            echo htmlentities(
-                                $item['user_id'],
-                                ENT_QUOTES,
-                                'UTF-8'
-                            );
-                            ?>
-
-                        </td>
-
-
-                        <td>
-
-                            <?php
-
-                            if (
-                                isset($PID) &&
-                                $item['problem_num'] >= 0 &&
-                                isset(
-                                    $PID[$item['problem_num']]
-                                )
-                            ) {
-
-                                echo htmlentities(
-                                    $PID[$item['problem_num']],
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                );
-
-
-                                echo " / ";
-                            }
-
-
-                            echo intval(
-                                $item['problem_id']
-                            );
-
-                            ?>
-
-                        </td>
-
-
-                        <td>
-
-                            <?php
-                            echo intval(
-                                $item['submit_count']
-                            );
-                            ?>회
-
-                        </td>
-
-
-                        <td>
-
-                            <?php
-
-                            $result_num =
-                                intval(
-                                    $item['latest_result']
-                                );
-
-
-                            if (
-                                isset(
-                                    $judge_result[$result_num]
-                                )
-                            ) {
-
-                                echo htmlentities(
-                                    $judge_result[$result_num],
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                );
-                            } else {
-
-                                echo "-";
-                            }
-
-                            ?>
-
-                        </td>
-
-
-                        <td>
-
-                            <?php
-
-                            $ai_count =
-                                intval(
-                                    $item['ai_count']
-                                );
-
-
-                            if ($ai_count > 0) {
-
-                                echo
-                                $ai_count .
-                                    "회";
-                            } else {
-
-                                echo
-                                "미사용";
-                            }
-
-                            ?>
-
-                        </td>
-
-
-                        <td>
-
-                            <?php
-
-                            if (
-                                intval(
-                                    $item['has_plan']
-                                ) === 1
-                            ) {
-
-                                echo
-                                "작성";
-                            } else {
-
-                                echo
-                                "-";
-                            }
-
-                            ?>
-
-                        </td>
-
-
-                        <td>
-
-                            <a
-                                href="solution_process_view.php?sid=<?php
-                                                                    echo intval(
-                                                                        $item['latest_solution_id']
-                                                                    );
-                                                                    ?>"
-                                class="ui mini basic button"
-                                style="
-                                white-space:nowrap;
-                            ">
-                                과정
-                            </a>
-
-                        </td>
-
-
-                    </tr>
-
-
-                <?php } ?>
-
-
-            </tbody>
-
-        </table>
-
-
-    <?php } ?>
 
 
     <!-- ======================================================

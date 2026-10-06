@@ -364,7 +364,11 @@ include("template/$OJ_TEMPLATE/header.php");
                         </div>
 
 
-                        <div class="course-actions">
+                        <div class="course-actions course-actions-primary">
+
+                              <div class="course-actions-label">
+                                  주요 기능
+                              </div>
 
                             <a
                                 class="ui small blue button"
@@ -376,51 +380,8 @@ include("template/$OJ_TEMPLATE/header.php");
 
 
                             <?php
-                            if ($can_manage_students) {
-                            ?>
-
-                                <a
-                                    class="ui small blue basic button"
-                                    href="course_students.php?course_id=<?php echo $course_id; ?>"
-                                >
-                                    <i class="users icon"></i>
-                                    학생 관리
-                                </a>
-
-                            <?php
-                            }
-                            ?>
-
-
-                            <?php
-                            if ($can_manage_teachers) {
-                            ?>
-
-                                <a
-                                    class="ui small teal basic button"
-                                    href="course_teachers.php?course_id=<?php echo $course_id; ?>"
-                                >
-                                    <i class="user tie icon"></i>
-                                    교사 관리
-                                </a>
-
-                            <?php
-                            }
-                            ?>
-
-
-                            <?php
                             if ($can_manage_contests) {
                             ?>
-
-                                <a
-                                    class="ui small basic button"
-                                    href="course_code_monitor.php?course_id=<?php echo $course_id; ?>"
-                                    title="이 수업 학생들의 작성 중인 코드를 확인합니다."
-                                >
-                                    <i class="code icon"></i>
-                                    학생 코드 모니터링
-                                </a>
 
                                 <a
                                     class="ui small violet basic button"
@@ -428,7 +389,7 @@ include("template/$OJ_TEMPLATE/header.php");
                                     title="학생별 문제 수행 현황과 해결 과정을 확인합니다."
                                 >
                                     <i class="tasks icon"></i>
-                                    수행평가 현황
+                                    수업 현황
                                 </a>
 
                             <?php
@@ -436,24 +397,7 @@ include("template/$OJ_TEMPLATE/header.php");
                             ?>
 
 
-                            <?php
-                            if ($can_edit_course) {
-                            ?>
-
-                                <a
-                                    class="ui small basic button"
-                                    href="course_edit.php?course_id=<?php echo $course_id; ?>"
-                                >
-                                    <i class="edit icon"></i>
-                                    수업 정보 수정
-                                </a>
-
-                            <?php
-                            }
-                            ?>
-
-
-                            <?php
+                                                      <?php
                             if ($can_manage_performance) {
                             ?>
 
@@ -608,6 +552,67 @@ include("template/$OJ_TEMPLATE/header.php");
 
                             <?php
                                 }
+                            }
+                            ?>
+
+
+                            </div>
+
+                          <div class="course-actions course-actions-settings">
+
+                              <div class="course-actions-label">
+                                  운영 · 설정
+                              </div>
+
+<?php
+                            if ($can_manage_students) {
+                            ?>
+
+                                <a
+                                    class="ui small blue basic button"
+                                    href="course_students.php?course_id=<?php echo $course_id; ?>"
+                                >
+                                    <i class="users icon"></i>
+                                    학생 관리
+                                </a>
+
+                            <?php
+                            }
+                            ?>
+
+
+
+
+<?php
+                            if ($can_manage_teachers) {
+                            ?>
+
+                                <a
+                                    class="ui small teal basic button"
+                                    href="course_teachers.php?course_id=<?php echo $course_id; ?>"
+                                >
+                                    <i class="user tie icon"></i>
+                                    교사 관리
+                                </a>
+
+                            <?php
+                            }
+                            ?>
+
+
+                            <?php
+                            if ($can_edit_course) {
+                            ?>
+
+                                <a
+                                    class="ui small basic button"
+                                    href="course_edit.php?course_id=<?php echo $course_id; ?>"
+                                >
+                                    <i class="edit icon"></i>
+                                    수업 정보 수정
+                                </a>
+
+                            <?php
                             }
                             ?>
 

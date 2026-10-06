@@ -7,7 +7,7 @@ require_once('./include/setlang.php');
 require_once('./include/permission_functions.inc.php');
 require_once('./include/course_functions.inc.php');
 
-$view_title = "학생 문제 해결 과정 현황";
+$view_title = "차시 상세 분석";
 
 // ============================================================
 // 1. 로그인 확인
@@ -104,6 +104,45 @@ $contest_title =
     isset($contest_result[0]['title'])
         ? $contest_result[0]['title']
         : $contest_result[0][0];
+
+// ============================================================
+// 4-1. Course 연결 정보
+//
+// Course에 연결된 Contest이면
+// 수업 현황 화면으로 돌아갈 수 있도록 Course/차시 정보를 확보한다.
+// ============================================================
+
+$process_course_id = 0;
+$process_lesson_no = 0;
+
+$course_link_rows =
+    pdo_query(
+        "SELECT
+            course_id,
+            lesson_no
+         FROM course_contest
+         WHERE contest_id = ?
+           AND status = 1
+         LIMIT 1",
+        $cid
+    );
+
+if (
+    $course_link_rows &&
+    isset($course_link_rows[0])
+) {
+
+    $process_course_id =
+        isset($course_link_rows[0]['course_id'])
+            ? intval($course_link_rows[0]['course_id'])
+            : 0;
+
+    $process_lesson_no =
+        isset($course_link_rows[0]['lesson_no'])
+            ? intval($course_link_rows[0]['lesson_no'])
+            : 0;
+}
+
 
 // ============================================================
 // 5. 학생 과정 공통 데이터 생성
