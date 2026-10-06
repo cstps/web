@@ -422,6 +422,15 @@ include("template/$OJ_TEMPLATE/header.php");
                                     학생 코드 모니터링
                                 </a>
 
+                                <a
+                                    class="ui small violet basic button"
+                                    href="course_performance_dashboard.php?course_id=<?php echo $course_id; ?>"
+                                    title="학생별 문제 수행 현황과 해결 과정을 확인합니다."
+                                >
+                                    <i class="tasks icon"></i>
+                                    수행평가 현황
+                                </a>
+
                             <?php
                             }
                             ?>
