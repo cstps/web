@@ -174,30 +174,66 @@ $view_student_count =
 $view_contests = pdo_query(
     "SELECT
         cc.id,
+        cc.lesson_id,
         cc.contest_id,
         cc.source_contest_id,
         cc.link_type,
-        cc.lesson_no,
-        cc.sort_order,
-        cc.visible,
+
+        COALESCE(
+            cl.lesson_no,
+            cc.lesson_no
+        ) AS lesson_no,
+
+        COALESCE(
+            cl.sort_order,
+            cc.sort_order
+        ) AS sort_order,
+
+        COALESCE(
+            cl.visible,
+            cc.visible
+        ) AS visible,
+
         cc.created_by,
         cc.created_at,
 
-        c.title,
-        c.start_time,
-        c.end_time,
+        COALESCE(
+            NULLIF(cl.title, ''),
+            c.title
+        ) AS title,
+
+        COALESCE(
+            cl.start_time,
+            c.start_time
+        ) AS start_time,
+
+        COALESCE(
+            cl.end_time,
+            c.end_time
+        ) AS end_time,
+
         c.defunct
 
      FROM course_contest cc
 
-    LEFT JOIN contest c
-    ON c.contest_id = cc.contest_id
+     LEFT JOIN course_lesson cl
+       ON cl.lesson_id = cc.lesson_id
 
-    WHERE cc.course_id = ?
-        AND cc.status = 1
+     LEFT JOIN contest c
+       ON c.contest_id = cc.contest_id
 
-    ORDER BY
-        cc.lesson_no,
+     WHERE cc.course_id = ?
+       AND cc.status = 1
+
+     ORDER BY
+        COALESCE(
+            cl.lesson_no,
+            cc.lesson_no
+        ),
+        COALESCE(
+            cl.sort_order,
+            cc.sort_order
+        ),
         cc.contest_id",
     $course_id
 );
@@ -252,21 +288,49 @@ if (
 $view_removed_contests = pdo_query(
     "SELECT
         cc.id,
+        cc.lesson_id,
         cc.contest_id,
         cc.source_contest_id,
         cc.link_type,
-        cc.lesson_no,
-        cc.sort_order,
-        cc.visible,
+
+        COALESCE(
+            cl.lesson_no,
+            cc.lesson_no
+        ) AS lesson_no,
+
+        COALESCE(
+            cl.sort_order,
+            cc.sort_order
+        ) AS sort_order,
+
+        COALESCE(
+            cl.visible,
+            cc.visible
+        ) AS visible,
+
         cc.status,
         cc.created_by,
         cc.created_at,
 
-        c.title,
-        c.start_time,
-        c.end_time
+        COALESCE(
+            NULLIF(cl.title, ''),
+            c.title
+        ) AS title,
+
+        COALESCE(
+            cl.start_time,
+            c.start_time
+        ) AS start_time,
+
+        COALESCE(
+            cl.end_time,
+            c.end_time
+        ) AS end_time
 
      FROM course_contest cc
+
+     LEFT JOIN course_lesson cl
+       ON cl.lesson_id = cc.lesson_id
 
      LEFT JOIN contest c
        ON c.contest_id = cc.contest_id
@@ -275,7 +339,14 @@ $view_removed_contests = pdo_query(
        AND cc.status = 0
 
      ORDER BY
-        cc.sort_order,
+        COALESCE(
+            cl.lesson_no,
+            cc.lesson_no
+        ),
+        COALESCE(
+            cl.sort_order,
+            cc.sort_order
+        ),
         cc.contest_id",
     $course_id
 );

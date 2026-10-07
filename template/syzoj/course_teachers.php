@@ -13,11 +13,11 @@ require_once('./include/csrf_check.php');
     <div class="course-page-header">
 
         <a
-            href="course_view.php?course_id=<?php echo intval($course_id); ?>"
+            href="course_list.php"
             class="ui small basic button"
         >
             <i class="left arrow icon"></i>
-            수업으로 돌아가기
+            수업목록으로 돌아가기
         </a>
 
         <h1 class="ui header">

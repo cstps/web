@@ -1431,6 +1431,184 @@ function course_revoke_linked_student_right(
 }
 
 
+// ============================================================
+// Course Lesson 조회
+// ============================================================
+
+function course_get_lesson($lesson_id) {
+
+    $lesson_id = intval($lesson_id);
+
+    if ($lesson_id <= 0) {
+        return null;
+    }
+
+
+    $rows =
+        pdo_query(
+            "SELECT
+                lesson_id,
+                course_id,
+                lesson_no,
+                title,
+                description,
+                start_time,
+                end_time,
+                sort_order,
+                visible,
+                status,
+                created_by,
+                created_at,
+                updated_at
+             FROM course_lesson
+             WHERE lesson_id = ?
+             LIMIT 1",
+            $lesson_id
+        );
+
+
+    if (
+        !$rows ||
+        !isset($rows[0])
+    ) {
+        return null;
+    }
+
+
+    return $rows[0];
+}
+
+
+// ============================================================
+// Contest에 연결된 Course Lesson 조회
+//
+// 신규 구조:
+// course_contest.lesson_id -> course_lesson
+//
+// 호환 처리:
+// lesson_id가 없는 기존 데이터는
+// course_contest.lesson_no / contest 정보를 사용한다.
+// ============================================================
+
+function course_get_lesson_by_contest($contest_id) {
+
+    $contest_id = intval($contest_id);
+
+    if ($contest_id <= 0) {
+        return null;
+    }
+
+
+    $rows =
+        pdo_query(
+            "SELECT
+                cc.id AS course_contest_id,
+                cc.course_id,
+                cc.contest_id,
+                cc.lesson_id,
+
+                COALESCE(
+                    cl.lesson_no,
+                    cc.lesson_no
+                ) AS lesson_no,
+
+                COALESCE(
+                    NULLIF(cl.title, ''),
+                    NULLIF(c.title, ''),
+                    CONCAT(
+                        cc.lesson_no,
+                        '차시'
+                    )
+                ) AS title,
+
+                cl.description,
+
+                COALESCE(
+                    cl.start_time,
+                    c.start_time
+                ) AS start_time,
+
+                COALESCE(
+                    cl.end_time,
+                    c.end_time
+                ) AS end_time,
+
+                COALESCE(
+                    cl.sort_order,
+                    cc.sort_order
+                ) AS sort_order,
+
+                COALESCE(
+                    cl.visible,
+                    cc.visible
+                ) AS visible,
+
+                cc.status AS course_contest_status,
+
+                cl.status AS lesson_status
+
+             FROM course_contest cc
+
+             LEFT JOIN course_lesson cl
+                    ON cl.lesson_id = cc.lesson_id
+
+             LEFT JOIN contest c
+                    ON c.contest_id = cc.contest_id
+
+             WHERE cc.contest_id = ?
+
+             LIMIT 1",
+            $contest_id
+        );
+
+
+    if (
+        !$rows ||
+        !isset($rows[0])
+    ) {
+        return null;
+    }
+
+
+    return $rows[0];
+}
+
+
+// ============================================================
+// Course Contest 행에서 유효한 차시 번호 반환
+// ============================================================
+
+function course_get_effective_lesson_no($row) {
+
+    if (!is_array($row)) {
+        return 0;
+    }
+
+
+    if (
+        isset($row['course_lesson_no']) &&
+        intval($row['course_lesson_no']) > 0
+    ) {
+        return intval(
+            $row['course_lesson_no']
+        );
+    }
+
+
+    if (
+        isset($row['lesson_no']) &&
+        intval($row['lesson_no']) > 0
+    ) {
+        return intval(
+            $row['lesson_no']
+        );
+    }
+
+
+    return 0;
+}
+
+
 // 학생 학습기록 조회
 // administrator / owner / teacher / assistant
 function course_can_view_student_records($course_id) {

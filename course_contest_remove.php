@@ -114,6 +114,7 @@ if (
 $link_rows = pdo_query(
     "SELECT
         id,
+        lesson_id,
         status,
         link_type
      FROM course_contest
@@ -146,6 +147,12 @@ if (intval($link_rows[0]['status']) !== 1) {
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);
 }
+
+
+$lesson_id =
+    isset($link_rows[0]['lesson_id'])
+        ? intval($link_rows[0]['lesson_id'])
+        : 0;
 
 
 $link_type =
@@ -188,7 +195,23 @@ pdo_query(
 );
 
 
-/// ============================================================
+if ($lesson_id > 0) {
+
+    pdo_query(
+        "UPDATE course_lesson
+         SET
+            status = 0,
+            visible = 0
+         WHERE lesson_id = ?
+           AND course_id = ?
+           AND status = 1",
+        $lesson_id,
+        $course_id
+    );
+}
+
+
+// ============================================================
 // 8. Course 학생들의 Contest 참가권한 제거
 //
 // created:

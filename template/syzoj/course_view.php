@@ -732,7 +732,11 @@ include("template/$OJ_TEMPLATE/header.php");
                     <td class="center aligned">
 
                         <?php
-                        if (intval($view_course['status']) === 1) {
+                        if (
+    intval($view_course['status']) === 1 &&
+    isset($contest['lesson_id']) &&
+    intval($contest['lesson_id']) > 0
+) {
                         ?>
 
                             <form

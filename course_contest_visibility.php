@@ -127,6 +127,7 @@ if (intval($course_rows[0]['status']) !== 1) {
 $rows = pdo_query(
     "SELECT
         id,
+        lesson_id,
         status,
         link_type
      FROM course_contest
@@ -160,6 +161,12 @@ if (intval($rows[0]['status']) !== 1) {
 }
 
 
+$lesson_id =
+    isset($rows[0]['lesson_id'])
+        ? intval($rows[0]['lesson_id'])
+        : 0;
+
+
 $link_type =
     isset($rows[0]['link_type'])
         ? trim($rows[0]['link_type'])
@@ -180,6 +187,21 @@ pdo_query(
     $course_id,
     $contest_id
 );
+
+
+if ($lesson_id > 0) {
+
+    pdo_query(
+        "UPDATE course_lesson
+         SET visible = ?
+         WHERE lesson_id = ?
+           AND course_id = ?
+           AND status = 1",
+        $visible,
+        $lesson_id,
+        $course_id
+    );
+}
 
 // ============================================================
 // 7. 학생 Contest 참가 권한 동기화

@@ -79,13 +79,30 @@ $link_rows = pdo_query(
         cc.contest_id,
         cc.source_contest_id,
         cc.link_type,
-        cc.lesson_no,
-        cc.visible,
+        cc.lesson_id,
+
+        COALESCE(
+            cl.lesson_no,
+            cc.lesson_no
+        ) AS lesson_no,
+
+        COALESCE(
+            cl.visible,
+            cc.visible
+        ) AS visible,
+
         cc.status,
 
-        c.title
+        COALESCE(
+            NULLIF(cl.title, ''),
+            c.title
+        ) AS title
 
      FROM course_contest cc
+
+     LEFT JOIN course_lesson cl
+       ON cl.lesson_id = cc.lesson_id
+      AND cl.course_id = cc.course_id
 
      INNER JOIN contest c
        ON c.contest_id = cc.contest_id

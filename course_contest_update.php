@@ -167,6 +167,7 @@ if (
 $link_rows = pdo_query(
     "SELECT
         id,
+        lesson_id,
         contest_id,
         link_type
      FROM course_contest
@@ -190,6 +191,12 @@ if (
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);
 }
+
+$lesson_id =
+    isset($link_rows[0]['lesson_id'])
+        ? intval($link_rows[0]['lesson_id'])
+        : 0;
+
 
 $link_type =
     isset($link_rows[0]['link_type'])
@@ -531,7 +538,42 @@ pdo_query(
 
 
 // ============================================================
-// 13. Course 화면으로 복귀
+// 13. Course Lesson 정보 동기화
+//
+// created:
+// - Contest와 Lesson 모두 제목/시간 수정
+//
+// linked:
+// - 원본 Contest는 수정하지 않음
+// - Course Lesson 정보만 수정
+//
+// lesson_no는 기존 course_contest와 함께 유지한다.
+// ============================================================
+
+if ($lesson_id > 0) {
+
+    pdo_query(
+        "UPDATE course_lesson
+         SET
+            lesson_no = ?,
+            title = ?,
+            start_time = ?,
+            end_time = ?
+         WHERE lesson_id = ?
+           AND course_id = ?
+           AND status = 1",
+        $lesson_no,
+        $contest_title,
+        $start_time,
+        $end_time,
+        $lesson_id,
+        $course_id
+    );
+}
+
+
+// ============================================================
+// 14. Course 화면으로 복귀
 // ============================================================
 
 header(

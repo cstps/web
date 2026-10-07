@@ -324,16 +324,43 @@ $view_contests = pdo_query(
     "SELECT
         cc.contest_id,
         cc.source_contest_id,
-        cc.lesson_no,
-        cc.sort_order,
-        cc.visible,
+        cc.lesson_id,
 
-        c.title,
-        c.start_time,
-        c.end_time,
+        COALESCE(
+            cl.lesson_no,
+            cc.lesson_no
+        ) AS lesson_no,
+
+        COALESCE(
+            cl.sort_order,
+            cc.sort_order
+        ) AS sort_order,
+
+        COALESCE(
+            cl.visible,
+            cc.visible
+        ) AS visible,
+
+        COALESCE(
+            NULLIF(cl.title, ''),
+            c.title
+        ) AS title,
+
+        COALESCE(
+            cl.start_time,
+            c.start_time
+        ) AS start_time,
+
+        COALESCE(
+            cl.end_time,
+            c.end_time
+        ) AS end_time,
 
         CASE
-            WHEN c.start_time <= NOW()
+            WHEN COALESCE(
+                cl.start_time,
+                c.start_time
+            ) <= NOW()
             THEN 1
             ELSE 0
         END AS has_started,
@@ -358,28 +385,66 @@ $view_contests = pdo_query(
 
      FROM course_contest cc
 
-        LEFT JOIN contest c
-        ON c.contest_id = cc.contest_id
+     LEFT JOIN course_lesson cl
+       ON cl.lesson_id = cc.lesson_id
+      AND cl.course_id = cc.course_id
 
-        LEFT JOIN solution s
-        ON s.contest_id = cc.contest_id
-        AND s.user_id = ?
+     LEFT JOIN contest c
+       ON c.contest_id = cc.contest_id
 
-        WHERE cc.course_id = ?
-        AND cc.status = 1
+     LEFT JOIN solution s
+       ON s.contest_id = cc.contest_id
+      AND s.user_id = ?
+
+     WHERE cc.course_id = ?
+       AND cc.status = 1
 
      GROUP BY
         cc.contest_id,
         cc.source_contest_id,
-        cc.lesson_no,
-        cc.sort_order,
-        cc.visible,
-        c.title,
-        c.start_time,
-        c.end_time
+        cc.lesson_id,
+
+        COALESCE(
+            cl.lesson_no,
+            cc.lesson_no
+        ),
+
+        COALESCE(
+            cl.sort_order,
+            cc.sort_order
+        ),
+
+        COALESCE(
+            cl.visible,
+            cc.visible
+        ),
+
+        COALESCE(
+            NULLIF(cl.title, ''),
+            c.title
+        ),
+
+        COALESCE(
+            cl.start_time,
+            c.start_time
+        ),
+
+        COALESCE(
+            cl.end_time,
+            c.end_time
+        )
 
      ORDER BY
-        cc.lesson_no ASC,
+        COALESCE(
+            cl.lesson_no,
+            cc.lesson_no
+        ) ASC,
+
+        COALESCE(
+            cl.sort_order,
+            cc.sort_order
+        ) ASC,
+
         cc.contest_id ASC",
     $student_user_id,
     $course_id
@@ -1406,15 +1471,25 @@ $view_student_memos = pdo_query(
         m.created_at,
         m.updated_at,
 
-        c.title AS contest_title,
+        COALESCE(
+            NULLIF(cl.title, ''),
+            c.title
+        ) AS contest_title,
 
-        cc.lesson_no
+        COALESCE(
+            cl.lesson_no,
+            cc.lesson_no
+        ) AS lesson_no
 
      FROM course_student_memo m
 
      LEFT JOIN course_contest cc
        ON cc.course_id = m.course_id
       AND cc.contest_id = m.contest_id
+
+     LEFT JOIN course_lesson cl
+       ON cl.lesson_id = cc.lesson_id
+      AND cl.course_id = cc.course_id
 
      LEFT JOIN contest c
        ON c.contest_id = m.contest_id
@@ -1452,9 +1527,15 @@ $view_teacher_process_notes =
             tpn.created_at,
             tpn.updated_at,
 
-            cc.lesson_no,
+            COALESCE(
+                cl.lesson_no,
+                cc.lesson_no
+            ) AS lesson_no,
 
-            c.title AS contest_title,
+            COALESCE(
+                NULLIF(cl.title, ''),
+                c.title
+            ) AS contest_title,
 
             cp.num AS problem_num,
 
@@ -1470,6 +1551,10 @@ $view_teacher_process_notes =
           AND cc.course_id = ?
           AND cc.status = 1
 
+         LEFT JOIN course_lesson cl
+           ON cl.lesson_id = cc.lesson_id
+          AND cl.course_id = cc.course_id
+
          LEFT JOIN contest c
            ON c.contest_id = tpn.contest_id
 
@@ -1483,7 +1568,10 @@ $view_teacher_process_notes =
          WHERE tpn.user_id = ?
 
          ORDER BY
-            cc.lesson_no ASC,
+            COALESCE(
+                cl.lesson_no,
+                cc.lesson_no
+            ) ASC,
             cp.num ASC,
             tpn.created_at DESC,
             tpn.note_id DESC",

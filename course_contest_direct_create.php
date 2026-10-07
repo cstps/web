@@ -825,6 +825,7 @@ $password = '';
 // ============================================================
 
 $new_contest_id = 0;
+$new_lesson_id = 0;
 
 
 try {
@@ -1105,7 +1106,54 @@ try {
 
 
     // ========================================================
-    // 14-6. Course ↔ Contest 연결
+    // 14-6. Course Lesson 생성
+    //
+    // 직접 생성된 차시는 교사 확인 전까지 비공개이므로
+    // course_lesson.visible도 0으로 시작한다.
+    // ========================================================
+
+    $new_lesson_id =
+        pdo_query(
+            "INSERT INTO course_lesson
+            (
+                course_id,
+                lesson_no,
+                title,
+                description,
+                start_time,
+                end_time,
+                sort_order,
+                visible,
+                status,
+                created_by
+            )
+            VALUES
+            (
+                ?, ?, ?, NULL, ?, ?, ?, 0, 1, ?
+            )",
+            $course_id,
+            $lesson_no,
+            $contest_title,
+            $start_time,
+            $end_time,
+            $sort_order,
+            $user_id
+        );
+
+    $new_lesson_id =
+        intval($new_lesson_id);
+
+
+    if ($new_lesson_id <= 0) {
+
+        throw new Exception(
+            '새 Course Lesson 생성에 실패했습니다.'
+        );
+    }
+
+
+    // ========================================================
+    // 14-7. Course ↔ Contest 연결
     //
     // 직접 문제를 선택해서 만든 차시이므로:
     //
@@ -1119,6 +1167,7 @@ try {
         "INSERT INTO course_contest
         (
             course_id,
+            lesson_id,
             contest_id,
             source_contest_id,
             link_type,
@@ -1131,6 +1180,7 @@ try {
         (
             ?,
             ?,
+            ?,
             NULL,
             'created',
             ?,
@@ -1139,6 +1189,7 @@ try {
             ?
         )",
         $course_id,
+        $new_lesson_id,
         $new_contest_id,
         $lesson_no,
         $sort_order,
@@ -1165,6 +1216,17 @@ catch (Exception $e) {
                  WHERE contest_id = ?",
                 $new_contest_id
             );
+
+
+            // Course Lesson
+            if ($new_lesson_id > 0) {
+
+                pdo_query(
+                    "DELETE FROM course_lesson
+                     WHERE lesson_id = ?",
+                    $new_lesson_id
+                );
+            }
 
 
             // 관리자 / 참가 권한

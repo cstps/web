@@ -43,29 +43,43 @@ function course_add_student_contest_privileges(
 
     $contest_rows = pdo_query(
         "SELECT
-            contest_id,
-            link_type,
-            visible
+            cc.contest_id,
+            cc.link_type,
 
-         FROM course_contest
+            COALESCE(
+                cl.visible,
+                cc.visible
+            ) AS visible
 
-         WHERE course_id = ?
-           AND status = 1
+         FROM course_contest cc
+
+         LEFT JOIN course_lesson cl
+           ON cl.lesson_id = cc.lesson_id
+          AND cl.course_id = cc.course_id
+
+         WHERE cc.course_id = ?
+           AND cc.status = 1
            AND
            (
-                link_type = 'created'
+                cc.link_type = 'created'
 
                 OR
 
                 (
-                    link_type = 'linked'
-                    AND visible = 1
+                    cc.link_type = 'linked'
+                    AND COALESCE(
+                        cl.visible,
+                        cc.visible
+                    ) = 1
                 )
            )
 
          ORDER BY
-            lesson_no,
-            contest_id",
+            COALESCE(
+                cl.lesson_no,
+                cc.lesson_no
+            ),
+            cc.contest_id",
         $course_id
     );
 
@@ -195,17 +209,24 @@ function course_remove_student_contest_privileges(
 
     $contest_rows = pdo_query(
         "SELECT
-            contest_id,
-            link_type
+            cc.contest_id,
+            cc.link_type
 
-         FROM course_contest
+         FROM course_contest cc
 
-         WHERE course_id = ?
-           AND link_type IN ('created', 'linked')
+         LEFT JOIN course_lesson cl
+           ON cl.lesson_id = cc.lesson_id
+          AND cl.course_id = cc.course_id
+
+         WHERE cc.course_id = ?
+           AND cc.link_type IN ('created', 'linked')
 
          ORDER BY
-            lesson_no,
-            contest_id",
+            COALESCE(
+                cl.lesson_no,
+                cc.lesson_no
+            ),
+            cc.contest_id",
         $course_id
     );
 
@@ -1183,13 +1204,23 @@ $started_contest_rows =
 
          FROM course_contest cc
 
+         LEFT JOIN course_lesson cl
+           ON cl.lesson_id = cc.lesson_id
+          AND cl.course_id = cc.course_id
+
          INNER JOIN contest c
            ON c.contest_id = cc.contest_id
 
          WHERE cc.course_id = ?
            AND cc.status = 1
-           AND cc.visible = 1
-           AND c.start_time <= NOW()",
+           AND COALESCE(
+               cl.visible,
+               cc.visible
+           ) = 1
+           AND COALESCE(
+               cl.start_time,
+               c.start_time
+           ) <= NOW()",
         $course_id
     );
 
@@ -1274,16 +1305,26 @@ $view_students = pdo_query(
             FROM solution s
 
             INNER JOIN course_contest cc
-            ON cc.contest_id = s.contest_id
-            AND cc.status = 1
-            AND cc.visible = 1
+              ON cc.contest_id = s.contest_id
+             AND cc.status = 1
+
+            LEFT JOIN course_lesson cl
+              ON cl.lesson_id = cc.lesson_id
+             AND cl.course_id = cc.course_id
 
             INNER JOIN contest c
-            ON c.contest_id = cc.contest_id
+              ON c.contest_id = cc.contest_id
 
             WHERE cc.course_id = cs.course_id
-            AND s.user_id = cs.user_id
-            AND c.start_time <= NOW()
+              AND s.user_id = cs.user_id
+              AND COALESCE(
+                  cl.visible,
+                  cc.visible
+              ) = 1
+              AND COALESCE(
+                  cl.start_time,
+                  c.start_time
+              ) <= NOW()
 
         ) AS started_participated_contest_count,
 
@@ -1355,24 +1396,34 @@ $retry_unsolved_rows =
 
              FROM solution s
 
-             INNER JOIN course_contest cc
-               ON cc.contest_id = s.contest_id
+               INNER JOIN course_contest cc
+                 ON cc.contest_id = s.contest_id
 
-             INNER JOIN contest c
-               ON c.contest_id = cc.contest_id
+               LEFT JOIN course_lesson cl
+                 ON cl.lesson_id = cc.lesson_id
+                AND cl.course_id = cc.course_id
 
-             WHERE cc.course_id = ?
-               AND cc.status = 1
-               AND cc.visible = 1
-               AND c.start_time <= NOW()
+               INNER JOIN contest c
+                 ON c.contest_id = cc.contest_id
 
-             GROUP BY
-                s.user_id,
-                s.contest_id,
-                s.problem_id
+               WHERE cc.course_id = ?
+                 AND cc.status = 1
+                 AND COALESCE(
+                     cl.visible,
+                     cc.visible
+                 ) = 1
+                 AND COALESCE(
+                     cl.start_time,
+                     c.start_time
+                 ) <= NOW()
 
-             HAVING
-                COUNT(*) >= 2
+               GROUP BY
+                  s.user_id,
+                  s.contest_id,
+                  s.problem_id
+
+               HAVING
+                  COUNT(*) >= 2
 
                 AND
 

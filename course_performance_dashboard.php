@@ -123,16 +123,44 @@ $view_contests =
         "SELECT
             cc.id,
             cc.contest_id,
-            cc.lesson_no,
-            cc.sort_order,
-            cc.visible,
+            cc.lesson_id,
 
-            c.title,
-            c.start_time,
-            c.end_time,
+            COALESCE(
+                cl.lesson_no,
+                cc.lesson_no
+            ) AS lesson_no,
+
+            COALESCE(
+                cl.sort_order,
+                cc.sort_order
+            ) AS sort_order,
+
+            COALESCE(
+                cl.visible,
+                cc.visible
+            ) AS visible,
+
+            COALESCE(
+                NULLIF(cl.title, ''),
+                c.title
+            ) AS title,
+
+            COALESCE(
+                cl.start_time,
+                c.start_time
+            ) AS start_time,
+
+            COALESCE(
+                cl.end_time,
+                c.end_time
+            ) AS end_time,
+
             c.defunct
 
          FROM course_contest cc
+
+         LEFT JOIN course_lesson cl
+           ON cl.lesson_id = cc.lesson_id
 
          LEFT JOIN contest c
            ON c.contest_id = cc.contest_id
@@ -141,8 +169,14 @@ $view_contests =
            AND cc.status = 1
 
          ORDER BY
-            cc.lesson_no,
-            cc.sort_order,
+            COALESCE(
+                cl.lesson_no,
+                cc.lesson_no
+            ),
+            COALESCE(
+                cl.sort_order,
+                cc.sort_order
+            ),
             cc.contest_id",
         $course_id
     );

@@ -376,12 +376,61 @@ if ($sort_order <= 0) {
 // 처음 연결할 때는 교사가 확인 후 공개하도록 visible=0.
 // ============================================================
 
+$new_lesson_id = 0;
+
 try {
+
+    $new_lesson_id =
+        pdo_query(
+            "INSERT INTO course_lesson
+            (
+                course_id,
+                lesson_no,
+                title,
+                description,
+                start_time,
+                end_time,
+                sort_order,
+                visible,
+                status,
+                created_by
+            )
+            VALUES
+            (
+                ?, ?, ?, NULL, ?, ?, ?, 0, 1, ?
+            )",
+            $course_id,
+            $lesson_no,
+            isset($contest['title'])
+                ? trim($contest['title'])
+                : $lesson_no . '차시',
+            isset($contest['start_time'])
+                ? $contest['start_time']
+                : null,
+            isset($contest['end_time'])
+                ? $contest['end_time']
+                : null,
+            $sort_order,
+            $user_id
+        );
+
+    $new_lesson_id =
+        intval($new_lesson_id);
+
+
+    if ($new_lesson_id <= 0) {
+
+        throw new Exception(
+            '새 Course Lesson 생성에 실패했습니다.'
+        );
+    }
+
 
     $link_id = pdo_query(
         "INSERT INTO course_contest
         (
             course_id,
+            lesson_id,
             contest_id,
             source_contest_id,
             link_type,
@@ -395,6 +444,7 @@ try {
         (
             ?,
             ?,
+            ?,
             NULL,
             'linked',
             ?,
@@ -404,6 +454,7 @@ try {
             ?
         )",
         $course_id,
+        $new_lesson_id,
         $contest_id,
         $lesson_no,
         $sort_order,
@@ -424,6 +475,24 @@ try {
 
 }
 catch (Exception $e) {
+
+    if ($new_lesson_id > 0) {
+
+        try {
+
+            pdo_query(
+                "DELETE FROM course_lesson
+                 WHERE lesson_id = ?",
+                $new_lesson_id
+            );
+
+        }
+        catch (Exception $cleanup_error) {
+
+            // 정리 실패는 사용자 화면에 노출하지 않는다.
+        }
+    }
+
 
     /*
      * 사전 검사 이후 다른 요청이 동시에 실행되어

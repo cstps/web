@@ -148,6 +148,100 @@ require_once(
         display: block;
     }
 }
+
+.course-code-tiles-section {
+    margin: 18px 0 22px;
+}
+
+.course-code-tiles-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.course-code-tiles-head strong {
+    font-size: 16px;
+}
+
+.course-code-tiles-head span {
+    color: #777;
+    font-size: 12px;
+}
+
+.course-code-tiles {
+    display: grid;
+    grid-template-columns:
+        repeat(auto-fit, minmax(280px, 1fr));
+    gap: 10px;
+}
+
+.course-code-tile {
+    min-width: 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.course-code-tile.is-active {
+    border: 2px solid #2185d0;
+    box-shadow: 0 0 0 1px rgba(33, 133, 208, 0.08);
+}
+
+.course-code-tile-head {
+    padding: 9px 11px;
+    border-bottom: 1px solid #eee;
+}
+
+.course-code-tile-user {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.course-code-tile-meta {
+    margin-top: 5px;
+    font-size: 12px;
+    color: #666;
+}
+
+.course-code-tile-problem {
+    display: block;
+    margin-top: 5px;
+    text-decoration: none;
+}
+
+.course-code-tile-source {
+    margin: 0;
+    padding: 10px 11px;
+    height: 170px;
+    overflow: auto;
+    white-space: pre;
+    tab-size: 4;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.45;
+    background: #fafafa;
+}
+
+.course-code-tile-empty {
+    color: #999;
+}
+
+@media (max-width: 700px) {
+    .course-code-tiles {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+.course-code-monitor-table-toggle {
+    margin: 12px 0;
+    text-align: right;
+}
+
 </style>
 
 
@@ -179,10 +273,10 @@ require_once(
 
             <a
                 class="ui button"
-                href="course_view.php?course_id=<?php
+                href="course_performance_dashboard.php?course_id=<?php
                     echo intval($course_id);
                 ?>">
-                수업으로 돌아가기
+                수업 현황으로 돌아가기
             </a>
 
         </div>
@@ -296,7 +390,42 @@ require_once(
     </div>
 
 
-    <div class="course-code-monitor-table-wrap">
+    <div class="course-code-tiles-section">
+
+        <div class="course-code-tiles-head">
+            <strong>전체 학생 코드</strong>
+
+            <span>
+                작성 중인 학생을 우선 표시합니다.
+            </span>
+        </div>
+
+        <div
+            id="course-code-tiles"
+            class="course-code-tiles">
+        </div>
+
+    </div>
+
+
+    <div class="course-code-monitor-table-toggle">
+
+        <button
+            type="button"
+            id="course-code-monitor-table-toggle-button"
+            class="ui small button"
+            aria-expanded="false"
+            aria-controls="course-code-monitor-table-wrap">
+            상세 학생 목록 펼치기
+        </button>
+
+    </div>
+
+
+    <div
+        id="course-code-monitor-table-wrap"
+        class="course-code-monitor-table-wrap"
+        hidden>
 
         <table class="course-code-monitor-table">
 
@@ -422,25 +551,38 @@ require_once(
 
                             <td class="course-code-monitor-problem">
 
-                                <strong>
-                                    <?php
-                                    echo htmlspecialchars(
-                                        $current['problem_label'],
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    );
-                                    ?>
-                                </strong>
+                                <a
+                                    href="problem.php?id=<?php
+                                        echo intval(
+                                            $current['problem_id']
+                                        );
+                                    ?>"
+                                    target="_blank"
+                                    style="
+                                        display:block;
+                                        text-decoration:none;
+                                    "
+                                >
+                                    <strong>
+                                        <?php
+                                        echo htmlspecialchars(
+                                            $current['problem_label'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        );
+                                        ?>
+                                    </strong>
 
-                                <span class="course-code-monitor-problem-title">
-                                    <?php
-                                    echo htmlspecialchars(
-                                        $current['problem_title'],
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    );
-                                    ?>
-                                </span>
+                                    <span class="course-code-monitor-problem-title">
+                                        <?php
+                                        echo htmlspecialchars(
+                                            $current['problem_title'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        );
+                                        ?>
+                                    </span>
+                                </a>
 
                             </td>
 
@@ -754,6 +896,22 @@ require_once(
     let currentUpdatedAt = "";
     let sourceRefreshing = false;
 
+    const tileSourceCache =
+        new Map();
+
+    const tileLoading =
+        new Set();
+
+    const tableToggleButton =
+        document.getElementById(
+            "course-code-monitor-table-toggle-button"
+        );
+
+    const tableWrap =
+        document.getElementById(
+            "course-code-monitor-table-wrap"
+        );
+
 
     function openModal() {
 
@@ -890,6 +1048,430 @@ require_once(
     }
 
 
+    function getTileKey(student) {
+
+        if (!student.current) {
+            return "";
+        }
+
+        return [
+            String(student.user_id),
+            Number(student.current.contest_id),
+            Number(student.current.problem_id),
+            String(
+                student.current.updated_at || ""
+            )
+        ].join(":");
+    }
+
+
+    async function loadTileSource(
+        student,
+        sourceElement
+    ) {
+
+        if (!student.current) {
+
+            sourceElement.textContent =
+                "저장된 코드가 없습니다.";
+
+            sourceElement.classList.add(
+                "course-code-tile-empty"
+            );
+
+            return;
+        }
+
+        const cacheKey =
+            getTileKey(student);
+
+        sourceElement.dataset.cacheKey =
+            cacheKey;
+
+        if (
+            tileSourceCache.has(
+                cacheKey
+            )
+        ) {
+
+            sourceElement.textContent =
+                tileSourceCache.get(
+                    cacheKey
+                );
+
+            return;
+        }
+
+        if (
+            tileLoading.has(
+                cacheKey
+            )
+        ) {
+
+            sourceElement.textContent =
+                "코드를 불러오는 중입니다...";
+
+            return;
+        }
+
+        tileLoading.add(
+            cacheKey
+        );
+
+        sourceElement.textContent =
+            "코드를 불러오는 중입니다...";
+
+        try {
+
+            const url =
+                new URL(
+                    "contest_code_monitor_source.php",
+                    window.location.href
+                );
+
+            url.searchParams.set(
+                "cid",
+                String(
+                    student.current.contest_id
+                )
+            );
+
+            url.searchParams.set(
+                "user_id",
+                String(
+                    student.user_id
+                )
+            );
+
+            url.searchParams.set(
+                "problem_id",
+                String(
+                    student.current.problem_id
+                )
+            );
+
+            const response =
+                await fetch(
+                    url.toString(),
+                    {
+                        credentials:
+                            "same-origin",
+                        cache:
+                            "no-store"
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (
+                !response.ok ||
+                data.ok !== true
+            ) {
+
+                throw new Error(
+                    data.message ||
+                    "코드를 불러오지 못했습니다."
+                );
+            }
+
+            const source =
+                data.source || "";
+
+            tileSourceCache.set(
+                cacheKey,
+                source
+            );
+
+            if (
+                sourceElement.dataset.cacheKey
+                === cacheKey
+            ) {
+
+                sourceElement.textContent =
+                    source;
+            }
+        }
+        catch (error) {
+
+            if (
+                sourceElement.dataset.cacheKey
+                === cacheKey
+            ) {
+
+                sourceElement.textContent =
+                    error.message;
+            }
+        }
+        finally {
+
+            tileLoading.delete(
+                cacheKey
+            );
+        }
+    }
+
+
+    function renderCodeTiles(
+        students
+    ) {
+
+        const container =
+            document.getElementById(
+                "course-code-tiles"
+            );
+
+        if (!container) {
+            return;
+        }
+
+        container.textContent = "";
+
+        students.forEach(
+            (student) => {
+
+                const current =
+                    student.current;
+
+                const tile =
+                    document.createElement(
+                        "div"
+                    );
+
+                tile.className =
+                    "course-code-tile";
+
+                if (
+                    current &&
+                    current.active === true
+                ) {
+
+                    tile.classList.add(
+                        "is-active"
+                    );
+                }
+
+
+                const head =
+                    document.createElement(
+                        "div"
+                    );
+
+                head.className =
+                    "course-code-tile-head";
+
+
+                const userLine =
+                    document.createElement(
+                        "div"
+                    );
+
+                userLine.className =
+                    "course-code-tile-user";
+
+
+                const userLink =
+                    document.createElement(
+                        "a"
+                    );
+
+                userLink.href =
+                    "course_student_view.php" +
+                    "?course_id=" +
+                    encodeURIComponent(
+                        String(courseId)
+                    ) +
+                    "&user_id=" +
+                    encodeURIComponent(
+                        String(
+                            student.user_id
+                        )
+                    );
+
+                userLink.target =
+                    "_blank";
+
+                userLink.textContent =
+                    student.user_id +
+                    (
+                        student.nick
+                            ? " (" +
+                              student.nick +
+                              ")"
+                            : ""
+                    );
+
+
+                const state =
+                    document.createElement(
+                        "span"
+                    );
+
+                if (!current) {
+
+                    state.className =
+                        "ui tiny grey basic label";
+
+                    state.textContent =
+                        "코드 없음";
+                }
+                else if (
+                    current.active === true
+                ) {
+
+                    state.className =
+                        "ui tiny primary label";
+
+                    state.textContent =
+                        "작성 중";
+                }
+                else {
+
+                    state.className =
+                        "ui tiny basic label";
+
+                    state.textContent =
+                        "최근 코드";
+                }
+
+
+                userLine.appendChild(
+                    userLink
+                );
+
+                userLine.appendChild(
+                    state
+                );
+
+                head.appendChild(
+                    userLine
+                );
+
+
+                if (current) {
+
+                    const meta =
+                        document.createElement(
+                            "div"
+                        );
+
+                    meta.className =
+                        "course-code-tile-meta";
+
+                    meta.textContent =
+                        current.lesson_no +
+                        "차시 · " +
+                        current.language_name +
+                        " · " +
+                        current.updated_at;
+
+                    head.appendChild(
+                        meta
+                    );
+
+
+                    const problemLink =
+                        document.createElement(
+                            "a"
+                        );
+
+                    problemLink.className =
+                        "course-code-tile-problem";
+
+                    problemLink.href =
+                        "problem.php?id=" +
+                        Number(
+                            current.problem_id
+                        );
+
+                    problemLink.target =
+                        "_blank";
+
+                    problemLink.textContent =
+                        current.problem_label +
+                        " · " +
+                        (
+                            current.problem_title
+                            || ""
+                        );
+
+                    head.appendChild(
+                        problemLink
+                    );
+                }
+
+
+                const source =
+                    document.createElement(
+                        "pre"
+                    );
+
+                source.className =
+                    "course-code-tile-source";
+
+                if (!current) {
+
+                    source.textContent =
+                        "저장된 코드가 없습니다.";
+
+                    source.classList.add(
+                        "course-code-tile-empty"
+                    );
+                }
+                else {
+
+                    const cacheKey =
+                        getTileKey(
+                            student
+                        );
+
+                    source.dataset.cacheKey =
+                        cacheKey;
+
+                    if (
+                        tileSourceCache.has(
+                            cacheKey
+                        )
+                    ) {
+
+                        source.textContent =
+                            tileSourceCache.get(
+                                cacheKey
+                            );
+                    }
+                    else {
+
+                        source.textContent =
+                            "코드를 불러오는 중입니다...";
+                    }
+                }
+
+
+                tile.appendChild(
+                    head
+                );
+
+                tile.appendChild(
+                    source
+                );
+
+                container.appendChild(
+                    tile
+                );
+
+
+                if (current) {
+
+                    loadTileSource(
+                        student,
+                        source
+                    );
+                }
+            }
+        );
+    }
+
+
     async function refreshMonitor() {
 
         if (monitorRefreshing) {
@@ -930,6 +1512,10 @@ require_once(
             ) {
                 return;
             }
+
+            renderCodeTiles(
+                data.students
+            );
 
             const tableBody =
                 document.getElementById(
@@ -1121,6 +1707,24 @@ require_once(
 
                     cells[3].textContent = "";
 
+                    const problemLink =
+                        document.createElement(
+                            "a"
+                        );
+
+                    problemLink.href =
+                        "problem.php?id=" +
+                        Number(current.problem_id);
+
+                    problemLink.target =
+                        "_blank";
+
+                    problemLink.style.display =
+                        "block";
+
+                    problemLink.style.textDecoration =
+                        "none";
+
                     const problemLabel =
                         document.createElement(
                             "strong"
@@ -1140,12 +1744,16 @@ require_once(
                     problemTitle.textContent =
                         current.problem_title || "";
 
-                    cells[3].appendChild(
+                    problemLink.appendChild(
                         problemLabel
                     );
 
-                    cells[3].appendChild(
+                    problemLink.appendChild(
                         problemTitle
+                    );
+
+                    cells[3].appendChild(
+                        problemLink
                     );
 
                     cells[4].textContent =
@@ -1402,6 +2010,37 @@ require_once(
             }
         }
     );
+
+
+    if (
+        tableToggleButton &&
+        tableWrap
+    ) {
+
+        tableToggleButton.addEventListener(
+            "click",
+            () => {
+
+                const isHidden =
+                    tableWrap.hidden;
+
+                tableWrap.hidden =
+                    !isHidden;
+
+                tableToggleButton.setAttribute(
+                    "aria-expanded",
+                    isHidden
+                        ? "true"
+                        : "false"
+                );
+
+                tableToggleButton.textContent =
+                    isHidden
+                        ? "상세 학생 목록 접기"
+                        : "상세 학생 목록 펼치기";
+            }
+        );
+    }
 
 
     refreshMonitor();

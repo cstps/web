@@ -701,6 +701,7 @@ $password = '';
 // ============================================================
 
 $new_contest_id = 0;
+$new_lesson_id = 0;
 
 
 try {
@@ -914,13 +915,58 @@ try {
     }
 
     // ========================================================
-    // 21. Course ↔ Contest 연결
+    // 21. Course Lesson 생성
+    // ========================================================
+
+    $new_lesson_id =
+        pdo_query(
+            "INSERT INTO course_lesson
+            (
+                course_id,
+                lesson_no,
+                title,
+                description,
+                start_time,
+                end_time,
+                sort_order,
+                visible,
+                status,
+                created_by
+            )
+            VALUES
+            (
+                ?, ?, ?, NULL, ?, ?, ?, 1, 1, ?
+            )",
+            $course_id,
+            $lesson_no,
+            $contest_title,
+            $start_time,
+            $end_time,
+            $sort_order,
+            $user_id
+        );
+
+    $new_lesson_id =
+        intval($new_lesson_id);
+
+
+    if ($new_lesson_id <= 0) {
+
+        throw new Exception(
+            '새 Course Lesson 생성에 실패했습니다.'
+        );
+    }
+
+
+    // ========================================================
+    // 22. Course ↔ Contest 연결
     // ========================================================
 
     pdo_query(
         "INSERT INTO course_contest
         (
             course_id,
+            lesson_id,
             contest_id,
             source_contest_id,
             link_type,
@@ -931,9 +977,10 @@ try {
         )
         VALUES
         (
-            ?, ?, ?, 'created', ?, ?, 1, ?
+            ?, ?, ?, ?, 'created', ?, ?, 1, ?
         )",
         $course_id,
+        $new_lesson_id,
         $new_contest_id,
         $source_contest_id,
         $lesson_no,
@@ -959,6 +1006,15 @@ catch (Exception $e) {
                  WHERE contest_id = ?",
                 $new_contest_id
             );
+
+            if ($new_lesson_id > 0) {
+
+                pdo_query(
+                    "DELETE FROM course_lesson
+                     WHERE lesson_id = ?",
+                    $new_lesson_id
+                );
+            }
 
             pdo_query(
                 "DELETE FROM privilege

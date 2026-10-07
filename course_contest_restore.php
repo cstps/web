@@ -86,6 +86,7 @@ if (
 $link_rows = pdo_query(
     "SELECT
         id,
+        lesson_id,
         status,
         link_type
      FROM course_contest
@@ -118,6 +119,22 @@ if (intval($link_rows[0]['status']) !== 0) {
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);
 }
+
+$lesson_id =
+    isset($link_rows[0]['lesson_id'])
+        ? intval($link_rows[0]['lesson_id'])
+        : 0;
+
+
+if ($lesson_id <= 0) {
+
+    $view_errors =
+        "<h2>이전 구조에서 제거된 차시는 복원할 수 없습니다.</h2>";
+
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
+
 
 $link_type =
     isset($link_rows[0]['link_type'])
@@ -157,6 +174,19 @@ pdo_query(
        AND status = 0",
     $course_id,
     $contest_id
+);
+
+
+pdo_query(
+    "UPDATE course_lesson
+     SET
+        status = 1,
+        visible = 0
+     WHERE lesson_id = ?
+       AND course_id = ?
+       AND status = 0",
+    $lesson_id,
+    $course_id
 );
 
 

@@ -73,12 +73,16 @@ require_once(
 }
 
 .course-performance-table {
-    min-width: 900px;
+    width: auto !important;
+    min-width: 0;
 }
 
 .course-performance-problem {
-    min-width: 78px;
+    width: 88px;
+    min-width: 88px;
+    max-width: 88px;
     text-align: center;
+    white-space: nowrap;
 }
 
 .course-performance-problem-link {
@@ -311,14 +315,42 @@ require_once(
                         ) {
                         ?>
 
-                            <th class="center aligned">
-                                <?php
-                                echo htmlspecialchars(
-                                    $problem['label'],
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                );
-                                ?>
+                            <th
+                                class="center aligned course-performance-problem"
+                                style="padding:0;"
+                            >
+                                <a
+                                    href="problem.php?id=<?php
+                                        echo intval(
+                                            $problem['problem_id']
+                                        );
+                                    ?>"
+                                    target="_blank"
+                                    title="<?php
+                                        echo htmlspecialchars(
+                                            isset($problem['title'])
+                                                ? $problem['title']
+                                                : '',
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        );
+                                    ?>"
+                                    style="
+                                        display:block;
+                                        width:100%;
+                                        height:100%;
+                                        padding:0.8em 0.6em;
+                                        box-sizing:border-box;
+                                    "
+                                >
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $problem['label'],
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    );
+                                    ?>
+                                </a>
                             </th>
 
                         <?php } ?>
@@ -404,6 +436,7 @@ require_once(
                                     ?>&user_id=<?php
                                         echo urlencode($user_id);
                                     ?>"
+                                    target="_blank"
                                     title="학생 학습현황 보기"
                                 >
                                     <strong>
@@ -529,6 +562,7 @@ require_once(
                                             ?>&course_id=<?php
                                                 echo intval($course_id);
                                             ?>"
+                                            target="_blank"
                                         >
                                             <span
                                                 class="ui tiny <?php
