@@ -14,6 +14,7 @@
     let traceSteps = [];
     let traceIndex = -1;
     let traceMarkerId = null;
+    let traceError = null;
 
     // 요청별 제한 시간. 서버의 실행 시간 제한과는 별도로 처리한다.
     async function request(url, options = {}) {
@@ -66,6 +67,42 @@
 
         panel.hidden = false;
 
+        const isErrorStep =
+            traceError &&
+            Number.isInteger(traceError.line) &&
+            traceError.line === step.line;
+
+        const errorElement =
+            el("trace-error");
+
+        if (errorElement) {
+            if (isErrorStep) {
+                const errorType =
+                    typeof traceError.type === "string"
+                        ? traceError.type
+                        : "Error";
+
+                const errorMessage =
+                    typeof traceError.message === "string"
+                        ? traceError.message
+                        : "";
+
+                errorElement.textContent =
+                    errorType +
+                    (
+                        errorMessage !== ""
+                            ? ": " + errorMessage
+                            : ""
+                    );
+
+                errorElement.hidden = false;
+            }
+            else {
+                errorElement.textContent = "";
+                errorElement.hidden = true;
+            }
+        }
+
         el("trace-position").textContent =
             "단계 " +
             (traceIndex + 1) +
@@ -106,7 +143,9 @@
                         step.line - 1,
                         1
                     ),
-                    "execution-current-line",
+                    isErrorStep
+                        ? "execution-error-line"
+                        : "execution-current-line",
                     "fullLine"
                 );
 
@@ -137,6 +176,17 @@
 
         const names = Object.keys(variables);
 
+        const previousStep =
+            traceIndex > 0
+                ? traceSteps[traceIndex - 1] || {}
+                : {};
+
+        const previousVariables =
+            previousStep.variables &&
+            typeof previousStep.variables === "object"
+                ? previousStep.variables
+                : {};
+
         if (names.length === 0) {
             variablesElement.textContent =
                 "표시할 변수가 없습니다.";
@@ -164,6 +214,29 @@
                 nameCell.textContent = name;
                 valueCell.textContent =
                     String(variables[name]);
+
+                const isNewVariable =
+                    !Object.prototype.hasOwnProperty.call(
+                        previousVariables,
+                        name
+                    );
+
+                const isChangedVariable =
+                    !isNewVariable &&
+                    String(previousVariables[name]) !==
+                        String(variables[name]);
+
+                if (
+                    traceIndex > 0 &&
+                    (
+                        isNewVariable ||
+                        isChangedVariable
+                    )
+                ) {
+                    tr.classList.add(
+                        "test-run-trace-variable-changed"
+                    );
+                }
 
                 tr.appendChild(nameCell);
                 tr.appendChild(valueCell);
@@ -203,6 +276,7 @@
     function loadTrace(data) {
         traceSteps = [];
         traceIndex = -1;
+        traceError = null;
 
         const panel = el("trace-panel");
 
@@ -234,6 +308,13 @@
         }
 
         traceSteps = data.trace.steps;
+
+        traceError =
+            data.trace.error &&
+            typeof data.trace.error === "object"
+                ? data.trace.error
+                : null;
+
         traceIndex = 0;
 
         renderTraceStep();

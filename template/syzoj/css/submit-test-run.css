@@ -65,3 +65,35 @@
     background: #fff;
     box-sizing: border-box;
 }
+
+.test-run-trace-error {
+    margin: 0.75rem 0;
+    padding: 0.75rem;
+    border: 1px solid rgba(219, 40, 40, 0.35);
+    border-radius: 0.4rem;
+    background: rgba(219, 40, 40, 0.06);
+    color: #9f3a38;
+    font-weight: 600;
+}
+
+.test-run-trace-variable-changed td {
+    background: rgba(33, 133, 208, 0.16) !important;
+    font-weight: 700;
+}
+
+.test-run-trace-variable-changed td:first-child {
+    border-left: 4px solid #2185d0 !important;
+}
+
+.test-run-trace-variable-changed td:last-child::after {
+    content: "변경";
+    display: inline-block;
+    margin-left: 0.6rem;
+    padding: 0.12rem 0.35rem;
+    border-radius: 0.25rem;
+    background: #2185d0;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    vertical-align: middle;
+}

@@ -86,6 +86,12 @@ $test_run_readonly = !empty($view_source_readonly);
                 <strong id="test-run-trace-line">—</strong>
             </div>
 
+            <div
+                id="test-run-trace-error"
+                class="test-run-trace-error"
+                hidden>
+            </div>
+
             <div class="test-run-trace-grid">
 
                 <div>

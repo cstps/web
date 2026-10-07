@@ -429,3 +429,11 @@
     border-bottom: 1px solid rgba(220, 170, 0, 0.35);
     z-index: 4;
 }
+
+.execution-error-line {
+    position: absolute;
+    background: rgba(219, 40, 40, 0.18);
+    border-top: 1px solid rgba(219, 40, 40, 0.45);
+    border-bottom: 1px solid rgba(219, 40, 40, 0.45);
+    z-index: 4;
+}

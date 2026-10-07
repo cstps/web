@@ -558,6 +558,7 @@ import sys
 _OJ_MAX_STEPS = ' . $max_steps . '
 _OJ_STEPS = []
 _OJ_TRACE_TRUNCATED = False
+_OJ_TRACE_ERROR = None
 
 # judge_client 저장 한도(512 KiB)보다 여유 있게 제한한다.
 _OJ_MAX_TRACE_BYTES = 400 * 1024
@@ -693,7 +694,8 @@ def _oj_save_trace():
         "version": 1,
         "steps": _OJ_STEPS,
         "step_count": len(_OJ_STEPS),
-        "truncated": bool(_OJ_TRACE_TRUNCATED)
+        "truncated": bool(_OJ_TRACE_TRUNCATED),
+        "error": _OJ_TRACE_ERROR
     }
 
     try:
@@ -734,6 +736,29 @@ try:
         _OJ_NAMESPACE,
         _OJ_NAMESPACE
     )
+
+except Exception as _oj_error:
+    _OJ_TRACE_ERROR = {
+        "line": None,
+        "type": type(_oj_error).__name__,
+        "message": str(_oj_error)
+    }
+
+    _oj_tb = _oj_error.__traceback__
+
+    while _oj_tb is not None:
+        if (
+            _oj_tb.tb_frame.f_code.co_filename
+            == "<student>"
+        ):
+            _OJ_TRACE_ERROR["line"] = int(
+                _oj_tb.tb_lineno
+            )
+
+        _oj_tb = _oj_tb.tb_next
+
+    raise
+
 finally:
     sys.settrace(None)
     sys.stdout = _OJ_REAL_STDOUT
