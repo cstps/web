@@ -1,0 +1,142 @@
+diff --git a/judge_client.cc b/judge_client.cc
+index 35765e0..343d0fc 100755
+--- a/judge_client.cc
++++ b/judge_client.cc
+@@ -1245,6 +1245,129 @@ free(output);
+ free(errors);
+ return saved;
+ }
++
++// 단계적 실행에서 생성한 trace.json을 별도 테이블에 저장한다.
++// trace.json이 없으면 일반 전체 실행이므로 아무 작업도 하지 않는다.
++static bool save_test_run_trace_mysql(int solution_id)
++{
++const unsigned long limit = 524288;
++
++FILE *fp = fopen("trace.json", "rb");
++
++if (fp == NULL)
++{
++return true;
++}
++
++unsigned char *trace =
++(unsigned char *)malloc(limit + 1);
++
++if (trace == NULL)
++{
++fclose(fp);
++write_log("test run trace allocation failed");
++return false;
++}
++
++size_t count =
++fread(
++trace,
++1,
++limit + 1,
++fp);
++
++bool failed = ferror(fp) != 0;
++fclose(fp);
++
++if (failed)
++{
++free(trace);
++write_log("test run trace read failed");
++return false;
++}
++
++if (count > limit)
++{
++    free(trace);
++
++    write_log(
++        "test run trace exceeds 512 KiB; "
++        "trace was not saved");
++
++    return false;
++}
++
++unsigned long length =
++(unsigned long)count;
++
++int truncated = 0;
++int step_count = 0;
++
++const char *sql =
++"INSERT INTO test_run_trace "
++"(solution_id,trace_json,step_count,truncated) "
++"VALUES(?,?,?,?) "
++"ON DUPLICATE KEY UPDATE "
++"trace_json=VALUES(trace_json),"
++"step_count=VALUES(step_count),"
++"truncated=VALUES(truncated),"
++"updated_at=CURRENT_TIMESTAMP";
++
++MYSQL_BIND bindings[4];
++memset(bindings, 0, sizeof(bindings));
++
++bindings[0].buffer_type = MYSQL_TYPE_LONG;
++bindings[0].buffer = &solution_id;
++bindings[0].buffer_length = sizeof(int);
++
++bindings[1].buffer_type = MYSQL_TYPE_BLOB;
++bindings[1].buffer = trace;
++bindings[1].buffer_length = length;
++bindings[1].length = &length;
++
++bindings[2].buffer_type = MYSQL_TYPE_LONG;
++bindings[2].buffer = &step_count;
++bindings[2].buffer_length = sizeof(int);
++
++bindings[3].buffer_type = MYSQL_TYPE_LONG;
++bindings[3].buffer = &truncated;
++bindings[3].buffer_length = sizeof(int);
++
++MYSQL_STMT *statement = mysql_stmt_init(conn);
++bool saved = false;
++
++if (statement != NULL)
++{
++if (
++mysql_stmt_prepare(
++statement,
++sql,
++(unsigned long)strlen(sql)) == 0 &&
++mysql_stmt_bind_param(statement, bindings) == 0 &&
++mysql_stmt_execute(statement) == 0
++)
++{
++saved = true;
++}
++else
++{
++write_log("test run trace database save failed");
++fprintf(
++stderr,
++"test run trace: %s\n",
++mysql_stmt_error(statement));
++}
++
++mysql_stmt_close(statement);
++}
++else
++{
++write_log("test run trace statement creation failed");
++}
++
++free(trace);
++return saved;
++}
+ #endif
+
+ void addreinfo(int solution_id)
+@@ -3617,6 +3740,7 @@ int main(int argc, char **argv)
+ if (!http_judge)
+ {
+ save_test_run_result_mysql(solution_id, ACflg);
++save_test_run_trace_mysql(solution_id);
+ }
+ #endif
+ update_solution(solution_id, OJ_TR, usedtime, topmemory >> 10, 0, 0, 0);
