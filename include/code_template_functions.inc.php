@@ -144,6 +144,137 @@ function oj_extract_language_template(
     return $language_code;
 }
 
+
+// ============================================================
+// 문제의 언어별 front/rear 템플릿 조회
+//
+// 우선순위:
+// 1. problem_template의 problem_id + language_id
+// 2. 기존 problem.front_code/rear_code의 //언어명// 형식
+//
+// 기존 문제와의 호환성을 유지하면서 신규 problem_template
+// 구조를 실제 실행 경로에서 사용할 수 있도록 한다.
+// ============================================================
+
+function oj_get_problem_language_templates(
+    $problem_id,
+    $language_id,
+    $language_names,
+    $legacy_front_code,
+    $legacy_rear_code
+) {
+
+    $problem_id =
+        intval($problem_id);
+
+    $language_id =
+        intval($language_id);
+
+
+    $result = array(
+        'front' => '',
+        'rear' => '',
+        'source' => 'legacy'
+    );
+
+
+    // problem_template을 사용할 수 있으면
+    // language_id 기준 데이터를 가장 먼저 사용한다.
+    if (
+        $problem_id > 0 &&
+        function_exists('pdo_query')
+    ) {
+
+        $rows =
+            pdo_query(
+                "SELECT
+                    kind,
+                    content
+                 FROM problem_template
+                 WHERE problem_id = ?
+                   AND language_id = ?
+                 ORDER BY kind",
+                $problem_id,
+                $language_id
+            );
+
+
+        if (
+            is_array($rows) &&
+            count($rows) > 0
+        ) {
+
+            foreach ($rows as $row) {
+
+                $kind =
+                    isset($row['kind'])
+                        ? (string)$row['kind']
+                        : '';
+
+                $content =
+                    isset($row['content'])
+                        ? oj_normalize_source_newlines(
+                            $row['content']
+                        )
+                        : '';
+
+
+                if ($kind === 'front') {
+
+                    $result['front'] =
+                        $content;
+                }
+                elseif ($kind === 'rear') {
+
+                    $result['rear'] =
+                        $content;
+                }
+            }
+
+
+            $result['source'] =
+                'problem_template';
+
+            return $result;
+        }
+    }
+
+
+    // --------------------------------------------------------
+    // problem_template에 해당 언어 데이터가 없으면
+    // 기존 //C//, //C++//, //Python// 형식을 사용한다.
+    // --------------------------------------------------------
+
+    $legacy_front =
+        oj_extract_language_template(
+            $legacy_front_code,
+            $language_id,
+            $language_names
+        );
+
+    $legacy_rear =
+        oj_extract_language_template(
+            $legacy_rear_code,
+            $language_id,
+            $language_names
+        );
+
+
+    $result['front'] =
+        $legacy_front === null
+            ? ''
+            : $legacy_front;
+
+    $result['rear'] =
+        $legacy_rear === null
+            ? ''
+            : $legacy_rear;
+
+
+    return $result;
+}
+
+
 // ============================================================
 // 기존 front_code/rear_code 문자열을 언어별 템플릿으로 분석
 // ============================================================
@@ -524,7 +655,9 @@ function oj_build_judge_source(
 // ============================================================
 
 function oj_build_python_trace_source(
+    $front_code,
     $user_source,
+    $rear_code,
     $max_steps = 500
 ) {
 
@@ -534,9 +667,76 @@ function oj_build_python_trace_source(
         $max_steps = 500;
     }
 
+
+    $front_code =
+        oj_normalize_source_newlines(
+            $front_code
+        );
+
+    $user_source =
+        oj_normalize_source_newlines(
+            $user_source
+        );
+
+    $rear_code =
+        oj_normalize_source_newlines(
+            $rear_code
+        );
+
+
+    // oj_build_judge_source()가 Front와 학생 코드 사이에
+    // 추가할 수 있는 줄바꿈까지 포함하여 offset을 계산한다.
+    $trace_front =
+        $front_code;
+
+    if (
+        $trace_front !== '' &&
+        substr($trace_front, -1) !== "\n" &&
+        $user_source !== '' &&
+        substr($user_source, 0, 1) !== "\n"
+    ) {
+        $trace_front .= "\n";
+    }
+
+
+    $student_line_offset =
+        substr_count(
+            $trace_front,
+            "\n"
+        );
+
+
+    if ($user_source === '') {
+
+        $student_line_count = 0;
+    }
+    else {
+
+        $student_line_count =
+            substr_count(
+                $user_source,
+                "\n"
+            );
+
+        if (
+            substr($user_source, -1) !== "\n"
+        ) {
+            $student_line_count++;
+        }
+    }
+
+
+    $judge_source =
+        oj_build_judge_source(
+            $front_code,
+            $user_source,
+            $rear_code
+        );
+
+
     $encoded_source =
         base64_encode(
-            (string)$user_source
+            $judge_source
         );
 
     $encoded_literal =
@@ -556,6 +756,9 @@ import os
 import sys
 
 _OJ_MAX_STEPS = ' . $max_steps . '
+_OJ_STUDENT_LINE_OFFSET = ' . $student_line_offset . '
+_OJ_STUDENT_LINE_COUNT = ' . $student_line_count . '
+
 _OJ_STEPS = []
 _OJ_TRACE_TRUNCATED = False
 _OJ_TRACE_ERROR = None
@@ -563,6 +766,10 @@ _OJ_TRACE_ERROR = None
 # judge_client 저장 한도(512 KiB)보다 여유 있게 제한한다.
 _OJ_MAX_TRACE_BYTES = 400 * 1024
 _OJ_TRACE_BYTES = 0
+
+# frame별로 아직 실행 결과를 반영하지 않은
+# 학생 코드 단계의 index를 보관한다.
+_OJ_ACTIVE_STEPS = {}
 
 _OJ_REAL_STDOUT = sys.stdout
 _OJ_STDOUT_BUFFER = io.StringIO()
@@ -611,6 +818,50 @@ def _oj_capture_state(frame):
     }
 
 
+def _oj_student_line(actual_line):
+    if _OJ_STUDENT_LINE_COUNT <= 0:
+        return None
+
+    student_line = (
+        int(actual_line) -
+        _OJ_STUDENT_LINE_OFFSET
+    )
+
+    if (
+        student_line < 1 or
+        student_line > _OJ_STUDENT_LINE_COUNT
+    ):
+        return None
+
+    return student_line
+
+
+def _oj_finish_active_step(frame):
+    step_index = _OJ_ACTIVE_STEPS.pop(
+        frame,
+        None
+    )
+
+    if step_index is None:
+        return
+
+    if (
+        step_index < 0 or
+        step_index >= len(_OJ_STEPS)
+    ):
+        return
+
+    state = _oj_capture_state(frame)
+
+    _OJ_STEPS[step_index]["variables"] = (
+        state["variables"]
+    )
+
+    _OJ_STEPS[step_index]["stdout"] = (
+        state["stdout"]
+    )
+
+
 def _oj_trace(frame, event, arg):
     global _OJ_TRACE_TRUNCATED
     global _OJ_TRACE_BYTES
@@ -620,26 +871,25 @@ def _oj_trace(frame, event, arg):
 
     if event == "line":
 
-        # 새로운 줄에 도착했다는 것은
-        # 직전에 기록한 줄의 실행이 끝났다는 뜻이다.
-        if _OJ_STEPS:
-            state = _oj_capture_state(frame)
+        # 같은 frame의 직전 학생 코드 줄이 있었다면
+        # 현재 줄에 도착한 시점에서 실행 결과를 확정한다.
+        _oj_finish_active_step(frame)
 
-            _OJ_STEPS[-1]["variables"] = (
-                state["variables"]
-            )
+        student_line = _oj_student_line(
+            frame.f_lineno
+        )
 
-            _OJ_STEPS[-1]["stdout"] = (
-                state["stdout"]
-            )
+        # Front/Rear 줄은 실제로 실행하되
+        # 학생 단계 목록에는 기록하지 않는다.
+        if student_line is None:
+            return _oj_trace
 
         if len(_OJ_STEPS) >= _OJ_MAX_STEPS:
             _OJ_TRACE_TRUNCATED = True
             return _oj_trace
 
-        # 지금부터 실행할 줄을 새 단계로 등록한다.
         new_step = {
-            "line": int(frame.f_lineno),
+            "line": int(student_line),
             "variables": {},
             "stdout": ""
         }
@@ -662,22 +912,17 @@ def _oj_trace(frame, event, arg):
         _OJ_STEPS.append(new_step)
         _OJ_TRACE_BYTES += estimated_bytes
 
+        _OJ_ACTIVE_STEPS[frame] = (
+            len(_OJ_STEPS) - 1
+        )
+
         return _oj_trace
 
     if event == "return":
 
-        # 마지막 줄은 다음 line 이벤트가 없으므로
-        # 함수/프로그램 종료 시점에서 최종 상태를 반영한다.
-        if _OJ_STEPS:
-            state = _oj_capture_state(frame)
-
-            _OJ_STEPS[-1]["variables"] = (
-                state["variables"]
-            )
-
-            _OJ_STEPS[-1]["stdout"] = (
-                state["stdout"]
-            )
+        # 해당 frame에서 실행한 마지막 학생 코드 줄은
+        # 다음 line 이벤트가 없을 수 있으므로 여기서 확정한다.
+        _oj_finish_active_step(frame)
 
         return _oj_trace
 
@@ -751,9 +996,14 @@ except Exception as _oj_error:
             _oj_tb.tb_frame.f_code.co_filename
             == "<student>"
         ):
-            _OJ_TRACE_ERROR["line"] = int(
+            _oj_error_line = _oj_student_line(
                 _oj_tb.tb_lineno
             )
+
+            if _oj_error_line is not None:
+                _OJ_TRACE_ERROR["line"] = int(
+                    _oj_error_line
+                )
 
         _oj_tb = _oj_tb.tb_next
 

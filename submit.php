@@ -368,9 +368,11 @@ $source_user =
 $front_code = "";
 $rear_code  = "";
 $ban_code   = "";
+
+$abs_pid = abs($id);
+
 if ($id !== 0) {
     // test_run에서 $id가 음수일 수 있으므로 절댓값으로 원래 문제를 찾음
-    $abs_pid = abs($id);
     $rowp = pdo_query("SELECT `front_code`,`rear_code`,`ban_code` FROM `problem` WHERE `problem_id`=?", $abs_pid);
     if ($rowp && count($rowp) > 0) {
         $front_code = (string)$rowp[0]['front_code'];
@@ -393,19 +395,20 @@ if (!empty($ban_code)) {
 }
 
 // (3) 제출 언어에 해당하는 front/rear 코드 추출
-$front_code_print =
-    oj_extract_language_template(
-        $front_code,
+$language_templates =
+    oj_get_problem_language_templates(
+        $abs_pid,
         $language,
-        $language_name
+        $language_name,
+        $front_code,
+        $rear_code
     );
 
+$front_code_print =
+    $language_templates['front'];
+
 $rear_code_print =
-    oj_extract_language_template(
-        $rear_code,
-        $language,
-        $language_name
-    );
+    $language_templates['rear'];
 
 
 // 학생 원본은 변경하지 않고 채점용 코드만 결합
@@ -426,11 +429,11 @@ if ($language == 6) { // Python3
 // ============================================================
 // Python 단계적 실행
 //
-// 1차 구현:
-// - Python3만 지원
-// - front/rear 코드가 없는 문제만 지원
+// - 현재 Python3만 지원
+// - front + 학생 코드 + rear 전체를 실제로 실행
+// - 단계 목록에는 학생이 작성한 코드 줄만 기록
+// - ACE 줄 번호는 학생 코드 기준으로 표시
 // - 학생 원본 코드는 source_user에 그대로 유지
-// - 실제 실행용 source만 trace wrapper로 변환
 // ============================================================
 
 if (
@@ -459,7 +462,9 @@ if (
 
     $source =
         oj_build_python_trace_source(
+            '',
             $source_user,
+            '',
             500
         );
 }
