@@ -2,11 +2,18 @@
     "use strict";
     const form = document.getElementById("frmSolution");
     const button = document.getElementById("test-run-button");
+    const traceButton =
+        document.getElementById("test-run-trace-button");
+
     if (!form || !button) return;
     const el = id => document.getElementById("test-run-" + id);
     const retry = el("retry");
     let busy = false;
     let solutionId = null;
+
+    let traceSteps = [];
+    let traceIndex = -1;
+    let traceMarkerId = null;
 
     // 요청별 제한 시간. 서버의 실행 시간 제한과는 별도로 처리한다.
     async function request(url, options = {}) {
@@ -38,6 +45,201 @@
             : "실행 요청이 거부되었습니다. 로그인, 인증번호와 제출 간격을 확인해 주세요.";
     }
 
+    function renderTraceStep() {
+        const panel = el("trace-panel");
+
+        if (!panel) {
+            return;
+        }
+
+        if (
+            !Array.isArray(traceSteps) ||
+            traceSteps.length === 0 ||
+            traceIndex < 0 ||
+            traceIndex >= traceSteps.length
+        ) {
+            panel.hidden = true;
+            return;
+        }
+
+        const step = traceSteps[traceIndex] || {};
+
+        panel.hidden = false;
+
+        el("trace-position").textContent =
+            "단계 " +
+            (traceIndex + 1) +
+            " / " +
+            traceSteps.length;
+
+        el("trace-line").textContent =
+            Number.isInteger(step.line)
+                ? String(step.line)
+                : "—";
+
+        if (
+            window.editor &&
+            typeof window.editor.gotoLine === "function" &&
+            Number.isInteger(step.line) &&
+            step.line > 0
+        ) {
+            const aceEditor = window.editor;
+
+            if (traceMarkerId !== null) {
+                aceEditor.session.removeMarker(
+                    traceMarkerId
+                );
+
+                traceMarkerId = null;
+            }
+
+            const Range =
+                ace.require(
+                    "ace/range"
+                ).Range;
+
+            traceMarkerId =
+                aceEditor.session.addMarker(
+                    new Range(
+                        step.line - 1,
+                        0,
+                        step.line - 1,
+                        1
+                    ),
+                    "execution-current-line",
+                    "fullLine"
+                );
+
+            aceEditor.gotoLine(
+                step.line,
+                0,
+                true
+            );
+
+            aceEditor.scrollToLine(
+                step.line - 1,
+                true,
+                true,
+                function () {}
+            );
+        }
+
+        const variablesElement =
+            el("trace-variables");
+
+        variablesElement.textContent = "";
+
+        const variables =
+            step.variables &&
+            typeof step.variables === "object"
+                ? step.variables
+                : {};
+
+        const names = Object.keys(variables);
+
+        if (names.length === 0) {
+            variablesElement.textContent =
+                "표시할 변수가 없습니다.";
+        }
+        else {
+            const table =
+                document.createElement("table");
+
+            table.className =
+                "ui very basic compact table";
+
+            const tbody =
+                document.createElement("tbody");
+
+            names.forEach(name => {
+                const tr =
+                    document.createElement("tr");
+
+                const nameCell =
+                    document.createElement("td");
+
+                const valueCell =
+                    document.createElement("td");
+
+                nameCell.textContent = name;
+                valueCell.textContent =
+                    String(variables[name]);
+
+                tr.appendChild(nameCell);
+                tr.appendChild(valueCell);
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(tbody);
+            variablesElement.appendChild(table);
+        }
+
+        el("trace-stdout").textContent =
+            typeof step.stdout === "string" &&
+            step.stdout !== ""
+                ? step.stdout
+                : "아직 출력이 없습니다.";
+
+        const prev = el("trace-prev");
+        const next = el("trace-next");
+        const last = el("trace-last");
+
+        if (prev) {
+            prev.disabled = traceIndex <= 0;
+        }
+
+        if (next) {
+            next.disabled =
+                traceIndex >= traceSteps.length - 1;
+        }
+
+        if (last) {
+            last.disabled =
+                traceIndex >= traceSteps.length - 1;
+        }
+    }
+
+
+    function loadTrace(data) {
+        traceSteps = [];
+        traceIndex = -1;
+
+        const panel = el("trace-panel");
+
+        const normalOutput =
+            document.getElementById(
+                "test-run-normal-output"
+            );
+
+        if (
+            !data ||
+            data.trace_available !== true ||
+            !data.trace ||
+            !Array.isArray(data.trace.steps) ||
+            data.trace.steps.length === 0
+        ) {
+            if (panel) {
+                panel.hidden = true;
+            }
+
+            if (normalOutput) {
+                normalOutput.hidden = false;
+            }
+
+            return;
+        }
+
+        if (normalOutput) {
+            normalOutput.hidden = true;
+        }
+
+        traceSteps = data.trace.steps;
+        traceIndex = 0;
+
+        renderTraceStep();
+    }
+
+
     function render(data) {
         el("status").textContent = data.status;
         el("time").textContent = data.time_ms + " ms";
@@ -51,12 +253,20 @@
         if (data.stdout_truncated) warnings.push("표준 출력은 앞부분 64 KiB까지 표시합니다.");
         if (data.stderr_truncated) warnings.push("오류 출력은 앞부분 64 KiB까지 표시합니다.");
         if (data.compile_error_truncated) warnings.push("컴파일 오류 메시지 일부가 생략되었습니다.");
+
+        if (data.trace_truncated) {
+            warnings.push(
+                "단계적 실행 내용이 많아 일부 단계 또는 상태가 생략되었습니다."
+            );
+        }
         if (data.stdout_invalid_utf8 || data.stderr_invalid_utf8 || data.compile_error_invalid_utf8) {
             warnings.push("UTF-8로 표시할 수 없는 바이트가 있어 일부 문자가 대체되었습니다.");
         }
         if (data.message) warnings.push(data.message);
         el("warnings").textContent = warnings.join("\n");
         el("warnings").hidden = warnings.length === 0;
+
+        loadTrace(data);
     }
 
     async function poll() {
@@ -79,10 +289,15 @@
         throw new Error("결과 조회 대기 시간이 지났습니다. 결과 다시 확인을 눌러 주세요.");
     }
 
-    async function run(checkOnly) {
+    async function run(checkOnly, mode = "normal") {
         if (busy) return;
         busy = true;
         button.disabled = true;
+
+        if (traceButton) {
+            traceButton.disabled = true;
+        }
+
         retry.disabled = true;
         retry.hidden = true;
         el("results").hidden = false;
@@ -105,6 +320,14 @@
                 }
                 const data = new FormData(form);
                 data.set("source", source);
+
+                data.set(
+                    "test_run_mode",
+                    mode === "trace"
+                        ? "trace"
+                        : "normal"
+                );
+
                 ["encoded_submit", "reverse2"].forEach(name => data.delete(name));
 
                 // 원래 문제의 코드 템플릿과 대회 설정을 적용하는 시험 실행 경로
@@ -135,10 +358,77 @@
         } finally {
             busy = false;
             button.disabled = false;
+
+            if (traceButton) {
+                traceButton.disabled = false;
+            }
+
             retry.disabled = false;
         }
     }
-    button.addEventListener("click", () => run(false));
-    retry.addEventListener("click", () => run(true));
+    button.addEventListener(
+        "click",
+        () => run(false, "normal")
+    );
+
+    if (traceButton) {
+        traceButton.addEventListener(
+            "click",
+            () => run(false, "trace")
+        );
+
+        traceButton.disabled = false;
+    }
+
+    retry.addEventListener(
+        "click",
+        () => run(true, "normal")
+    );
+
+    const tracePrev = el("trace-prev");
+    const traceNext = el("trace-next");
+    const traceLast = el("trace-last");
+
+    if (tracePrev) {
+        tracePrev.addEventListener(
+            "click",
+            () => {
+                if (traceIndex > 0) {
+                    traceIndex--;
+                    renderTraceStep();
+                }
+            }
+        );
+    }
+
+    if (traceNext) {
+        traceNext.addEventListener(
+            "click",
+            () => {
+                if (
+                    traceIndex >= 0 &&
+                    traceIndex < traceSteps.length - 1
+                ) {
+                    traceIndex++;
+                    renderTraceStep();
+                }
+            }
+        );
+    }
+
+    if (traceLast) {
+        traceLast.addEventListener(
+            "click",
+            () => {
+                if (traceSteps.length > 0) {
+                    traceIndex =
+                        traceSteps.length - 1;
+
+                    renderTraceStep();
+                }
+            }
+        );
+    }
+
     button.disabled = false;
 })();

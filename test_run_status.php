@@ -74,12 +74,25 @@ $rows = pdo_query(
         OCTET_LENGTH(t.stderr) > 65536 AS stderr_capped,
         c.solution_id AS compile_result_id,
         LEFT(c.error, 65536) AS compile_error,
-        OCTET_LENGTH(c.error) > 65536 AS compile_error_truncated
+        OCTET_LENGTH(c.error) > 65536 AS compile_error_truncated,
+
+        tr.solution_id AS trace_result_id,
+        LEFT(tr.trace_json, 524288) AS trace_json,
+        tr.step_count AS trace_step_count,
+        tr.truncated AS trace_truncated,
+        OCTET_LENGTH(tr.trace_json) > 524288 AS trace_capped
+
      FROM solution s
+
      LEFT JOIN test_run_result t
         ON t.solution_id = s.solution_id
+
      LEFT JOIN compileinfo c
-        ON c.solution_id = s.solution_id AND s.result = 11
+        ON c.solution_id = s.solution_id
+       AND s.result = 11
+
+     LEFT JOIN test_run_trace tr
+        ON tr.solution_id = s.solution_id
      WHERE s.solution_id = ?
        AND s.user_id = ?
        AND s.problem_id = 0
@@ -129,6 +142,46 @@ $stderr = $run_available ? (string)$row['stderr'] : '';
 $compile_error = $compile_available
     ? (string)$row['compile_error']
     : '';
+
+$trace_available =
+    isset($row['trace_result_id']);
+
+$trace_data = null;
+$trace_invalid = false;
+
+if ($trace_available) {
+
+    $trace_json =
+        (string)$row['trace_json'];
+
+    if ($trace_json !== '') {
+
+        $decoded_trace =
+            json_decode(
+                $trace_json,
+                true
+            );
+
+        if (
+            is_array($decoded_trace) &&
+            isset($decoded_trace['steps']) &&
+            is_array($decoded_trace['steps'])
+        ) {
+
+            $trace_data =
+                $decoded_trace;
+        }
+        else {
+
+            $trace_invalid = true;
+        }
+    }
+    else {
+
+        $trace_invalid = true;
+    }
+}
+
 
 $status_labels = array(
     0 => '실행 대기',
@@ -185,6 +238,27 @@ $respond(array(
     'stderr_invalid_utf8' => preg_match('//u', $stderr) !== 1,
     'compile_error_invalid_utf8' =>
         preg_match('//u', $compile_error) !== 1,
+
+    'trace_available' =>
+        $trace_available &&
+        $trace_data !== null,
+
+    'trace' =>
+        $trace_data,
+
+    'trace_truncated' =>
+        $trace_available && (
+            (int)$row['trace_truncated'] !== 0 ||
+            (int)$row['trace_capped'] !== 0 ||
+            (
+                is_array($trace_data) &&
+                !empty($trace_data['truncated'])
+            )
+        ),
+
+    'trace_invalid' =>
+        $trace_invalid,
+
     'details_available' => $details_available,
     'message' => $message
 ));

@@ -495,12 +495,16 @@
 						isset($view_is_resubmit) &&
 						$view_is_resubmit
 					)
-						? '3. 코드 수정'
-						: '3. 코드 작성';
+						? '3. 코드 수정 및 실행'
+						: '3. 코드 작성 및 실행';
 				}
 				?>
 			</strong>
 		</div>
+                <div class="submit-code-workspace">
+
+                    <div class="submit-code-pane">
+
 
 
 		<?php if ($OJ_ACE_EDITOR) { ?>
@@ -514,6 +518,14 @@
 												"UTF-8"
 											);
 											?></pre>
+
+                    <div
+                            id="submit-editor-resize"
+                            class="submit-editor-resize"
+                            title="드래그하여 코드 편집기 높이 조절"
+                            aria-label="코드 편집기 높이 조절">
+                            <span></span>
+                    </div>
 
 			<br>
 
@@ -538,9 +550,19 @@
 
 		<?php } ?>
 
-		<?php if (isset($OJ_TEST_RUN) && $OJ_TEST_RUN) { ?>
-		    <?php require(__DIR__ . "/submit-test-run.php"); ?>
-		<?php } ?>
+		                    </div>
+
+                    <?php if (isset($OJ_TEST_RUN) && $OJ_TEST_RUN) { ?>
+
+                        <div class="submit-run-pane">
+
+                            <?php require(__DIR__ . "/submit-test-run.php"); ?>
+
+                        </div>
+
+                    <?php } ?>
+
+                </div>
 		<?php
 		if (
 			!isset($view_source_readonly) ||
@@ -777,6 +799,122 @@
 			fontSize: "13pt", // font size 키우기
 
 		});
+
+            // ============================================================
+            // ACE Editor 높이 수동 조절
+            // - 기본 높이는 CSS에서 지정
+            // - 아래 손잡이를 위/아래로 드래그하여 조절
+            // - 새로고침하면 CSS 기본 높이로 복원
+            // ============================================================
+            (function () {
+
+                    var resizeHandle =
+                            document.getElementById(
+                                    "submit-editor-resize"
+                            );
+
+                    var editorElement =
+                            document.getElementById(
+                                    "source"
+                            );
+
+                    if (
+                            !resizeHandle ||
+                            !editorElement
+                    ) {
+                            return;
+                    }
+
+
+                    var submitEditorResizeStartY = 0;
+                    var submitEditorResizeStartHeight = 0;
+
+                    var minHeight = 160;
+                    var maxHeight = 900;
+
+
+
+                    resizeHandle.addEventListener(
+                            "pointerdown",
+                            function (event) {
+
+                                    submitEditorResizeStartY =
+                                            event.clientY;
+
+                                    submitEditorResizeStartHeight =
+                                            editorElement.offsetHeight;
+
+                                    resizeHandle.setPointerCapture(
+                                            event.pointerId
+                                    );
+
+                                    event.preventDefault();
+                            }
+                    );
+
+
+                    resizeHandle.addEventListener(
+                            "pointermove",
+                            function (event) {
+
+                                    if (
+                                            !resizeHandle.hasPointerCapture(
+                                                    event.pointerId
+                                            )
+                                    ) {
+                                            return;
+                                    }
+
+                                    var newHeight =
+                                            submitEditorResizeStartHeight +
+                                            (
+                                                    event.clientY -
+                                                    submitEditorResizeStartY
+                                            );
+
+                                    newHeight =
+                                            Math.max(
+                                                    minHeight,
+                                                    Math.min(
+                                                            maxHeight,
+                                                            newHeight
+                                                    )
+                                            );
+
+                                    editorElement.style.height =
+                                            newHeight + "px";
+
+                                    editor.resize();
+                            }
+                    );
+
+
+                    function finishEditorResize(event) {
+
+                            if (
+                                    resizeHandle.hasPointerCapture(
+                                            event.pointerId
+                                    )
+                            ) {
+                                    resizeHandle.releasePointerCapture(
+                                            event.pointerId
+                                    );
+                            }
+                    }
+
+
+                    resizeHandle.addEventListener(
+                            "pointerup",
+                            finishEditorResize
+                    );
+
+                    resizeHandle.addEventListener(
+                            "pointercancel",
+                            finishEditorResize
+                    );
+
+            })();
+
 		<?php
 		if (
 			isset($view_source_readonly) &&

@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS test_run_trace (
+    solution_id INT NOT NULL,
+
+    trace_json MEDIUMBLOB NOT NULL,
+
+    step_count INT UNSIGNED NOT NULL DEFAULT 0,
+
+    truncated TINYINT UNSIGNED NOT NULL DEFAULT 0,
+
+    updated_at DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (solution_id)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4;

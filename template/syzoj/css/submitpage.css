@@ -111,9 +111,60 @@
 }
 
 
+.submit-code-workspace {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1.25fr)
+        minmax(340px, 1fr);
+
+    grid-template-areas:
+        "code result"
+        "input result";
+
+    gap: 1rem;
+    align-items: start;
+}
+
+.submit-code-pane {
+    grid-area: code;
+    min-width: 0;
+}
+
+.submit-run-pane,
+.submit-run-pane .submit-test-run {
+    display: contents;
+}
+
+.submit-run-input-pane {
+    grid-area: input;
+    min-width: 0;
+}
+
+.submit-run-result-pane {
+    grid-area: result;
+    min-width: 0;
+}
+
+
+.submit-code-pane,
+.submit-run-pane {
+    min-width: 0;
+}
+
+.submit-run-pane .submit-test-run {
+    margin-top: 0;
+}
+
+.submit-run-pane textarea {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+
 .submit-code-editor {
     width: 100%;
-    height: 380px;
+    height: 220px;
 
     margin: 0;
 
@@ -123,12 +174,43 @@
     box-sizing: border-box;
 }
 
+.submit-editor-resize {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    height: 16px;
+
+    margin: 0;
+
+    cursor: ns-resize;
+    user-select: none;
+    touch-action: none;
+}
+
+.submit-editor-resize span {
+    display: block;
+
+    width: 56px;
+    height: 4px;
+
+    border-radius: 999px;
+
+    background: #c8c8c8;
+}
+
+.submit-editor-resize:hover span {
+    background: #8c8c8c;
+}
+
+
 
 .submit-source-textarea {
     display: block;
 
     width: 100%;
-    min-height: 380px;
+    min-height: 220px;
 
     padding: 1rem;
 
@@ -163,10 +245,23 @@
     }
 
 
+    .submit-code-workspace {
+        grid-template-columns: 1fr;
+
+        grid-template-areas:
+            "code"
+            "input"
+            "result";
+    }
+
+    .submit-run-pane {
+        width: 100%;
+    }
+
     .submit-code-editor,
     .submit-source-textarea {
-        height: 320px;
-        min-height: 320px;
+        height: 200px;
+        min-height: 200px;
     }
 
     .submit-actions {
@@ -326,4 +421,11 @@
     .submit-process-textarea {
         min-height: 120px;
     }
+}
+.execution-current-line {
+    position: absolute;
+    background: rgba(255, 214, 64, 0.30);
+    border-top: 1px solid rgba(220, 170, 0, 0.35);
+    border-bottom: 1px solid rgba(220, 170, 0, 0.35);
+    z-index: 4;
 }

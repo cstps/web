@@ -234,6 +234,22 @@ $source = isset($_POST['source']) ? $_POST['source'] : "";
 $input_text = isset($_POST['input_text']) ? $_POST['input_text'] : "";
 
 // ============================================================
+// 시험 실행 방식
+// - normal : 기존 전체 실행
+// - trace  : 단계적 실행
+// ============================================================
+
+$test_run_mode = "normal";
+
+if (
+    $test_run &&
+    isset($_POST['test_run_mode']) &&
+    $_POST['test_run_mode'] === "trace"
+) {
+    $test_run_mode = "trace";
+}
+
+// ============================================================
 // 수업용 OJ - 학생 사고과정 / 생성형 AI 활용 기록
 // ============================================================
 
@@ -406,6 +422,48 @@ if ($language == 6) { // Python3
         $source = "# coding=utf-8\n" . $source;
     }
 }
+
+// ============================================================
+// Python 단계적 실행
+//
+// 1차 구현:
+// - Python3만 지원
+// - front/rear 코드가 없는 문제만 지원
+// - 학생 원본 코드는 source_user에 그대로 유지
+// - 실제 실행용 source만 trace wrapper로 변환
+// ============================================================
+
+if (
+    $test_run &&
+    $test_run_mode === "trace"
+) {
+
+    if ($language != 6) {
+
+        $test_run_reject(
+            '단계적 실행은 현재 Python3만 지원합니다.',
+            400
+        );
+    }
+
+    if (
+        trim($front_code_print) !== '' ||
+        trim($rear_code_print) !== ''
+    ) {
+
+        $test_run_reject(
+            '코드 템플릿이 적용된 문제는 현재 단계적 실행을 지원하지 않습니다.',
+            400
+        );
+    }
+
+    $source =
+        oj_build_python_trace_source(
+            $source_user,
+            500
+        );
+}
+
 
 // (5) custom test run에서만 실제 채점ID 0으로 전환
 if ($test_run) {

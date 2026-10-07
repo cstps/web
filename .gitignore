@@ -1,4 +1,5 @@
 include/*
+!include/code_template_functions.inc.php
 !include/contest_access.inc.php
 kindeditor/
 upload/

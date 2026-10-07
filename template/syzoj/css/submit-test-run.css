@@ -21,3 +21,47 @@
     .submit-test-run { padding: 16px; }
     .submit-test-run .test-run-grid { grid-template-columns: 1fr; }
 }
+
+#input_text {
+    white-space: pre;
+    overflow-x: auto;
+    overflow-y: auto;
+    resize: vertical;
+}
+
+#out {
+    white-space: pre;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+.test-run-trace-grid {
+    margin-bottom: 1rem;
+}
+
+#test-run-trace-stdout {
+    min-height: 5rem;
+    max-height: 12rem;
+    overflow: auto;
+    margin-bottom: 0;
+}
+
+.test-run-trace-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    clear: both;
+    margin-top: 1rem;
+}
+
+.test-run-trace-actions .button {
+    margin: 0 !important;
+}
+
+.submit-run-result-pane {
+    border: 1px solid rgba(34, 36, 38, 0.15);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: #fff;
+    box-sizing: border-box;
+}
