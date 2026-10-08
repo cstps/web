@@ -901,17 +901,11 @@ $now_timestamp =
                                     ?>
                                 </dd>
 
-                                <dt>신청 현황</dt>
+                                <dt>모집 현황</dt>
                                 <dd>
-                                    <?php
-                                    echo (int)$class_item['active_application_count'];
-                                    ?>
-                                    /
-                                    <?php
-                                    echo (int)$class_item['capacity'];
-                                    ?>명
-                                    · 잔여
-                                    <?php echo $remaining; ?>명
+                                    <?php echo $remaining === 0
+                                        ? '모집 마감'
+                                        : '잔여 ' . $remaining . '명'; ?>
                                 </dd>
                             </dl>
 

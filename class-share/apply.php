@@ -771,7 +771,7 @@ $applications_url =
                     <?php } ?>
 
                     <?php if ($participation_enabled) { ?>
-                    <dt>참여 구분별 신청 현황</dt>
+                    <dt>참여 구분별 모집 현황</dt>
                     <dd>
                         <ul>
                             <?php if (count($participation_options) === 0) { ?>
@@ -780,18 +780,16 @@ $applications_url =
                             <?php foreach ($participation_options as $option) { ?>
                             <li>
                                 <strong><?php echo class_share_public_escape($option['name']); ?></strong>:
-                                신청 <?php echo (int)$option['active_count']; ?>명
                                 <?php if ($option['capacity'] === null) { ?>
-                                    · 정원 제한 없음
+                                    정원 제한 없음
                                 <?php } else {
                                     $option_remaining = max(
                                         0,
                                         (int)$option['capacity'] - (int)$option['active_count']
                                     );
                                 ?>
-                                    / 정원 <?php echo (int)$option['capacity']; ?>명
-                                    · <?php echo $option_remaining === 0
-                                        ? '마감'
+                                    <?php echo $option_remaining === 0
+                                        ? '모집 마감'
                                         : '잔여 ' . $option_remaining . '명'; ?>
                                 <?php } ?>
                             </li>
@@ -799,31 +797,25 @@ $applications_url =
                         </ul>
                     </dd>
 
-                    <dt>전체 신청</dt>
-                    <dd>
-                        <?php echo $active_count; ?>명
-                        <?php if ($capacity !== null) { ?>
-                            / 전체 정원 <?php echo $capacity; ?>명
-                            · 잔여 <?php echo $remaining; ?>명
-                        <?php } ?>
-                    </dd>
                     <?php if ($capacity !== null) { ?>
+                    <dt>전체 잔여</dt>
+                    <dd>
+                        <?php echo $remaining === 0
+                            ? '모집 마감'
+                            : $remaining . '명'; ?>
+                    </dd>
                     <dt>정원 적용 안내</dt>
                     <dd>전체 정원이 차면 구분별 자리가 남아 있어도 신청이 마감됩니다.</dd>
                     <?php } ?>
 
                     <?php } else { ?>
-                    <dt>신청 현황</dt>
+                    <dt>모집 현황</dt>
                     <dd>
-                        <?php echo $active_count; ?>명
-                        <?php if ($capacity !== null) { ?>
-                            /
-                            <?php echo $capacity; ?>명
-                            · 잔여
-                            <?php echo $remaining; ?>명
-                        <?php } else { ?>
-                            · 정원 제한 없음
-                        <?php } ?>
+                        <?php echo $capacity === null
+                            ? '정원 제한 없음'
+                            : ($remaining === 0
+                                ? '모집 마감'
+                                : '잔여 ' . $remaining . '명'); ?>
                     </dd>
                     <?php } ?>
                 </dl>
