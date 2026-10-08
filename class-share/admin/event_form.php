@@ -392,7 +392,7 @@ require_once(
 
             <div class="admin-field">
                 <label for="application_capacity">
-                    행사 직접 신청 정원
+                    행사 전체 신청 정원
                 </label>
 
                 <input
@@ -411,7 +411,9 @@ require_once(
                     ?>">
 
                 <small>
-                    행사에 직접 신청 방식을 선택한 경우에만 사용합니다.
+                    행사에 직접 신청할 때 전체 신청 인원을 제한합니다.
+                    참여 구분을 사용하는 경우에도 이 제한이 함께 적용됩니다.
+                    구분별 정원만 적용하려면 비워 두세요.
                 </small>
             </div>
         </div>

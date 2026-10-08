@@ -636,7 +636,7 @@ require_once(
 
             <div class="admin-field">
                 <label for="application_capacity">
-                    행사 직접 신청 정원
+                    행사 전체 신청 정원
                 </label>
 
                 <input
@@ -655,7 +655,9 @@ require_once(
                     ?>">
 
                 <small class="admin-muted">
-                    행사에 직접 신청 방식을 선택한 경우에만 사용합니다.
+                    행사에 직접 신청할 때 전체 신청 인원을 제한합니다.
+                    참여 구분을 사용하는 경우에도 이 제한이 함께 적용됩니다.
+                    구분별 정원만 적용하려면 비워 두세요.
                 </small>
             </div>
 
@@ -861,6 +863,17 @@ require_once(
         </div>
     </form>
 </section>
+
+<?php if ((string)$event['application_mode'] === 'event') { ?>
+<section class="admin-panel">
+    <h2>참여 구분별 모집</h2>
+    <p class="admin-muted">온라인·오프라인 등 참여 구분별 이름과 정원을 설정합니다.</p>
+    <a class="admin-secondary-link"
+       href="/class-share/admin/participation_options.php?event_id=<?php echo (int)$event_id; ?>">
+        참여 구분 설정
+    </a>
+</section>
+<?php } ?>
 
 <script
     src="/class-share/admin/assets/event-form.js?v=20260923"

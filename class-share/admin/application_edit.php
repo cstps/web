@@ -26,6 +26,8 @@ $application_rows =
             application.event_id,
             application.application_code,
             application.application_scope,
+            application.participation_option_id,
+            participation.name AS participation_name,
             application.class_id,
             application.applicant_name,
             application.applicant_school,
@@ -62,6 +64,10 @@ $application_rows =
         LEFT JOIN class_share_class AS class_item
             ON class_item.id =
                application.class_id
+
+        LEFT JOIN class_share_participation_option AS participation
+            ON participation.id = application.participation_option_id
+           AND participation.event_id = application.event_id
 
         WHERE application.id = ?
 
@@ -139,6 +145,17 @@ $can_edit =
         $school_id,
         $admin
     );
+
+$participation_options = array();
+if ($can_edit && (string)$application['application_scope'] === 'event') {
+    require_once(dirname(__DIR__) . '/include/participation_functions.php');
+    try {
+        $participation_options = class_share_participation_list_options($event_id, false);
+    } catch (Throwable $exception) {
+        http_response_code(500);
+        exit('참여 구분 목록을 불러올 수 없습니다.');
+    }
+}
 
 $can_view_sensitive =
     !$privacy_destroyed &&
@@ -302,6 +319,11 @@ require_once(
             </code>
         </dd>
 
+        <?php if ((string)$application['application_scope'] === 'event') { ?>
+        <dt>참여 구분</dt>
+        <dd><?php echo class_share_escape($application['participation_name'] === null
+            ? '미구분' : $application['participation_name']); ?></dd>
+        <?php } ?>
         <dt>성명</dt>
         <dd>
             <?php
@@ -461,6 +483,21 @@ require_once(
                     <?php } ?>
                 </select>
             </div>
+
+            <?php if ((string)$application['application_scope'] === 'event') { ?>
+            <div class="admin-field">
+                <label for="participation_option_id">참여 구분</label>
+                <select id="participation_option_id" name="participation_option_id">
+                    <option value=""<?php echo $application['participation_option_id'] === null ? ' selected' : ''; ?>>미구분</option>
+                    <?php foreach ($participation_options as $option) { ?>
+                    <option value="<?php echo (int)$option['id']; ?>"<?php
+                        echo (string)$application['participation_option_id'] === (string)$option['id'] ? ' selected' : '';
+                    ?>><?php echo class_share_escape($option['name'] . ((int)$option['is_active'] === 1 ? '' : ' · 모집 중지')); ?></option>
+                    <?php } ?>
+                </select>
+                <small class="admin-muted">활성 신청을 다른 구분으로 옮기거나 재활성화할 때는 해당 구분의 정원을 확인합니다.</small>
+            </div>
+            <?php } ?>
 
             <div class="admin-field">
                 <label for="admin_note">

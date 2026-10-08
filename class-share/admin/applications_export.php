@@ -119,6 +119,24 @@ if (
     exit('신청자 연락처를 내려받을 권한이 없습니다.');
 }
 
+require_once(dirname(__DIR__) . '/include/participation_functions.php');
+try {
+    $participation_options = class_share_participation_list_options($event_id, false);
+    $participation_filter_data = class_share_participation_make_filter(
+        isset($_POST['participation']) ? $_POST['participation'] : '',
+        $participation_options
+    );
+} catch (DomainException $exception) {
+    http_response_code(400);
+    exit($exception->getMessage());
+} catch (Throwable $exception) {
+    error_log('[class-share] 내보내기 참여 구분 조회 실패: ' . $exception->getMessage());
+    http_response_code(500);
+    exit('참여 구분 목록을 불러올 수 없습니다.');
+}
+$participation_filter = $participation_filter_data['value'];
+$participation_condition = $participation_filter_data['sql'];
+
 $status_condition =
     $status_filter === ''
     ? ''
@@ -130,6 +148,7 @@ $sql =
         application.id,
         application.application_code,
         application.application_scope,
+        participation.name AS participation_name,
         application.applicant_name,
         application.applicant_school,
         application.phone_ciphertext,
@@ -149,29 +168,29 @@ $sql =
         ON class_item.id =
            application.class_id
 
+    LEFT JOIN class_share_participation_option AS participation
+        ON participation.id = application.participation_option_id
+       AND participation.event_id = application.event_id
+
     WHERE application.event_id = ?
     " .
     $status_condition .
+    $participation_condition .
     "
     ORDER BY
         application.created_at,
         application.id
     ";
 
-if ($status_filter === '') {
-    $applications =
-        pdo_query(
-            $sql,
-            $event_id
-        );
-} else {
-    $applications =
-        pdo_query(
-            $sql,
-            $event_id,
-            $status_filter
-        );
+$export_parameters = array($event_id);
+if ($status_filter !== '') {
+    $export_parameters[] = $status_filter;
 }
+$export_parameters = array_merge(
+    $export_parameters,
+    $participation_filter_data['parameters']
+);
+$applications = pdo_query($sql, ...$export_parameters);
 
 if ($applications === false) {
     http_response_code(500);
@@ -296,6 +315,9 @@ try {
             array(
                 $csv_safe($application_code),
                 $csv_safe($scope_name),
+                $csv_safe($scope === 'event'
+                    ? ($application['participation_name'] === null ? '미구분' : $application['participation_name'])
+                    : '-'),
                 $csv_safe($target_name),
                 $csv_safe($applicant_name),
                 $csv_safe($applicant_school),
@@ -360,6 +382,7 @@ $csv_headers =
     array(
         '신청번호',
         '신청구분',
+        '참여구분',
         '행사·프로그램',
         '성명',
         '소속',
@@ -419,6 +442,9 @@ $audit_data =
 
         'school_id' =>
             $school_id,
+
+        'participation_filter' => $participation_filter,
+        'participation_label' => $participation_filter_data['label'],
 
         'status_filter' =>
             $status_filter,

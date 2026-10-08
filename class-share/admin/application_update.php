@@ -212,7 +212,8 @@ try {
             SELECT
                 id,
                 school_id,
-                application_capacity
+                application_capacity,
+                participation_enabled
 
             FROM class_share_event
 
@@ -243,6 +244,7 @@ try {
                 id,
                 event_id,
                 application_scope,
+                participation_option_id,
                 class_id,
                 phone_lookup_hash,
                 status,
@@ -313,6 +315,34 @@ try {
             $active_statuses,
             true
         );
+
+    $current_option_id = $current['participation_option_id'] === null
+        ? null : (int)$current['participation_option_id'];
+    $requested_option_id = $current_option_id;
+    if ((string)$current['application_scope'] === 'event') {
+        if (array_key_exists('participation_option_id', $_POST)) {
+            $requested_option_id = class_share_participation_parse_id(
+                $_POST['participation_option_id'], true
+            );
+        }
+        $option_changed = $current_option_id !== $requested_option_id;
+        $needs_option_slot = $will_be_active && (!$was_active || $option_changed);
+        if (
+            (int)$event_rows[0]['participation_enabled'] === 1 &&
+            $requested_option_id === null &&
+            ($needs_option_slot || ($option_changed && $current_option_id !== null))
+        ) {
+            throw new DomainException('참여 구분을 선택한 뒤 신청을 변경해 주세요.');
+        }
+        if ($requested_option_id !== null && ($option_changed || $needs_option_slot)) {
+            class_share_participation_check_option(
+                $event_id, $requested_option_id, $application_id,
+                $needs_option_slot, $needs_option_slot
+            );
+        }
+    } else {
+        $option_changed = false;
+    }
 
     if (
         !$was_active &&
@@ -474,6 +504,10 @@ try {
     $changed_fields =
         array();
 
+    if ($option_changed) {
+        $changed_fields[] = 'participation_option_id';
+    }
+
     if ($current_status !== $requested_status) {
         $changed_fields[] =
             'status';
@@ -499,6 +533,7 @@ try {
 
             SET
                 status = ?,
+                participation_option_id = ?,
                 cancelled_at =
                     CASE
                         WHEN ? = 'cancelled'
@@ -516,6 +551,7 @@ try {
               AND event_id = ?
             ",
             $requested_status,
+            $requested_option_id,
             $requested_status,
             $admin_id,
             $admin_note === ''
@@ -540,6 +576,8 @@ try {
                 'event_id' =>
                     $event_id,
 
+                'participation_option_id' => $current_option_id,
+
                 'status' =>
                     $current_status,
 
@@ -555,6 +593,8 @@ try {
             array(
                 'event_id' =>
                     $event_id,
+
+                'participation_option_id' => $requested_option_id,
 
                 'status' =>
                     $requested_status,

@@ -6,6 +6,8 @@ require_once(
 );
 
 
+require_once(__DIR__ . '/participation_functions.php');
+
 function class_share_application_clean($value)
 {
     return trim(
@@ -282,10 +284,8 @@ function class_share_application_validate(
         : '';
 
     $phone_input =
-        isset($source['phone'])
-        ? class_share_application_clean(
-            $source['phone']
-        )
+        isset($source['phone']) && is_string($source['phone'])
+        ? $source['phone']
         : '';
 
     $password =
@@ -342,14 +342,17 @@ function class_share_application_validate(
     $normalized_phone =
         '';
 
-    try {
-        $normalized_phone =
-            class_share_normalize_phone(
-                $phone_input
-            );
-    } catch (InvalidArgumentException $e) {
+    if (!preg_match('/^010-[0-9]{4}-[0-9]{4}$/D', $phone_input)) {
         $errors[] =
-            '연락처를 정확히 입력해 주세요.';
+            '연락처는 하이픈을 포함하여 010-0000-0000 형식으로 입력해 주세요.';
+    } else {
+        try {
+            $normalized_phone =
+                class_share_normalize_phone($phone_input);
+        } catch (InvalidArgumentException $e) {
+            $errors[] =
+                '연락처는 010-0000-0000 형식으로 입력해 주세요.';
+        }
     }
 
     $password_length =
@@ -383,6 +386,16 @@ function class_share_application_validate(
             '신청 요청을 처리할 수 없습니다.';
     }
 
+    $participation_raw = isset($source['participation_option_id'])
+        ? $source['participation_option_id'] : '';
+    $participation_id = null;
+    try {
+        $participation_id = class_share_participation_parse_id($participation_raw, true);
+    } catch (DomainException $exception) {
+        $errors[] = $exception->getMessage();
+        $participation_raw = '';
+    }
+
     return array(
         'errors' =>
             array_values(
@@ -394,6 +407,7 @@ function class_share_application_validate(
                 'name' => $name,
                 'school' => $school,
                 'phone' => $phone_input,
+                'participation_option_id' => (string)$participation_raw,
                 'privacy_agreed' =>
                     $privacy_agreed
                     ? '1'
@@ -405,7 +419,8 @@ function class_share_application_validate(
                 'name' => $name,
                 'school' => $school,
                 'phone' => $normalized_phone,
-                'password' => $password
+                'password' => $password,
+                'participation_option_id' => $participation_id
             )
     );
 }

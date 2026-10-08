@@ -217,6 +217,7 @@ try {
                 event_type,
                 application_mode,
                 application_capacity,
+                participation_enabled,
                 slug,
                 title,
                 subtitle,
@@ -517,6 +518,14 @@ try {
         (int)$active_application_rows[0][
             'active_count'
         ];
+
+    // 참여 구분 사용 상태와 신청 방식이 서로 어긋나지 않도록 검사합니다.
+    if (
+        (int)$locked_event['participation_enabled'] === 1 &&
+        $data['application_mode'] !== 'event'
+    ) {
+        throw new DomainException('참여 구분 사용을 해제한 뒤 신청 방식을 변경해 주세요.');
+    }
 
     if (
         (string)$locked_event[

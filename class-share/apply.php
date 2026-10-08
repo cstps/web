@@ -110,6 +110,7 @@ if ($page_error === '') {
                 event.event_type,
                 event.application_mode,
                 event.application_capacity,
+                event.participation_enabled,
                 event.event_start_at,
                 event.event_end_at,
                 event.application_start_at,
@@ -321,6 +322,28 @@ $is_available =
         $active_count < $capacity
     );
 
+$participation_enabled = $event !== null &&
+    !$is_program_application &&
+    (int)$event['participation_enabled'] === 1;
+$participation_options = array();
+if ($participation_enabled && $page_error === '') {
+    try {
+        $participation_options = class_share_participation_list_options((int)$event['id']);
+        $has_available_option = false;
+        foreach ($participation_options as $option) {
+            if ($option['capacity'] === null || (int)$option['active_count'] < (int)$option['capacity']) {
+                $has_available_option = true;
+            }
+        }
+        $is_available = $is_available && $has_available_option;
+    } catch (Throwable $exception) {
+        error_log('[class-share] 참여 구분 현황 조회 실패: ' . $exception->getMessage());
+        http_response_code(500);
+        $page_error = '참여 구분 현황을 불러올 수 없습니다.';
+        $is_available = false;
+    }
+}
+
 $form_errors =
     array();
 
@@ -329,7 +352,8 @@ $form_values =
         'name' => '',
         'school' => '',
         'phone' => '',
-        'privacy_agreed' => ''
+        'privacy_agreed' => '',
+        'participation_option_id' => ''
     );
 
 if (
@@ -560,6 +584,10 @@ $applications_url =
                         </code>
                     </dd>
 
+                    <?php if (!empty($success['participation_name'])) { ?>
+                    <dt>참여 구분</dt>
+                    <dd><?php echo class_share_public_escape($success['participation_name']); ?></dd>
+                    <?php } ?>
                     <dt>신청 상태</dt>
                     <dd>신청 완료</dd>
                 </dl>
@@ -742,6 +770,49 @@ $applications_url =
                         </dd>
                     <?php } ?>
 
+                    <?php if ($participation_enabled) { ?>
+                    <dt>참여 구분별 신청 현황</dt>
+                    <dd>
+                        <ul>
+                            <?php if (count($participation_options) === 0) { ?>
+                            <li>모집 중인 참여 구분이 없습니다.</li>
+                            <?php } ?>
+                            <?php foreach ($participation_options as $option) { ?>
+                            <li>
+                                <strong><?php echo class_share_public_escape($option['name']); ?></strong>:
+                                신청 <?php echo (int)$option['active_count']; ?>명
+                                <?php if ($option['capacity'] === null) { ?>
+                                    · 정원 제한 없음
+                                <?php } else {
+                                    $option_remaining = max(
+                                        0,
+                                        (int)$option['capacity'] - (int)$option['active_count']
+                                    );
+                                ?>
+                                    / 정원 <?php echo (int)$option['capacity']; ?>명
+                                    · <?php echo $option_remaining === 0
+                                        ? '마감'
+                                        : '잔여 ' . $option_remaining . '명'; ?>
+                                <?php } ?>
+                            </li>
+                            <?php } ?>
+                        </ul>
+                    </dd>
+
+                    <dt>전체 신청</dt>
+                    <dd>
+                        <?php echo $active_count; ?>명
+                        <?php if ($capacity !== null) { ?>
+                            / 전체 정원 <?php echo $capacity; ?>명
+                            · 잔여 <?php echo $remaining; ?>명
+                        <?php } ?>
+                    </dd>
+                    <?php if ($capacity !== null) { ?>
+                    <dt>정원 적용 안내</dt>
+                    <dd>전체 정원이 차면 구분별 자리가 남아 있어도 신청이 마감됩니다.</dd>
+                    <?php } ?>
+
+                    <?php } else { ?>
                     <dt>신청 현황</dt>
                     <dd>
                         <?php echo $active_count; ?>명
@@ -754,6 +825,7 @@ $applications_url =
                             · 정원 제한 없음
                         <?php } ?>
                     </dd>
+                    <?php } ?>
                 </dl>
             </section>
 
@@ -873,6 +945,28 @@ $applications_url =
                                 autocomplete="off">
                         </div>
 
+                        <?php if ($participation_enabled) { ?>
+                        <div class="public-field">
+                            <label for="participation_option_id">참여 구분 *</label>
+                            <select id="participation_option_id" name="participation_option_id" required>
+                                <option value="">참여 구분을 선택해 주세요.</option>
+                                <?php foreach ($participation_options as $option) {
+                                    $option_remaining = $option['capacity'] === null ? null
+                                        : max(0, (int)$option['capacity'] - (int)$option['active_count']);
+                                    $option_full = $option_remaining === 0;
+                                    $option_label = (string)$option['name'] . ($option_remaining === null
+                                        ? ' · 정원 제한 없음' : ($option_full ? ' · 마감' : ' · 잔여 ' . $option_remaining . '명'));
+                                ?>
+                                <option value="<?php echo (int)$option['id']; ?>"<?php
+                                    echo (string)$form_values['participation_option_id'] === (string)$option['id'] ? ' selected' : '';
+                                    echo $option_full ? ' disabled' : '';
+                                ?>><?php echo class_share_public_escape($option_label); ?></option>
+                                <?php } ?>
+                            </select>
+                            <small>선택한 구분의 정원과 행사 전체 정원을 함께 확인합니다.</small>
+                        </div>
+                        <?php } ?>
+
                         <div class="public-field">
                             <label for="name">
                                 성명 *
@@ -923,7 +1017,11 @@ $applications_url =
                                 id="phone"
                                 name="phone"
                                 required
-                                maxlength="20"
+                                minlength="13"
+                                maxlength="13"
+                                pattern="010-[0-9]{4}-[0-9]{4}"
+                                title="010-0000-0000 형식으로 입력해 주세요."
+                                aria-describedby="phone-format-help"
                                 inputmode="tel"
                                 autocomplete="tel"
                                 placeholder="010-1234-5678"
@@ -932,6 +1030,9 @@ $applications_url =
                                     $form_values['phone']
                                 );
                                 ?>">
+                            <small id="phone-format-help" aria-live="polite">
+                                하이픈을 포함하여 010-0000-0000 형식으로 입력해 주세요.
+                            </small>
                         </div>
 
                         <div class="public-field">
@@ -1035,5 +1136,6 @@ $applications_url =
             <?php } ?>
         <?php } ?>
     </main>
+<script src="/class-share/assets/application-phone.js?v=20261008-1" defer></script>
 </body>
 </html>

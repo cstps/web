@@ -110,6 +110,7 @@ function class_share_create_event_application(
                     event.status,
                     event.application_mode,
                     event.application_capacity,
+                    event.participation_enabled,
                     event.application_start_at,
                     event.application_end_at,
                     event.privacy_policy_version
@@ -239,6 +240,14 @@ function class_share_create_event_application(
             );
         }
 
+        // 행사 잠금 안에서 구분별 남은 인원을 최종 확인합니다.
+        $participation_option = class_share_participation_new_choice(
+            $event,
+            isset($data['participation_option_id']) ? $data['participation_option_id'] : null
+        );
+        $participation_option_id = $participation_option === null
+            ? null : (int)$participation_option['id'];
+
         $application_id =
             pdo_query(
                 "
@@ -247,6 +256,7 @@ function class_share_create_event_application(
                     event_id,
                     class_id,
                     application_scope,
+                    participation_option_id,
                     application_code,
                     applicant_name,
                     applicant_school,
@@ -275,6 +285,7 @@ function class_share_create_event_application(
                     ?,
                     ?,
                     ?,
+                    ?,
                     'applied',
                     ?,
                     NOW(),
@@ -286,6 +297,7 @@ function class_share_create_event_application(
                 )
                 ",
                 $event_id,
+                $participation_option_id,
                 $application_code,
                 $name,
                 $school,
@@ -309,6 +321,8 @@ function class_share_create_event_application(
                 array(
                     'event_id' =>
                         $event_id,
+
+                    'participation_option_id' => $participation_option_id,
 
                     'application_scope' =>
                         'event',
@@ -379,6 +393,9 @@ function class_share_create_event_application(
         $dbh->commit();
 
         return array(
+            'participation_name' => $participation_option === null
+                ? '' : (string)$participation_option['name'],
+
             'application_id' =>
                 (int)$application_id,
 
@@ -881,6 +898,8 @@ function class_share_find_applications(
                 application.id,
                 application.application_code,
                 application.application_scope,
+                application.participation_option_id,
+                participation.name AS participation_name,
                 application.class_id,
                 application.applicant_name,
                 application.applicant_school,
@@ -901,6 +920,10 @@ function class_share_find_applications(
             LEFT JOIN class_share_class AS class_item
                 ON class_item.id =
                    application.class_id
+
+            LEFT JOIN class_share_participation_option AS participation
+                ON participation.id = application.participation_option_id
+               AND participation.event_id = application.event_id
 
             WHERE event.school_id = ?
               AND application.event_id = ?
@@ -965,6 +988,9 @@ function class_share_find_applications(
                     (string)$row[
                         'application_scope'
                     ],
+
+                'participation_name' => $row['participation_name'] === null
+                    ? '미구분' : (string)$row['participation_name'],
 
                 'class_id' =>
                     $row['class_id'] === null

@@ -461,6 +461,13 @@ $page_title =
                                     ?>
                                 </dd>
 
+                                <?php if ($application['application_scope'] === 'event') { ?>
+                                <dt>참여 구분</dt>
+                                <dd><?php echo class_share_public_escape(
+                                    isset($application['participation_name'])
+                                        ? $application['participation_name'] : '미구분'
+                                ); ?></dd>
+                                <?php } ?>
                                 <dt>신청 상태</dt>
                                 <dd>
                                     <?php

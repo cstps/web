@@ -101,6 +101,24 @@ $status_filter =
     ? $requested_status
     : '';
 
+require_once(dirname(__DIR__) . '/include/participation_functions.php');
+try {
+    $participation_options = class_share_participation_list_options($event_id, false);
+    $participation_filter_data = class_share_participation_make_filter(
+        isset($_GET['participation']) ? $_GET['participation'] : '',
+        $participation_options
+    );
+} catch (DomainException $exception) {
+    http_response_code(400);
+    exit($exception->getMessage());
+} catch (Throwable $exception) {
+    error_log('[class-share] 참여 구분 필터 조회 실패: ' . $exception->getMessage());
+    http_response_code(500);
+    exit('참여 구분 목록을 불러올 수 없습니다.');
+}
+$participation_filter = $participation_filter_data['value'];
+$participation_condition = $participation_filter_data['sql'];
+
 $page =
     isset($_GET['page'])
     ? (int)$_GET['page']
@@ -124,21 +142,17 @@ $status_counts =
         'cancelled' => 0
     );
 
-$summary_rows =
-    pdo_query(
-        "
-        SELECT
-            status,
-            COUNT(*) AS application_count
-
-        FROM class_share_application
-
-        WHERE event_id = ?
-
-        GROUP BY status
-        ",
-        $event_id
-    );
+$summary_parameters = array_merge(
+    array($event_id),
+    $participation_filter_data['parameters']
+);
+$summary_rows = pdo_query(
+    "SELECT application.status, COUNT(*) AS application_count
+     FROM class_share_application AS application
+     WHERE application.event_id = ?" . $participation_condition . "
+     GROUP BY application.status",
+    ...$summary_parameters
+);
 
 if ($summary_rows === false) {
     http_response_code(500);
@@ -211,6 +225,7 @@ $application_sql =
         application.id,
         application.application_code,
         application.application_scope,
+        participation.name AS participation_name,
         application.class_id,
         application.applicant_name,
         application.applicant_school,
@@ -230,9 +245,14 @@ $application_sql =
         ON class_item.id =
            application.class_id
 
+    LEFT JOIN class_share_participation_option AS participation
+        ON participation.id = application.participation_option_id
+       AND participation.event_id = application.event_id
+
     WHERE application.event_id = ?
     " .
     $status_condition .
+    $participation_condition .
     "
     ORDER BY
         application.created_at DESC,
@@ -245,20 +265,15 @@ $application_sql =
     OFFSET " .
     (int)$offset;
 
-if ($status_filter === '') {
-    $applications =
-        pdo_query(
-            $application_sql,
-            $event_id
-        );
-} else {
-    $applications =
-        pdo_query(
-            $application_sql,
-            $event_id,
-            $status_filter
-        );
+$application_parameters = array($event_id);
+if ($status_filter !== '') {
+    $application_parameters[] = $status_filter;
 }
+$application_parameters = array_merge(
+    $application_parameters,
+    $participation_filter_data['parameters']
+);
+$applications = pdo_query($application_sql, ...$application_parameters);
 
 if ($applications === false) {
     error_log(
@@ -296,7 +311,8 @@ $format_datetime =
 $build_page_url =
     function ($target_page) use (
         $event_id,
-        $status_filter
+        $status_filter,
+        $participation_filter
     ) {
         $url =
             '/class-share/admin/applications.php?event_id=' .
@@ -310,6 +326,10 @@ $build_page_url =
                 rawurlencode(
                     $status_filter
                 );
+        }
+
+        if ($participation_filter !== '') {
+            $url .= '&participation=' . rawurlencode($participation_filter);
         }
 
         return
@@ -420,6 +440,8 @@ require_once(
                 );
                 ?>">
 
+            <input type="hidden" name="participation" value="<?php echo class_share_escape($participation_filter); ?>">
+
             <button
                 type="submit"
                 class="admin-submit-button">
@@ -477,6 +499,19 @@ require_once(
                 </select>
             </div>
 
+        <div class="admin-field">
+            <label for="participation">참여 구분</label>
+            <select id="participation" name="participation">
+                <option value=""<?php echo $participation_filter === '' ? ' selected' : ''; ?>>전체 구분</option>
+                <option value="unassigned"<?php echo $participation_filter === 'unassigned' ? ' selected' : ''; ?>>미구분 (행사 직접 신청)</option>
+                <?php foreach ($participation_options as $option) { ?>
+                <option value="<?php echo (int)$option['id']; ?>"<?php
+                    echo $participation_filter === (string)$option['id'] ? ' selected' : '';
+                ?>><?php echo class_share_escape($option['name'] . ((int)$option['is_active'] === 1 ? '' : ' · 모집 중지')); ?></option>
+                <?php } ?>
+            </select>
+        </div>
+
         <div class="admin-form-actions">
             <button
                 class="admin-submit-button"
@@ -487,7 +522,9 @@ require_once(
     </form>
 
     <p class="admin-muted">
-        선택한 조건:
+        참여 구분:
+        <strong><?php echo class_share_escape($participation_filter_data['label']); ?></strong>
+        · 신청 상태:
         <strong>
             <?php
             echo $status_filter === ''
@@ -510,7 +547,7 @@ require_once(
             <strong>신청 내역이 없습니다.</strong>
 
             <p>
-                아직 이 행사에 접수된 신청이 없습니다.
+                선택한 조건에 해당하는 신청이 없습니다.
             </p>
         </div>
     <?php } else { ?>
@@ -522,6 +559,7 @@ require_once(
                         <th>신청일시</th>
                         <th>신청 고유번호</th>
                         <th>구분</th>
+                        <th>참여 구분</th>
                         <th>행사·프로그램</th>
                         <th>성명</th>
                         <th>소속</th>
@@ -626,6 +664,11 @@ require_once(
                                     : '행사';
                                 ?>
                             </td>
+
+                            <td><?php echo $is_program ? '—' : class_share_escape(
+                                $application['participation_name'] === null
+                                    ? '미구분' : $application['participation_name']
+                            ); ?></td>
 
                             <td>
                                 <?php

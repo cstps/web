@@ -286,6 +286,9 @@ try {
             'event_id' =>
                 (int)$event['id'],
 
+            'participation_name' => isset($result['participation_name'])
+                ? (string)$result['participation_name'] : '',
+
             'event_title' =>
                 (string)$event['title'],
 
