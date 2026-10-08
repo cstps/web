@@ -7,6 +7,7 @@ require_once(
 
 
 require_once(__DIR__ . '/participation_functions.php');
+require_once(__DIR__ . '/application_form_functions.php');
 
 function class_share_application_clean($value)
 {
@@ -262,26 +263,20 @@ function class_share_application_program_is_open(
 
 
 function class_share_application_validate(
-    $source
+    $source,
+    $form = null
 ) {
     if (!is_array($source)) {
         $source =
             array();
     }
 
-    $name =
-        isset($source['name'])
-        ? class_share_application_clean(
-            $source['name']
-        )
-        : '';
-
-    $school =
-        isset($source['school'])
-        ? class_share_application_clean(
-            $source['school']
-        )
-        : '';
+    if ($form === null) {
+        $form = array('schema_version' => 0, 'fields' => class_share_form_defaults());
+    }
+    $form_validation = class_share_form_validate_answers($source, $form);
+    $name = $form_validation['basic']['name'];
+    $school = $form_validation['basic']['school'];
 
     $phone_input =
         isset($source['phone']) && is_string($source['phone'])
@@ -289,54 +284,38 @@ function class_share_application_validate(
         : '';
 
     $password =
-        isset($source['password'])
+        isset($source['password']) && is_string($source['password'])
         ? (string)$source['password']
         : '';
 
     $password_confirm =
-        isset($source['password_confirm'])
+        isset($source['password_confirm']) && is_string($source['password_confirm'])
         ? (string)$source[
             'password_confirm'
         ]
         : '';
 
     $privacy_agreed =
-        isset($source['privacy_agreed']) &&
-        (string)$source['privacy_agreed'] ===
+        isset($source['privacy_agreed']) && is_string($source['privacy_agreed']) &&
+        $source['privacy_agreed'] ===
             '1';
 
     $honeypot =
-        isset($source['website'])
+        isset($source['website']) && !is_string($source['website'])
+        ? 'invalid'
+        : (isset($source['website'])
         ? class_share_application_clean(
             $source['website']
         )
-        : '';
+        : '');
 
-    $errors =
-        array();
-
-    if (
-        class_share_application_text_length(
-            $name
-        ) < 2 ||
-        class_share_application_text_length(
-            $name
-        ) > 60
-    ) {
-        $errors[] =
-            '성명은 2~60자로 입력해 주세요.';
-    }
-
-    if (
-        class_share_application_text_length(
-            $school
-        ) < 2 ||
-        class_share_application_text_length(
-            $school
-        ) > 100
-    ) {
-        $errors[] =
-            '소속은 2~100자로 입력해 주세요.';
+    $errors = $form_validation['errors'];
+    $form_version = isset($source['form_schema_version']) ? $source['form_schema_version'] : '0';
+    try {
+        $form_version = (string)class_share_form_check_version($form_version, $form);
+    } catch (DomainException $exception) {
+        $errors[] = $exception->getMessage();
+        $form_version = (string)$form['schema_version'];
     }
 
     $normalized_phone =
@@ -407,6 +386,7 @@ function class_share_application_validate(
                 'name' => $name,
                 'school' => $school,
                 'phone' => $phone_input,
+                'answers' => $form_validation['values'],
                 'participation_option_id' => (string)$participation_raw,
                 'privacy_agreed' =>
                     $privacy_agreed
@@ -420,6 +400,8 @@ function class_share_application_validate(
                 'school' => $school,
                 'phone' => $normalized_phone,
                 'password' => $password,
+                'form_schema_version' => $form_version,
+                'answers' => $form_validation['values'],
                 'participation_option_id' => $participation_id
             )
     );

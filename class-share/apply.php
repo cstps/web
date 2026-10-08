@@ -344,6 +344,18 @@ if ($participation_enabled && $page_error === '') {
     }
 }
 
+$configured_form = array('schema_version' => 0, 'fields' => class_share_form_defaults());
+if ($event !== null && $page_error === '') {
+    try {
+        $configured_form = class_share_form_load((int)$event['id']);
+    } catch (Throwable $exception) {
+        error_log('[class-share] 신청서 조회 실패: ' . $exception->getMessage());
+        http_response_code(500);
+        $page_error = '신청서 항목을 불러올 수 없습니다.';
+        $is_available = false;
+    }
+}
+
 $form_errors =
     array();
 
@@ -353,7 +365,8 @@ $form_values =
         'school' => '',
         'phone' => '',
         'privacy_agreed' => '',
-        'participation_option_id' => ''
+        'participation_option_id' => '',
+        'answers' => array()
     );
 
 if (
@@ -959,73 +972,62 @@ $applications_url =
                         </div>
                         <?php } ?>
 
-                        <div class="public-field">
-                            <label for="name">
-                                성명 *
+                        <input type="hidden" name="form_schema_version" value="<?php echo (int)$configured_form['schema_version']; ?>">
+                        <?php foreach ($configured_form['fields'] as $field) {
+                            if ((int)$field['is_active'] !== 1) {
+                                continue;
+                            }
+                            $key = $field['field_key'];
+                            $basic = in_array($key, array('name', 'school', 'phone'), true);
+                            $input_name = $basic ? $key : 'answers[' . $key . ']';
+                            $input_id = $basic ? $key : 'question-' . (int)$field['id'];
+                            $required = (int)$field['is_required'] === 1;
+                            $saved_answers = isset($form_values['answers']) && is_array($form_values['answers']) ? $form_values['answers'] : array();
+                            $value = $basic ? (isset($form_values[$key]) ? $form_values[$key] : '')
+                                : (isset($saved_answers[$key]) ? $saved_answers[$key] : '');
+                            $label = $field['label'] . ($required ? ' *' : '');
+                            $help_id = $key === 'phone' ? 'phone-format-help' : $input_id . '-help';
+                            $has_help = $key === 'phone' || $field['help_text'] !== '';
+                            $description = $has_help ? ' aria-describedby="' . class_share_public_escape($help_id) . '"' : '';
+                            $maximum = $basic ? ($key === 'name' ? 60 : 100) : ($field['field_type'] === 'long_text' ? 2000 : 500);
+                        ?>
+                        <?php if ($field['field_type'] === 'multiple_choice') { ?>
+                        <fieldset class="public-field" data-cs-required="<?php echo $required ? '1' : '0'; ?>"<?php echo $description; ?>>
+                            <legend><?php echo class_share_public_escape($label); ?></legend>
+                            <?php foreach ($field['options'] as $choice_index => $choice) { ?>
+                            <label for="<?php echo $input_id . '-' . $choice_index; ?>">
+                                <input type="checkbox" id="<?php echo $input_id . '-' . $choice_index; ?>" name="<?php echo class_share_public_escape($input_name); ?>[]" value="<?php echo class_share_public_escape($choice); ?>"<?php echo is_array($value) && in_array($choice, $value, true) ? ' checked' : ''; ?>>
+                                <?php echo class_share_public_escape($choice); ?>
                             </label>
-
-                            <input
-                                type="text"
-                                id="name"
-                                name="name"
-                                required
-                                minlength="2"
-                                maxlength="60"
-                                autocomplete="name"
-                                value="<?php
-                                echo class_share_public_escape(
-                                    $form_values['name']
-                                );
-                                ?>">
-                        </div>
-
+                            <?php } ?>
+                            <?php if ($has_help) { ?><small id="<?php echo $help_id; ?>"><?php echo class_share_public_escape($field['help_text']); ?></small><?php } ?>
+                        </fieldset>
+                        <?php } else { ?>
                         <div class="public-field">
-                            <label for="school">
-                                소속 학교 또는 기관 *
-                            </label>
-
-                            <input
-                                type="text"
-                                id="school"
-                                name="school"
-                                required
-                                minlength="2"
-                                maxlength="100"
-                                autocomplete="organization"
-                                value="<?php
-                                echo class_share_public_escape(
-                                    $form_values['school']
-                                );
-                                ?>">
-                        </div>
-
-                        <div class="public-field">
-                            <label for="phone">
-                                연락처 *
-                            </label>
-
-                            <input
-                                type="tel"
-                                id="phone"
-                                name="phone"
-                                required
-                                minlength="13"
-                                maxlength="13"
-                                pattern="010-[0-9]{4}-[0-9]{4}"
-                                title="010-0000-0000 형식으로 입력해 주세요."
-                                aria-describedby="phone-format-help"
-                                inputmode="tel"
-                                autocomplete="tel"
-                                placeholder="010-1234-5678"
-                                value="<?php
-                                echo class_share_public_escape(
-                                    $form_values['phone']
-                                );
-                                ?>">
-                            <small id="phone-format-help" aria-live="polite">
-                                하이픈을 포함하여 010-0000-0000 형식으로 입력해 주세요.
+                            <label for="<?php echo $input_id; ?>"><?php echo class_share_public_escape($label); ?></label>
+                            <?php if ($key === 'phone') { ?>
+                            <input type="tel" id="phone" name="phone" required minlength="13" maxlength="13" pattern="010-[0-9]{4}-[0-9]{4}" title="010-0000-0000 형식으로 입력해 주세요." aria-describedby="phone-format-help" inputmode="tel" autocomplete="tel" placeholder="010-1234-5678" value="<?php echo class_share_public_escape(is_string($value) ? $value : ''); ?>">
+                            <?php } elseif ($field['field_type'] === 'single_choice') { ?>
+                            <select id="<?php echo $input_id; ?>" name="<?php echo class_share_public_escape($input_name); ?>"<?php echo $required ? ' required' : ''; ?><?php echo $description; ?>>
+                                <option value="">선택해 주세요.</option>
+                                <?php foreach ($field['options'] as $choice) { ?>
+                                <option value="<?php echo class_share_public_escape($choice); ?>"<?php echo is_string($value) && $value === $choice ? ' selected' : ''; ?>><?php echo class_share_public_escape($choice); ?></option>
+                                <?php } ?>
+                            </select>
+                            <?php } elseif ($field['field_type'] === 'long_text') { ?>
+                            <textarea id="<?php echo $input_id; ?>" name="<?php echo class_share_public_escape($input_name); ?>" rows="4" maxlength="2000"<?php echo $required ? ' required' : ''; ?><?php echo $description; ?>><?php echo class_share_public_escape(is_string($value) ? $value : ''); ?></textarea>
+                            <?php } else { ?>
+                            <input type="text" id="<?php echo $input_id; ?>" name="<?php echo class_share_public_escape($input_name); ?>" maxlength="<?php echo $maximum; ?>"<?php echo $basic ? ' minlength="2" autocomplete="' . ($key === 'name' ? 'name' : 'organization') . '"' : ''; ?><?php echo $required ? ' required' : ''; ?><?php echo $description; ?> value="<?php echo class_share_public_escape(is_string($value) ? $value : ''); ?>">
+                            <?php } ?>
+                            <?php if ($has_help) { ?>
+                            <small id="<?php echo $help_id; ?>"<?php echo $key === 'phone' ? ' aria-live="polite"' : ''; ?>>
+                                <?php if ($key === 'phone') { ?>하이픈을 포함하여 010-0000-0000 형식으로 입력해 주세요. <?php } ?>
+                                <?php echo class_share_public_escape($field['help_text']); ?>
                             </small>
+                            <?php } ?>
                         </div>
+                        <?php } ?>
+                        <?php } ?>
 
                         <div class="public-field">
                             <label for="password">
@@ -1129,5 +1131,6 @@ $applications_url =
         <?php } ?>
     </main>
 <script src="/class-share/assets/application-phone.js?v=20261008-1" defer></script>
+<script src="/class-share/assets/application-form.js?v=20261008-1" defer></script>
 </body>
 </html>

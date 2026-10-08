@@ -875,6 +875,15 @@ require_once(
 </section>
 <?php } ?>
 
+<section class="admin-panel">
+    <h2>참가 신청서 항목</h2>
+    <p class="admin-muted">이름·소속 항목을 편집하고 추가 질문을 설정합니다. 연락처는 항상 필수입니다.</p>
+    <a class="admin-secondary-link"
+       href="/class-share/admin/application_form_fields.php?event_id=<?php echo (int)$event_id; ?>">
+        신청서 항목 설정
+    </a>
+</section>
+
 <script
     src="/class-share/admin/assets/event-form.js?v=20260923"
     defer></script>

@@ -186,6 +186,38 @@ if (
     }
 }
 
+// 비밀번호 확인을 통과해 세션에 담긴 신청만 현재 파기 상태와 함께 다시 조회합니다.
+$visible_applications = array();
+if ($event !== null && is_array($saved_lookup)
+    && isset($saved_lookup['event_id']) && (int)$saved_lookup['event_id'] === (int)$event['id']) {
+    try {
+        foreach ($applications as $application) {
+            if (!isset($application['id'], $application['application_code'])) {
+                continue;
+            }
+            $answers = class_share_form_load_response(
+                (int)$event['id'], (int)$application['id'], $application['application_code']
+            );
+            if ($answers === null) {
+                continue;
+            }
+            foreach (array('applicant_name', 'applicant_school') as $name_key) {
+                if (!isset($application[$name_key]) || $application[$name_key] === '') {
+                    $application[$name_key] = '미입력';
+                }
+            }
+            $application['form_answers'] = $answers;
+            $visible_applications[] = $application;
+        }
+    } catch (Throwable $exception) {
+        error_log('[class-share] 신청 확인 추가 답변 조회 실패: ' . $exception->getMessage());
+        http_response_code(500);
+        $lookup_errors[] = '신청 내역을 불러올 수 없습니다. 잠시 후 다시 확인해 주세요.';
+        $visible_applications = array();
+    }
+}
+$applications = $visible_applications;
+
 $status_names =
     array(
         'applied' => '신청 완료',
@@ -511,6 +543,17 @@ $page_title =
                                     </dd>
                                 <?php } ?>
                             </dl>
+
+                            <?php if (count($application['form_answers']) > 0) { ?>
+                            <h4>추가 질문 답변</h4>
+                            <dl>
+                            <?php foreach ($application['form_answers'] as $answer) { ?>
+                                <dt><?php echo class_share_public_escape($answer['label']); ?></dt>
+                                <dd><?php $answer_text = class_share_form_answer_text($answer);
+                                    echo $answer_text === '' ? '미입력' : nl2br(class_share_public_escape($answer_text)); ?></dd>
+                            <?php } ?>
+                            </dl>
+                            <?php } ?>
 
                             <?php
                             if (

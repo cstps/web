@@ -164,6 +164,25 @@ $can_view_sensitive =
         $admin
     );
 
+require_once(dirname(__DIR__) . '/include/application_form_functions.php');
+$form_answers = array();
+if ($can_view_sensitive) {
+    try {
+        $loaded_answers = class_share_form_load_response($event_id, $application_id);
+        $form_answers = $loaded_answers === null ? array() : $loaded_answers;
+    } catch (Throwable $exception) {
+        error_log('[class-share] 추가 답변 조회 실패: ' . $exception->getMessage());
+        http_response_code(500);
+        exit('추가 답변을 불러올 수 없습니다.');
+    }
+}
+if (!$privacy_destroyed && $applicant_name_display === '') {
+    $applicant_name_display = '미입력';
+}
+if (!$privacy_destroyed && $applicant_school_display === '') {
+    $applicant_school_display = '미입력';
+}
+
 $status_names =
     array(
         'applied' => '신청 완료',
@@ -423,6 +442,25 @@ require_once(
             ?>
         </dd>
     </dl>
+</section>
+
+<section class="admin-panel">
+    <h2>추가 질문 답변</h2>
+    <?php if ($privacy_destroyed) { ?>
+    <p class="admin-muted">개인정보 보관 기한이 종료되어 추가 답변이 파기되었습니다.</p>
+    <?php } elseif (!$can_view_sensitive) { ?>
+    <p class="admin-muted">추가 답변을 조회할 권한이 없습니다.</p>
+    <?php } elseif (count($form_answers) === 0) { ?>
+    <p class="admin-muted">저장된 추가 답변이 없습니다.</p>
+    <?php } else { ?>
+    <dl>
+    <?php foreach ($form_answers as $answer) { ?>
+        <dt><?php echo class_share_escape($answer['label']); ?></dt>
+        <dd><?php $answer_text = class_share_form_answer_text($answer);
+            echo $answer_text === '' ? '미입력' : nl2br(class_share_escape($answer_text)); ?></dd>
+    <?php } ?>
+    </dl>
+    <?php } ?>
 </section>
 
 <?php if ($can_edit) { ?>

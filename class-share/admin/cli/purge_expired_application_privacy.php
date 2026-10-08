@@ -228,6 +228,18 @@ try {
         );
     }
 
+    // 기본 개인정보를 파기하기 전에 같은 신청의 추가 답변도 삭제합니다.
+    $response_delete_result = pdo_query(
+        'DELETE response FROM class_share_application_form_response AS response
+         INNER JOIN class_share_application AS application ON application.id = response.application_id
+         INNER JOIN class_share_event AS event ON event.id = application.event_id
+         WHERE event.retention_until IS NOT NULL AND event.retention_until < CURDATE()
+           AND application.privacy_destroyed_at IS NULL'
+    );
+    if ($response_delete_result === false) {
+        throw new RuntimeException('추가 답변 개인정보를 파기할 수 없습니다.');
+    }
+
     $application_update_result =
         pdo_query(
             "
@@ -274,6 +286,7 @@ try {
                     $locked_event_count,
                 'application_count' =>
                     $locked_application_count,
+                'form_response_count' => (int)$response_delete_result,
                 'audit_log_count' =>
                     (int)$audit_update_result
             ),
@@ -333,6 +346,7 @@ try {
     echo "비식별 감사 로그: " .
         (int)$audit_update_result .
         "건\n";
+    echo "추가 답변 파기: " . (int)$response_delete_result . "건\n";
     echo "개인정보 파기가 완료되었습니다.\n";
 } catch (Throwable $exception) {
     if ($dbh->inTransaction()) {

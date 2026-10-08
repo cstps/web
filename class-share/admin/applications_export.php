@@ -120,6 +120,7 @@ if (
 }
 
 require_once(dirname(__DIR__) . '/include/participation_functions.php');
+require_once(dirname(__DIR__) . '/include/application_form_functions.php');
 try {
     $participation_options = class_share_participation_list_options($event_id, false);
     $participation_filter_data = class_share_participation_make_filter(
@@ -159,6 +160,7 @@ $sql =
         application.created_at,
         application.cancelled_at,
         application.admin_note,
+        response.answers_json,
 
         class_item.title AS program_title
 
@@ -171,6 +173,10 @@ $sql =
     LEFT JOIN class_share_participation_option AS participation
         ON participation.id = application.participation_option_id
        AND participation.event_id = application.event_id
+
+    LEFT JOIN class_share_application_form_response AS response
+        ON response.application_id = application.id
+       AND application.privacy_destroyed_at IS NULL
 
     WHERE application.event_id = ?
     " .
@@ -245,6 +251,20 @@ $csv_safe =
 
         return $value;
     };
+
+try {
+    $configured_form = class_share_form_load($event_id);
+    $response_sets = array();
+    foreach ($applications as $application) {
+        $response_sets[(int)$application['id']] = $application['privacy_destroyed_at'] !== null
+            ? array() : class_share_form_decode_response($application['answers_json']);
+    }
+    $form_columns = class_share_form_export_plan($configured_form['fields'], $response_sets);
+} catch (Throwable $exception) {
+    error_log('[class-share] 추가 답변 CSV 준비 실패: ' . $exception->getMessage());
+    http_response_code(500);
+    exit('추가 답변 자료를 불러올 수 없습니다.');
+}
 
 $export_rows =
     array();
@@ -366,6 +386,11 @@ try {
                 )
             );
 
+        $last_row = count($export_rows) - 1;
+        foreach (class_share_form_export_cells($form_columns, $response_sets[(int)$application['id']]) as $cell) {
+            $export_rows[$last_row][] = $csv_safe($cell);
+        }
+
         $phone = null;
     }
 } catch (Throwable $e) {
@@ -394,6 +419,10 @@ $csv_headers =
         '취소일시',
         '관리자 메모'
     );
+
+foreach ($form_columns as $column) {
+    $csv_headers[] = $csv_safe($column['header']);
+}
 
 $to_cp949 =
     function ($value) {
@@ -448,6 +477,8 @@ $audit_data =
 
         'status_filter' =>
             $status_filter,
+
+        'additional_question_columns' => count($form_columns),
 
         'export_count' =>
             count($export_rows)

@@ -144,6 +144,10 @@ function class_share_create_event_application(
         $event =
             $event_rows[0];
 
+        $locked_form = class_share_form_lock_validate($event_id, $data);
+        $name = $locked_form['validation']['basic']['name'];
+        $school = $locked_form['validation']['basic']['school'];
+
         if (
             !class_share_application_event_is_open(
                 $event
@@ -315,6 +319,8 @@ function class_share_create_event_application(
                 '행사 신청을 저장할 수 없습니다.'
             );
         }
+
+        class_share_form_store_response($application_id, $locked_form);
 
         $after_json =
             json_encode(
@@ -559,6 +565,10 @@ function class_share_create_program_application(
         $event =
             $event_rows[0];
 
+        $locked_form = class_share_form_lock_validate($event_id, $data);
+        $name = $locked_form['validation']['basic']['name'];
+        $school = $locked_form['validation']['basic']['school'];
+
         $class_rows =
             pdo_query(
                 "
@@ -752,6 +762,8 @@ function class_share_create_program_application(
                 '프로그램 신청을 저장할 수 없습니다.'
             );
         }
+
+        class_share_form_store_response($application_id, $locked_form);
 
         $after_json =
             json_encode(

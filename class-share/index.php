@@ -404,7 +404,7 @@ $now_timestamp =
     <meta charset="UTF-8">
     <link
         rel="stylesheet"
-        href="/class-share/assets/public.css?v=20261008-1">
+        href="/class-share/assets/public.css?v=20261008-types-1">
 
     <meta
         name="viewport"
@@ -502,7 +502,7 @@ $now_timestamp =
 
                         <article>
                             <p>
-                                <span class="public-badge">
+                                <span class="public-badge public-event-type" data-event-type="<?php echo class_share_public_escape(isset($event_type_names[$event_item_type]) ? $event_item_type : 'other'); ?>">
                                     <?php
                                     echo class_share_public_escape(
                                         $event_item_type_name
@@ -612,7 +612,7 @@ $now_timestamp =
 
             <section>
                 <p>
-                    <span class="public-badge">
+                    <span class="public-badge public-event-type" data-event-type="<?php echo class_share_public_escape(isset($event_type_names[$current_event_type]) ? $current_event_type : 'other'); ?>">
                         <?php
                         echo class_share_public_escape(
                             $current_event_type_name

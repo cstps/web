@@ -497,3 +497,48 @@ body.class-share-public {
 .cs-notice-align-right {
     text-align: right;
 }
+
+/* 행사 유형별 무지개 배지 */
+.class-share-public .public-badge.public-event-type {
+    min-height: 32px;
+    padding: 5px 14px;
+    border-width: 2px;
+    font-size: 0.95em;
+    font-weight: 800;
+}
+
+.class-share-public .public-event-type[data-event-type="class_share"] {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #f87171;
+}
+
+.class-share-public .public-event-type[data-event-type="school_event"] {
+    background: #ffedd5;
+    color: #9a3412;
+    border-color: #fb923c;
+}
+
+.class-share-public .public-event-type[data-event-type="briefing"] {
+    background: #fef9c3;
+    color: #713f12;
+    border-color: #facc15;
+}
+
+.class-share-public .public-event-type[data-event-type="experience"] {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #4ade80;
+}
+
+.class-share-public .public-event-type[data-event-type="training"] {
+    background: #dbeafe;
+    color: #1e40af;
+    border-color: #60a5fa;
+}
+
+.class-share-public .public-event-type[data-event-type="other"] {
+    background: #f3e8ff;
+    color: #6b21a8;
+    border-color: #c084fc;
+}

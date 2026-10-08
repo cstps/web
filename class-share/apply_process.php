@@ -243,10 +243,16 @@ $class_id =
     ? (int)$class_item['id']
     : 0;
 
-$validation =
-    class_share_application_validate(
-        $_POST
+try {
+    $configured_form = class_share_form_load((int)$event['id']);
+    $validation = class_share_application_validate($_POST, $configured_form);
+} catch (Throwable $exception) {
+    error_log('[class-share] 신청서 검증 준비 실패: ' . $exception->getMessage());
+    $store_error_and_redirect(
+        (int)$event['id'], $class_id,
+        array('신청서 항목을 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.'), array()
     );
+}
 
 if (
     count($validation['errors']) > 0
