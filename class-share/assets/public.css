@@ -477,3 +477,23 @@ body.class-share-public {
 .class-share-public .public-footer p {
     margin: 0;
 }
+
+
+/* 공지 이미지 및 문단 정렬 */
+.cs-notice-image {
+    max-width: 100%;
+    height: auto;
+    display: inline;
+}
+
+.cs-notice-align-left {
+    text-align: left;
+}
+
+.cs-notice-align-center {
+    text-align: center;
+}
+
+.cs-notice-align-right {
+    text-align: right;
+}

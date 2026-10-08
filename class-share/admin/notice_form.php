@@ -374,7 +374,7 @@ require_once(
                     ?></textarea>
 
                 <small class="admin-muted">
-                    제목, 강조, 목록, 표와 링크를 사용할 수 있습니다.
+                    제목, 강조, 목록, 표, 링크와 이미지를 사용할 수 있습니다. 이미지는 JPG·PNG·GIF·WebP 형식으로 5MB 이하만 업로드할 수 있습니다.
                     실제 글 내용은 10,000자 이하로 입력해 주세요.
                 </small>
             </div>
@@ -402,7 +402,7 @@ require_once(
     src="/tinymce/tinymce.min.js?v=8.9.0"></script>
 
 <script
-    src="/class-share/admin/assets/class-editor.js?v=20260922"></script>
+    src="/class-share/admin/assets/notice-editor.js?v=20261008-5"></script>
 <?php
 
 require_once(

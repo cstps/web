@@ -404,7 +404,7 @@ $now_timestamp =
     <meta charset="UTF-8">
     <link
         rel="stylesheet"
-        href="/class-share/assets/public.css?v=20260925-1">
+        href="/class-share/assets/public.css?v=20261008-1">
 
     <meta
         name="viewport"
@@ -743,7 +743,7 @@ $now_timestamp =
                             <div>
                                 <?php
                                 echo class_share_content_sanitize_html(
-                                    $notice['content']
+                                    $notice['content'], true
                                 );
                                 ?>
                             </div>

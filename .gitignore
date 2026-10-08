@@ -25,3 +25,6 @@ tinymce/
 tmp/
 phpad.php
 ads.txt
+
+# 공지 업로드 이미지
+/class-share/uploads/notices/

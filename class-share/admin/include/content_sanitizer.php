@@ -190,8 +190,10 @@ function class_share_content_sanitize_href($value)
     return $compact;
 }
 
-function class_share_content_sanitize_html($html)
-{
+function class_share_content_sanitize_html(
+    $html,
+    $allow_images = false
+) {
     if (
         is_array($html) ||
         is_object($html)
@@ -268,6 +270,12 @@ function class_share_content_sanitize_html($html)
             'base' => true
         );
 
+    // 공지에서 명시적으로 요청한 경우에만 이미지를 허용합니다.
+    if ($allow_images === true) {
+        $allowed_elements['img'] = true;
+        unset($remove_entirely['img']);
+    }
+
     $document =
         new DOMDocument(
             '1.0',
@@ -320,7 +328,8 @@ function class_share_content_sanitize_html($html)
         function ($node) use (
             &$sanitize_node,
             $allowed_elements,
-            $remove_entirely
+            $remove_entirely,
+            $allow_images
         ) {
             $children =
                 array();
@@ -398,6 +407,109 @@ function class_share_content_sanitize_html($html)
                     continue;
                 }
 
+                // 업로드 전용 경로의 이미지와 필요한 속성만 유지합니다.
+                if ($tag_name === 'img') {
+                    $src = trim($child->getAttribute('src'));
+
+                    if (!preg_match(
+                        '~^/class-share/uploads/notices/'
+                        . '[1-9][0-9]*/[a-f0-9]{32}'
+                        . '\\.(?:jpg|png|gif|webp)$~D',
+                        $src
+                    )) {
+                        $node->removeChild($child);
+                        continue;
+                    }
+
+                    $alt = mb_substr(
+                        $child->getAttribute('alt'),
+                        0,
+                        300,
+                        'UTF-8'
+                    );
+                    $title = mb_substr(
+                        $child->getAttribute('title'),
+                        0,
+                        300,
+                        'UTF-8'
+                    );
+                    $width = $child->getAttribute('width');
+                    $height = $child->getAttribute('height');
+
+                    // 이벤트, 임의 스타일 등 기존 속성은 모두 제거합니다.
+                    while ($child->attributes->length > 0) {
+                        $child->removeAttributeNode(
+                            $child->attributes->item(0)
+                        );
+                    }
+
+                    $child->setAttribute('src', $src);
+                    $child->setAttribute('alt', $alt);
+
+                    if ($title !== '') {
+                        $child->setAttribute('title', $title);
+                    }
+
+                    foreach (
+                        array('width' => $width, 'height' => $height)
+                        as $name => $value
+                    ) {
+                        if (
+                            preg_match('/^[1-9][0-9]{0,3}$/D', $value)
+                        ) {
+                            $child->setAttribute($name, $value);
+                        }
+                    }
+
+                    // 작은 화면에서도 이미지가 본문 너비를 넘지 않습니다.
+                    $child->setAttribute(
+                        'class',
+                        'cs-notice-image'
+                    );
+                    continue;
+                }
+
+                if (
+                    $allow_images === true &&
+                    in_array(
+                        $tag_name,
+                        array('p', 'h2', 'h3', 'h4', 'li', 'blockquote'),
+                        true
+                    )
+                ) {
+                    $alignment_value = '';
+                    $alignment_classes = array(
+                        'cs-notice-align-left' => 'left',
+                        'cs-notice-align-center' => 'center',
+                        'cs-notice-align-right' => 'right'
+                    );
+
+                    $existing_class = trim($child->getAttribute('class'));
+
+                    if (isset($alignment_classes[$existing_class])) {
+                        $alignment_value = $alignment_classes[$existing_class];
+                    }
+
+                    // 편집기에서 새로 지정한 정렬을 우선합니다.
+                    if (preg_match(
+                        '/^\s*text-align\s*:\s*(left|center|right)\s*;?\s*$/iD',
+                        $child->getAttribute('style'),
+                        $alignment_match
+                    )) {
+                        $alignment_value = strtolower($alignment_match[1]);
+                    }
+
+                    $child->removeAttribute('style');
+                    $child->removeAttribute('class');
+
+                    if ($alignment_value !== '') {
+                        $child->setAttribute(
+                            'class',
+                            'cs-notice-align-' . $alignment_value
+                        );
+                    }
+                }
+
                 $attribute_names =
                     array();
 
@@ -429,6 +541,25 @@ function class_share_content_sanitize_html($html)
                         false;
 
                     if (
+                        $allow_images === true &&
+                        $lower_name === 'class' &&
+                        in_array(
+                            $tag_name,
+                            array('p', 'h2', 'h3', 'h4', 'li', 'blockquote'),
+                            true
+                        ) &&
+                        in_array(
+                            $attribute_value,
+                            array(
+                                'cs-notice-align-left',
+                                'cs-notice-align-center',
+                                'cs-notice-align-right'
+                            ),
+                            true
+                        )
+                    ) {
+                        $keep_attribute = true;
+                    } elseif (
                         $tag_name === 'a' &&
                         $lower_name === 'href'
                     ) {

@@ -109,7 +109,8 @@ function class_share_notice_validate_input($source)
 
     $safe_content =
         class_share_content_sanitize_html(
-            $form_values['content']
+            $form_values['content'],
+            true
         );
 
     $content_text_length =
@@ -117,7 +118,10 @@ function class_share_notice_validate_input($source)
             $safe_content
         );
 
-    if ($content_text_length < 1) {
+    // 정제 후 유효한 이미지가 남아 있으면 이미지 공지도 허용합니다.
+    $has_image = strpos($safe_content, '<img ') !== false;
+
+    if ($content_text_length < 1 && !$has_image) {
         $errors[] =
             '공지 내용을 입력해 주세요.';
     } elseif ($content_text_length > 10000) {
