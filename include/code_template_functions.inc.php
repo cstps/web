@@ -15,6 +15,148 @@ function oj_normalize_source_newlines($source) {
 
 
 // ============================================================
+// 현재 OJ에서 활성화된 언어 목록 반환
+//
+// HUSTOJ의 OJ_LANGMASK 규칙:
+// - bit가 0인 언어가 활성화된 언어이다.
+// - 실제 제출 화면과 동일하게 language_ext 개수를 기준으로 한다.
+//
+// 반환 예:
+//
+// array(
+//     0 => 'C',
+//     1 => 'C++',
+//     3 => 'Java',
+//     6 => 'Python'
+// )
+// ============================================================
+
+function oj_get_enabled_template_languages(
+    $language_names,
+    $language_extensions,
+    $language_mask
+) {
+    if (
+        !is_array($language_names) ||
+        !is_array($language_extensions)
+    ) {
+        return array();
+    }
+
+    $language_count =
+        min(
+            count($language_names),
+            count($language_extensions)
+        );
+
+    $language_mask =
+        intval($language_mask);
+
+    $enabled_languages =
+        array();
+
+    for (
+        $language_id = 0;
+        $language_id < $language_count;
+        $language_id++
+    ) {
+        // HUSTOJ에서는 mask bit가 1이면 비활성화 언어이다.
+        if (
+            $language_mask &
+            (1 << $language_id)
+        ) {
+            continue;
+        }
+
+        $enabled_languages[$language_id] =
+            (string)$language_names[$language_id];
+    }
+
+    return $enabled_languages;
+}
+
+
+// ============================================================
+// 문제별 언어 템플릿 전체 조회
+//
+// 반환 형식:
+//
+// array(
+//     language_id => array(
+//         'lang'  => 'Python',
+//         'front' => '...',
+//         'rear'  => '...'
+//     )
+// )
+// ============================================================
+
+function oj_get_problem_templates(
+    $problem_id
+) {
+    $problem_id =
+        intval($problem_id);
+
+    if ($problem_id <= 0) {
+        return array();
+    }
+
+    $rows =
+        pdo_query(
+            "SELECT
+                language_id,
+                lang,
+                kind,
+                content
+             FROM problem_template
+             WHERE problem_id = ?
+             ORDER BY language_id, kind",
+            $problem_id
+        );
+
+    if ($rows === false) {
+        return false;
+    }
+
+    $templates =
+        array();
+
+    foreach ($rows as $row) {
+        $language_id =
+            intval($row['language_id']);
+
+        if (!isset($templates[$language_id])) {
+            $templates[$language_id] =
+                array(
+                    'lang' =>
+                        (string)$row['lang'],
+
+                    'front' =>
+                        '',
+
+                    'rear' =>
+                        ''
+                );
+        }
+
+        $kind =
+            (string)$row['kind'];
+
+        if (
+            $kind !== 'front' &&
+            $kind !== 'rear'
+        ) {
+            continue;
+        }
+
+        $templates[$language_id][$kind] =
+            (string)$row['content'];
+    }
+
+    return $templates;
+}
+
+
+// ============================================================
 // 언어별 front/rear 코드 추출
 //
 // 기존 저장 형식:
@@ -377,13 +519,6 @@ function oj_sync_problem_templates_from_legacy(
     $rear_code,
     $language_names
 ) {
-    $problem_id =
-        intval($problem_id);
-
-    if ($problem_id <= 0) {
-        return false;
-    }
-
     $templates =
         oj_parse_legacy_problem_templates(
             $front_code,
@@ -392,6 +527,56 @@ function oj_sync_problem_templates_from_legacy(
         );
 
     if ($templates === false) {
+        return false;
+    }
+
+    return oj_save_problem_templates(
+        $problem_id,
+        $templates
+    );
+}
+
+
+// ============================================================
+// 언어별 problem_template 직접 저장
+//
+// $templates 형식:
+//
+// array(
+//     'front' => array(
+//         language_id => array(
+//             'language_id' => ...,
+//             'lang'        => ...,
+//             'kind'        => 'front',
+//             'content'     => ...
+//         )
+//     ),
+//     'rear' => array(...)
+// )
+//
+// - 신규/수정 UI에서도 직접 호출할 수 있다.
+// - INSERT/UPDATE/DELETE를 구분해 기존 ID를 최대한 유지한다.
+// - 자체 트랜잭션을 사용한다.
+// ============================================================
+
+function oj_save_problem_templates(
+    $problem_id,
+    $templates
+) {
+    $problem_id =
+        intval($problem_id);
+
+    if ($problem_id <= 0) {
+        return false;
+    }
+
+    if (
+        !is_array($templates) ||
+        !isset($templates['front']) ||
+        !isset($templates['rear']) ||
+        !is_array($templates['front']) ||
+        !is_array($templates['rear'])
+    ) {
         return false;
     }
 
@@ -447,12 +632,49 @@ function oj_sync_problem_templates_from_legacy(
             array();
 
         foreach ($templates as $kind => $kind_templates) {
+
+            if (
+                $kind !== 'front' &&
+                $kind !== 'rear'
+            ) {
+                continue;
+            }
+
             foreach (
                 $kind_templates
                 as $language_id => $template
             ) {
+                $language_id =
+                    intval($language_id);
+
+                if (
+                    !is_array($template) ||
+                    $language_id < 0
+                ) {
+                    throw new RuntimeException(
+                        '잘못된 템플릿 데이터'
+                    );
+                }
+
+                $lang =
+                    isset($template['lang'])
+                        ? (string)$template['lang']
+                        : '';
+
+                $content =
+                    isset($template['content'])
+                        ? oj_normalize_source_newlines(
+                            $template['content']
+                        )
+                        : '';
+
+                // 빈 템플릿은 행을 만들지 않는다.
+                if ($content === '') {
+                    continue;
+                }
+
                 $key =
-                    intval($language_id) .
+                    $language_id .
                     ':' .
                     $kind;
 
@@ -464,9 +686,9 @@ function oj_sync_problem_templates_from_legacy(
 
                     if (
                         (string)$existing['lang'] ===
-                        (string)$template['lang'] &&
+                            $lang &&
                         (string)$existing['content'] ===
-                        (string)$template['content']
+                            $content
                     ) {
                         continue;
                     }
@@ -478,8 +700,8 @@ function oj_sync_problem_templates_from_legacy(
                                 lang = ?,
                                 content = ?
                              WHERE id = ?",
-                            $template['lang'],
-                            $template['content'],
+                            $lang,
+                            $content,
                             intval($existing['id'])
                         );
 
@@ -507,10 +729,10 @@ function oj_sync_problem_templates_from_legacy(
                             ?, ?, ?, ?, ?
                         )",
                         $problem_id,
-                        intval($template['language_id']),
-                        $template['lang'],
+                        $language_id,
+                        $lang,
                         $kind,
-                        $template['content']
+                        $content
                     );
 
                 if ($insert_result === false) {
@@ -550,7 +772,9 @@ function oj_sync_problem_templates_from_legacy(
         }
 
         return true;
+
     } catch (Throwable $exception) {
+
         if (
             $transaction_started &&
             $dbh->inTransaction()
@@ -561,7 +785,7 @@ function oj_sync_problem_templates_from_legacy(
         error_log(
             '[problem_template] problem_id=' .
                 $problem_id .
-                ' 동기화 실패: ' .
+                ' 저장 실패: ' .
                 $exception->getMessage()
         );
 
@@ -570,6 +794,89 @@ function oj_sync_problem_templates_from_legacy(
 }
 
 
+// ============================================================
+// 언어별 템플릿 배열을 기존 HUSTOJ 형식으로 변환
+//
+// problem_template을 원본으로 사용하면서
+// problem.front_code / rear_code 호환본을 유지하기 위한 함수.
+// ============================================================
+
+function oj_build_legacy_problem_templates(
+    $templates,
+    $language_names
+) {
+    $result =
+        array(
+            'front' => '',
+            'rear' => ''
+        );
+
+    if (
+        !is_array($templates) ||
+        !is_array($language_names)
+    ) {
+        return $result;
+    }
+
+    foreach (
+        array('front', 'rear')
+        as $kind
+    ) {
+        if (
+            !isset($templates[$kind]) ||
+            !is_array($templates[$kind])
+        ) {
+            continue;
+        }
+
+        $parts =
+            array();
+
+        foreach (
+            $language_names
+            as $language_id => $language_label
+        ) {
+            $language_id =
+                intval($language_id);
+
+            if (
+                !isset(
+                    $templates[$kind][$language_id]
+                )
+            ) {
+                continue;
+            }
+
+            $template =
+                $templates[$kind][$language_id];
+
+            $content =
+                isset($template['content'])
+                    ? oj_normalize_source_newlines(
+                        $template['content']
+                    )
+                    : '';
+
+            if ($content === '') {
+                continue;
+            }
+
+            $parts[] =
+                '//' .
+                (string)$language_label .
+                "//\n" .
+                $content;
+        }
+
+        $result[$kind] =
+            implode(
+                "\n",
+                $parts
+            );
+    }
+
+    return $result;
+}
 
 
 // ============================================================

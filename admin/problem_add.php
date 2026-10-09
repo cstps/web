@@ -76,31 +76,79 @@ if ($creator_length > 200) {
 $spj = $_POST['spj'];
 
 
-// 앞뒤 코드, 금지어, 포인트
-// 코드는 내용과 빈 줄을 보존하고 줄바꿈 방식만 LF로 통일한다.
-$front_code =
-    isset($_POST['front_code'])
-    ? $_POST['front_code']
-    : '';
+// ------------------------------------------------------------
+// 언어별 코드 템플릿
+//
+// problem_template을 원본으로 사용한다.
+// ------------------------------------------------------------
 
-$rear_code =
-    isset($_POST['rear_code'])
-    ? $_POST['rear_code']
-    : '';
-
-$front_code =
-    str_replace(
-        array("\r\n", "\r"),
-        "\n",
-        $front_code
+$enabled_template_languages =
+    oj_get_enabled_template_languages(
+        $language_name,
+        $language_ext,
+        $OJ_LANGMASK
     );
 
-$rear_code =
-    str_replace(
-        array("\r\n", "\r"),
-        "\n",
-        $rear_code
+$templates =
+    array(
+        'front' => array(),
+        'rear' => array()
     );
+
+foreach (
+    $enabled_template_languages
+    as $language_id => $language_label
+) {
+    $language_id =
+        intval($language_id);
+
+    foreach (
+        array('front', 'rear')
+        as $kind
+    ) {
+        $post_name =
+            'template_' . $kind;
+
+        $content =
+            isset($_POST[$post_name]) &&
+            is_array($_POST[$post_name]) &&
+            isset($_POST[$post_name][$language_id])
+                ? (string)$_POST[$post_name][$language_id]
+                : '';
+
+        $content =
+            oj_normalize_source_newlines(
+                $content
+            );
+
+        if ($content === '') {
+            continue;
+        }
+
+        $templates[$kind][$language_id] =
+            array(
+                'language_id' => $language_id,
+                'lang' => (string)$language_label,
+                'kind' => $kind,
+                'content' => $content
+            );
+    }
+}
+
+
+// 기존 HUSTOJ 코드와 FPS 호환을 위한 legacy 복제본
+$legacy_templates =
+    oj_build_legacy_problem_templates(
+        $templates,
+        $language_name
+    );
+
+$front_code =
+    $legacy_templates['front'];
+
+$rear_code =
+    $legacy_templates['rear'];
+
 
 $ban_code =
     isset($_POST['ban_code'])
@@ -175,7 +223,9 @@ $pid = addproblem(
     $front_code,
     $rear_code,
     $ban_code,
-    $pro_point
+    $pro_point,
+    '',
+    $templates
 );
 
 if (

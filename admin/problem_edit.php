@@ -44,6 +44,40 @@ $admin_page_access_allowed = true;
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>문제 수정</title>
   <?php include_once("tinymce.php"); ?>
+
+  <style>
+    .admin-template-language-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      margin-bottom: 16px;
+    }
+
+    .admin-template-language-tab {
+      border: 1px solid #d0d7de;
+      background: #ffffff;
+      border-radius: 6px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .admin-template-language-tab.active {
+      font-weight: 600;
+      border-color: #0969da;
+      background: #f0f6ff;
+    }
+
+    .admin-template-language-panel {
+      display: none;
+    }
+
+    .admin-template-language-panel.active {
+      display: block;
+    }
+  </style>
+
 </head>
 
 <body>
@@ -79,6 +113,73 @@ $admin_page_access_allowed = true;
       }
 
       $row = $result[0];
+
+
+      // ----------------------------------------------------------
+      // 코드 템플릿 편집용 활성 언어 목록
+      // ----------------------------------------------------------
+
+      $enabled_template_languages =
+        oj_get_enabled_template_languages(
+          $language_name,
+          $language_ext,
+          $OJ_LANGMASK
+        );
+
+
+      // ----------------------------------------------------------
+      // problem_template에서 현재 문제의 언어별 Front/Rear 조회
+      // ----------------------------------------------------------
+
+      $problem_templates =
+        oj_get_problem_templates(
+          $id
+        );
+
+      if ($problem_templates === false) {
+        http_response_code(500);
+
+        exit(
+          '언어별 코드 템플릿 정보를 불러오지 못했습니다.'
+        );
+      }
+
+
+      // ----------------------------------------------------------
+      // 편집 화면에서 사용할 언어별 기본값 구성
+      // ----------------------------------------------------------
+
+      $template_editor_values =
+        array();
+
+      foreach (
+        $enabled_template_languages
+        as $language_id => $language_label
+      ) {
+        $language_id =
+          intval($language_id);
+
+        $template_editor_values[$language_id] =
+          array(
+            'lang' =>
+              (string)$language_label,
+
+            'front' =>
+              isset(
+                $problem_templates[$language_id]['front']
+              )
+                ? (string)$problem_templates[$language_id]['front']
+                : '',
+
+            'rear' =>
+              isset(
+                $problem_templates[$language_id]['rear']
+              )
+                ? (string)$problem_templates[$language_id]['rear']
+                : ''
+          );
+      }
+
 
       $creator_value =
         isset($row['creator'])
@@ -722,120 +823,135 @@ $admin_page_access_allowed = true;
             <div class="admin-form-field">
 
               <label class="admin-form-label">
-                앞 코드 (Front Code)
+                언어별 코드 템플릿
               </label>
 
               <div class="admin-form-help">
-                학생이 작성한 코드 앞에 자동으로 추가되는 코드입니다.
-                언어별 구분은 기존 HUSTOJ 형식인
-                <code>//언어명//</code>을 사용합니다.
+                현재 사이트에서 활성화된 언어별로
+                Front Code와 Rear Code를 관리합니다.
               </div>
 
+              <div class="admin-template-language-tabs">
+
+                <?php
+                $template_language_index = 0;
+
+                foreach (
+                  $template_editor_values
+                  as $language_id => $template_value
+                ) {
+                ?>
+
+                  <button
+                    type="button"
+                    class="admin-template-language-tab <?php
+                      echo $template_language_index === 0
+                        ? 'active'
+                        : '';
+                    ?>"
+                    data-template-language="<?php
+                      echo intval($language_id);
+                    ?>">
+                    <?php
+                    echo htmlspecialchars(
+                      $template_value['lang'],
+                      ENT_QUOTES,
+                      'UTF-8'
+                    );
+                    ?>
+                  </button>
+
+                <?php
+                  $template_language_index++;
+                }
+                ?>
+
+              </div>
+
+
               <?php
-              if ($OJ_ACE_EDITOR) {
+              $template_language_index = 0;
+
+              foreach (
+                $template_editor_values
+                as $language_id => $template_value
+              ) {
+                $language_id =
+                  intval($language_id);
               ?>
 
-                <pre
-                  class="admin-code-editor"
-                  id="front_code"><?php
-                                  echo htmlspecialchars(
-                                    isset($row['front_code'])
-                                      ? $row['front_code']
-                                      : '',
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                  );
-                                  ?></pre>
+                <div
+                  class="admin-template-language-panel <?php
+                    echo $template_language_index === 0
+                      ? 'active'
+                      : '';
+                  ?>"
+                  data-template-panel="<?php echo $language_id; ?>">
 
-                <input
-                  type="hidden"
-                  id="front_code_source"
-                  name="front_code"
-                  value="">
+                  <div class="admin-form-field">
+
+                    <label class="admin-form-label">
+                      <?php
+                      echo htmlspecialchars(
+                        $template_value['lang'],
+                        ENT_QUOTES,
+                        'UTF-8'
+                      );
+                      ?>
+                      Front Code
+                    </label>
+
+                    <textarea
+                      class="admin-form-textarea admin-code-textarea"
+                      rows="8"
+                      name="template_front[<?php echo $language_id; ?>]"><?php
+                        echo htmlspecialchars(
+                          $template_value['front'],
+                          ENT_QUOTES,
+                          'UTF-8'
+                        );
+                      ?></textarea>
+
+                  </div>
+
+
+                  <div class="admin-form-field">
+
+                    <label class="admin-form-label">
+                      <?php
+                      echo htmlspecialchars(
+                        $template_value['lang'],
+                        ENT_QUOTES,
+                        'UTF-8'
+                      );
+                      ?>
+                      Rear Code
+                    </label>
+
+                    <textarea
+                      class="admin-form-textarea admin-code-textarea"
+                      rows="8"
+                      name="template_rear[<?php echo $language_id; ?>]"><?php
+                        echo htmlspecialchars(
+                          $template_value['rear'],
+                          ENT_QUOTES,
+                          'UTF-8'
+                        );
+                      ?></textarea>
+
+                  </div>
+
+                </div>
 
               <?php
-              } else {
-              ?>
-
-                <textarea
-                  class="admin-form-textarea admin-code-textarea"
-                  rows="10"
-                  id="front_code"
-                  name="front_code"><?php
-                                    echo htmlspecialchars(
-                                      isset($row['front_code'])
-                                        ? $row['front_code']
-                                        : '',
-                                      ENT_QUOTES,
-                                      'UTF-8'
-                                    );
-                                    ?></textarea>
-
-              <?php
+                $template_language_index++;
               }
               ?>
 
             </div>
 
 
-            <div class="admin-form-field">
-
-              <label class="admin-form-label">
-                뒤 코드 (Rear Code)
-              </label>
-
-              <div class="admin-form-help">
-                학생이 작성한 코드 뒤에 자동으로 추가되는 코드입니다.
-              </div>
-
-              <?php
-              if ($OJ_ACE_EDITOR) {
-              ?>
-
-                <pre
-                  class="admin-code-editor"
-                  id="rear_code"><?php
-                                  echo htmlspecialchars(
-                                    isset($row['rear_code'])
-                                      ? $row['rear_code']
-                                      : '',
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                  );
-                                  ?></pre>
-
-                <input
-                  type="hidden"
-                  id="rear_code_source"
-                  name="rear_code"
-                  value="">
-
-              <?php
-              } else {
-              ?>
-
-                <textarea
-                  class="admin-form-textarea admin-code-textarea"
-                  rows="10"
-                  id="rear_code"
-                  name="rear_code"><?php
-                                    echo htmlspecialchars(
-                                      isset($row['rear_code'])
-                                        ? $row['rear_code']
-                                        : '',
-                                      ENT_QUOTES,
-                                      'UTF-8'
-                                    );
-                                    ?></textarea>
-
-              <?php
-              }
-              ?>
-
-            </div>
-
-
-            <div class="admin-form-field">
+<div class="admin-form-field">
 
               <label class="admin-form-label">
                 <?php echo $MSG_BAN_CODE; ?>
@@ -1075,30 +1191,142 @@ $admin_page_access_allowed = true;
         : 0;
 
 
-      // 앞뒤 코드는 원문을 보존하고 줄바꿈 방식만 LF로 통일한다.
-      $front_code =
-        isset($_POST['front_code'])
-        ? $_POST['front_code']
-        : '';
+      // ----------------------------------------------------------
+      // 언어별 코드 템플릿
+      //
+      // problem_template을 원본으로 사용한다.
+      // 비활성 언어의 기존 템플릿은 수정 시 삭제하지 않고 보존한다.
+      // ----------------------------------------------------------
 
-      $rear_code =
-        isset($_POST['rear_code'])
-        ? $_POST['rear_code']
-        : '';
-
-      $front_code =
-        str_replace(
-          array("\r\n", "\r"),
-          "\n",
-          $front_code
+      $enabled_template_languages =
+        oj_get_enabled_template_languages(
+          $language_name,
+          $language_ext,
+          $OJ_LANGMASK
         );
 
-      $rear_code =
-        str_replace(
-          array("\r\n", "\r"),
-          "\n",
-          $rear_code
+      $existing_templates =
+        oj_get_problem_templates(
+          $id
         );
+
+      if ($existing_templates === false) {
+        http_response_code(500);
+        exit(
+          '기존 언어별 코드 템플릿 정보를 불러오지 못했습니다.'
+        );
+      }
+
+      $templates =
+        array(
+          'front' => array(),
+          'rear' => array()
+        );
+
+
+      // 비활성 언어를 포함한 기존 템플릿을 우선 보존한다.
+      foreach (
+        $existing_templates
+        as $language_id => $template
+      ) {
+        $language_id =
+          intval($language_id);
+
+        $lang =
+          isset($template['lang'])
+          ? (string)$template['lang']
+          : (
+              isset($language_name[$language_id])
+              ? (string)$language_name[$language_id]
+              : ''
+            );
+
+        foreach (
+          array('front', 'rear')
+          as $kind
+        ) {
+          $content =
+            isset($template[$kind])
+            ? (string)$template[$kind]
+            : '';
+
+          if ($content === '') {
+            continue;
+          }
+
+          $templates[$kind][$language_id] =
+            array(
+              'language_id' => $language_id,
+              'lang' => $lang,
+              'kind' => $kind,
+              'content' =>
+                oj_normalize_source_newlines(
+                  $content
+                )
+            );
+        }
+      }
+
+
+      // 활성 언어는 현재 편집 화면에서 넘어온 값으로 교체한다.
+      foreach (
+        $enabled_template_languages
+        as $language_id => $language_label
+      ) {
+        $language_id =
+          intval($language_id);
+
+        foreach (
+          array('front', 'rear')
+          as $kind
+        ) {
+          $post_name =
+            'template_' . $kind;
+
+          $content =
+            isset($_POST[$post_name]) &&
+            is_array($_POST[$post_name]) &&
+            isset($_POST[$post_name][$language_id])
+              ? (string)$_POST[$post_name][$language_id]
+              : '';
+
+          $content =
+            oj_normalize_source_newlines(
+              $content
+            );
+
+          // 빈 값이면 해당 활성 언어 템플릿을 제거한다.
+          unset(
+            $templates[$kind][$language_id]
+          );
+
+          if ($content === '') {
+            continue;
+          }
+
+          $templates[$kind][$language_id] =
+            array(
+              'language_id' => $language_id,
+              'lang' => (string)$language_label,
+              'kind' => $kind,
+              'content' => $content
+            );
+        }
+      }
+
+
+      // 기존 HUSTOJ 코드와 FPS 호환을 위한 legacy 복제본 생성
+      $legacy_templates =
+        oj_build_legacy_problem_templates(
+          $templates,
+          $language_name
+        );
+
+      $front_code =
+        $legacy_templates['front'];
+
+      $rear_code =
+        $legacy_templates['rear'];
 
 
       $ban_code =
@@ -1265,11 +1493,9 @@ $admin_page_access_allowed = true;
       }
 
       $template_sync_result =
-        oj_sync_problem_templates_from_legacy(
+        oj_save_problem_templates(
           $id,
-          $front_code,
-          $rear_code,
-          $language_name
+          $templates
         );
 
       if ($template_sync_result === false) {
@@ -1413,26 +1639,6 @@ $admin_page_access_allowed = true;
           );
         }
 
-        // display:none 상태에서 초기화된 ACE 편집기의 폭 재계산
-        window.setTimeout(
-          function() {
-
-            if (
-              typeof(editorFrontCode) !==
-              "undefined"
-            ) {
-              editorFrontCode.resize();
-            }
-
-            if (
-              typeof(editorRearCode) !==
-              "undefined"
-            ) {
-              editorRearCode.resize();
-            }
-          },
-          0
-        );
       }
     }
 
@@ -1445,99 +1651,67 @@ $admin_page_access_allowed = true;
         window.tinymce.triggerSave();
       }
 
-      if (
-        typeof(editorFrontCode) !== "undefined"
-      ) {
-        $("#front_code_source").val(
-          editorFrontCode.getValue()
-        );
-      }
-
-      if (
-        typeof(editorRearCode) !== "undefined"
-      ) {
-        $("#rear_code_source").val(
-          editorRearCode.getValue()
-        );
-      }
-
       document.getElementById("problemEdit").target = "_self";
     }
   </script>
 
 
-  <?php
-  if (
-    isset($OJ_ACE_EDITOR) &&
-    $OJ_ACE_EDITOR &&
-    isset($_GET['id'])
-  ) {
-  ?>
-    <script src="../ace/ace.js"></script>
-    <script src="../ace/ext-language_tools.js"></script>
-
-    <script>
-      ace.require("../ace/ext/language_tools");
-
-      var editorFrontCode =
-        ace.edit("front_code");
-
-      editorFrontCode.setTheme(
-        "ace/theme/chrome"
-      );
-
-      editorFrontCode.session.setMode(
-        "ace/mode/c_cpp"
-      );
-
-      editorFrontCode.setOptions({
-        enableBasicAutocompletion: false,
-        enableSnippets: true,
-        enableLiveAutocompletion: false,
-        fontSize: "13pt"
-      });
 
 
-      var editorRearCode =
-        ace.edit("rear_code");
 
-      editorRearCode.setTheme(
-        "ace/theme/chrome"
-      );
+  <script>
+    document.addEventListener(
+      "DOMContentLoaded",
+      function () {
 
-      editorRearCode.session.setMode(
-        "ace/mode/c_cpp"
-      );
+        var tabs =
+          document.querySelectorAll(
+            ".admin-template-language-tab"
+          );
 
-      editorRearCode.setOptions({
-        enableBasicAutocompletion: false,
-        enableSnippets: true,
-        enableLiveAutocompletion: false,
-        fontSize: "13pt"
-      });
+        var panels =
+          document.querySelectorAll(
+            ".admin-template-language-panel"
+          );
 
-      if (
-        document
-        .getElementById(
-          "codeTemplateContent"
-        )
-        .classList.contains(
-          "open"
-        )
-      ) {
+        tabs.forEach(function (tab) {
 
-        window.setTimeout(
-          function() {
-            editorFrontCode.resize();
-            editorRearCode.resize();
-          },
-          0
-        );
+          tab.addEventListener(
+            "click",
+            function () {
+
+              var languageId =
+                this.getAttribute(
+                  "data-template-language"
+                );
+
+              tabs.forEach(function (item) {
+                item.classList.remove("active");
+              });
+
+              panels.forEach(function (panel) {
+                panel.classList.remove("active");
+              });
+
+              this.classList.add("active");
+
+              var target =
+                document.querySelector(
+                  '.admin-template-language-panel' +
+                  '[data-template-panel="' +
+                  languageId +
+                  '"]'
+                );
+
+              if (target) {
+                target.classList.add("active");
+              }
+            }
+          );
+        });
       }
-    </script>
-  <?php
-  }
-  ?>
+    );
+  </script>
 
 </body>
 
