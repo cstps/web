@@ -5,6 +5,12 @@ if (PHP_SAPI !== 'cli') {
   exit;
 }
 
+// CLI에서는 웹 서버 환경 변수가 없으므로
+// 공통 초기화 코드가 참조하는 최소 값을 준비한다.
+if (!isset($_SERVER['HTTP_HOST'])) {
+  $_SERVER['HTTP_HOST'] = 'localhost';
+}
+
 // admin/migrate_problem_templates.php
 
 // 1) 경로 안전: 스크립트 기준으로 include
@@ -65,10 +71,36 @@ $rows = pdo_query(
 );
 
 $done = 0;
+$skipped = 0;
+$empty = 0;
 $ins = 0;
 
 foreach ($rows as $r) {
   $pid = (int)$r['problem_id'];
+
+  // ----------------------------------------------------------
+  // problem_template은 현재 원본 데이터다.
+  //
+  // 이미 structured template이 하나라도 존재하는 문제는
+  // legacy front_code/rear_code로 다시 이관하지 않는다.
+  // ----------------------------------------------------------
+
+  $existing_rows =
+    pdo_query(
+      "SELECT 1
+       FROM problem_template
+       WHERE problem_id = ?
+       LIMIT 1",
+      $pid
+    );
+
+  if (
+    $existing_rows &&
+    isset($existing_rows[0])
+  ) {
+    $skipped++;
+    continue;
+  }
 
   // DB에 엔티티로 저장된 경우를 고려해 디코드
   $front_raw = html_entity_decode((string)($r['front_code'] ?? ''), ENT_QUOTES, 'UTF-8');
@@ -76,6 +108,14 @@ foreach ($rows as $r) {
 
   $fmap = parse_blocks($front_raw, $language_name);
   $rmap = parse_blocks($rear_raw,  $language_name);
+
+  if (
+    empty($fmap) &&
+    empty($rmap)
+  ) {
+    $empty++;
+    continue;
+  }
 
   foreach ($fmap as $lang => $code) {
 
@@ -117,7 +157,6 @@ foreach ($rows as $r) {
 
     $ins++;
 
-    $ins++;
   }
   foreach ($rmap as $lang => $code) {
 
@@ -163,4 +202,8 @@ foreach ($rows as $r) {
   $done++;
 }
 
-echo "Migrated templates for {$done} problems. Rows upserted: {$ins}\n";
+echo
+  "Migrated: {$done} problems. " .
+  "Skipped existing: {$skipped}. " .
+  "Skipped empty: {$empty}. " .
+  "Rows inserted: {$ins}\n";
