@@ -583,6 +583,15 @@ function import_fps($tempfile)
     $ban_code = getValue($searchNode, 'ban_code');
     $pro_point = getValue($searchNode, 'pro_point');
 
+    // FPS/XML의 기존 //언어명// 형식을
+    // problem_template 저장 형식으로 변환한다.
+    $templates =
+      oj_parse_legacy_problem_templates(
+        $front_code,
+        $rear_code,
+        $language_name
+      );
+
     $spjcode = getValue($searchNode, 'spj');
     if ($spjcode) $spjlang = getAttribute($searchNode, 'spj', 'language');
     $tpjcode = getValue($searchNode, 'tpj');
@@ -607,7 +616,8 @@ function import_fps($tempfile)
         $rear_code,
         $ban_code,
         $pro_point,
-        $creator
+        $creator,
+        $templates
       );
 
       if (

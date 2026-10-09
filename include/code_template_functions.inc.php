@@ -886,6 +886,119 @@ function oj_build_legacy_problem_templates(
 // 코드 사이에 줄바꿈이 전혀 없을 때만 한 줄을 추가한다.
 // ============================================================
 
+// ------------------------------------------------------------
+// problem_template을 우선 사용하여
+// 기존 //언어명// 형식의 Front/Rear 호환본을 반환한다.
+//
+// 오래된 문제처럼 problem_template 행이 없는 경우에만
+// problem.front_code / rear_code를 fallback으로 사용한다.
+// ------------------------------------------------------------
+
+function oj_get_problem_legacy_template_codes(
+    $problem_id,
+    $language_names
+) {
+    $problem_id =
+        intval($problem_id);
+
+    $result =
+        array(
+            'front' => '',
+            'rear' => ''
+        );
+
+    if ($problem_id <= 0) {
+        return $result;
+    }
+
+    $problem_templates =
+        oj_get_problem_templates(
+            $problem_id
+        );
+
+    if (
+        is_array($problem_templates) &&
+        !empty($problem_templates)
+    ) {
+        $templates =
+            array(
+                'front' => array(),
+                'rear' => array()
+            );
+
+        foreach (
+            $problem_templates
+            as $language_id => $template
+        ) {
+            foreach (
+                array('front', 'rear')
+                as $kind
+            ) {
+                $content =
+                    isset($template[$kind])
+                        ? (string)$template[$kind]
+                        : '';
+
+                if ($content === '') {
+                    continue;
+                }
+
+                $templates[$kind][$language_id] =
+                    array(
+                        'language_id' =>
+                            intval($language_id),
+
+                        'lang' =>
+                            isset($template['lang'])
+                                ? (string)$template['lang']
+                                : '',
+
+                        'kind' =>
+                            $kind,
+
+                        'content' =>
+                            $content
+                    );
+            }
+        }
+
+        return
+            oj_build_legacy_problem_templates(
+                $templates,
+                $language_names
+            );
+    }
+
+    $rows =
+        pdo_query(
+            "SELECT
+                front_code,
+                rear_code
+             FROM problem
+             WHERE problem_id = ?
+             LIMIT 1",
+            $problem_id
+        );
+
+    if (
+        $rows &&
+        isset($rows[0])
+    ) {
+        $result['front'] =
+            isset($rows[0]['front_code'])
+                ? (string)$rows[0]['front_code']
+                : '';
+
+        $result['rear'] =
+            isset($rows[0]['rear_code'])
+                ? (string)$rows[0]['rear_code']
+                : '';
+    }
+
+    return $result;
+}
+
+
 function oj_build_judge_source(
     $front_code,
     $user_source,

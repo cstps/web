@@ -545,37 +545,18 @@ if (isset($_GET['sid'])) {
 
 			else {
 
-				$template_rows =
-					pdo_query(
-						"SELECT
-							front_code,
-							rear_code
-						FROM problem
-						WHERE problem_id = ?
-						LIMIT 1",
-						$sproblem_id
-					);
+				$template_codes =
+				        oj_get_problem_legacy_template_codes(
+				                $sproblem_id,
+				                $language_name
+				        );
 
+				$front_code =
+				        $template_codes['front'];
 
-				$front_code = '';
-				$rear_code = '';
+				$rear_code =
+				        $template_codes['rear'];
 
-
-				if (
-					$template_rows &&
-					isset($template_rows[0])
-				) {
-
-					$front_code =
-						isset($template_rows[0]['front_code'])
-							? $template_rows[0]['front_code']
-							: '';
-
-					$rear_code =
-						isset($template_rows[0]['rear_code'])
-							? $template_rows[0]['rear_code']
-							: '';
-				}
 
 
 				$view_src =
@@ -615,37 +596,18 @@ if (isset($_GET['sid'])) {
 					(string)$legacy_source_rows[0]['source'];
 
 
-				$template_rows =
-					pdo_query(
-						"SELECT
-							front_code,
-							rear_code
-						 FROM problem
-						 WHERE problem_id = ?
-						 LIMIT 1",
-						$sproblem_id
-					);
+				$template_codes =
+				        oj_get_problem_legacy_template_codes(
+				                $sproblem_id,
+				                $language_name
+				        );
 
+				$front_code =
+				        $template_codes['front'];
 
-				$front_code = '';
-				$rear_code = '';
+				$rear_code =
+				        $template_codes['rear'];
 
-
-				if (
-					$template_rows &&
-					isset($template_rows[0])
-				) {
-
-					$front_code =
-						isset($template_rows[0]['front_code'])
-						? $template_rows[0]['front_code']
-						: '';
-
-					$rear_code =
-						isset($template_rows[0]['rear_code'])
-						? $template_rows[0]['rear_code']
-						: '';
-				}
 
 
 				$view_src =
