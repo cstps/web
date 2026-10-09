@@ -298,17 +298,7 @@ if (!function_exists("admin_menu_link_class")) {
         <?php
         if (oj_is_admin()) {
         ?>
-
-          <a
-            href="problem_copy.php"
-            target="<?php echo $admin_internal_target; ?>"
-            class="admin-nav-link">
-            문제 복사
-          </a>
-
-
-
-        <?php
+<?php
         }
         ?>
 

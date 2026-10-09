@@ -281,18 +281,7 @@ require(__DIR__ . "/admin-layout-start.php");
           <?php } ?>
 
           <?php if (oj_is_admin()) { ?>
-
-            <a class="admin-dashboard-action" href="problem_copy.php">
-              <span class="admin-dashboard-action-title">
-                문제 복사
-              </span>$postkey_session_name =
-              <span class="admin-dashboard-action-description">
-                외부 문제를 현재 문제은행으로 복사합니다.
-              </span>
-            </a>
-
-
-          <?php } ?>
+<?php } ?>
 
         </div>
 
