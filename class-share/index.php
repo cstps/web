@@ -19,8 +19,9 @@ header(
     "Content-Security-Policy: " .
         "default-src 'self'; " .
         "style-src 'self'; " .
-        "img-src 'self' data:; " .
-        "script-src 'self'; " .
+        "img-src 'self' data: https://wcs.naver.com; " .
+        "script-src 'self' https://wcs.pstatic.net https://ssl.pstatic.net; " .
+        "connect-src 'self' https://wcs.naver.com https://nam.veta.naver.com https://tivan.naver.com; " .
         "form-action 'self'; " .
         "frame-ancestors 'none'; " .
         "base-uri 'self'; " .
@@ -1055,6 +1056,10 @@ $now_timestamp =
             since 2026
         </p>
     </footer>
+
+    <!-- 네이버 애널리틱스 -->
+    <script src="https://wcs.pstatic.net/wcslog.js" defer></script>
+    <script src="/class-share/assets/naver-analytics.js?v=20261009-1" defer></script>
 </body>
 
 </html>
