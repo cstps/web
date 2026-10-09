@@ -320,9 +320,13 @@ require_once(
                                 style="padding:0;"
                             >
                                 <a
-                                    href="problem.php?id=<?php
+                                    href="problem.php?cid=<?php
                                         echo intval(
-                                            $problem['problem_id']
+                                            $selected_contest_id
+                                        );
+                                    ?>&amp;pid=<?php
+                                        echo intval(
+                                            $problem['num']
                                         );
                                     ?>"
                                     target="_blank"

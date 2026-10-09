@@ -552,11 +552,11 @@ require_once(
                             <td class="course-code-monitor-problem">
 
                                 <a
-                                    href="problem.php?id=<?php
-                                        echo intval(
-                                            $current['problem_id']
-                                        );
-                                    ?>"
+                                    href="problem.php?cid=<?php
+        echo intval($current['contest_id']);
+    ?>&amp;pid=<?php
+        echo intval($current['problem_num']);
+    ?>"
                                     target="_blank"
                                     style="
                                         display:block;
@@ -1379,10 +1379,10 @@ require_once(
                         "course-code-tile-problem";
 
                     problemLink.href =
-                        "problem.php?id=" +
-                        Number(
-                            current.problem_id
-                        );
+                        "problem.php?cid=" +
+                        Number(current.contest_id) +
+                        "&pid=" +
+                        Number(current.problem_num);
 
                     problemLink.target =
                         "_blank";
@@ -1713,8 +1713,10 @@ require_once(
                         );
 
                     problemLink.href =
-                        "problem.php?id=" +
-                        Number(current.problem_id);
+                        "problem.php?cid=" +
+                        Number(current.contest_id) +
+                        "&pid=" +
+                        Number(current.problem_num);
 
                     problemLink.target =
                         "_blank";
