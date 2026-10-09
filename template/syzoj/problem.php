@@ -1,4 +1,9 @@
 <?php
+
+require_once(
+  __DIR__ . "/../../include/code_template_functions.inc.php"
+);
+
 if ($pr_flag) {
   $show_title = "P$id - " . $row['title'] . " - $OJ_NAME";
 } else {
@@ -135,57 +140,155 @@ if ($pr_flag) {
     </div>
   </div>
   <?php
-  if ($row['front_code'] || $row['rear_code'] || $row['ban_code']) { ?>
+  $problem_templates =
+    oj_get_problem_templates(
+      intval($id)
+    );
+
+  if ($problem_templates === false) {
+    $problem_templates = array();
+  }
+
+  // 아직 problem_template에 이관되지 않은 오래된 문제는
+  // 기존 front_code/rear_code를 fallback으로 사용한다.
+  if (
+    empty($problem_templates) &&
+    (
+      !empty($row['front_code']) ||
+      !empty($row['rear_code'])
+    )
+  ) {
+    $legacy_templates =
+      oj_parse_legacy_problem_templates(
+        isset($row['front_code'])
+          ? (string)$row['front_code']
+          : '',
+        isset($row['rear_code'])
+          ? (string)$row['rear_code']
+          : '',
+        $language_name
+      );
+
+    foreach (
+      array('front', 'rear')
+      as $template_kind
+    ) {
+      foreach (
+        $legacy_templates[$template_kind]
+        as $language_id => $template
+      ) {
+        if (!isset($problem_templates[$language_id])) {
+          $problem_templates[$language_id] =
+            array(
+              'language_id' => intval($language_id),
+              'lang' => isset($template['lang'])
+                ? $template['lang']
+                : '',
+              'front' => '',
+              'rear' => ''
+            );
+        }
+
+        $problem_templates[$language_id][$template_kind] =
+          isset($template['content'])
+            ? $template['content']
+            : '';
+      }
+    }
+  }
+
+  $has_code_template =
+    !empty($problem_templates);
+
+  if (
+    $has_code_template ||
+    !empty($row['ban_code'])
+  ) { ?>
     <div class="row">
       <div class="column">
         <div class="ui bottom attached segment font-content">
           <?php
           function preCodePrint($ln, $fc, $rc)
           {
-            echo "<span><code class='lang-c'><center>" . $ln . "</center>";
-            if ($fc != "") {
-              echo "<pre>" . $fc . "</pre>";
+            echo "<span><code class='lang-c'>";
+            echo "<center>" .
+              htmlspecialchars(
+                $ln,
+                ENT_QUOTES,
+                'UTF-8'
+              ) .
+              "</center>";
+
+            if ($fc !== "") {
+              echo "<pre>" .
+                htmlspecialchars(
+                  $fc,
+                  ENT_QUOTES,
+                  'UTF-8'
+                ) .
+                "</pre>";
             }
-            echo "<pre class='ui label brown'> 여기에 알맞는 코드</pre>";
-            if ($rc != "") {
-              echo "<pre>" . $rc . "</pre>";
+
+            echo "<pre class='ui label brown'>" .
+              " 여기에 알맞는 코드" .
+              "</pre>";
+
+            if ($rc !== "") {
+              echo "<pre>" .
+                htmlspecialchars(
+                  $rc,
+                  ENT_QUOTES,
+                  'UTF-8'
+                ) .
+                "</pre>";
             }
+
             echo "</code></span>";
           }
-          // front_code, rear_code 정보 제공 c언어와  python으로 분리
-          if ($row['front_code'] || $row['rear_code']) {
-            echo "<div class='code'><center><h3>" . "[미리 작성된 코드]" . "</h3></center>";
-            echo "";
-            //htmlentities를 통해 특수문자를 <>& 등을 html에 보이도록 설정
-            $front_code = htmlentities($row['front_code']);
-            $rear_code = htmlentities($row['rear_code']);
-            // 분리하기 위해 해당 언어별로 주석표시가 있는지 본다. //Python//
-            $cnt_language = count($language_name);
-            for ($i = 0; $i < $cnt_language; $i++) {
-              $find_str = "//" . $language_name[$i] . "//";
-              $lang_name_print = "";
-              $front_code_print = "";
-              $rear_code_print = "";
-              //front code 내용 확인하여 언어별 분리
-              if (strpos($front_code, $find_str) !== false) {
-                $split_str = explode($find_str, $front_code);
-                $lang_name_print = $language_name[$i];
-                $front_code_print = explode("//", $split_str[1])[0];
+
+
+          if ($has_code_template) {
+
+            echo "<div class='code'>";
+            echo "<center><h3>[미리 작성된 코드]</h3></center>";
+
+            ksort($problem_templates);
+
+            foreach (
+              $problem_templates
+              as $template
+            ) {
+              $front_code_print =
+                isset($template['front'])
+                  ? (string)$template['front']
+                  : '';
+
+              $rear_code_print =
+                isset($template['rear'])
+                  ? (string)$template['rear']
+                  : '';
+
+              if (
+                $front_code_print === '' &&
+                $rear_code_print === ''
+              ) {
+                continue;
               }
-              //rear code 내용 확인하여 언어별 분리
-              if (strpos($rear_code, $find_str) !== false) {
-                $split_str = explode($find_str, $rear_code);
-                $lang_name_print = $language_name[$i];
-                $rear_code_print = explode("//", $split_str[1])[0];
-              }
-              if ($lang_name_print !== "") {
-                preCodePrint($lang_name_print, $front_code_print, $rear_code_print);
-                //구분선 
-                echo "<span> </span>";
-              }
+
+              preCodePrint(
+                isset($template['lang'])
+                  ? (string)$template['lang']
+                  : '',
+                $front_code_print,
+                $rear_code_print
+              );
+
+              echo "<span> </span>";
             }
+
             echo "</div>";
           }
+
           // ban_code 정보 제공
           if ($row['ban_code']) {
             $ban_code = explode("/", $row['ban_code']);

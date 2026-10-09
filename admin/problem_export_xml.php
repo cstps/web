@@ -3,6 +3,7 @@
 require_once __DIR__ . '/admin-init.php';
 
 require_once __DIR__ . '/../include/const.inc.php';
+require_once __DIR__ . '/../include/code_template_functions.inc.php';
 
 function fixcdata($content) {
   $content = str_replace("\x1a","",$content);   // remove some strange \x1a [SUB] char from datafile
@@ -373,6 +374,87 @@ else {
   <generator name="HUSTOJ" url="https://github.com/zhblue/hustoj/" />
   <?php
   foreach ($result as  $row) {
+
+    // --------------------------------------------------------
+    // problem_template을 코드 템플릿의 원본으로 사용한다.
+    //
+    // FPS/XML 형식은 기존 front_code/rear_code 형식을
+    // 그대로 유지하여 다른 HUSTOJ와의 호환성을 보존한다.
+    // --------------------------------------------------------
+
+    $export_front_code =
+      isset($row['front_code'])
+        ? (string)$row['front_code']
+        : '';
+
+    $export_rear_code =
+      isset($row['rear_code'])
+        ? (string)$row['rear_code']
+        : '';
+
+    $problem_templates =
+      oj_get_problem_templates(
+        intval($row['problem_id'])
+      );
+
+    if (
+      is_array($problem_templates) &&
+      !empty($problem_templates)
+    ) {
+      $structured_templates =
+        array(
+          'front' => array(),
+          'rear' => array()
+        );
+
+      foreach (
+        $problem_templates
+        as $language_id => $template
+      ) {
+        foreach (
+          array('front', 'rear')
+          as $kind
+        ) {
+          $content =
+            isset($template[$kind])
+              ? (string)$template[$kind]
+              : '';
+
+          if ($content === '') {
+            continue;
+          }
+
+          $structured_templates[$kind][$language_id] =
+            array(
+              'language_id' =>
+                intval($language_id),
+
+              'lang' =>
+                isset($template['lang'])
+                  ? (string)$template['lang']
+                  : '',
+
+              'kind' =>
+                $kind,
+
+              'content' =>
+                $content
+            );
+        }
+      }
+
+      $legacy_templates =
+        oj_build_legacy_problem_templates(
+          $structured_templates,
+          $language_name
+        );
+
+      $export_front_code =
+        $legacy_templates['front'];
+
+      $export_rear_code =
+        $legacy_templates['rear'];
+    }
   ?>
 
   <item>
@@ -398,8 +480,8 @@ else {
     <source><![CDATA[<?php echo fixcdata($row['source'])?>]]></source>
     <creator><![CDATA[<?php echo fixcdata($row['creator'])?>]]></creator>
     
-    <front_code><![CDATA[<?php echo fixcdata($row['front_code'])?>]]></front_code>
-    <rear_code><![CDATA[<?php echo fixcdata($row['rear_code'])?>]]></rear_code>
+    <front_code><![CDATA[<?php echo fixcdata($export_front_code)?>]]></front_code>
+    <rear_code><![CDATA[<?php echo fixcdata($export_rear_code)?>]]></rear_code>
     <ban_code><![CDATA[<?php echo fixcdata($row['ban_code'])?>]]></ban_code>
     <pro_point><![CDATA[<?php echo fixcdata($row['pro_point'])?>]]></pro_point>
     
