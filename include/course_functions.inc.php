@@ -359,7 +359,13 @@ function course_is_user_in_performance_mode(
 // 현재 학생에게 적용되는 수행모드 기준 시작시각
 //
 // 여러 Course 수행모드에 동시에 참여 중인 경우
-// 가장 최근에 시작된 수행모드의 시작시각을 사용한다.
+// 가장 먼저 시작된 활성 수행모드의 시작시각을 사용한다.
+//
+// 이유:
+// - 다른 Course 수행모드가 중간에 시작되더라도
+//   기존 제한 기준시각이 뒤로 이동하지 않도록 한다.
+// - 일부 Course 수행모드가 먼저 종료되더라도
+//   남아 있는 활성 수행모드 범위 안에서만 기준을 다시 계산한다.
 // ============================================================
 
 function course_get_user_performance_cutoff(
@@ -393,7 +399,7 @@ function course_get_user_performance_cutoff(
 
         if (
             $cutoff === null ||
-            $started_at > $cutoff
+            $started_at < $cutoff
         ) {
             $cutoff = $started_at;
         }
