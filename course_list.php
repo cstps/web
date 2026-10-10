@@ -85,6 +85,32 @@ if ($is_admin) {
 
             (
                 SELECT COUNT(*)
+                FROM course_lesson cl
+                WHERE cl.course_id = c.course_id
+                  AND cl.status = 1
+            ) AS lesson_count,
+
+            (
+                SELECT COUNT(*)
+                FROM course_activity ca
+                WHERE ca.course_id = c.course_id
+                  AND ca.status = 1
+                  AND (
+                      ca.activity_type <> 'contest'
+                      OR EXISTS (
+                          SELECT 1
+                          FROM course_activity_contest cac
+                          INNER JOIN course_contest cc2
+                              ON cc2.id = cac.course_contest_id
+                          WHERE cac.activity_id = ca.activity_id
+                            AND cc2.course_id = c.course_id
+                            AND cc2.status = 1
+                      )
+                  )
+            ) AS activity_count,
+
+            (
+                SELECT COUNT(*)
                 FROM course_contest cc
                 WHERE cc.course_id = c.course_id
                   AND cc.status = 1
@@ -145,6 +171,32 @@ if ($is_admin) {
                 WHERE cc.course_id = c.course_id
                   AND cc.status = 1
             ) AS contest_count,
+
+            (
+                SELECT COUNT(*)
+                FROM course_lesson cl
+                WHERE cl.course_id = c.course_id
+                  AND cl.status = 1
+            ) AS lesson_count,
+
+            (
+                SELECT COUNT(*)
+                FROM course_activity ca
+                WHERE ca.course_id = c.course_id
+                  AND ca.status = 1
+                  AND (
+                      ca.activity_type <> 'contest'
+                      OR EXISTS (
+                          SELECT 1
+                          FROM course_activity_contest cac
+                          INNER JOIN course_contest cc2
+                              ON cc2.id = cac.course_contest_id
+                          WHERE cac.activity_id = ca.activity_id
+                            AND cc2.course_id = c.course_id
+                            AND cc2.status = 1
+                      )
+                  )
+            ) AS activity_count,
 
             (
                 SELECT COUNT(*)

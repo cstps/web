@@ -88,6 +88,16 @@ include("template/$OJ_TEMPLATE/header.php");
                 $contest_count =
                     intval($course['contest_count']);
 
+                $lesson_count =
+                    isset($course['lesson_count'])
+                        ? intval($course['lesson_count'])
+                        : 0;
+
+                $activity_count =
+                    isset($course['activity_count'])
+                        ? intval($course['activity_count'])
+                        : 0;
+
                 $visible_contest_count =
                     isset($course['visible_contest_count'])
                         ? intval($course['visible_contest_count'])
@@ -305,6 +315,30 @@ include("template/$OJ_TEMPLATE/header.php");
                                 전체 차시:
                                 <strong>
                                     <?php echo $contest_count; ?>
+                                </strong>개
+
+                            </span>
+
+
+                            <span class="course-meta-item">
+
+                                <i class="layer group icon"></i>
+
+                                정식 차시:
+                                <strong>
+                                    <?php echo $lesson_count; ?>
+                                </strong>개
+
+                            </span>
+
+
+                            <span class="course-meta-item">
+
+                                <i class="tasks icon"></i>
+
+                                학습 활동:
+                                <strong>
+                                    <?php echo $activity_count; ?>
                                 </strong>개
 
                             </span>

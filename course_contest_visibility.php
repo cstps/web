@@ -189,19 +189,27 @@ pdo_query(
 );
 
 
-if ($lesson_id > 0) {
+// ============================================================
+// 6-1. 연결된 Contest Activity 공개 상태 동기화
+// ============================================================
 
-    pdo_query(
-        "UPDATE course_lesson
-         SET visible = ?
-         WHERE lesson_id = ?
-           AND course_id = ?
-           AND status = 1",
-        $visible,
-        $lesson_id,
-        $course_id
-    );
-}
+pdo_query(
+    "UPDATE course_activity ca
+     INNER JOIN course_activity_contest cac
+         ON cac.activity_id = ca.activity_id
+     SET ca.visible = ?
+     WHERE cac.course_contest_id = ?
+       AND ca.course_id = ?
+       AND ca.activity_type = 'contest'
+       AND ca.status = 1",
+    $visible,
+    intval($rows[0]['id']),
+    $course_id
+);
+
+
+// Lesson의 공개 상태는 독립적으로 관리한다.
+// Contest 공개·숨김은 Lesson의 visible을 변경하지 않는다.
 
 // ============================================================
 // 7. 학생 Contest 참가 권한 동기화

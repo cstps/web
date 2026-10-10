@@ -1615,6 +1615,169 @@ function course_get_effective_lesson_no($row) {
 }
 
 
+// ============================================================
+// Course Activity 목록 조회
+//
+// 기존 Contest는 course_contest의 상태 및 공개 설정을
+// 우선 사용한다.
+//
+// 이 함수는 데이터만 조회한다.
+// 호출하는 페이지에서 Course 접근 권한을 먼저 검사해야 한다.
+// ============================================================
+
+function course_get_activities($course_id) {
+
+    $course_id = intval($course_id);
+
+    if ($course_id <= 0) {
+        return array();
+    }
+
+    $rows = pdo_query(
+        "SELECT
+            ca.activity_id,
+            ca.course_id,
+            ca.lesson_id,
+            ca.activity_type,
+            ca.title AS activity_title,
+            ca.description,
+
+            COALESCE(
+                cl.lesson_no,
+                cc.lesson_no,
+                0
+            ) AS lesson_no,
+
+            CASE
+                WHEN ca.activity_type = 'contest'
+                THEN COALESCE(
+                    cl.sort_order,
+                    cc.sort_order,
+                    ca.sort_order
+                )
+                ELSE ca.sort_order
+            END AS lesson_sort_order,
+
+            ca.sort_order AS activity_sort_order,
+
+            ca.visible AS activity_visible,
+            cl.visible AS lesson_visible,
+            cc.visible AS contest_visible,
+
+            CASE
+                WHEN ca.visible = 1
+                 AND (
+                     cl.lesson_id IS NULL
+                     OR (
+                         cl.status = 1
+                         AND cl.visible = 1
+                     )
+                 )
+                 AND (
+                     ca.activity_type <> 'contest'
+                     OR cc.visible = 1
+                 )
+                THEN 1
+                ELSE 0
+            END AS visible,
+
+            ca.status,
+
+            cac.course_contest_id,
+            cc.contest_id,
+
+            CASE
+                WHEN ca.activity_type = 'contest'
+                THEN COALESCE(
+                    NULLIF(c.title, ''),
+                    NULLIF(ca.title, ''),
+                    NULLIF(cl.title, '')
+                )
+                ELSE ca.title
+            END AS display_title
+
+         FROM course_activity ca
+
+         LEFT JOIN course_activity_contest cac
+           ON cac.activity_id = ca.activity_id
+
+         LEFT JOIN course_contest cc
+           ON cc.id = cac.course_contest_id
+          AND cc.course_id = ca.course_id
+
+         LEFT JOIN course_lesson cl
+           ON cl.lesson_id = ca.lesson_id
+          AND cl.course_id = ca.course_id
+
+         LEFT JOIN contest c
+           ON c.contest_id = cc.contest_id
+
+         WHERE ca.course_id = ?
+           AND ca.status = 1
+           AND (
+               ca.activity_type <> 'contest'
+               OR (
+                   cc.id IS NOT NULL
+                   AND cc.status = 1
+               )
+           )
+
+         ORDER BY
+            lesson_no,
+            lesson_sort_order,
+            activity_sort_order,
+            ca.activity_id",
+        $course_id
+    );
+
+    return is_array($rows) ? $rows : array();
+}
+
+
+// ============================================================
+// Course Lesson 목록 조회
+//
+// Contest 연결 여부와 관계없이 Lesson 자체를 조회한다.
+// 호출 페이지에서 Course 접근 권한을 먼저 검사해야 한다.
+// ============================================================
+
+function course_get_lessons($course_id) {
+
+    $course_id = intval($course_id);
+
+    if ($course_id <= 0) {
+        return array();
+    }
+
+    $rows = pdo_query(
+        "SELECT
+            lesson_id,
+            course_id,
+            lesson_no,
+            title,
+            description,
+            start_time,
+            end_time,
+            sort_order,
+            visible,
+            status,
+            created_by,
+            created_at,
+            updated_at
+         FROM course_lesson
+         WHERE course_id = ?
+           AND status = 1
+         ORDER BY
+            sort_order,
+            lesson_no,
+            lesson_id",
+        $course_id
+    );
+
+    return is_array($rows) ? $rows : array();
+}
+
+
 // 학생 학습기록 조회
 // administrator / owner / teacher / assistant
 function course_can_view_student_records($course_id) {

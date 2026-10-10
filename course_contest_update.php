@@ -463,6 +463,30 @@ if ($link_type === 'created') {
 
 
 // ============================================================
+// 9-1. Lesson 연결 Contest 번호 검증
+// ============================================================
+
+if ($lesson_id > 0) {
+
+    $linked_lesson = course_get_lesson($lesson_id);
+
+    if (
+        !$linked_lesson ||
+        intval($linked_lesson['course_id']) !== $course_id ||
+        intval($linked_lesson['status']) !== 1 ||
+        intval($linked_lesson['lesson_no']) !== $lesson_no
+    ) {
+
+        $view_errors =
+            "<h2>연결된 Lesson의 차시 번호는 Contest에서 변경할 수 없습니다.</h2>";
+
+        require("template/".$OJ_TEMPLATE."/error.php");
+        exit(0);
+    }
+}
+
+
+// ============================================================
 // 10. lesson_no 중복 확인
 //
 // 같은 Course 안에서는 동일한 차시 번호를 사용할 수 없다.
@@ -494,6 +518,33 @@ if (
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);
 }
+
+// ============================================================
+// 10-1. 미배정 Contest의 Lesson 번호 중복 방지
+// ============================================================
+
+if ($lesson_id <= 0) {
+
+    $duplicate_course_lesson = pdo_query(
+        "SELECT 1
+         FROM course_lesson
+         WHERE course_id = ?
+           AND lesson_no = ?
+         LIMIT 1",
+        $course_id,
+        $lesson_no
+    );
+
+    if (!empty($duplicate_course_lesson)) {
+
+        $view_errors =
+            "<h2>이미 Lesson에서 사용 중인 차시 번호입니다.</h2>";
+
+        require("template/".$OJ_TEMPLATE."/error.php");
+        exit(0);
+    }
+}
+
 
 // ============================================================
 // Contest 기본 정보 수정
@@ -538,38 +589,10 @@ pdo_query(
 
 
 // ============================================================
-// 13. Course Lesson 정보 동기화
+// 13. Lesson 정보는 독립적으로 관리한다.
 //
-// created:
-// - Contest와 Lesson 모두 제목/시간 수정
-//
-// linked:
-// - 원본 Contest는 수정하지 않음
-// - Course Lesson 정보만 수정
-//
-// lesson_no는 기존 course_contest와 함께 유지한다.
+// Contest 수정 시 Lesson 제목, 번호, 일정은 변경하지 않는다.
 // ============================================================
-
-if ($lesson_id > 0) {
-
-    pdo_query(
-        "UPDATE course_lesson
-         SET
-            lesson_no = ?,
-            title = ?,
-            start_time = ?,
-            end_time = ?
-         WHERE lesson_id = ?
-           AND course_id = ?
-           AND status = 1",
-        $lesson_no,
-        $contest_title,
-        $start_time,
-        $end_time,
-        $lesson_id,
-        $course_id
-    );
-}
 
 
 // ============================================================

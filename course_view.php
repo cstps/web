@@ -245,6 +245,110 @@ if (!is_array($view_contests)) {
 
 
 // ============================================================
+// 8-1. Course Lesson / Activity 목록
+//
+// Lesson은 Contest 연결 여부와 관계없이 조회한다.
+// 기존 Contest 목록은 그대로 유지한다.
+// ============================================================
+
+$view_lessons = course_get_lessons($course_id);
+
+$view_activities = course_get_activities($course_id);
+
+
+// ============================================================
+// 8-1. 비활성 일반 Activity 조회
+//
+// 관리자에게만 제공하며 Contest Activity는 제외한다.
+// 기존 활성 Activity 조회 함수는 변경하지 않는다.
+// ============================================================
+
+$view_inactive_general_activities = array();
+
+if ($view_can_manage_contests) {
+
+    $inactive_rows = pdo_query(
+        "SELECT
+            ca.activity_id,
+            ca.course_id,
+            ca.lesson_id,
+            ca.activity_type,
+            ca.title,
+            ca.description,
+            ca.sort_order,
+            ca.visible,
+            ca.status,
+            cl.lesson_no,
+            cl.title AS lesson_title,
+            cl.status AS lesson_status
+         FROM course_activity ca
+         LEFT JOIN course_lesson cl
+           ON cl.lesson_id = ca.lesson_id
+          AND cl.course_id = ca.course_id
+         WHERE ca.course_id = ?
+           AND ca.status = 0
+           AND ca.activity_type IN ('material', 'assignment')
+         ORDER BY
+            cl.lesson_no,
+            ca.sort_order,
+            ca.activity_id",
+        $course_id
+    );
+
+    if (is_array($inactive_rows)) {
+        $view_inactive_general_activities = $inactive_rows;
+    }
+}
+
+
+// ============================================================
+// 8-2. Lesson별 Activity 그룹 구성
+//
+// Lesson이 없는 기존 활동은 별도로 관리한다.
+// 기존 Contest 목록과 관리 기능은 변경하지 않는다.
+// ============================================================
+
+$view_lesson_groups = array();
+
+$view_unassigned_activities = array();
+
+foreach ($view_lessons as $lesson) {
+
+    $lesson_id = intval($lesson['lesson_id']);
+
+    if ($lesson_id <= 0) {
+        continue;
+    }
+
+    $view_lesson_groups[$lesson_id] = array(
+        'lesson' => $lesson,
+        'activities' => array()
+    );
+}
+
+foreach ($view_activities as $activity) {
+
+    $lesson_id =
+        isset($activity['lesson_id'])
+            ? intval($activity['lesson_id'])
+            : 0;
+
+    if (
+        $lesson_id > 0 &&
+        isset($view_lesson_groups[$lesson_id])
+    ) {
+
+        $view_lesson_groups[$lesson_id]['activities'][] =
+            $activity;
+
+    } else {
+
+        $view_unassigned_activities[] = $activity;
+    }
+}
+
+
+// ============================================================
 // 9. 현재 진행 중인 수행모드
 //
 // 한 Course에서는 동시에 하나의 수행모드만 진행한다.

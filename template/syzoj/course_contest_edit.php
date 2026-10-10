@@ -121,8 +121,23 @@ include("template/$OJ_TEMPLATE/header.php");
                     value="<?php
                         echo intval($view_contest['lesson_no']);
                     ?>"
+                    <?php
+                    if (intval($view_contest['lesson_id']) > 0) {
+                        echo 'readonly';
+                    }
+                    ?>
                     required
                 >
+
+                <?php
+                if (intval($view_contest['lesson_id']) > 0) {
+                ?>
+                    <div class="ui small message">
+                        연결된 Lesson의 차시 번호는
+                        여기서 변경할 수 없습니다.
+                        차시 번호는 Lesson 관리 화면에서 관리합니다.
+                    </div>
+                <?php } ?>
 
             </div>
 

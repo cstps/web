@@ -195,20 +195,27 @@ pdo_query(
 );
 
 
-if ($lesson_id > 0) {
+// ============================================================
+// 7-1. 연결된 Contest Activity 상태 동기화
+// ============================================================
 
-    pdo_query(
-        "UPDATE course_lesson
-         SET
-            status = 0,
-            visible = 0
-         WHERE lesson_id = ?
-           AND course_id = ?
-           AND status = 1",
-        $lesson_id,
-        $course_id
-    );
-}
+pdo_query(
+    "UPDATE course_activity ca
+     INNER JOIN course_activity_contest cac
+         ON cac.activity_id = ca.activity_id
+     SET
+         ca.status = 0,
+         ca.visible = 0
+     WHERE cac.course_contest_id = ?
+       AND ca.course_id = ?
+       AND ca.activity_type = 'contest'",
+    intval($link_rows[0]['id']),
+    $course_id
+);
+
+
+// Lesson은 독립적인 학습 단위이므로
+// Contest를 제거해도 Lesson 상태는 변경하지 않는다.
 
 
 // ============================================================

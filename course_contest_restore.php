@@ -126,14 +126,8 @@ $lesson_id =
         : 0;
 
 
-if ($lesson_id <= 0) {
-
-    $view_errors =
-        "<h2>이전 구조에서 제거된 차시는 복원할 수 없습니다.</h2>";
-
-    require("template/".$OJ_TEMPLATE."/error.php");
-    exit(0);
-}
+// Lesson 미배정 Contest도 복구할 수 있다.
+// 복구 후에는 미배정 Activity로 관리한다.
 
 
 $link_type =
@@ -177,17 +171,29 @@ pdo_query(
 );
 
 
+// ============================================================
+// 6-1. 연결된 Contest Activity 상태 복구
+//
+// 복구 직후에는 비공개 상태를 유지한다.
+// ============================================================
+
 pdo_query(
-    "UPDATE course_lesson
+    "UPDATE course_activity ca
+     INNER JOIN course_activity_contest cac
+         ON cac.activity_id = ca.activity_id
      SET
-        status = 1,
-        visible = 0
-     WHERE lesson_id = ?
-       AND course_id = ?
-       AND status = 0",
-    $lesson_id,
+         ca.status = 1,
+         ca.visible = 0
+     WHERE cac.course_contest_id = ?
+       AND ca.course_id = ?
+       AND ca.activity_type = 'contest'",
+    intval($link_rows[0]['id']),
     $course_id
 );
+
+
+// Lesson은 Contest 복구와 독립적으로 관리한다.
+// 기존 비활성 Lesson은 자동으로 활성화하지 않는다.
 
 
 // ============================================================
