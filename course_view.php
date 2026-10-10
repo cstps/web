@@ -189,10 +189,7 @@ $view_contests = pdo_query(
             cc.sort_order
         ) AS sort_order,
 
-        COALESCE(
-            cl.visible,
-            cc.visible
-        ) AS visible,
+        cc.visible AS visible,
 
         cc.created_by,
         cc.created_at,
@@ -202,15 +199,9 @@ $view_contests = pdo_query(
             c.title
         ) AS title,
 
-        COALESCE(
-            cl.start_time,
-            c.start_time
-        ) AS start_time,
+        c.start_time AS start_time,
 
-        COALESCE(
-            cl.end_time,
-            c.end_time
-        ) AS end_time,
+        c.end_time AS end_time,
 
         c.defunct
 

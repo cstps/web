@@ -108,6 +108,17 @@ if (!course_is_active_student($course_id)) {
 
 
 // ============================================================
+// 4-1. 학생 수행모드 상태
+//
+// 모든 Course의 활성 수행모드를 확인한다.
+// 수행모드 중 과거 학습기록 보호에 사용한다.
+// ============================================================
+
+$view_is_performance_mode =
+    course_should_restrict_student_history($user_id);
+
+
+// ============================================================
 // 5. 학생에게 공개된 활성 차시 조회
 //
 // - 제거된 차시 제외
@@ -246,7 +257,131 @@ foreach ($view_contests as $contest) {
 
 
 // ============================================================
-// 7. 화면 출력
+// 7. 학생용 공개 Lesson / Activity 구성
+//
+// 기존 Contest 목록과 학습 통계는 변경하지 않는다.
+// 공개된 독립 Lesson에 속하는 공개 Activity만 구성한다.
+// ============================================================
+
+$view_student_lessons =
+    course_get_visible_student_lessons($course_id);
+
+$view_student_activities =
+    course_get_visible_student_activities($course_id);
+
+$view_student_lesson_groups = array();
+
+
+// ------------------------------------------------------------
+// 7-1. 공개 Lesson 그룹 생성
+// ------------------------------------------------------------
+
+foreach ($view_student_lessons as $lesson) {
+
+    $lesson_id = intval($lesson['lesson_id']);
+
+    if ($lesson_id <= 0) {
+        continue;
+    }
+
+    $view_student_lesson_groups[$lesson_id] = array(
+        'lesson' => $lesson,
+        'activities' => array()
+    );
+}
+
+
+// ------------------------------------------------------------
+// 7-2. 공개 Activity를 소속 Lesson에 배치
+// ------------------------------------------------------------
+
+foreach ($view_student_activities as $activity) {
+
+    $lesson_id =
+        isset($activity['lesson_id'])
+            ? intval($activity['lesson_id'])
+            : 0;
+
+    if (
+        $lesson_id <= 0 ||
+        !isset($view_student_lesson_groups[$lesson_id])
+    ) {
+        continue;
+    }
+
+    $view_student_lesson_groups[$lesson_id]['activities'][] =
+        $activity;
+}
+
+
+// ============================================================
+// 8. 기존 Contest 학습 정보를 Activity와 연결
+//
+// 기존 Contest 목록 및 전체 학습 통계는 유지한다.
+// course_contest.id를 기준으로 정확한 연결을 확인한다.
+// 학생용 공개 Activity에만 학습 정보를 부여한다.
+// ============================================================
+
+$view_student_contest_by_link = array();
+
+foreach ($view_contests as $contest) {
+
+    $link_id = isset($contest['id'])
+        ? intval($contest['id'])
+        : 0;
+
+    if ($link_id <= 0) {
+        continue;
+    }
+
+    $view_student_contest_by_link[$link_id] = $contest;
+}
+
+foreach ($view_student_lesson_groups as &$group) {
+
+    foreach ($group['activities'] as &$activity) {
+
+        if (
+            !isset($activity['activity_type']) ||
+            $activity['activity_type'] !== 'contest'
+        ) {
+            continue;
+        }
+
+        $link_id = isset($activity['course_contest_id'])
+            ? intval($activity['course_contest_id'])
+            : 0;
+
+        $contest_id = isset($activity['contest_id'])
+            ? intval($activity['contest_id'])
+            : 0;
+
+        if (
+            $link_id <= 0 ||
+            !isset($view_student_contest_by_link[$link_id])
+        ) {
+            continue;
+        }
+
+        $contest = $view_student_contest_by_link[$link_id];
+
+        if (
+            intval($contest['contest_id']) !== $contest_id
+        ) {
+            continue;
+        }
+
+        $activity['contest_learning'] = $contest;
+    }
+
+    unset($activity);
+}
+
+unset($group);
+
+
+// ============================================================
+// 9. 화면 출력
 // ============================================================
 
 require(

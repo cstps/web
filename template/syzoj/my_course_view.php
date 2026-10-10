@@ -173,6 +173,11 @@ include("template/$OJ_TEMPLATE/header.php");
     ?>
 
 
+    <?php
+    // 수행모드 학습 통계 보호 시작
+    if (!$view_is_performance_mode) {
+    ?>
+
     <!-- ======================================================
          전체 학습 요약
          ====================================================== -->
@@ -281,6 +286,329 @@ include("template/$OJ_TEMPLATE/header.php");
 
     </div>
 
+
+    <?php } else { ?>
+
+        <div class="ui info message">
+            수행모드 진행 중에는 이전 학습 기록과
+            제출 통계를 표시하지 않습니다.
+        </div>
+
+    <?php } ?>
+
+
+    <!-- ======================================================
+         학생용 독립 Lesson / Activity 목록
+         ====================================================== -->
+
+    <h3 class="ui dividing header">
+        차시별 학습 활동
+    </h3>
+
+    <?php if (empty($view_student_lesson_groups)) { ?>
+
+        <div class="ui message">
+            현재 공개된 학습 활동이 없습니다.
+        </div>
+
+    <?php } else { ?>
+
+        <div class="ui segments">
+
+            <?php
+            foreach ($view_student_lesson_groups as $group) {
+
+                $lesson = $group['lesson'];
+                $activities = $group['activities'];
+
+                $lesson_no = intval($lesson['lesson_no']);
+
+                $lesson_title = htmlspecialchars(
+                    (string)$lesson['title'],
+                    ENT_QUOTES,
+                    'UTF-8'
+                );
+
+                $lesson_description = htmlspecialchars(
+                    (string)$lesson['description'],
+                    ENT_QUOTES,
+                    'UTF-8'
+                );
+            ?>
+
+                <div class="ui segment">
+
+                    <h4 class="ui header">
+                        <?php echo $lesson_no; ?>차시
+                        -
+                        <?php echo $lesson_title; ?>
+                    </h4>
+
+                    <?php if ($lesson_description !== '') { ?>
+                        <p>
+                            <?php
+                            echo nl2br($lesson_description);
+                            ?>
+                        </p>
+                    <?php } ?>
+
+                    <?php if (empty($activities)) { ?>
+
+                        <div class="ui small message">
+                            공개된 활동이 없습니다.
+                        </div>
+
+                    <?php } else { ?>
+
+                        <div class="ui relaxed divided list">
+
+                            <?php foreach ($activities as $activity) {
+
+                                $activity_type =
+                                    (string)$activity['activity_type'];
+
+                                $type_labels = array(
+                                    'contest' => '코딩 실습',
+                                    'material' => '학습 자료',
+                                    'assignment' => '학습 과제',
+                                    'notebook' => 'Notebook',
+                                    'data_analysis' => '데이터 분석',
+                                    'simulation' => '시뮬레이션'
+                                );
+
+                                $type_label = isset(
+                                    $type_labels[$activity_type]
+                                )
+                                    ? $type_labels[$activity_type]
+                                    : '학습 활동';
+
+                                $activity_title = htmlspecialchars(
+                                    (string)$activity['display_title'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+
+                                $activity_description = htmlspecialchars(
+                                    (string)$activity['description'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                            ?>
+
+                                <div class="item">
+
+                                    <div class="content">
+
+                                        <div class="header">
+                                            <span class="ui tiny basic label">
+                                                <?php
+                                                echo htmlspecialchars(
+                                                    $type_label,
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                );
+                                                ?>
+                                            </span>
+
+                                            <?php echo $activity_title; ?>
+                                        </div>
+
+                                        <?php
+                                        if ($activity_description !== '') {
+                                        ?>
+                                            <div class="description">
+                                                <?php
+                                                echo nl2br(
+                                                    $activity_description
+                                                );
+                                                ?>
+                                            </div>
+                                        <?php } ?>
+
+                                        <?php
+                                        // 학생용 Contest Activity 학습 현황
+                                        if (
+                                            $activity_type === 'contest' &&
+                                            isset($activity['contest_learning'])
+                                        ) {
+
+                                            $learning =
+                                                $activity['contest_learning'];
+
+                                            $problem_count =
+                                                intval($learning['problem_count']);
+
+                                            $solved_count =
+                                                intval($learning['solved_count']);
+
+                                            $submission_count =
+                                                intval($learning['submission_count']);
+
+                                            $activity_progress = 0;
+
+                                            if ($problem_count > 0) {
+                                                $activity_progress = intval(
+                                                    round(
+                                                        $solved_count /
+                                                        $problem_count * 100
+                                                    )
+                                                );
+
+                                                $activity_progress = max(
+                                                    0,
+                                                    min(100, $activity_progress)
+                                                );
+                                            }
+                                        ?>
+
+                                            <?php if (!$view_is_performance_mode) { ?>
+
+                                            <div
+                                                class="description"
+                                                style="margin-top:0.75rem;"
+                                            >
+                                                <span class="ui tiny label">
+                                                    문제 <?php echo $problem_count; ?>개
+                                                </span>
+
+                                                <span class="ui tiny label">
+                                                    해결 <?php echo $solved_count; ?>개
+                                                </span>
+
+                                                <span class="ui tiny label">
+                                                    제출 <?php echo $submission_count; ?>회
+                                                </span>
+
+                                                <span class="ui tiny blue basic label">
+                                                    해결률 <?php echo $activity_progress; ?>%
+                                                </span>
+                                            </div>
+
+                                            <?php } ?>
+
+                                            <?php
+                                            // 학생용 Contest Activity 학습 버튼
+                                            $activity_contest_id =
+                                                intval($learning['contest_id']);
+
+                                            $activity_lesson_status =
+                                                isset($learning['lesson_status'])
+                                                    ? (string)$learning['lesson_status']
+                                                    : 'unscheduled';
+
+                                            $activity_course_active =
+                                                intval($view_course['status']) === 1;
+                                            ?>
+
+                                            <div
+                                                class="course-actions"
+                                                style="margin-top:0.75rem;"
+                                            >
+
+                                                <?php
+                                                if (
+                                                    $activity_course_active &&
+                                                    $activity_contest_id > 0 &&
+                                                    $activity_lesson_status === 'ongoing'
+                                                ) {
+                                                ?>
+
+                                                    <a
+                                                        class="ui small green button"
+                                                        href="contest.php?cid=<?php echo $activity_contest_id; ?>"
+                                                    >
+                                                        <i class="play icon"></i>
+                                                        학습하기
+                                                    </a>
+
+                                                <?php
+                                                } elseif (
+                                                    $activity_course_active &&
+                                                    $activity_contest_id > 0 &&
+                                                    $activity_lesson_status === 'ended'
+                                                ) {
+                                                ?>
+
+                                                    <a
+                                                        class="ui small blue button"
+                                                        href="contest.php?cid=<?php echo $activity_contest_id; ?>"
+                                                    >
+                                                        차시 보기
+                                                    </a>
+
+                                                <?php
+                                                } else {
+                                                ?>
+
+                                                    <button
+                                                        type="button"
+                                                        class="ui small disabled button"
+                                                        disabled
+                                                    >
+                                                        <?php
+                                                        echo $activity_course_active
+                                                            ? '시작 전'
+                                                            : '수업 종료';
+                                                        ?>
+                                                    </button>
+
+                                                <?php } ?>
+
+                                                <?php
+                                                // 학생용 Contest Activity 제출 기록 버튼
+                                                // 수행모드에서는 과거 기록 링크를 제공하지 않는다.
+                                                if (
+                                                    !$view_is_performance_mode &&
+                                                    $activity_contest_id > 0 &&
+                                                    $submission_count > 0
+                                                ) {
+                                                ?>
+
+                                                    <a
+                                                        class="ui small basic blue button"
+                                                        href="status.php?cid=<?php
+                                                            echo $activity_contest_id;
+                                                        ?>&amp;user_id=<?php
+                                                            echo rawurlencode($user_id);
+                                                        ?>"
+                                                    >
+                                                        <i class="history icon"></i>
+                                                        내 제출·해결과정
+                                                    </a>
+
+                                                <?php } ?>
+
+                                            </div>
+
+                                        <?php } ?>
+
+                                    </div>
+
+                                </div>
+
+                            <?php } ?>
+
+                        </div>
+
+                    <?php } ?>
+
+                </div>
+
+            <?php } ?>
+
+        </div>
+
+    <?php } ?>
+
+
+    <?php
+    // Course 5 통합 화면 테스트
+    // 수행모드에서는 기존 Contest 통계 목록도 숨긴다.
+    if (
+        intval($course_id) !== 5 &&
+        !$view_is_performance_mode
+    ) {
+    ?>
 
     <!-- ======================================================
          차시 목록
@@ -660,6 +988,8 @@ include("template/$OJ_TEMPLATE/header.php");
     <?php
     }
     ?>
+
+    <?php } // Course 5 통합 화면 테스트 종료 ?>
 
 </div>
 

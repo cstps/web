@@ -1778,6 +1778,150 @@ function course_get_lessons($course_id) {
 }
 
 
+// ============================================================
+// 학생에게 공개된 활성 Lesson 조회
+//
+// 교사용 course_get_lessons()는 변경하지 않는다.
+// 현재 로그인한 활성 수강생에게만 공개 Lesson을 반환한다.
+// ============================================================
+
+function course_get_visible_student_lessons($course_id) {
+
+    $course_id = intval($course_id);
+
+    if (
+        $course_id <= 0 ||
+        !course_is_active_student($course_id)
+    ) {
+        return array();
+    }
+
+    $rows = pdo_query(
+        "SELECT
+            lesson_id,
+            course_id,
+            lesson_no,
+            title,
+            description,
+            start_time,
+            end_time,
+            sort_order,
+            visible,
+            status
+         FROM course_lesson
+         WHERE course_id = ?
+           AND status = 1
+           AND visible = 1
+         ORDER BY
+            sort_order,
+            lesson_no,
+            lesson_id",
+        $course_id
+    );
+
+    return is_array($rows) ? $rows : array();
+}
+
+
+// ============================================================
+// 학생에게 공개된 활성 Activity 목록 조회
+//
+// 활성 수강생에게만 공개된 Lesson의 Activity를 반환한다.
+// 교사용 course_get_activities()는 변경하지 않는다.
+// Contest의 실제 참가 및 문제 접근 권한은 기존 시스템에서
+// 별도로 검사해야 한다.
+// ============================================================
+
+function course_get_visible_student_activities($course_id) {
+
+    $course_id = intval($course_id);
+
+    if (
+        $course_id <= 0 ||
+        !course_is_active_student($course_id)
+    ) {
+        return array();
+    }
+
+    $rows = pdo_query(
+        "SELECT
+            ca.activity_id,
+            ca.course_id,
+            ca.lesson_id,
+            ca.activity_type,
+            ca.title AS activity_title,
+            ca.description,
+            ca.sort_order AS activity_sort_order,
+
+            cl.lesson_no,
+            cl.sort_order AS lesson_sort_order,
+
+            ca.visible AS activity_visible,
+            cl.visible AS lesson_visible,
+
+            ca.status,
+            1 AS visible,
+
+            cac.course_contest_id,
+            cc.contest_id,
+            cc.visible AS contest_visible,
+
+            CASE
+                WHEN ca.activity_type = 'contest'
+                THEN COALESCE(
+                    NULLIF(c.title, ''),
+                    NULLIF(ca.title, ''),
+                    NULLIF(cl.title, '')
+                )
+                ELSE ca.title
+            END AS display_title
+
+         FROM course_activity ca
+
+         INNER JOIN course_lesson cl
+           ON cl.lesson_id = ca.lesson_id
+          AND cl.course_id = ca.course_id
+          AND cl.status = 1
+          AND cl.visible = 1
+
+         LEFT JOIN course_activity_contest cac
+           ON cac.activity_id = ca.activity_id
+
+         LEFT JOIN course_contest cc
+           ON cc.id = cac.course_contest_id
+          AND cc.course_id = ca.course_id
+          AND cc.lesson_id = ca.lesson_id
+          AND cc.status = 1
+          AND cc.visible = 1
+
+         LEFT JOIN contest c
+           ON c.contest_id = cc.contest_id
+
+         WHERE ca.course_id = ?
+           AND ca.status = 1
+           AND ca.visible = 1
+
+           AND (
+               ca.activity_type <> 'contest'
+               OR (
+                   cc.id IS NOT NULL
+                   AND c.contest_id IS NOT NULL
+               )
+           )
+
+         ORDER BY
+            cl.sort_order,
+            cl.lesson_no,
+            ca.sort_order,
+            ca.activity_id",
+        $course_id
+    );
+
+    return is_array($rows) ? $rows : array();
+}
+
+
+// ============================================================
 // 학생 학습기록 조회
 // administrator / owner / teacher / assistant
 function course_can_view_student_records($course_id) {
