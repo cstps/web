@@ -893,6 +893,81 @@ $activity_type_labels = array(
                                     <?php } ?>
 
                                     <?php
+                                    // Contest Activity의 대회 설정 수정
+                                    if (
+                                        $view_can_manage_contests &&
+                                        intval($view_course['status']) === 1 &&
+                                        intval($lesson['status']) === 1 &&
+                                        $activity['activity_type'] === 'contest' &&
+                                        intval($activity['contest_id']) > 0
+                                    ) {
+                                    ?>
+                                        <a
+                                            class="ui mini teal basic button"
+                                            href="course_contest_edit.php?course_id=<?php
+                                                echo intval($course_id);
+                                            ?>&amp;contest_id=<?php
+                                                echo intval($activity['contest_id']);
+                                            ?>"
+                                        >
+                                            <i class="edit icon"></i>
+                                            대회 설정 수정
+                                        </a>
+                                    <?php } ?>
+
+                                    <?php
+                                    // Contest Activity 공개·숨김
+                                    if (
+                                        $view_can_manage_contests &&
+                                        intval($view_course['status']) === 1 &&
+                                        intval($lesson['status']) === 1 &&
+                                        $activity['activity_type'] === 'contest' &&
+                                        intval($activity['contest_id']) > 0
+                                    ) {
+                                        $contest_is_visible =
+                                            intval($activity['contest_visible']) === 1;
+                                    ?>
+                                        <form
+                                            method="post"
+                                            action="course_contest_visibility.php"
+                                            style="display:inline;"
+                                        >
+                                            <?php include("./csrf.php"); ?>
+
+                                            <input
+                                                type="hidden"
+                                                name="course_id"
+                                                value="<?php echo intval($course_id); ?>"
+                                            >
+
+                                            <input
+                                                type="hidden"
+                                                name="contest_id"
+                                                value="<?php echo intval($activity['contest_id']); ?>"
+                                            >
+
+                                            <input
+                                                type="hidden"
+                                                name="visible"
+                                                value="<?php echo $contest_is_visible ? 0 : 1; ?>"
+                                            >
+
+                                            <button
+                                                type="submit"
+                                                class="ui mini basic button"
+                                            >
+                                                <?php if ($contest_is_visible) { ?>
+                                                    <i class="eye slash icon"></i>
+                                                    대회 숨김
+                                                <?php } else { ?>
+                                                    <i class="eye icon"></i>
+                                                    대회 공개
+                                                <?php } ?>
+                                            </button>
+                                        </form>
+                                    <?php } ?>
+
+                                    <?php
                                     if (
                                         $view_can_manage_contests &&
                                         intval($view_course['status']) === 1 &&
