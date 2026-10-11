@@ -301,6 +301,12 @@ include("template/$OJ_TEMPLATE/header.php");
 
 
     <?php
+    // 통합 Lesson·Activity 관리 화면을 기본으로 사용한다.
+    // 기존 Contest 목록은 복구 가능하도록 임시 보존한다.
+    if (false) {
+    ?>
+
+    <?php
     if (empty($view_contests)) {
     ?>
 
@@ -645,6 +651,9 @@ include("template/$OJ_TEMPLATE/header.php");
     <?php
     }
     ?>
+
+    <?php } // 기존 Contest 목록 표시 조건 종료 ?>
+
     <?php
     // --------------------------------------------------------
     // Lesson별 Activity 목록
@@ -826,7 +835,7 @@ $activity_type_labels = array(
                                                     action="course_activity_move.php"
                                                     class="course-activity-move-form"
                                                 >
-                                                    <?php include("./csrf.php"); ?>
+                                                    <?php echo $view_csrf_input; ?>
 
                                                     <input type="hidden"
                                                            name="course_id"
@@ -852,7 +861,7 @@ $activity_type_labels = array(
                                                     action="course_activity_move.php"
                                                     class="course-activity-move-form"
                                                 >
-                                                    <?php include("./csrf.php"); ?>
+                                                    <?php echo $view_csrf_input; ?>
 
                                                     <input type="hidden"
                                                            name="course_id"
@@ -903,7 +912,7 @@ $activity_type_labels = array(
                                     ) {
                                     ?>
                                         <a
-                                            class="ui mini teal basic button"
+                                            class="ui mini teal basic button course-contest-action-button"
                                             href="course_contest_edit.php?course_id=<?php
                                                 echo intval($course_id);
                                             ?>&amp;contest_id=<?php
@@ -912,6 +921,31 @@ $activity_type_labels = array(
                                         >
                                             <i class="edit icon"></i>
                                             대회 설정 수정
+                                        </a>
+                                    <?php } ?>
+
+                                    <?php
+                                    // Course에서 생성한 Contest만 문제 구성 허용
+                                    if (
+                                        $view_can_manage_contests &&
+                                        intval($view_course['status']) === 1 &&
+                                        intval($lesson['status']) === 1 &&
+                                        $activity['activity_type'] === 'contest' &&
+                                        intval($activity['contest_id']) > 0 &&
+                                        isset($activity['contest_link_type']) &&
+                                        $activity['contest_link_type'] === 'created'
+                                    ) {
+                                    ?>
+                                        <a
+                                            class="ui mini orange basic button course-contest-action-button"
+                                            href="course_contest_problem_edit.php?course_id=<?php
+                                                echo intval($course_id);
+                                            ?>&amp;contest_id=<?php
+                                                echo intval($activity['contest_id']);
+                                            ?>"
+                                        >
+                                            <i class="tasks icon"></i>
+                                            문제 구성
                                         </a>
                                     <?php } ?>
 
@@ -932,7 +966,7 @@ $activity_type_labels = array(
                                             action="course_contest_visibility.php"
                                             style="display:inline;"
                                         >
-                                            <?php include("./csrf.php"); ?>
+                                            <?php echo $view_csrf_input; ?>
 
                                             <input
                                                 type="hidden"
@@ -954,7 +988,11 @@ $activity_type_labels = array(
 
                                             <button
                                                 type="submit"
-                                                class="ui mini basic button"
+                                                class="ui mini basic <?php
+                                                    echo $contest_is_visible
+                                                        ? 'orange'
+                                                        : 'teal';
+                                                ?> button"
                                             >
                                                 <?php if ($contest_is_visible) { ?>
                                                     <i class="eye slash icon"></i>
@@ -963,6 +1001,42 @@ $activity_type_labels = array(
                                                     <i class="eye icon"></i>
                                                     대회 공개
                                                 <?php } ?>
+                                            </button>
+                                        </form>
+                                    <?php } ?>
+
+                                    <?php
+                                    // Contest Activity의 수업 연결 제거
+                                    if (
+                                        $view_can_manage_contests &&
+                                        intval($view_course['status']) === 1 &&
+                                        intval($lesson['status']) === 1 &&
+                                        $activity['activity_type'] === 'contest' &&
+                                        intval($activity['contest_id']) > 0
+                                    ) {
+                                    ?>
+                                        <form
+                                            method="post"
+                                            action="course_contest_remove.php"
+                                            style="display:inline;"
+                                            onsubmit="return confirm(
+                                                '이 대회를 수업에서 제거하시겠습니까?\n\n기존 제출 기록은 삭제되지 않습니다.'
+                                            );"
+                                        >
+                                            <?php echo $view_csrf_input; ?>
+
+                                            <input type="hidden"
+                                                   name="course_id"
+                                                   value="<?php echo intval($course_id); ?>">
+
+                                            <input type="hidden"
+                                                   name="contest_id"
+                                                   value="<?php echo intval($activity['contest_id']); ?>">
+
+                                            <button type="submit"
+                                                    class="ui mini red basic button">
+                                                <i class="archive icon"></i>
+                                                대회 연결 제거
                                             </button>
                                         </form>
                                     <?php } ?>
@@ -993,7 +1067,7 @@ $activity_type_labels = array(
                                             method="post"
                                             action="course_activity_visibility.php"
                                         >
-                                            <?php include("./csrf.php"); ?>
+                                            <?php echo $view_csrf_input; ?>
 
                                             <input
                                                 type="hidden"
@@ -1038,7 +1112,7 @@ $activity_type_labels = array(
                                             method="post"
                                             action="course_activity_remove.php"
                                         >
-                                            <?php include("./csrf.php"); ?>
+                                            <?php echo $view_csrf_input; ?>
 
                                             <input
                                                 type="hidden"
@@ -1062,7 +1136,11 @@ $activity_type_labels = array(
                                         </form>
                                     <?php } ?>
 
-                                    <span class="ui mini basic label">
+                                    <span class="ui mini basic <?php
+                                            echo intval($activity['activity_visible']) === 1
+                                                ? 'blue'
+                                                : 'grey';
+                                        ?> label">
                                         <?php
                                         echo intval($activity['activity_visible']) === 1
                                             ? '활동 공개'
@@ -1071,7 +1149,11 @@ $activity_type_labels = array(
                                     </span>
 
                                     <?php if ($activity['activity_type'] === 'contest') { ?>
-                                        <span class="ui mini basic label">
+                                        <span class="ui mini basic <?php
+                                                echo intval($activity['contest_visible']) === 1
+                                                    ? 'teal'
+                                                    : 'grey';
+                                            ?> label">
                                             <?php
                                             echo intval($activity['contest_visible']) === 1
                                                 ? '대회 공개'
@@ -1080,7 +1162,11 @@ $activity_type_labels = array(
                                         </span>
                                     <?php } ?>
 
-                                    <span class="ui mini basic label">
+                                    <span class="ui mini basic <?php
+                                            echo intval($activity['visible']) === 1
+                                                ? 'green'
+                                                : 'orange';
+                                        ?> label">
                                         <?php
                                         echo intval($activity['visible']) === 1
                                             ? '학생 표시 가능'
@@ -1482,7 +1568,7 @@ $activity_type_labels = array(
                                 action="course_activity_restore.php"
                             >
 
-                                <?php include("./csrf.php"); ?>
+                                <?php echo $view_csrf_input; ?>
 
                                 <input
                                     type="hidden"

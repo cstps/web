@@ -292,6 +292,29 @@
     }
 }
 
+/* Contest 관리 버튼 높이 및 세로 정렬 통일 */
+.course-lesson-activities .course-contest-action-button {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: 32px !important;
+    min-height: 32px;
+    padding: 0 0.9em !important;
+    line-height: 1 !important;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* Contest 버튼 아이콘 수직 정렬 */
+.course-lesson-activities .course-contest-action-button > .icon {
+    align-self: center;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
 /* Lesson 내부 Activity 순서 변경 */
 .course-activity-title-row {
     display: flex;

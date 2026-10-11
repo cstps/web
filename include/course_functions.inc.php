@@ -1685,6 +1685,7 @@ function course_get_activities($course_id) {
 
             cac.course_contest_id,
             cc.contest_id,
+            cc.link_type AS contest_link_type,
 
             CASE
                 WHEN ca.activity_type = 'contest'
