@@ -413,25 +413,53 @@ include("template/$OJ_TEMPLATE/header.php");
                                     <div class="course-activity-title-row">
                                         <div class="course-activity-title">
                                         <?php
-$activity_type_labels = array(
+                                        $activity_type = (string)$activity['activity_type'];
+
+                                        $activity_type_labels = array(
                                             'material' => '학습 자료',
                                             'assignment' => '학습 과제',
                                             'contest' => '코딩 실습'
                                         );
 
-                                        $activity_type = (string)$activity['activity_type'];
+                                        $activity_type_colors = array(
+                                            'material' => 'blue',
+                                            'assignment' => 'orange',
+                                            'contest' => 'green'
+                                        );
+
+                                        $activity_type_icons = array(
+                                            'material' => 'book',
+                                            'assignment' => 'clipboard',
+                                            'contest' => 'code'
+                                        );
 
                                         $activity_type_label =
                                             $activity_type_labels[$activity_type]
-                                            ?? $activity_type;
+                                            ?? '학습 활동';
 
-                                        echo htmlspecialchars(
-                                            $activity_type_label,
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        );
+                                        $activity_type_color =
+                                            $activity_type_colors[$activity_type]
+                                            ?? '';
+
+                                        $activity_type_icon =
+                                            $activity_type_icons[$activity_type]
+                                            ?? 'tasks';
                                         ?>
-                                    </span>
+
+                                        <span class="ui tiny <?php
+                                            echo $activity_type_color;
+                                        ?> label">
+                                            <i class="<?php
+                                                echo $activity_type_icon;
+                                            ?> icon"></i>
+                                            <?php
+                                            echo htmlspecialchars(
+                                                $activity_type_label,
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            );
+                                            ?>
+                                        </span>
 
                                     <?php
                                     $activity_title =
@@ -707,7 +735,11 @@ $activity_type_labels = array(
                                             ?>"
                                         >
                                             <i class="edit icon"></i>
-                                            활동 수정
+                                            <?php
+                                            echo $activity['activity_type'] === 'material'
+                                                ? '자료 편집'
+                                                : '과제 편집';
+                                            ?>
                                         </a>
 
                                         <form

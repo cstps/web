@@ -166,6 +166,38 @@ if (
 
 
 // ============================================================
+// 7-1. 학습 자료 상세 본문 조회
+// ============================================================
+
+$view_material_html = '';
+
+if ($view_activity['activity_type'] === 'material') {
+
+    $material_rows = pdo_query(
+        "SELECT content_html
+         FROM course_material
+         WHERE activity_id = ?
+         LIMIT 1",
+        $activity_id
+    );
+
+    if ($material_rows === false) {
+
+        $view_errors =
+            "<h2>학습 자료 본문을 불러오지 못했습니다.</h2>";
+
+        require("template/".$OJ_TEMPLATE."/error.php");
+        exit(0);
+    }
+
+    if (isset($material_rows[0])) {
+        $view_material_html =
+            (string)($material_rows[0]['content_html'] ?? '');
+    }
+}
+
+
+// ============================================================
 // 8. 소속 Lesson 확인
 // ============================================================
 
@@ -204,9 +236,45 @@ if (
 // ============================================================
 
 $view_activity_types = array(
-    'material' => '학습 자료 안내',
-    'assignment' => '학습 활동·과제 안내'
+    'material' => '학습 자료',
+    'assignment' => '학습 과제'
 );
+
+
+// ============================================================
+// 9-1. 학습 자료 첨부파일 목록 조회
+// ============================================================
+
+$view_material_files = array();
+
+if ($view_activity['activity_type'] === 'material') {
+
+    $file_rows = pdo_query(
+        "SELECT
+            file_id,
+            activity_id,
+            original_name,
+            mime_type,
+            file_size,
+            sort_order,
+            created_at
+         FROM course_material_file
+         WHERE activity_id = ?
+         ORDER BY sort_order, file_id",
+        $activity_id
+    );
+
+    if ($file_rows === false) {
+
+        $view_errors =
+            "<h2>학습 자료 첨부파일 목록을 불러오지 못했습니다.</h2>";
+
+        require("template/".$OJ_TEMPLATE."/error.php");
+        exit(0);
+    }
+
+    $view_material_files = $file_rows;
+}
 
 
 // ============================================================

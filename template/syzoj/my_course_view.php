@@ -400,7 +400,32 @@ include("template/$OJ_TEMPLATE/header.php");
                                     <div class="content">
 
                                         <div class="header">
-                                            <span class="ui tiny basic label">
+                                            <?php
+                                            $type_colors = array(
+                                                'material' => 'blue',
+                                                'assignment' => 'orange',
+                                                'contest' => 'green'
+                                            );
+
+                                            $type_icons = array(
+                                                'material' => 'book',
+                                                'assignment' => 'clipboard',
+                                                'contest' => 'code'
+                                            );
+
+                                            $type_color =
+                                                $type_colors[$activity_type] ?? '';
+
+                                            $type_icon =
+                                                $type_icons[$activity_type] ?? 'tasks';
+                                            ?>
+
+                                            <span class="ui tiny <?php
+                                                echo $type_color;
+                                            ?> label">
+                                                <i class="<?php
+                                                    echo $type_icon;
+                                                ?> icon"></i>
                                                 <?php
                                                 echo htmlspecialchars(
                                                     $type_label,
@@ -423,6 +448,28 @@ include("template/$OJ_TEMPLATE/header.php");
                                                 );
                                                 ?>
                                             </div>
+                                        <?php } ?>
+
+                                        <?php
+                                        // 학생용 학습 자료 상세 열람 버튼
+                                        if ($activity_type === 'material') {
+                                        ?>
+
+                                            <div
+                                                class="course-actions"
+                                                style="margin-top:0.75rem;"
+                                            >
+                                                <a
+                                                    class="ui small basic blue button"
+                                                    href="course_material_view.php?activity_id=<?php
+                                                        echo intval($activity['activity_id']);
+                                                    ?>"
+                                                >
+                                                    <i class="book open icon"></i>
+                                                    학습 자료 보기
+                                                </a>
+                                            </div>
+
                                         <?php } ?>
 
                                         <?php

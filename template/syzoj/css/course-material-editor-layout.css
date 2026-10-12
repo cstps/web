@@ -1,0 +1,13 @@
+/* TinyMCE 팝업 위치 계산을 위한 일반 문서 스크롤 */
+
+html {
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+}
+
+body {
+    position: relative !important;
+    height: auto !important;
+    overflow: visible !important;
+}

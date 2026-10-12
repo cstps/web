@@ -1,6 +1,9 @@
-include/*
-!include/code_template_functions.inc.php
-!include/contest_access.inc.php
+# 서버별 설정 및 기존 include 파일 보호
+/include/*
+!/include/code_template_functions.inc.php
+!/include/contest_access.inc.php
+!/include/course_content_sanitizer.inc.php
+!/include/course_file_upload.inc.php
 kindeditor/
 upload/
 blockly/
@@ -28,3 +31,6 @@ ads.txt
 
 # 공지 업로드 이미지
 /class-share/uploads/notices/
+
+# 외부 로그인 연동 파일
+/include/login-*.php
