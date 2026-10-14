@@ -718,6 +718,34 @@ include("template/$OJ_TEMPLATE/header.php");
                                     <?php } ?>
 
                                     <?php
+                                    // 교사용 과제 상세 보기 및 제출 현황
+                                    if (
+                                        $view_can_manage_contests &&
+                                        $activity['activity_type'] === 'assignment'
+                                    ) {
+                                    ?>
+                                        <a
+                                            class="ui mini orange basic button"
+                                            href="course_assignment_view.php?activity_id=<?php
+                                                echo intval($activity['activity_id']);
+                                            ?>"
+                                        >
+                                            <i class="eye icon"></i>
+                                            과제 상세 보기
+                                        </a>
+
+                                        <a
+                                            class="ui mini blue basic button"
+                                            href="course_assignment_submissions.php?activity_id=<?php
+                                                echo intval($activity['activity_id']);
+                                            ?>"
+                                        >
+                                            <i class="tasks icon"></i>
+                                            제출 현황
+                                        </a>
+                                    <?php } ?>
+
+                                    <?php
                                     if (
                                         $view_can_manage_contests &&
                                         intval($view_course['status']) === 1 &&
