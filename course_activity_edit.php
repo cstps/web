@@ -198,6 +198,62 @@ if ($view_activity['activity_type'] === 'material') {
 
 
 // ============================================================
+// ============================================================
+// 7-2. 과제 상세 본문 조회
+// ============================================================
+
+$view_assignment_html = '';
+
+$view_assignment_due_at = '';
+$view_assignment_allow_late = 0;
+$view_assignment_allow_resubmit = 1;
+
+if ($view_activity['activity_type'] === 'assignment') {
+
+    $assignment_rows = pdo_query(
+        "SELECT
+            content_html,
+            due_at,
+            allow_late,
+            allow_resubmit
+         FROM course_assignment
+         WHERE activity_id = ?
+         LIMIT 1",
+        $activity_id
+    );
+
+    if ($assignment_rows === false) {
+
+        $view_errors =
+            "<h2>과제 상세 본문을 불러오지 못했습니다.</h2>";
+
+        require("template/".$OJ_TEMPLATE."/error.php");
+        exit(0);
+    }
+
+    if (isset($assignment_rows[0])) {
+        $view_assignment_html =
+            (string)$assignment_rows[0]['content_html'];
+
+        $due_at = $assignment_rows[0]['due_at'];
+
+        if ($due_at !== null && $due_at !== '') {
+            $view_assignment_due_at = str_replace(
+                ' ',
+                'T',
+                substr((string)$due_at, 0, 16)
+            );
+        }
+
+        $view_assignment_allow_late =
+            intval($assignment_rows[0]['allow_late']);
+
+        $view_assignment_allow_resubmit =
+            intval($assignment_rows[0]['allow_resubmit']);
+    }
+}
+
+
 // 8. 소속 Lesson 확인
 // ============================================================
 

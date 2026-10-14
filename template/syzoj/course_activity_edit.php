@@ -7,7 +7,11 @@ include("template/$OJ_TEMPLATE/header.php");
     href="template/<?php echo $OJ_TEMPLATE; ?>/css/course.css"
 >
 
-<?php if ($view_activity['activity_type'] === 'material') { ?>
+<?php if (in_array(
+    $view_activity['activity_type'],
+    array('material', 'assignment'),
+    true
+)) { ?>
 <link
     rel="stylesheet"
     href="template/<?php echo $OJ_TEMPLATE; ?>/css/course-material-editor-layout.css?v=1"
@@ -221,6 +225,126 @@ include("template/$OJ_TEMPLATE/header.php");
                 </div>
 
             <?php } ?>
+
+            <?php
+            if ($view_activity['activity_type'] === 'assignment') {
+            ?>
+
+                <div class="field">
+
+                    <label for="assignment_content_html">
+                        과제 상세 본문
+                    </label>
+
+                    <textarea
+                        id="assignment_content_html"
+                        name="assignment_content_html"
+                        rows="15"
+                    ><?php
+                        echo htmlspecialchars(
+                            (string)$view_assignment_html,
+                            ENT_QUOTES,
+                            'UTF-8'
+                        );
+                    ?></textarea>
+
+                    <div class="ui small message">
+                        학생에게 제공할 과제 안내, 수행 방법,
+                        제출물 작성 기준 등을 입력합니다.
+                    </div>
+
+                </div>
+
+            <?php } ?>
+
+            <?php
+            if ($view_activity['activity_type'] === 'assignment') {
+            ?>
+
+                <div class="ui divider"></div>
+
+                <h4 class="ui header">
+                    과제 제출 정책
+                </h4>
+
+                <div class="field">
+                    <label for="assignment_due_at">
+                        제출 기한
+                    </label>
+
+                    <input
+                        type="datetime-local"
+                        id="assignment_due_at"
+                        name="assignment_due_at"
+                        value="<?php
+                            echo htmlspecialchars(
+                                (string)$view_assignment_due_at,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                        ?>"
+                    >
+
+                    <div class="ui small message">
+                        비워 두면 제출 기한이 없습니다.
+                        서버의 날짜와 시간을 기준으로 적용합니다.
+                    </div>
+                </div>
+
+                <div class="two fields">
+
+                    <div class="field">
+                        <label for="assignment_allow_late">
+                            기한 후 제출
+                        </label>
+
+                        <select
+                            id="assignment_allow_late"
+                            name="assignment_allow_late"
+                            class="ui dropdown"
+                        >
+                            <option value="0" <?php
+                                echo $view_assignment_allow_late === 0
+                                    ? 'selected'
+                                    : '';
+                            ?>>허용하지 않음</option>
+
+                            <option value="1" <?php
+                                echo $view_assignment_allow_late === 1
+                                    ? 'selected'
+                                    : '';
+                            ?>>허용</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="assignment_allow_resubmit">
+                            재제출
+                        </label>
+
+                        <select
+                            id="assignment_allow_resubmit"
+                            name="assignment_allow_resubmit"
+                            class="ui dropdown"
+                        >
+                            <option value="1" <?php
+                                echo $view_assignment_allow_resubmit === 1
+                                    ? 'selected'
+                                    : '';
+                            ?>>허용</option>
+
+                            <option value="0" <?php
+                                echo $view_assignment_allow_resubmit === 0
+                                    ? 'selected'
+                                    : '';
+                            ?>>허용하지 않음</option>
+                        </select>
+                    </div>
+
+                </div>
+
+            <?php } ?>
+
 
             <div class="field">
 
@@ -455,7 +579,11 @@ include("template/$OJ_TEMPLATE/header.php");
 </div>
 
 <?php
-if ($view_activity['activity_type'] === 'material') {
+if (in_array(
+    $view_activity['activity_type'],
+    array('material', 'assignment'),
+    true
+)) {
 ?>
 <script src="/tinymce/tinymce.min.js?v=8.9.0"></script>
 <script src="/template/syzoj/js/course-material-editor.js?v=1"></script>

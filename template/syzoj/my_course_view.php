@@ -473,6 +473,28 @@ include("template/$OJ_TEMPLATE/header.php");
                                         <?php } ?>
 
                                         <?php
+                                        // 학생용 과제 상세 열람 버튼
+                                        if ($activity_type === 'assignment') {
+                                        ?>
+
+                                            <div
+                                                class="course-actions"
+                                                style="margin-top:0.75rem;"
+                                            >
+                                                <a
+                                                    class="ui small basic orange button"
+                                                    href="course_assignment_view.php?activity_id=<?php
+                                                        echo intval($activity['activity_id']);
+                                                    ?>"
+                                                >
+                                                    <i class="clipboard outline icon"></i>
+                                                    과제 보기
+                                                </a>
+                                            </div>
+
+                                        <?php } ?>
+
+                                        <?php
                                         // 학생용 Contest Activity 학습 현황
                                         if (
                                             $activity_type === 'contest' &&

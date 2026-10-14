@@ -2,7 +2,9 @@
     "use strict";
 
     function initializeCourseMaterialEditor() {
-        var textarea = document.getElementById("material_content_html");
+        var textarea =
+            document.getElementById("material_content_html") ||
+            document.getElementById("assignment_content_html");
 
         if (!textarea) {
             return;
@@ -46,7 +48,7 @@
 
         if (form) {
             form.addEventListener("submit", function () {
-                var editor = window.tinymce.get("material_content_html");
+                var editor = window.tinymce.get(textarea.id);
 
                 if (editor) {
                     editor.save();

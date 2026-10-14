@@ -266,6 +266,89 @@ if ($save_material_html) {
     );
 }
 
+// 기존 assignment를 편집하는 경우에만 과제 본문을 저장한다.
+$save_assignment_html = (
+    $activity['activity_type'] === 'assignment' &&
+    $activity_type === 'assignment'
+);
+
+$assignment_html = '';
+
+if ($save_assignment_html) {
+    if (
+        !isset($_POST['assignment_content_html']) ||
+        !is_string($_POST['assignment_content_html']) ||
+        strlen($_POST['assignment_content_html']) > 1024 * 1024
+    ) {
+        $view_errors =
+            "<h2>과제 상세 본문 입력값이 올바르지 않습니다.</h2>";
+
+        require("template/".$OJ_TEMPLATE."/error.php");
+        exit(0);
+    }
+
+    $assignment_html = course_content_sanitize_html(
+        $_POST['assignment_content_html']
+    );
+}
+
+// 과제 제출 정책은 기존 assignment 수정 시에만 저장한다.
+$assignment_due_at = null;
+$assignment_allow_late = 0;
+$assignment_allow_resubmit = 1;
+
+if ($save_assignment_html) {
+
+    $due_raw = $_POST['assignment_due_at'] ?? null;
+    $late_raw = $_POST['assignment_allow_late'] ?? null;
+    $resubmit_raw = $_POST['assignment_allow_resubmit'] ?? null;
+
+    if (
+        !is_string($due_raw) ||
+        !is_string($late_raw) ||
+        !is_string($resubmit_raw) ||
+        !in_array($late_raw, array('0', '1'), true) ||
+        !in_array($resubmit_raw, array('0', '1'), true)
+    ) {
+        $view_errors =
+            '<h2>과제 제출 정책 입력값이 올바르지 않습니다.</h2>';
+        require("template/".$OJ_TEMPLATE."/error.php");
+        exit(0);
+    }
+
+    $assignment_allow_late = intval($late_raw);
+    $assignment_allow_resubmit = intval($resubmit_raw);
+
+    $due_raw = trim($due_raw);
+
+    if ($due_raw !== '') {
+        $date = DateTimeImmutable::createFromFormat(
+            '!Y-m-d\TH:i',
+            $due_raw
+        );
+
+        $date_errors = DateTimeImmutable::getLastErrors();
+
+        if (
+            $date === false ||
+            ($date_errors !== false &&
+             (
+                $date_errors['warning_count'] > 0 ||
+                $date_errors['error_count'] > 0
+             )) ||
+            $date->format('Y-m-d\TH:i') !== $due_raw ||
+            intval($date->format('Y')) < 1000
+        ) {
+            $view_errors =
+                '<h2>제출 기한 날짜와 시간이 올바르지 않습니다.</h2>';
+            require("template/".$OJ_TEMPLATE."/error.php");
+            exit(0);
+        }
+
+        $assignment_due_at = $date->format('Y-m-d H:i:s');
+    }
+}
+
 // 트랜잭션 전에 PDO 연결을 준비한다.
 $connection_check = pdo_query('SELECT 1 AS connection_ok');
 
@@ -361,6 +444,35 @@ try {
         $save->execute(array(
             $activity_id,
             $material_html
+        ));
+
+        $save->closeCursor();
+    }
+
+    if ($save_assignment_html) {
+        $save = $dbh->prepare(
+            "INSERT INTO course_assignment
+                (
+                    activity_id,
+                    content_html,
+                    due_at,
+                    allow_late,
+                    allow_resubmit
+                )
+             VALUES (?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                content_html = VALUES(content_html),
+                due_at = VALUES(due_at),
+                allow_late = VALUES(allow_late),
+                allow_resubmit = VALUES(allow_resubmit)"
+        );
+
+        $save->execute(array(
+            $activity_id,
+            $assignment_html,
+            $assignment_due_at,
+            $assignment_allow_late,
+            $assignment_allow_resubmit
         ));
 
         $save->closeCursor();
