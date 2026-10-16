@@ -398,6 +398,30 @@ if (!function_exists("admin_menu_link_class")) {
   }
   ?>
 
+  <!-- 도구 관리 -->
+  <?php if (oj_can_manage_admin_system()) { ?>
+
+    <div class="admin-nav-group">
+
+      <div class="admin-nav-title">
+        도구
+      </div>
+
+      <div class="admin-nav-items">
+
+        <a
+          class="<?php echo admin_menu_link_class('shorturl_list'); ?>"
+          href="shorturl_list.php"
+          target="<?php echo $admin_internal_target; ?>">
+          단축 URL 관리
+        </a>
+
+      </div>
+
+    </div>
+
+  <?php } ?>
+
   <!-- 시스템 관리 -->
   <?php
   if (oj_can_manage_admin_system()) {
@@ -440,7 +464,7 @@ if (!function_exists("admin_menu_link_class")) {
             접속 사용자
           </a>
 
-          <a class="<?php echo admin_menu_link_class('system'); ?>" href="shorturl_list.php">단축 URL 관리</a>
+
 
           <a
             class="admin-nav-link"

@@ -74,6 +74,14 @@ include(__DIR__ . "/../header.php");
                         <i class="external alternate icon"></i> 이동
                     </a>
                 </div>
+                <div
+                    class="shorturl-qr-preview"
+                    data-qr-preview="<?php echo htmlspecialchars($generated_url, ENT_QUOTES, 'UTF-8'); ?>">
+                    <p>QR코드를 스캔하면 단축 주소로 이동합니다.</p>
+                    <button type="button" class="shorturl-qr-button" data-qr-download>
+                        QR코드 PNG 다운로드
+                    </button>
+                </div>
             </div>
         <?php } ?>
     </div>
@@ -130,6 +138,13 @@ include(__DIR__ . "/../header.php");
                                         <i class="copy icon"></i> 복사
                                     </button>
 
+                                    <button
+                                        type="button"
+                                        class="ui compact mini teal button"
+                                        data-qr-open="<?php echo htmlspecialchars($s_url, ENT_QUOTES, 'UTF-8'); ?>">
+                                        QR코드
+                                    </button>
+
                                     <form method="post" action="shorturl.php" onsubmit="return confirm('이 단축 URL을 삭제하시겠습니까?');" style="display:inline;">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
@@ -162,5 +177,10 @@ include(__DIR__ . "/../header.php");
         alert("단축 URL이 복사되었습니다:\n" + text);
     }
 </script>
+
+
+<link rel="stylesheet" href="/template/syzoj/tools/shorturl-qr.css?v=20261016-1">
+<script src="/template/syzoj/tools/vendor/qrcode-generator-1.4.4.js" defer></script>
+<script src="/template/syzoj/tools/shorturl-qr.js?v=20261016-1" defer></script>
 
 <?php include(__DIR__ . "/../footer.php"); ?>

@@ -45,7 +45,7 @@ $list_sql = "SELECT * FROM short_url {$where_clause} ORDER BY id DESC LIMIT {$of
 $url_list = pdo_query($list_sql, ...$params);
 
 $admin_page_title = "단축 URL 관리";
-$admin_active_menu = "system";
+$admin_active_menu = "shorturl_list";
 
 require(__DIR__ . "/admin-layout-start.php"); //
 ?>
@@ -90,7 +90,7 @@ require(__DIR__ . "/admin-layout-start.php"); //
                             <th style="width: 110px;">작성자</th>
                             <th style="width: 90px; text-align: center;">클릭수</th>
                             <th style="width: 150px;">생성일시</th>
-                            <th style="width: 80px; text-align: center;">관리</th>
+                            <th style="width: 150px; text-align: center;">관리</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -120,6 +120,12 @@ require(__DIR__ . "/admin-layout-start.php"); //
                                     <td class="text-center"><span class="badge badge-info"><?php echo number_format($row['click_count']); ?></span></td>
                                     <td><small class="text-muted"><?php echo $row['created_at']; ?></small></td>
                                     <td class="text-center">
+                                        <button
+                                            type="button"
+                                            class="btn btn-info btn-sm"
+                                            data-qr-open="<?php echo htmlspecialchars($full_short_url, ENT_QUOTES, 'UTF-8'); ?>">
+                                            QR코드
+                                        </button>
                                         <form method="post" action="shorturl_list.php" onsubmit="return confirm('정말 삭제하시겠습니까?');" style="display:inline;">
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
@@ -148,6 +154,11 @@ require(__DIR__ . "/admin-layout-start.php"); //
         </nav>
     <?php } ?>
 </div>
+
+
+<link rel="stylesheet" href="/template/syzoj/tools/shorturl-qr.css?v=20261016-1">
+<script src="/template/syzoj/tools/vendor/qrcode-generator-1.4.4.js" defer></script>
+<script src="/template/syzoj/tools/shorturl-qr.js?v=20261016-1" defer></script>
 
 <?php require(__DIR__ . "/admin-layout-end.php"); // 
 ?>

@@ -367,6 +367,43 @@ require(__DIR__ . "/admin-layout-start.php");
     <?php } ?>
 
 
+    <!-- 도구 관리 -->
+    <?php if (oj_can_manage_admin_system()) { ?>
+
+      <section class="admin-card admin-dashboard-card">
+
+        <div class="admin-dashboard-card-header">
+
+          <div>
+            <h2 class="admin-dashboard-card-title">
+              도구
+            </h2>
+
+            <p class="admin-dashboard-card-description">
+              사이트에서 제공하는 도구를 관리합니다.
+            </p>
+          </div>
+
+        </div>
+
+        <div class="admin-dashboard-actions">
+
+          <a class="admin-dashboard-action" href="shorturl_list.php">
+            <span class="admin-dashboard-action-title">
+              단축 URL 관리
+            </span>
+            <span class="admin-dashboard-action-description">
+              생성된 단축 주소를 검색하고 관리합니다.
+            </span>
+          </a>
+
+        </div>
+
+      </section>
+
+    <?php } ?>
+
+
     <!-- 시스템 -->
     <?php if (oj_can_manage_admin_system()) { ?>
 
