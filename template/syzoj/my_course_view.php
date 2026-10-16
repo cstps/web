@@ -404,13 +404,15 @@ include("template/$OJ_TEMPLATE/header.php");
                                             $type_colors = array(
                                                 'material' => 'blue',
                                                 'assignment' => 'orange',
-                                                'contest' => 'green'
+                                                'contest' => 'green',
+                                                'simulation' => 'teal'
                                             );
 
                                             $type_icons = array(
                                                 'material' => 'book',
                                                 'assignment' => 'clipboard',
-                                                'contest' => 'code'
+                                                'contest' => 'code',
+                                                'simulation' => 'play'
                                             );
 
                                             $type_color =
@@ -492,6 +494,26 @@ include("template/$OJ_TEMPLATE/header.php");
                                                 </a>
                                             </div>
 
+                                        <?php } ?>
+
+                                        <?php
+                                        // 학생용 시뮬레이션 실행 버튼
+                                        if ($activity_type === 'simulation') {
+                                        ?>
+                                            <div
+                                                class="course-actions"
+                                                style="margin-top:0.75rem;"
+                                            >
+                                                <a
+                                                    class="ui small basic teal button"
+                                                    href="course_simulation_view.php?activity_id=<?php
+                                                        echo intval($activity['activity_id']);
+                                                    ?>"
+                                                >
+                                                    <i class="play icon"></i>
+                                                    시뮬레이션 실행
+                                                </a>
+                                            </div>
                                         <?php } ?>
 
                                         <?php

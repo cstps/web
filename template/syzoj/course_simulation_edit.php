@@ -1,0 +1,316 @@
+<?php
+include("template/$OJ_TEMPLATE/header.php");
+
+function simulation_edit_escape($value)
+{
+    return htmlspecialchars(
+        (string)$value,
+        ENT_QUOTES,
+        'UTF-8'
+    );
+}
+?>
+
+<link
+    rel="stylesheet"
+    href="template/<?php echo simulation_edit_escape($OJ_TEMPLATE); ?>/css/course.css"
+>
+
+<div class="course-page">
+
+    <div class="course-page-header">
+
+        <a
+            class="ui small basic button"
+            href="course_view.php?course_id=<?php echo intval($course_id); ?>"
+        >
+            <i class="left arrow icon"></i>
+            수업으로 돌아가기
+        </a>
+
+        <h1 class="ui header">
+            시뮬레이션 편집
+        </h1>
+
+        <div class="course-page-description">
+            <?php echo simulation_edit_escape($view_course['course_name']); ?>
+        </div>
+
+    </div>
+
+    <div class="ui segment">
+
+        <h3 class="ui dividing header">
+            <?php echo intval($view_lesson['lesson_no']); ?>차시
+            —
+            <?php echo simulation_edit_escape($view_lesson['title']); ?>
+        </h3>
+
+        <div class="ui info message">
+            <div class="header">
+                p5.js 시뮬레이션 설정
+            </div>
+            <p>
+                기본 코드와 실행 환경을 설정합니다.
+                학생이 실행할 코드는 별도의 격리 환경에서 처리할 예정입니다.
+            </p>
+        </div>
+
+        <form
+            class="ui form"
+            method="post"
+            action="course_simulation_update.php"
+            accept-charset="UTF-8"
+        >
+
+            <?php
+            ob_start();
+            include("./csrf.php");
+            echo ob_get_clean();
+            ?>
+
+            <input
+                type="hidden"
+                name="course_id"
+                value="<?php echo intval($course_id); ?>"
+            >
+
+            <input
+                type="hidden"
+                name="activity_id"
+                value="<?php echo intval($view_activity['activity_id']); ?>"
+            >
+
+            <div class="required field">
+                <label for="simulation_title">
+                    활동 제목
+                </label>
+
+                <input
+                    type="text"
+                    id="simulation_title"
+                    name="title"
+                    maxlength="255"
+                    required
+                    value="<?php echo simulation_edit_escape($view_activity['title']); ?>"
+                >
+            </div>
+
+            <div class="field">
+                <label for="simulation_description">
+                    활동 설명
+                </label>
+
+                <textarea
+                    id="simulation_description"
+                    name="description"
+                    rows="4"
+                    maxlength="65535"
+                ><?php echo simulation_edit_escape($view_activity['description'] ?? ''); ?></textarea>
+            </div>
+
+            <div class="ui divider"></div>
+
+            <div class="required field">
+                <label for="simulation_mode">
+                    시뮬레이션 유형
+                </label>
+
+                <select
+                    id="simulation_mode"
+                    name="simulation_mode"
+                    required
+                >
+                    <option
+                        value="free"
+                        <?php echo $view_simulation['simulation_mode'] === 'free' ? 'selected' : ''; ?>
+                    >
+                        일반 시뮬레이션
+                    </option>
+
+                    <option
+                        value="drawing"
+                        <?php echo $view_simulation['simulation_mode'] === 'drawing' ? 'selected' : ''; ?>
+                    >
+                        그림 문제
+                    </option>
+                </select>
+
+                <div class="ui small message">
+                    그림 문제 모드는 향후 도형·좌표·크기·색상
+                    자동채점 기능과 연결됩니다.
+                    현재는 자동채점이 실행되지 않습니다.
+                </div>
+            </div>
+
+            <div class="two fields">
+
+                <div class="required field">
+                    <label for="canvas_width">
+                        캔버스 너비 (px)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="canvas_width"
+                        name="canvas_width"
+                        min="100"
+                        max="2000"
+                        step="1"
+                        required
+                        value="<?php echo intval($view_simulation['canvas_width']); ?>"
+                    >
+                </div>
+
+                <div class="required field">
+                    <label for="canvas_height">
+                        캔버스 높이 (px)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="canvas_height"
+                        name="canvas_height"
+                        min="100"
+                        max="2000"
+                        step="1"
+                        required
+                        value="<?php echo intval($view_simulation['canvas_height']); ?>"
+                    >
+                </div>
+
+            </div>
+
+            <div class="required field">
+                <label for="starter_code">
+                    기본 p5.js 코드
+                </label>
+
+                <textarea
+                    id="starter_code"
+                    name="starter_code"
+                    rows="20"
+                    spellcheck="false"
+                    required
+                    style="font-family: monospace; tab-size: 4;"
+                ><?php echo simulation_edit_escape($view_simulation['starter_code']); ?></textarea>
+
+                <div class="ui small message">
+                    JavaScript 코드를 입력합니다.
+                    이 입력 영역에서 코드를 실행하지는 않습니다.
+                </div>
+            </div>
+
+            <div class="two fields">
+
+                <div class="required field">
+                    <label for="allow_edit">
+                        학생 코드 편집
+                    </label>
+
+                    <select
+                        id="allow_edit"
+                        name="allow_edit"
+                        required
+                    >
+                        <option
+                            value="1"
+                            <?php echo intval($view_simulation['allow_edit']) === 1 ? 'selected' : ''; ?>
+                        >
+                            허용
+                        </option>
+
+                        <option
+                            value="0"
+                            <?php echo intval($view_simulation['allow_edit']) === 0 ? 'selected' : ''; ?>
+                        >
+                            허용하지 않음
+                        </option>
+                    </select>
+                </div>
+
+                <div class="required field">
+                    <label for="allow_submit">
+                        학생 코드 제출
+                    </label>
+
+                    <select
+                        id="allow_submit"
+                        name="allow_submit"
+                        required
+                    >
+                        <option
+                            value="1"
+                            <?php echo intval($view_simulation['allow_submit']) === 1 ? 'selected' : ''; ?>
+                        >
+                            허용
+                        </option>
+
+                        <option
+                            value="0"
+                            <?php echo intval($view_simulation['allow_submit']) === 0 ? 'selected' : ''; ?>
+                        >
+                            허용하지 않음
+                        </option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="required field">
+                <label for="simulation_visible">
+                    활동 공개 상태
+                </label>
+
+                <select
+                    id="simulation_visible"
+                    name="visible"
+                    required
+                >
+                    <option
+                        value="0"
+                        <?php echo intval($view_activity['visible']) === 0 ? 'selected' : ''; ?>
+                    >
+                        비공개
+                    </option>
+
+                    <option
+                        value="1"
+                        <?php echo intval($view_activity['visible']) === 1 ? 'selected' : ''; ?>
+                    >
+                        공개
+                    </option>
+                </select>
+
+                <div class="ui small message">
+                    차시가 비공개 상태이면 활동을 공개해도
+                    학생에게 표시되지 않습니다.
+                </div>
+            </div>
+
+            <div class="ui divider"></div>
+
+            <button
+                type="submit"
+                class="ui primary button"
+            >
+                <i class="save icon"></i>
+                변경 사항 저장
+            </button>
+
+            <a
+                class="ui basic button"
+                href="course_view.php?course_id=<?php echo intval($course_id); ?>"
+            >
+                취소
+            </a>
+
+        </form>
+
+    </div>
+
+</div>
+
+<?php
+include("template/$OJ_TEMPLATE/footer.php");
+?>

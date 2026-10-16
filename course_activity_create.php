@@ -68,7 +68,7 @@ if (
     $lesson_id <= 0 ||
     !in_array(
         $activity_type,
-        array('material', 'assignment'),
+        array('material', 'assignment', 'simulation'),
         true
     ) ||
     $title === '' ||
@@ -178,38 +178,124 @@ if (
 
 
 // ============================================================
-// 7. Activity 생성
+// 7. Activity 및 시뮬레이션 설정 생성
 //
-// Contest 연결 및 학생 제출 기록은 변경하지 않는다.
+// 기존 Course/Contest 및 학생 제출 기록은 변경하지 않는다.
+// 두 테이블은 하나의 트랜잭션으로 저장한다.
 // ============================================================
 
-$new_activity_id = pdo_query(
-    "INSERT INTO course_activity
-    (
-        course_id,
-        lesson_id,
-        activity_type,
-        title,
-        description,
-        sort_order,
-        visible,
-        status,
-        created_by
-    )
-    VALUES (?, ?, ?, ?, ?, ?, 0, 1, ?)",
-    $course_id,
-    $lesson_id,
-    $activity_type,
-    $title,
-    $description,
-    $sort_order,
-    $user_id
-);
+global $dbh;
 
-if (intval($new_activity_id) <= 0) {
+$transaction_started = false;
+
+try {
+    if (!($dbh instanceof PDO)) {
+        throw new RuntimeException(
+            '데이터베이스 연결을 확인할 수 없습니다.'
+        );
+    }
+
+    if ($dbh->inTransaction()) {
+        throw new RuntimeException(
+            '이미 진행 중인 트랜잭션이 있습니다.'
+        );
+    }
+
+    $dbh->beginTransaction();
+    $transaction_started = true;
+
+    // 기존 Activity 생성
+    $insert_activity = $dbh->prepare(
+        "INSERT INTO course_activity
+        (
+            course_id,
+            lesson_id,
+            activity_type,
+            title,
+            description,
+            sort_order,
+            visible,
+            status,
+            created_by
+        )
+        VALUES (?, ?, ?, ?, ?, ?, 0, 1, ?)"
+    );
+
+    $insert_activity->execute(array(
+        $course_id,
+        $lesson_id,
+        $activity_type,
+        $title,
+        $description,
+        $sort_order,
+        $user_id
+    ));
+
+    $new_activity_id = intval($dbh->lastInsertId());
+    $insert_activity->closeCursor();
+
+    if ($new_activity_id <= 0) {
+        throw new RuntimeException(
+            '신규 학습 활동 ID 생성에 실패했습니다.'
+        );
+    }
+
+    // simulation 유형일 때 전용 설정 생성
+    if ($activity_type === 'simulation') {
+
+        $starter_code = <<<'P5JS'
+function setup() {
+  createCanvas(400, 400);
+}
+
+function draw() {
+  background(240);
+}
+P5JS;
+
+        $insert_simulation = $dbh->prepare(
+            "INSERT INTO course_simulation
+            (
+                activity_id,
+                simulation_mode,
+                starter_code,
+                canvas_width,
+                canvas_height,
+                allow_edit,
+                allow_submit,
+                grading_config
+            )
+            VALUES (?, 'free', ?, 400, 400, 1, 1, NULL)"
+        );
+
+        $insert_simulation->execute(array(
+            $new_activity_id,
+            $starter_code
+        ));
+
+        $insert_simulation->closeCursor();
+    }
+
+    $dbh->commit();
+    $transaction_started = false;
+
+} catch (Throwable $e) {
+
+    if (
+        $transaction_started &&
+        $dbh instanceof PDO &&
+        $dbh->inTransaction()
+    ) {
+        $dbh->rollBack();
+    }
+
+    error_log(
+        '[course_activity_create] ' .
+        $e->getMessage()
+    );
 
     $view_errors =
-        "<h2>학습 활동 생성에 실패했습니다.</h2>";
+        "<h2>학습 활동을 생성하지 못했습니다.</h2>";
 
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);

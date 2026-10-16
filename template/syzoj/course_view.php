@@ -749,6 +749,34 @@ include("template/$OJ_TEMPLATE/header.php");
                                     if (
                                         $view_can_manage_contests &&
                                         intval($view_course['status']) === 1 &&
+                                        $activity['activity_type'] === 'simulation'
+                                    ) {
+                                    ?>
+                                        <a
+                                            class="ui mini teal basic button"
+                                            href="course_simulation_edit.php?activity_id=<?php
+                                                echo intval($activity['activity_id']);
+                                            ?>"
+                                        >
+                                            <i class="edit icon"></i>
+                                            시뮬레이션 편집
+                                        </a>
+
+                                        <a
+                                            class="ui mini blue basic button"
+                                            href="course_simulation_submissions.php?activity_id=<?php
+                                                echo intval($activity['activity_id']);
+                                            ?>"
+                                        >
+                                            <i class="tasks icon"></i>
+                                            제출 현황
+                                        </a>
+                                    <?php } ?>
+
+                                    <?php
+                                    if (
+                                        $view_can_manage_contests &&
+                                        intval($view_course['status']) === 1 &&
                                         in_array(
                                             $activity['activity_type'],
                                             array('material', 'assignment'),
