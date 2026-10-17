@@ -56,6 +56,19 @@ function simulation_edit_escape($value)
             </p>
         </div>
 
+        <?php if (
+            $view_simulation['simulation_mode'] === 'drawing' &&
+            intval($view_simulation['canvas_width']) === 400 &&
+            intval($view_simulation['canvas_height']) === 400
+        ): ?>
+            <p>
+                <a class="ui button"
+                   href="course_simulation_reference.php?activity_id=<?= intval($activity_id) ?>">
+                    교사용 정답 관리
+                </a>
+            </p>
+        <?php endif; ?>
+
         <form
             class="ui form"
             method="post"
