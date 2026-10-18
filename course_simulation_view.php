@@ -160,6 +160,39 @@ if (
 
 $view_simulation = $simulation_rows[0];
 
+// 최신 정답의 목표 이미지 준비 여부만 조회한다.
+// 정답 코드와 생성 메타데이터는 학생 화면으로 전달하지 않는다.
+$view_simulation_target = null;
+
+if ((string)$view_simulation['simulation_mode'] === 'drawing') {
+    $target_rows = pdo_query(
+        "SELECT
+            r.canvas_width,
+            r.canvas_height,
+            CASE
+                WHEN i.image_status = 'ready'
+                 AND i.source_sha256 = LOWER(SHA2(r.source_code, 256))
+                THEN 1
+                ELSE 0
+            END AS target_ready
+         FROM course_simulation_reference r
+         LEFT JOIN course_simulation_reference_image i
+           ON i.reference_id = r.reference_id
+         WHERE r.activity_id = ?
+         ORDER BY r.reference_no DESC
+         LIMIT 1",
+        $activity_id
+    );
+
+    if ($target_rows === false) {
+        error_log(
+            '[course_simulation_view] 목표 그림 준비 상태 조회 실패'
+        );
+    } elseif (isset($target_rows[0])) {
+        $view_simulation_target = $target_rows[0];
+    }
+}
+
 // ============================================================
 // 학생 본인의 시뮬레이션 정식 제출 이력
 // ============================================================

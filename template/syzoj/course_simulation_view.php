@@ -97,6 +97,39 @@ $canvas_height = intval($view_simulation['canvas_height']);
 
         <?php } ?>
 
+        <?php if ($simulation_mode === 'drawing') { ?>
+            <div class="ui segment">
+                <h3 class="ui header">목표 완성 그림</h3>
+
+                <?php if (
+                    is_array($view_simulation_target) &&
+                    intval($view_simulation_target['target_ready']) === 1
+                ) { ?>
+                    <p>
+                        문제 설명과 아래 그림을 참고하여 코드를 작성하세요.
+                    </p>
+
+                    <img
+                        class="ui bordered image"
+                        src="<?php echo $simulation_escape(
+                            '/course_simulation_reference_image.php?activity_id=' .
+                            intval($activity_id)
+                        ); ?>"
+                        alt="목표 완성 그림"
+                        width="<?php echo intval(
+                            $view_simulation_target['canvas_width']
+                        ); ?>"
+                        height="<?php echo intval(
+                            $view_simulation_target['canvas_height']
+                        ); ?>"
+                        decoding="async"
+                    >
+                <?php } else { ?>
+                    <p>목표 그림이 아직 준비되지 않았습니다.</p>
+                <?php } ?>
+            </div>
+        <?php } ?>
+
         <div class="ui small labels">
 
             <span class="ui blue label">
