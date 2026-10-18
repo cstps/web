@@ -234,6 +234,7 @@ try {
     $save->closeCursor();
 
     $saved_submission_id = (string)$dbh->lastInsertId();
+    $simulation_grade_queued = false;
 
     // 정답이 등록된 그림 그리기 활동만 자동 채점 대기 등록.
     // 제출과 채점 요청을 같은 트랜잭션으로 저장한다.
@@ -314,6 +315,7 @@ try {
                 $grade_feedback_json,
             ));
             $grade_save->closeCursor();
+            $simulation_grade_queued = true;
         }
     }
 
@@ -341,7 +343,45 @@ try {
 }
 
 // ============================================================
-// 6. 시뮬레이션 화면으로 이동
+// 6. 저장 완료 후 채점 처리기에 알림
+// ============================================================
+
+// DB 커밋이 완료된 뒤에만 알린다.
+// 알림 실패는 이미 저장된 제출의 성공 여부에 영향을 주지 않는다.
+if (!empty($simulation_grade_queued)) {
+    try {
+        $notify_errno = 0;
+        $notify_error = '';
+
+        $notify_socket = @stream_socket_client(
+            'unix:///run/1024kr-simulation-grade/notify.sock',
+            $notify_errno,
+            $notify_error,
+            0.05,
+            STREAM_CLIENT_CONNECT
+        );
+
+        if ($notify_socket !== false) {
+            // 처리기는 연결 수락 자체를 알림으로 사용한다.
+            // 정답 코드나 제출 코드를 소켓으로 보내지 않는다.
+            fclose($notify_socket);
+        } else {
+            error_log(
+                '[course_simulation_submit] ' .
+                '채점 알림 연결 실패. 제출과 대기 기록은 보존됨. 오류 번호: ' .
+                $notify_errno
+            );
+        }
+    } catch (Throwable $notify_exception) {
+        error_log(
+            '[course_simulation_submit] ' .
+            '채점 알림 처리 실패. 제출과 대기 기록은 보존됨.'
+        );
+    }
+}
+
+// ============================================================
+// 7. 시뮬레이션 화면으로 이동
 // ============================================================
 
 header(

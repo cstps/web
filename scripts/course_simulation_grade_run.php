@@ -92,14 +92,30 @@ try {
         }
     }
 
-    // 암호 입력을 기다리지 않는다. 권한이 없으면 대기 상태를 유지한다.
-    $unused = array();
-    $sudo_code = 0;
-    exec('/usr/bin/sudo -n /usr/bin/docker info > /dev/null 2>&1', $unused, $sudo_code);
+    // 서비스에서 소켓 접근 권한이 있으면 Docker를 직접 실행한다.
+    // 일반 터미널에서는 기존 sudo 방식을 사용한다.
+    $docker_socket = '/var/run/docker.sock';
 
-    if ($sudo_code !== 0) {
+    $docker_prefix = (
+        is_readable($docker_socket) &&
+        is_writable($docker_socket)
+    )
+        ? array('/usr/bin/docker')
+        : array('/usr/bin/sudo', '-n', '/usr/bin/docker');
+
+    $docker_check = simulation_grade_exec(
+        array_merge(
+            array('/usr/bin/timeout', '--kill-after=2s', '5s'),
+            $docker_prefix,
+            array('info')
+        ),
+        '/dev/null',
+        '/dev/null'
+    );
+
+    if ($docker_check !== 0) {
         throw new RuntimeException(
-            'Docker 접근 권한을 확인하세요. 같은 터미널에서 sudo -v 후 다시 실행하세요.'
+            'Docker 접근에 실패했습니다. 서비스 실행 권한 또는 sudo 인증을 확인하세요.'
         );
     }
 
@@ -262,9 +278,15 @@ try {
         'p5_file_sha256' => hash_file('sha256', $p5_file),
     );
 
-    $command = array(
-        '/usr/bin/timeout', '--signal=TERM', '--kill-after=5s', '40s',
-        '/usr/bin/sudo', '-n', '/usr/bin/docker',
+    $command = array_merge(
+        array(
+            '/usr/bin/timeout',
+            '--signal=TERM',
+            '--kill-after=5s',
+            '40s'
+        ),
+        $docker_prefix,
+        array(
         'run', '--name', $container_name,
         '--network=none',
         '--user=' . fileowner($temp_files['input']) . ':' . filegroup($temp_files['input']),
@@ -284,6 +306,7 @@ try {
         '--input-json', '/work/input.json',
         '--p5', '/work/p5.min.js',
         '--json',
+        )
     );
 
     $render_code = simulation_grade_exec(
@@ -424,10 +447,10 @@ try {
 } finally {
     if ($container_name !== null) {
         $cleanup_code = simulation_grade_exec(
-            array(
-                '/usr/bin/timeout', '--kill-after=2s', '10s',
-                '/usr/bin/sudo', '-n', '/usr/bin/docker',
-                'rm', '-f', $container_name,
+            array_merge(
+                array('/usr/bin/timeout', '--kill-after=2s', '10s'),
+                $docker_prefix,
+                array('rm', '-f', $container_name)
             ),
             '/dev/null',
             '/dev/null'

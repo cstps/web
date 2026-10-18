@@ -1,0 +1,28 @@
+[Unit]
+Description=1024.kr 그림 제출 비교 처리기
+Wants=docker.service
+After=network.target docker.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=gtkbs
+Group=www-data
+SupplementaryGroups=gtkbs docker
+WorkingDirectory=/home/judge/src/web
+ExecStart=/usr/bin/php /home/judge/src/web/scripts/course_simulation_grade_daemon.php
+RuntimeDirectory=1024kr-simulation-grade
+RuntimeDirectoryMode=0750
+UMask=0007
+PrivateTmp=false
+NoNewPrivileges=true
+Restart=on-failure
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=75
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
