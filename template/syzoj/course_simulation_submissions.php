@@ -191,6 +191,96 @@ $lesson_title = $simulation_escape(
                                                     </div>
                                                 </div>
 
+                                                <?php
+                                                $grade_status = isset(
+                                                    $submission['grading_status']
+                                                ) ? (string)$submission['grading_status'] : '';
+
+                                                $grade_labels = array(
+                                                    'pending' => '채점 대기',
+                                                    'running' => '비교 중',
+                                                    'graded' => '비교 완료',
+                                                    'error' => '실행 오류',
+                                                );
+
+                                                $grade_label = $grade_status === ''
+                                                    ? '채점 요청 없음'
+                                                    : (
+                                                        isset($grade_labels[$grade_status])
+                                                        ? $grade_labels[$grade_status]
+                                                        : '상태 확인 필요'
+                                                    );
+                                                ?>
+
+                                                <div class="ui small message">
+                                                    <div class="header">
+                                                        <?php echo $simulation_escape(
+                                                            $grade_label
+                                                        ); ?>
+                                                    </div>
+
+                                                    <?php if ($grade_status !== '') { ?>
+                                                        <p>
+                                                            채점 <?php echo intval(
+                                                                $submission['grading_no']
+                                                            ); ?>회차
+                                                            <?php if (isset(
+                                                                $submission['grade_reference_no']
+                                                            )) { ?>
+                                                                · 정답 버전
+                                                                <?php echo $simulation_escape(
+                                                                    $submission['grade_reference_no']
+                                                                ); ?>
+                                                            <?php } ?>
+                                                        </p>
+                                                    <?php } ?>
+
+                                                    <?php if ($grade_status === 'graded') { ?>
+                                                        <p>
+                                                            <?php
+                                                            foreach (array(
+                                                                'grade_foreground_match' => '전경 일치율',
+                                                                'grade_foreground_overlap' => '전경 겹침률',
+                                                            ) as $metric_key => $metric_label) {
+                                                                $metric_value = isset($submission[$metric_key])
+                                                                    ? $submission[$metric_key]
+                                                                    : null;
+
+                                                                $metric_text = '확인 불가';
+
+                                                                if (
+                                                                    is_numeric($metric_value) &&
+                                                                    is_finite((float)$metric_value) &&
+                                                                    (float)$metric_value >= 0 &&
+                                                                    (float)$metric_value <= 100
+                                                                ) {
+                                                                    $metric_text = number_format(
+                                                                        (float)$metric_value,
+                                                                        3,
+                                                                        '.',
+                                                                        ''
+                                                                    ) . '%';
+                                                                }
+                                                                ?>
+                                                                <span class="ui basic label">
+                                                                    <?php echo $simulation_escape(
+                                                                        $metric_label . ': ' . $metric_text
+                                                                    ); ?>
+                                                                </span>
+                                                            <?php } ?>
+                                                        </p>
+                                                        <p>
+                                                            그림 비교 지표입니다.
+                                                            공식 점수는 아직 산정하지 않습니다.
+                                                        </p>
+                                                    <?php } elseif ($grade_status === 'error') { ?>
+                                                        <p>
+                                                            코드 실행 또는 그림 비교 처리 중
+                                                            오류가 발생했습니다.
+                                                        </p>
+                                                    <?php } ?>
+                                                </div>
+
                                                 <textarea
                                                     id="<?php echo $code_id; ?>"
                                                     class="ui fluid"

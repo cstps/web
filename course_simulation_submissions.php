@@ -173,12 +173,32 @@ $history_rows = pdo_query(
         s.user_id,
         s.submission_no,
         s.source_code,
-        s.submitted_at
+        s.submitted_at,
+        g.grade_id,
+        g.grading_no,
+        g.grading_status,
+        JSON_UNQUOTE(JSON_EXTRACT(
+            g.feedback_json, '$.request.reference_no'
+        )) AS grade_reference_no,
+        JSON_UNQUOTE(JSON_EXTRACT(
+            g.feedback_json, '$.result.metrics.foreground_match'
+        )) AS grade_foreground_match,
+        JSON_UNQUOTE(JSON_EXTRACT(
+            g.feedback_json, '$.result.metrics.foreground_overlap'
+        )) AS grade_foreground_overlap
      FROM course_simulation_submission s
      INNER JOIN course_student cs
        ON cs.course_id = ?
       AND cs.user_id = s.user_id
       AND cs.status = 1
+     LEFT JOIN course_simulation_grade g
+       ON g.grade_id = (
+           SELECT g2.grade_id
+           FROM course_simulation_grade g2
+           WHERE g2.submission_id = s.submission_id
+           ORDER BY g2.grading_no DESC
+           LIMIT 1
+       )
      WHERE s.activity_id = ?
      ORDER BY
          s.user_id,
