@@ -144,6 +144,7 @@ try {
             ca.visible AS activity_visible,
             s.allow_edit,
             s.allow_submit,
+            s.simulation_mode,
             s.starter_code
          FROM course_activity ca
          INNER JOIN course c
@@ -233,6 +234,88 @@ try {
     $save->closeCursor();
 
     $saved_submission_id = (string)$dbh->lastInsertId();
+
+    // 정답이 등록된 그림 그리기 활동만 자동 채점 대기 등록.
+    // 제출과 채점 요청을 같은 트랜잭션으로 저장한다.
+    if ((string)$settings['simulation_mode'] === 'drawing') {
+        $reference_check = $dbh->prepare(
+            "SELECT
+                reference_id,
+                reference_no,
+                source_code,
+                canvas_width,
+                canvas_height,
+                p5_version,
+                render_config,
+                grading_config,
+                max_score
+             FROM course_simulation_reference
+             WHERE activity_id = ?
+             ORDER BY reference_no DESC
+             LIMIT 1
+             FOR UPDATE"
+        );
+
+        $reference_check->execute(array($activity_id));
+        $reference = $reference_check->fetch(PDO::FETCH_ASSOC);
+        $reference_check->closeCursor();
+
+        if ($reference) {
+            // CLI 대기 등록과 같은 메타데이터 형식을 사용한다.
+            $grade_feedback = array(
+                'schema_version' => 1,
+                'request' => array(
+                    'activity_id' => (int)$activity_id,
+                    'reference_id' => (int)$reference['reference_id'],
+                    'reference_no' => (int)$reference['reference_no'],
+                    'canvas_width' => (int)$reference['canvas_width'],
+                    'canvas_height' => (int)$reference['canvas_height'],
+                    'p5_version' => (string)$reference['p5_version'],
+                    'reference_max_score' => (string)$reference['max_score'],
+                    'reference_source_sha256' => hash(
+                        'sha256',
+                        (string)$reference['source_code']
+                    ),
+                    'student_source_sha256' => hash(
+                        'sha256',
+                        (string)$source_code
+                    ),
+                    'render_config_sha256' => hash(
+                        'sha256',
+                        (string)$reference['render_config']
+                    ),
+                    'grading_config_sha256' => hash(
+                        'sha256',
+                        (string)$reference['grading_config']
+                    ),
+                ),
+            );
+
+            $grade_feedback_json = json_encode(
+                $grade_feedback,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            );
+
+            if ($grade_feedback_json === false) {
+                throw new RuntimeException(
+                    '자동 채점 요청 JSON 생성에 실패했습니다.'
+                );
+            }
+
+            $grade_save = $dbh->prepare(
+                "INSERT INTO course_simulation_grade
+                    (submission_id, grading_no, grading_status,
+                     score, max_score, feedback_json, graded_at)
+                 VALUES (?, 1, 'pending', NULL, NULL, ?, NULL)"
+            );
+
+            $grade_save->execute(array(
+                $saved_submission_id,
+                $grade_feedback_json,
+            ));
+            $grade_save->closeCursor();
+        }
+    }
 
     $dbh->commit();
     $transaction_started = false;
