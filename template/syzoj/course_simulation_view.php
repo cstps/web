@@ -406,7 +406,11 @@ $canvas_height = intval($view_simulation['canvas_height']);
                         (최대 10건 표시)
                     </p>
 
-                    <table class="ui compact unstackable table">
+                    <table
+                        id="simulation-submission-history"
+                        class="ui compact unstackable table"
+                        data-activity-id="<?php echo intval($activity_id); ?>"
+                    >
 
                         <thead>
                             <tr>
@@ -465,7 +469,14 @@ $canvas_height = intval($view_simulation['canvas_height']);
                                     intval($submission['submission_id']);
                                 ?>
 
-                                <tr>
+                                <tr
+                                    data-submission-id="<?php echo intval(
+                                        $submission['submission_id']
+                                    ); ?>"
+                                    data-grade-state="<?php echo $simulation_escape(
+                                        $history_grade_status
+                                    ); ?>"
+                                >
 
                                     <td>
                                         <?php
@@ -483,13 +494,13 @@ $canvas_height = intval($view_simulation['canvas_height']);
                                         ?>
                                     </td>
 
-                                    <td>
+                                    <td data-grade-status>
                                         <?php echo $simulation_escape(
                                             $history_status_label
                                         ); ?>
                                     </td>
 
-                                    <td>
+                                    <td data-grade-score>
                                         <?php if (
                                             $history_grade_status === 'graded' &&
                                             $history_score_valid
@@ -563,6 +574,10 @@ $canvas_height = intval($view_simulation['canvas_height']);
                         </tbody>
 
                     </table>
+                    <script
+                        src="/template/syzoj/js/course-simulation-grade-status.js?v=1"
+                        defer
+                    ></script>
 
                     <p class="ui small message">
                         이전 코드를 불러와도 기존 제출 기록과
