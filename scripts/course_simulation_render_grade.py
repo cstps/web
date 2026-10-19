@@ -187,7 +187,7 @@ def compare(reference: np.ndarray, student: np.ndarray) -> Dict[str, float]:
 def render_and_compare(
     payload: Dict[str, Any],
     p5_path: Path,
-) -> Tuple[Dict[str, float], float]:
+) -> Tuple[Dict[str, Any], float]:
     width = int(payload["canvas_width"])
     height = int(payload["canvas_height"])
 
@@ -227,12 +227,40 @@ def render_and_compare(
         finally:
             browser.close()
 
+    metrics: Dict[str, Any] = dict(compare(reference, student))
+
+    # 서버가 채점 설정을 명시한 경우에만 허용 오차 비교를 추가한다.
+    if "grading_config" in payload:
+        config = payload["grading_config"]
+
+        if not isinstance(config, dict):
+            raise RuntimeError("채점 설정은 JSON 객체여야 합니다.")
+
+        if config.get("metric") != "symmetric_foreground_color_coverage":
+            raise RuntimeError("지원하지 않는 허용 오차 비교 방식입니다.")
+
+        if config.get("neighborhood") != "euclidean_disk":
+            raise RuntimeError("지원하지 않는 주변 픽셀 탐색 방식입니다.")
+
+        # 기존 실행과 목표 PNG 생성에 불필요한 의존성이 생기지 않도록
+        # 허용 오차 비교를 요청한 경우에만 가져온다.
+        from course_simulation_image_metrics import (
+            symmetric_foreground_color_coverage,
+        )
+
+        metrics["tolerance"] = symmetric_foreground_color_coverage(
+            reference,
+            student,
+            position_tolerance_px=config.get("position_tolerance_px"),
+            color_tolerance=config.get("color_tolerance"),
+        )
+
     elapsed = time.perf_counter() - started
 
-    return compare(reference, student), elapsed
+    return metrics, elapsed
 
 
-def print_text_result(payload: Dict[str, Any], result: Dict[str, float], elapsed: float) -> None:
+def print_text_result(payload: Dict[str, Any], result: Dict[str, Any], elapsed: float) -> None:
     print("활동 ID:", payload["activity_id"])
     print("정답 버전:", payload["reference_no"])
     print("제출 ID:", payload["submission_id"])
@@ -254,7 +282,7 @@ def print_text_result(payload: Dict[str, Any], result: Dict[str, float], elapsed
 
 def build_json_result(
     payload: Dict[str, Any],
-    result: Dict[str, float],
+    result: Dict[str, Any],
     elapsed: float,
 ) -> Dict[str, Any]:
     return {

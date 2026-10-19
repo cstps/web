@@ -84,9 +84,10 @@ try {
     }
 
     $python_script = $root_dir . '/scripts/course_simulation_render_grade.py';
+    $metrics_script = $root_dir . '/scripts/course_simulation_image_metrics.py';
     $p5_file = $root_dir . '/template/syzoj/js/vendor/p5.min.js';
 
-    foreach (array($python_script, $p5_file) as $file) {
+    foreach (array($python_script, $metrics_script, $p5_file) as $file) {
         if (!is_readable($file)) {
             throw new RuntimeException('필요한 파일을 읽을 수 없습니다: ' . $file);
         }
@@ -234,6 +235,23 @@ try {
         throw new RuntimeException('현재 비교기는 400×400, p5.js 2.3.4만 지원합니다.');
     }
 
+    // 요청에 기록된 해시와 일치하는 정답 버전의 설정만 사용한다.
+    $grading_config = json_decode($reference['grading_config'], true);
+
+    if (
+        !is_array($grading_config) ||
+        ($grading_config['metric'] ?? '') !==
+            'symmetric_foreground_color_coverage' ||
+        ($grading_config['neighborhood'] ?? '') !== 'euclidean_disk' ||
+        !isset($grading_config['position_tolerance_px']) ||
+        !is_int($grading_config['position_tolerance_px']) ||
+        $grading_config['position_tolerance_px'] < 0 ||
+        $grading_config['position_tolerance_px'] > 10 ||
+        ($grading_config['color_tolerance'] ?? null) !== 0
+    ) {
+        throw new RuntimeException('지원하지 않거나 올바르지 않은 채점 설정입니다.');
+    }
+
     $payload = array(
         'activity_id' => (int)$submission['activity_id'],
         'reference_no' => (int)$reference['reference_no'],
@@ -243,6 +261,7 @@ try {
         'student_code' => (string)$submission['source_code'],
         'canvas_width' => 400,
         'canvas_height' => 400,
+        'grading_config' => $grading_config,
     );
 
     foreach (array('input', 'output', 'error') as $label) {
@@ -269,12 +288,12 @@ try {
     $container_name = 'simulation-grade-' . $grade_id . '-' . bin2hex(random_bytes(8));
     $image = '1024kr/p5-render-poc:playwright-1.63.0';
 
-    // 현재 비교기는 고정된 PoC 렌더 조건을 사용한다.
-    // 정답의 render_config/grading_config를 해석하는 기능은 아직 없다.
+    // 기존 렌더 조건에서 정답 버전의 위치 허용 오차를 추가 비교한다.
     $feedback['runtime'] = array(
-        'comparison_mode' => 'static-image-poc-v1',
+        'comparison_mode' => 'static-image-tolerance-v1',
         'docker_image' => $image,
         'python_script_sha256' => hash_file('sha256', $python_script),
+        'metrics_script_sha256' => hash_file('sha256', $metrics_script),
         'p5_file_sha256' => hash_file('sha256', $p5_file),
     );
 
@@ -298,6 +317,7 @@ try {
         '--pids-limit=128',
         '--tmpfs', '/tmp:rw,nosuid,nodev,size=256m',
         '-v', $python_script . ':/work/course_simulation_render_grade.py:ro',
+        '-v', $metrics_script . ':/work/course_simulation_image_metrics.py:ro',
         '-v', $p5_file . ':/work/p5.min.js:ro',
         '-v', $temp_files['input'] . ':/work/input.json:ro',
         '--entrypoint', 'python',
@@ -365,6 +385,85 @@ try {
         $metrics[$key] = $value;
     }
 
+    // 허용 오차 결과도 필요한 필드만 검증하여 저장한다.
+    $tolerance = $result['metrics']['tolerance'] ?? null;
+
+    if (!is_array($tolerance)) {
+        throw new RuntimeException('허용 오차 비교 결과가 없습니다.');
+    }
+
+    $validated_tolerance = array();
+
+    foreach (array(
+        'metric' => 'symmetric_foreground_color_coverage',
+        'aggregation' => 'harmonic_mean',
+        'neighborhood' => 'euclidean_disk',
+        'position_tolerance_px' => $grading_config['position_tolerance_px'],
+        'color_tolerance' => 0,
+    ) as $key => $expected_value) {
+        if (($tolerance[$key] ?? null) !== $expected_value) {
+            throw new RuntimeException('허용 오차 결과의 설정이 다릅니다: ' . $key);
+        }
+        $validated_tolerance[$key] = $expected_value;
+    }
+
+    foreach (array(
+        'reference_foreground', 'student_foreground',
+        'reference_matched', 'student_matched'
+    ) as $key) {
+        $value = $tolerance[$key] ?? null;
+
+        if (!is_int($value) || $value < 0 || $value > 160000) {
+            throw new RuntimeException('허용 오차 결과의 픽셀 수가 잘못됐습니다: ' . $key);
+        }
+        $validated_tolerance[$key] = $value;
+    }
+
+    $reference_count = $validated_tolerance['reference_foreground'];
+    $student_count = $validated_tolerance['student_foreground'];
+
+    if (
+        $reference_count === 0 ||
+        (float)$reference_count !== (float)$metrics['reference_foreground'] ||
+        (float)$student_count !== (float)$metrics['student_foreground'] ||
+        $validated_tolerance['reference_matched'] > $reference_count ||
+        $validated_tolerance['student_matched'] > $student_count
+    ) {
+        throw new RuntimeException('허용 오차 결과의 전경 픽셀 수가 일치하지 않습니다.');
+    }
+
+    $reference_ratio =
+        $validated_tolerance['reference_matched'] / $reference_count;
+
+    $student_ratio = $student_count > 0
+        ? $validated_tolerance['student_matched'] / $student_count
+        : 0.0;
+
+    $symmetric_ratio = ($reference_ratio + $student_ratio) > 0
+        ? 2.0 * $reference_ratio * $student_ratio /
+            ($reference_ratio + $student_ratio)
+        : 0.0;
+
+    foreach (array(
+        'reference_coverage' => 100.0 * $reference_ratio,
+        'student_coverage' => 100.0 * $student_ratio,
+        'symmetric_coverage' => 100.0 * $symmetric_ratio,
+    ) as $key => $expected_value) {
+        $value = $tolerance[$key] ?? null;
+
+        if (
+            (!is_int($value) && !is_float($value)) ||
+            !is_finite((float)$value) ||
+            $value < 0 || $value > 100 ||
+            abs((float)$value - $expected_value) > 0.000001
+        ) {
+            throw new RuntimeException('허용 오차 결과의 비율이 잘못됐습니다: ' . $key);
+        }
+        $validated_tolerance[$key] = $value;
+    }
+
+    $metrics['tolerance'] = $validated_tolerance;
+
     $elapsed = isset($result['elapsed_seconds']) ? $result['elapsed_seconds'] : null;
     if ((!is_int($elapsed) && !is_float($elapsed)) ||
         !is_finite((float)$elapsed) || $elapsed < 0) {
@@ -405,6 +504,10 @@ try {
     echo "채점 상태: graded\n";
     printf("전경 일치율: %.3f%%\n", $metrics['foreground_match']);
     printf("전경 겹침률: %.3f%%\n", $metrics['foreground_overlap']);
+    printf(
+        "허용 오차 반영 충족률: %.3f%%\n",
+        $metrics['tolerance']['symmetric_coverage']
+    );
     echo "결과: 비교 지표 저장 완료 / 공식 점수 미산정\n";
 
 } catch (Throwable $e) {
