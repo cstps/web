@@ -266,6 +266,20 @@ if ($method === 'POST') {
         ));
         $save->closeCursor();
 
+        $saved_reference_id = (string)$dbh->lastInsertId();
+
+        // 새 정답과 이미지 생성 요청을 같은 트랜잭션으로 저장한다.
+        $image_request = $dbh->prepare(
+            "INSERT INTO course_simulation_reference_image
+                (reference_id, source_sha256, image_status)
+             VALUES (?, ?, 'pending')"
+        );
+        $image_request->execute(array(
+            $saved_reference_id,
+            hash('sha256', (string)$source),
+        ));
+        $image_request->closeCursor();
+
         $dbh->commit();
         $transaction_started = false;
     } catch (Throwable $e) {
@@ -279,6 +293,36 @@ if ($method === 'POST') {
             '변경됐을 수 있습니다. 입력 코드를 복사해 보관한 뒤 ' .
             '정답 관리 화면을 다시 열어 주세요.',
             409
+        );
+    }
+
+    // 정답과 생성 요청의 커밋이 완료된 뒤 처리기에 알린다.
+    // 알림 실패로 저장 완료된 정답을 실패 처리하지 않는다.
+    try {
+        $notify_errno = 0;
+        $notify_error = '';
+
+        $notify_socket = @stream_socket_client(
+            'unix:///run/1024kr-simulation-grade/notify.sock',
+            $notify_errno,
+            $notify_error,
+            0.05,
+            STREAM_CLIENT_CONNECT
+        );
+
+        if ($notify_socket !== false) {
+            fclose($notify_socket);
+        } else {
+            error_log(
+                '[simulation_reference_save] ' .
+                '이미지 생성 알림 실패. 정답과 생성 요청은 보존됨. 오류 번호: ' .
+                $notify_errno
+            );
+        }
+    } catch (Throwable $notify_exception) {
+        error_log(
+            '[simulation_reference_save] ' .
+            '이미지 생성 알림 처리 실패. 정답과 생성 요청은 보존됨.'
         );
     }
 

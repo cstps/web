@@ -10,7 +10,7 @@ if (PHP_SAPI !== 'cli') {
     exit("CLI에서만 실행할 수 있습니다.\n");
 }
 
-function simulation_daemon_next_grade()
+function simulation_daemon_next_job()
 {
     global $DB_HOST, $DB_NAME, $DB_USER, $DB_PASS;
 
@@ -25,18 +25,45 @@ function simulation_daemon_next_grade()
         )
     );
 
+    // 각 대기열의 첫 요청만 비교하여 오래된 작업부터 선택한다.
     $stmt = $db->query(
-        "SELECT grade_id
-         FROM course_simulation_grade
-         WHERE grading_status = 'pending'
-         ORDER BY created_at, grade_id
+        "SELECT job_type, job_id
+         FROM (
+             (
+                 SELECT
+                     'grade' AS job_type,
+                     grade_id AS job_id,
+                     created_at AS queued_at,
+                     1 AS job_priority
+                 FROM course_simulation_grade
+                 WHERE grading_status = 'pending'
+                 ORDER BY created_at, grade_id
+                 LIMIT 1
+             )
+             UNION ALL
+             (
+                 SELECT
+                     'image' AS job_type,
+                     reference_id AS job_id,
+                     created_at AS queued_at,
+                     0 AS job_priority
+                 FROM course_simulation_reference_image
+                 WHERE image_status = 'pending'
+                 ORDER BY created_at, reference_id
+                 LIMIT 1
+             )
+         ) AS jobs
+         ORDER BY queued_at, job_priority, job_id
          LIMIT 1"
     );
 
-    $grade_id = $stmt->fetchColumn();
+    $job = $stmt->fetch(PDO::FETCH_ASSOC);
     $stmt->closeCursor();
 
-    return $grade_id === false ? null : (string)$grade_id;
+    return $job === false ? null : array(
+        'type' => (string)$job['job_type'],
+        'id' => (string)$job['job_id'],
+    );
 }
 
 function simulation_daemon_drain_notifications($server)
@@ -80,9 +107,15 @@ try {
     }
 
     $worker = $root_dir . '/scripts/course_simulation_grade_worker.php';
+    $image_worker = $root_dir .
+        '/scripts/course_simulation_reference_image_run.php';
 
-    if (!is_readable($worker)) {
-        throw new RuntimeException('채점 배치 실행기를 읽을 수 없습니다.');
+    foreach (array($worker, $image_worker) as $required_worker) {
+        if (!is_readable($required_worker)) {
+            throw new RuntimeException(
+                '작업 실행기를 읽을 수 없습니다: ' . $required_worker
+            );
+        }
     }
 
     if (!function_exists('proc_open')) {
@@ -154,21 +187,43 @@ try {
         pcntl_signal(SIGINT, $stop_handler);
     }
 
-    echo "상시 처리기 시작: 제출 알림 대기 / 복구 확인 간격 60초\n";
+    echo "상시 처리기 시작: 제출·정답 알림 대기 / 복구 확인 간격 60초\n";
 
     while (!$stop_requested) {
         // 시작 시와 알림 또는 대기 시간 만료 후 대기열을 처리한다.
         while (!$stop_requested) {
             simulation_daemon_drain_notifications($server);
 
-            $before_id = simulation_daemon_next_grade();
+            $before_job = simulation_daemon_next_job();
 
-            if ($before_id === null) {
+            if ($before_job === null) {
                 break;
             }
 
+            if (!preg_match('/^[1-9][0-9]*$/D', $before_job['id'])) {
+                throw new RuntimeException('대기 작업 ID가 올바르지 않습니다.');
+            }
+
+            if ($before_job['type'] === 'image') {
+                $job_label = '목표 이미지 생성';
+                $job_command = array(
+                    PHP_BINARY,
+                    $image_worker,
+                    '--reference-id=' . $before_job['id'],
+                );
+            } elseif ($before_job['type'] === 'grade') {
+                $job_label = '학생 제출 비교';
+                $job_command = array(
+                    PHP_BINARY,
+                    $worker,
+                    '--limit=1',
+                );
+            } else {
+                throw new RuntimeException('지원하지 않는 대기 작업 유형입니다.');
+            }
+
             $process = proc_open(
-                array(PHP_BINARY, $worker, '--limit=1'),
+                $job_command,
                 array(
                     0 => array('file', '/dev/null', 'r'),
                     1 => STDOUT,
@@ -190,14 +245,15 @@ try {
                 break;
             }
 
-            $after_id = simulation_daemon_next_grade();
+            $after_job = simulation_daemon_next_job();
 
             // 권한 문제 등으로 같은 작업이 pending에 남으면
             // 즉시 반복하지 않고 알림 또는 복구 확인까지 대기한다.
-            if ($after_id === $before_id) {
+            if ($after_job === $before_job) {
                 fwrite(
                     STDERR,
-                    '대기열 처리 보류: 채점 ID ' . $before_id .
+                    '대기열 처리 보류: ' . $job_label .
+                    ' ID ' . $before_job['id'] .
                     ', 배치 종료 코드 ' . $worker_code . "\n"
                 );
 
