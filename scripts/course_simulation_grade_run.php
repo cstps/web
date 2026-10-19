@@ -77,6 +77,19 @@ try {
 
     $db = $dbh;
 
+    require_once($root_dir . '/scripts/course_simulation_job_lock.php');
+
+    // 실행 종료까지 연결을 유지해 작업 잠금을 보유한다.
+    $job_lock_connection = simulation_job_acquire_lock(
+        'grade',
+        $grade_id
+    );
+
+    if ($job_lock_connection === null) {
+        throw new RuntimeException('다른 실행기가 이 작업을 처리 중입니다.');
+    }
+
+
     foreach (array('/usr/bin/timeout', '/usr/bin/sudo', '/usr/bin/docker') as $binary) {
         if (!is_executable($binary)) {
             throw new RuntimeException('필요한 실행 파일이 없습니다: ' . $binary);
@@ -152,7 +165,7 @@ try {
     $stmt = simulation_grade_statement(
         $db,
         "UPDATE course_simulation_grade
-         SET grading_status = 'running'
+         SET grading_status = 'running', started_at = NOW()
          WHERE grade_id = ? AND grading_status = 'pending'",
         array($grade_id)
     );

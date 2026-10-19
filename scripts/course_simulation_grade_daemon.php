@@ -189,7 +189,11 @@ try {
 
     echo "상시 처리기 시작: 제출·정답 알림 대기 / 복구 확인 간격 60초\n";
 
+    require_once($root_dir . '/scripts/course_simulation_job_recovery.php');
+
     while (!$stop_requested) {
+        simulation_recover_interrupted_jobs();
+
         // 시작 시와 알림 또는 대기 시간 만료 후 대기열을 처리한다.
         while (!$stop_requested) {
             simulation_daemon_drain_notifications($server);

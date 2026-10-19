@@ -62,6 +62,19 @@ try {
     }
     $db = $dbh;
 
+    require_once($root_dir . '/scripts/course_simulation_job_lock.php');
+
+    // 실행 종료까지 연결을 유지해 작업 잠금을 보유한다.
+    $job_lock_connection = simulation_job_acquire_lock(
+        'image',
+        $reference_id
+    );
+
+    if ($job_lock_connection === null) {
+        throw new RuntimeException('다른 실행기가 이 작업을 처리 중입니다.');
+    }
+
+
     $exporter = $root_dir . '/scripts/course_simulation_render_reference.py';
     $renderer = $root_dir . '/scripts/course_simulation_render_grade.py';
     $p5_file = $root_dir . '/template/syzoj/js/vendor/p5.min.js';
@@ -138,6 +151,7 @@ try {
     $stmt = $db->prepare(
         "UPDATE course_simulation_reference_image
          SET image_status = 'running',
+             started_at = NOW(),
              render_metadata = JSON_OBJECT('claim_token', ?),
              error_message = NULL
          WHERE reference_id = ? AND image_status = 'pending'"
