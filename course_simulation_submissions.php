@@ -185,7 +185,13 @@ $history_rows = pdo_query(
         )) AS grade_foreground_match,
         JSON_UNQUOTE(JSON_EXTRACT(
             g.feedback_json, '$.result.metrics.foreground_overlap'
-        )) AS grade_foreground_overlap
+        )) AS grade_foreground_overlap,
+        JSON_UNQUOTE(JSON_EXTRACT(
+            g.feedback_json, '$.result.metrics.tolerance.symmetric_coverage'
+        )) AS grade_tolerance_coverage,
+        JSON_UNQUOTE(JSON_EXTRACT(
+            g.feedback_json, '$.result.metrics.tolerance.position_tolerance_px'
+        )) AS grade_tolerance_radius
      FROM course_simulation_submission s
      INNER JOIN course_student cs
        ON cs.course_id = ?

@@ -269,6 +269,57 @@ $lesson_title = $simulation_escape(
                                                                 </span>
                                                             <?php } ?>
                                                         </p>
+                                                        <?php
+                                                        $tolerance_value =
+                                                            $submission['grade_tolerance_coverage'] ?? null;
+                                                        $tolerance_radius =
+                                                            $submission['grade_tolerance_radius'] ?? null;
+
+                                                        $tolerance_valid = (
+                                                            is_numeric($tolerance_value) &&
+                                                            is_finite((float)$tolerance_value) &&
+                                                            (float)$tolerance_value >= 0 &&
+                                                            (float)$tolerance_value <= 100 &&
+                                                            ctype_digit((string)$tolerance_radius) &&
+                                                            intval($tolerance_radius) >= 0 &&
+                                                            intval($tolerance_radius) <= 10
+                                                        );
+                                                        ?>
+
+                                                        <p>
+                                                            <?php if ($tolerance_valid) { ?>
+                                                                <span class="ui blue basic label">
+                                                                    허용 오차 충족률:
+                                                                    <?php echo $simulation_escape(
+                                                                        number_format(
+                                                                            (float)$tolerance_value,
+                                                                            3,
+                                                                            '.',
+                                                                            ''
+                                                                        ) . '%'
+                                                                    ); ?>
+                                                                </span>
+
+                                                                <span class="ui basic label">
+                                                                    위치 허용 반경:
+                                                                    <?php echo intval(
+                                                                        $tolerance_radius
+                                                                    ); ?>픽셀
+                                                                </span>
+                                                            <?php } elseif (
+                                                                $tolerance_value === null &&
+                                                                $tolerance_radius === null
+                                                            ) { ?>
+                                                                <span class="ui basic label">
+                                                                    허용 오차 비교: 미산출
+                                                                </span>
+                                                            <?php } else { ?>
+                                                                <span class="ui basic label">
+                                                                    허용 오차 정보 확인 필요
+                                                                </span>
+                                                            <?php } ?>
+                                                        </p>
+
                                                         <p>
                                                             그림 비교 지표입니다.
                                                             공식 점수는 아직 산정하지 않습니다.
