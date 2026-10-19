@@ -238,6 +238,49 @@ foreach ($history_rows as $submission) {
 // 6. 교사용 화면 출력
 // ============================================================
 
+
+// 교사용 재채점에 적용할 최신 정답 버전
+$view_regrade_reference_no = 0;
+$view_regrade_csrf_html = '';
+
+if (($view_activity['simulation_mode'] ?? '') === 'drawing') {
+    $regrade_rows = pdo_query(
+        "SELECT r.reference_no
+         FROM course_simulation_reference r
+         INNER JOIN course_activity a ON a.activity_id = r.activity_id
+         INNER JOIN course c ON c.course_id = a.course_id
+         INNER JOIN course_lesson l
+           ON l.lesson_id = a.lesson_id
+          AND l.course_id = a.course_id
+         WHERE r.activity_id = ?
+           AND a.activity_type = 'simulation'
+           AND a.status = 1
+           AND l.status = 1
+           AND c.status = 1
+         ORDER BY r.reference_no DESC
+         LIMIT 1",
+        $activity_id
+    );
+
+    if ($regrade_rows === false) {
+        simulation_submissions_error(
+            '재채점에 사용할 정답 버전을 조회하지 못했습니다.',
+            500
+        );
+    }
+
+    if (isset($regrade_rows[0])) {
+        $view_regrade_reference_no = intval(
+            $regrade_rows[0]['reference_no']
+        );
+
+        ob_start();
+        include('./csrf.php');
+        $view_regrade_csrf_html = ob_get_clean();
+    }
+}
+
+
 require(
     "template/".$OJ_TEMPLATE."/course_simulation_submissions.php"
 );
