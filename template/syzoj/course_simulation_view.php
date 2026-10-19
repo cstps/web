@@ -412,6 +412,8 @@ $canvas_height = intval($view_simulation['canvas_height']);
                             <tr>
                                 <th>제출 번호</th>
                                 <th>제출 일시</th>
+                                <th>채점 상태</th>
+                                <th>점수</th>
                                 <th>기능</th>
                             </tr>
                         </thead>
@@ -423,6 +425,41 @@ $canvas_height = intval($view_simulation['canvas_height']);
                             ) { ?>
 
                                 <?php
+                                $history_grade_status = (string)(
+                                    $submission['grading_status'] ?? ''
+                                );
+                                $history_score =
+                                    $submission['grade_score'] ?? null;
+                                $history_max_score =
+                                    $submission['grade_max_score'] ?? null;
+
+                                $history_score_valid = (
+                                    $history_score !== null &&
+                                    $history_max_score !== null &&
+                                    is_numeric($history_score) &&
+                                    is_numeric($history_max_score) &&
+                                    is_finite((float)$history_score) &&
+                                    is_finite((float)$history_max_score) &&
+                                    (float)$history_score >= 0 &&
+                                    (float)$history_max_score > 0 &&
+                                    (float)$history_score <=
+                                        (float)$history_max_score
+                                );
+
+                                $history_status_labels = array(
+                                    '' => '채점 기록 없음',
+                                    'pending' => '채점 대기',
+                                    'running' => '채점 중',
+                                    'graded' => $history_score_valid
+                                        ? '채점 완료'
+                                        : '비교 완료',
+                                    'error' => '처리 오류',
+                                );
+
+                                $history_status_label =
+                                    $history_status_labels[$history_grade_status]
+                                    ?? '상태 확인 필요';
+
                                 $history_id =
                                     'simulation-history-code-' .
                                     intval($submission['submission_id']);
@@ -444,6 +481,47 @@ $canvas_height = intval($view_simulation['canvas_height']);
                                             (string)$submission['submitted_at']
                                         );
                                         ?>
+                                    </td>
+
+                                    <td>
+                                        <?php echo $simulation_escape(
+                                            $history_status_label
+                                        ); ?>
+                                    </td>
+
+                                    <td>
+                                        <?php if (
+                                            $history_grade_status === 'graded' &&
+                                            $history_score_valid
+                                        ) { ?>
+                                            <?php echo $simulation_escape(
+                                                number_format(
+                                                    (float)$history_score,
+                                                    2,
+                                                    '.',
+                                                    ''
+                                                ) .
+                                                ' / ' .
+                                                number_format(
+                                                    (float)$history_max_score,
+                                                    2,
+                                                    '.',
+                                                    ''
+                                                )
+                                            ); ?>점
+                                        <?php } elseif (
+                                            $history_grade_status === 'graded' &&
+                                            $history_score === null &&
+                                            $history_max_score === null
+                                        ) { ?>
+                                            미산정
+                                        <?php } elseif (
+                                            $history_grade_status === 'graded'
+                                        ) { ?>
+                                            확인 필요
+                                        <?php } else { ?>
+                                            -
+                                        <?php } ?>
                                     </td>
 
                                     <td>

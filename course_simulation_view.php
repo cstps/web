@@ -204,14 +204,25 @@ if ($is_student) {
 
     $submission_rows = pdo_query(
         "SELECT
-            submission_id,
-            submission_no,
-            source_code,
-            submitted_at
-         FROM course_simulation_submission
-         WHERE activity_id = ?
-           AND user_id = ?
-         ORDER BY submission_no DESC
+            s.submission_id,
+            s.submission_no,
+            s.source_code,
+            s.submitted_at,
+            g.grading_status,
+            g.score AS grade_score,
+            g.max_score AS grade_max_score
+         FROM course_simulation_submission s
+         LEFT JOIN course_simulation_grade g
+           ON g.grade_id = (
+               SELECT g2.grade_id
+               FROM course_simulation_grade g2
+               WHERE g2.submission_id = s.submission_id
+               ORDER BY g2.grading_no DESC
+               LIMIT 1
+           )
+         WHERE s.activity_id = ?
+           AND s.user_id = ?
+         ORDER BY s.submission_no DESC
          LIMIT 10",
         $activity_id,
         (string)$_SESSION[$OJ_NAME.'_user_id']
