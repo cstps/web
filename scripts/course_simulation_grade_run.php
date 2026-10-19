@@ -252,6 +252,28 @@ try {
         throw new RuntimeException('지원하지 않거나 올바르지 않은 채점 설정입니다.');
     }
 
+    $scoring_mode = $grading_config['scoring_mode'] ?? 'metrics_only';
+
+    if (
+        !is_string($scoring_mode) ||
+        !in_array($scoring_mode, array('metrics_only', 'whole_image'), true)
+    ) {
+        throw new RuntimeException('지원하지 않는 점수 산정 방식입니다.');
+    }
+
+    if ($scoring_mode === 'whole_image') {
+        if (
+            ($grading_config['scoring_method'] ?? '') !==
+            'coverage_linear_v1'
+        ) {
+            throw new RuntimeException('지원하지 않는 점수 계산 방식입니다.');
+        }
+
+        require_once(
+            $root_dir . '/include/course_simulation_scoring.inc.php'
+        );
+    }
+
     $payload = array(
         'activity_id' => (int)$submission['activity_id'],
         'reference_no' => (int)$reference['reference_no'],
@@ -470,6 +492,37 @@ try {
         throw new RuntimeException('실행 시간이 올바르지 않습니다.');
     }
 
+    // 정답 버전에 명시된 방식으로만 점수를 계산한다.
+    $score_value = null;
+    $max_score_value = null;
+
+    $feedback['scoring'] = array(
+        'mode' => $scoring_mode,
+        'method' => null,
+    );
+
+    if ($scoring_mode === 'whole_image') {
+        $calculated_score = course_simulation_calculate_score(
+            $metrics['tolerance']['symmetric_coverage'],
+            (string)$reference['max_score']
+        );
+
+        $score_value = $calculated_score['score'];
+        $max_score_value = $calculated_score['max_score'];
+
+        $feedback['scoring'] = array(
+            'mode' => 'whole_image',
+            'method' => $calculated_score['scoring_method'],
+            'coverage_used' => $metrics['tolerance']['symmetric_coverage'],
+            'score' => $score_value,
+            'max_score' => $max_score_value,
+            'scoring_script_sha256' => hash_file(
+                'sha256',
+                $root_dir . '/include/course_simulation_scoring.inc.php'
+            ),
+        );
+    }
+
     $feedback['result'] = array(
         'status' => 'ok',
         'metrics' => $metrics,
@@ -488,10 +541,15 @@ try {
         $db,
         "UPDATE course_simulation_grade
          SET grading_status = 'graded',
-             score = NULL, max_score = NULL,
+             score = ?, max_score = ?,
              feedback_json = ?, graded_at = NOW()
          WHERE grade_id = ? AND grading_status = 'running'",
-        array($feedback_json, $grade_id)
+        array(
+            $score_value,
+            $max_score_value,
+            $feedback_json,
+            $grade_id
+        )
     );
     if ($stmt->rowCount() !== 1) {
         throw new RuntimeException('채점 완료 상태를 저장하지 못했습니다.');
@@ -508,7 +566,13 @@ try {
         "허용 오차 반영 충족률: %.3f%%\n",
         $metrics['tolerance']['symmetric_coverage']
     );
-    echo "결과: 비교 지표 저장 완료 / 공식 점수 미산정\n";
+    if ($score_value !== null) {
+        echo "점수: " . $score_value .
+            " / " . $max_score_value . "\n";
+        echo "결과: 비교 지표·점수 저장 완료\n";
+    } else {
+        echo "결과: 비교 지표 저장 완료 / 공식 점수 미산정\n";
+    }
 
 } catch (Throwable $e) {
     if ($db instanceof PDO && $db->inTransaction()) {

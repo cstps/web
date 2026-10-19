@@ -96,7 +96,24 @@ function simulation_reference_escape($value)
             </div>
         </div>
 
-        <div class="two fields">
+        <div class="three fields">
+            <div class="field">
+                <label for="reference-scoring-mode">점수 산정 방식</label>
+                <select id="reference-scoring-mode" name="scoring_mode">
+                    <?php foreach (array(
+                        'metrics_only' => '비교 지표만 저장',
+                        'whole_image' => '전체 그림 충족률로 점수 산정',
+                    ) as $mode_value => $mode_label): ?>
+                        <option
+                            value="<?= simulation_reference_escape($mode_value) ?>"
+                            <?= $view_reference_scoring_mode === $mode_value
+                                ? 'selected' : '' ?>
+                        >
+                            <?= simulation_reference_escape($mode_label) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
             <div class="field">
                 <label for="reference-radius">실험용 위치 허용 반경</label>
                 <select id="reference-radius" name="position_tolerance">
@@ -111,7 +128,7 @@ function simulation_reference_escape($value)
             </div>
 
             <div class="field">
-                <label for="reference-score">예정 배점</label>
+                <label for="reference-score">배점</label>
                 <input id="reference-score" type="number"
                        name="max_score" min="0.01" max="99999.99"
                        step="0.01" required
@@ -121,7 +138,12 @@ function simulation_reference_escape($value)
             </div>
         </div>
 
-        <p>위치 허용 반경과 배점은 설정만 저장하며 학생 점수를 생성하지 않습니다.</p>
+        <p>
+            비교 지표만 저장하면 점수를 산정하지 않습니다.
+            전체 그림 방식은 허용 오차 충족률에 배점을 곱해 점수를 산정하며,
+            단일 도형 문제에 적합합니다.
+            선택한 방식은 새 정답 버전에 저장됩니다.
+        </p>
 
         <button class="ui primary button" type="submit">
             새 정답 버전 저장

@@ -177,6 +177,8 @@ $history_rows = pdo_query(
         g.grade_id,
         g.grading_no,
         g.grading_status,
+        g.score AS grade_score,
+        g.max_score AS grade_max_score,
         JSON_UNQUOTE(JSON_EXTRACT(
             g.feedback_json, '$.request.reference_no'
         )) AS grade_reference_no,

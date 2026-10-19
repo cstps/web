@@ -150,6 +150,7 @@ if ($method === 'POST') {
     $base = $_POST['base_reference_no'] ?? null;
     $radius = $_POST['position_tolerance'] ?? null;
     $max_score = $_POST['max_score'] ?? null;
+    $scoring_mode = $_POST['scoring_mode'] ?? 'metrics_only';
 
     if (
         !is_string($source) ||
@@ -161,6 +162,8 @@ if ($method === 'POST') {
         (float)$base > 2147483646 ||
         !is_string($radius) ||
         !in_array($radius, array('0', '1', '2'), true) ||
+        !is_string($scoring_mode) ||
+        !in_array($scoring_mode, array('metrics_only', 'whole_image'), true) ||
         !is_string($max_score) ||
         !preg_match('/^[0-9]{1,5}(?:\.[0-9]{1,2})?$/D', $max_score)
     ) {
@@ -196,7 +199,11 @@ if ($method === 'POST') {
         'metric' => 'symmetric_foreground_color_coverage',
         'position_tolerance_px' => intval($radius),
         'neighborhood' => 'euclidean_disk',
-        'color_tolerance' => 0
+        'color_tolerance' => 0,
+        'scoring_mode' => $scoring_mode,
+        'scoring_method' => $scoring_mode === 'whole_image'
+            ? 'coverage_linear_v1'
+            : null
     ), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
     global $dbh;
@@ -365,6 +372,21 @@ $config = json_decode($view_reference['grading_config'], true);
 $view_reference_radius = intval(
     $config['position_tolerance_px'] ?? 0
 );
+
+$view_reference_scoring_mode = $config['scoring_mode'] ?? 'metrics_only';
+
+if (
+    !is_string($view_reference_scoring_mode) ||
+    !in_array(
+        $view_reference_scoring_mode,
+        array('metrics_only', 'whole_image'),
+        true
+    )
+) {
+    simulation_reference_error(
+        '지원하지 않는 점수 산정 방식이 저장돼 있습니다.'
+    );
+}
 
 require(
     'template/' . $OJ_TEMPLATE . '/course_simulation_reference.php'

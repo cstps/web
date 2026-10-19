@@ -320,9 +320,55 @@ $lesson_title = $simulation_escape(
                                                             <?php } ?>
                                                         </p>
 
+                                                        <?php
+                                                        $saved_score =
+                                                            $submission['grade_score'] ?? null;
+                                                        $saved_max_score =
+                                                            $submission['grade_max_score'] ?? null;
+
+                                                        $saved_score_valid = (
+                                                            $saved_score !== null &&
+                                                            $saved_max_score !== null &&
+                                                            is_numeric($saved_score) &&
+                                                            is_numeric($saved_max_score) &&
+                                                            is_finite((float)$saved_score) &&
+                                                            is_finite((float)$saved_max_score) &&
+                                                            (float)$saved_score >= 0 &&
+                                                            (float)$saved_max_score > 0 &&
+                                                            (float)$saved_score <=
+                                                                (float)$saved_max_score
+                                                        );
+                                                        ?>
+
                                                         <p>
-                                                            그림 비교 지표입니다.
-                                                            공식 점수는 아직 산정하지 않습니다.
+                                                            <?php if ($saved_score_valid) { ?>
+                                                                <span class="ui teal label">
+                                                                    점수:
+                                                                    <?php echo $simulation_escape(
+                                                                        number_format(
+                                                                            (float)$saved_score,
+                                                                            2,
+                                                                            '.',
+                                                                            ''
+                                                                        ) .
+                                                                        ' / ' .
+                                                                        number_format(
+                                                                            (float)$saved_max_score,
+                                                                            2,
+                                                                            '.',
+                                                                            ''
+                                                                        )
+                                                                    ); ?>점
+                                                                </span>
+                                                            <?php } elseif (
+                                                                $saved_score === null &&
+                                                                $saved_max_score === null
+                                                            ) { ?>
+                                                                비교 지표만 저장한 기록입니다.
+                                                                점수는 산정하지 않았습니다.
+                                                            <?php } else { ?>
+                                                                점수 정보 확인이 필요합니다.
+                                                            <?php } ?>
                                                         </p>
                                                     <?php } elseif ($grade_status === 'error') { ?>
                                                         <p>
