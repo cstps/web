@@ -5,6 +5,7 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 require_once('./include/course_functions.inc.php');
+require_once('./scripts/course_simulation_draft_store.php');
 require_once('./include/csrf_check.php');
 
 $view_title = '시뮬레이션 코드 임시 저장';
@@ -33,6 +34,7 @@ $user_id = (string)$_SESSION[$OJ_NAME.'_user_id'];
 
 $activity_id_raw = $_POST['activity_id'] ?? '';
 $source_code = $_POST['source_code'] ?? null;
+$expected_revision = $_POST['expected_revision'] ?? null;
 
 if (
     !is_string($activity_id_raw) ||
@@ -183,22 +185,13 @@ try {
     }
 
     // 학생·활동별 최신 작업 코드 하나만 저장한다.
-    $save = $dbh->prepare(
-        "INSERT INTO course_simulation_draft
-            (activity_id, user_id, source_code)
-         VALUES (?, ?, ?)
-         ON DUPLICATE KEY UPDATE
-            source_code = VALUES(source_code),
-            updated_at = CURRENT_TIMESTAMP"
-    );
-
-    $save->execute(array(
+    $saved_revision = simulation_store_versioned_draft(
+        $dbh,
         $activity_id,
         $user_id,
-        $source_code
-    ));
-
-    $save->closeCursor();
+        $source_code,
+        $expected_revision
+    );
 
     $dbh->commit();
     $transaction_started = false;
@@ -217,8 +210,35 @@ try {
         $e->getMessage()
     );
 
+    http_response_code(
+        $e instanceof SimulationDraftConflictException ? 409 : 400
+    );
+
+    $draft_failure_message =
+        $e instanceof SimulationDraftConflictException
+            ? $e->getMessage()
+            : '코드를 저장하지 못했습니다. 아래 코드를 보관한 뒤 최신 작업 화면을 다시 열어 주세요.';
+
     $view_errors =
-        '<h2>코드를 임시 저장하지 못했습니다.</h2>';
+        '<h2>' .
+        htmlspecialchars(
+            $draft_failure_message,
+            ENT_QUOTES | ENT_SUBSTITUTE,
+            'UTF-8'
+        ) .
+        '</h2>' .
+        '<p>저장하지 못한 코드가 아래에 보존돼 있습니다. 복사해 보관해 주세요.</p>' .
+        '<textarea rows="16" readonly aria-label="저장하지 못한 코드">' .
+        htmlspecialchars(
+            $source_code,
+            ENT_QUOTES | ENT_SUBSTITUTE,
+            'UTF-8'
+        ) .
+        '</textarea>' .
+        '<p><a target="_blank" rel="noopener" href="' .
+        'course_simulation_view.php?activity_id=' .
+        intval($activity_id) .
+        '">최신 작업 화면 열기</a></p>';
 
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);

@@ -28,6 +28,7 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 require_once('./include/course_functions.inc.php');
+require_once('./scripts/course_simulation_draft_store.php');
 // 자동 저장 전용 토큰은 같은 로그인 세션에서 반복 사용할 수 있다.
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     header('Allow: POST');
@@ -94,6 +95,23 @@ $user_id = (string)$_SESSION[$OJ_NAME.'_user_id'];
 
 $activity_id_raw = $_POST['activity_id'] ?? '';
 $source_code = $_POST['source_code'] ?? null;
+$expected_revision = $_POST['expected_revision'] ?? null;
+
+if (
+    !is_string($expected_revision) ||
+    !preg_match('/^(0|[1-9][0-9]{0,19})$/D', $expected_revision) ||
+    (
+        strlen($expected_revision) === 20 &&
+        strcmp($expected_revision, '18446744073709551615') > 0
+    )
+) {
+    simulation_autosave_json(array(
+        'ok' => false,
+        'code' => 'revision_required',
+        'message' => '초안 버전을 확인하지 못했습니다. 현재 코드를 복사해 보관한 뒤 화면을 새로고침해 주세요.',
+    ), 409);
+}
+
 
 if (
     !is_string($activity_id_raw) ||
@@ -247,22 +265,13 @@ try {
     }
 
     // 학생·활동별 최신 작업 코드 하나만 저장한다.
-    $save = $dbh->prepare(
-        "INSERT INTO course_simulation_draft
-            (activity_id, user_id, source_code)
-         VALUES (?, ?, ?)
-         ON DUPLICATE KEY UPDATE
-            source_code = VALUES(source_code),
-            updated_at = CURRENT_TIMESTAMP"
-    );
-
-    $save->execute(array(
+    $saved_revision = simulation_store_versioned_draft(
+        $dbh,
         $activity_id,
         $user_id,
-        $source_code
-    ));
-
-    $save->closeCursor();
+        $source_code,
+        $expected_revision
+    );
 
     $dbh->commit();
     $transaction_started = false;
@@ -274,6 +283,14 @@ try {
         $dbh->inTransaction()
     ) {
         $dbh->rollBack();
+    }
+
+    if ($e instanceof SimulationDraftConflictException) {
+        simulation_autosave_json(array(
+            'ok' => false,
+            'code' => 'draft_conflict',
+            'message' => $e->getMessage(),
+        ), 409);
     }
 
     error_log(
@@ -295,5 +312,6 @@ simulation_autosave_json(array(
     'ok' => true,
     'activity_id' => (string)$activity_id,
     'source_sha256' => hash('sha256', $source_code),
+    'revision' => (string)$saved_revision,
     'message' => '코드 자동 저장 완료',
 ));

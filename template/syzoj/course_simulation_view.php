@@ -330,6 +330,7 @@ $canvas_height = intval($view_simulation['canvas_height']);
 
             <div
                 id="simulation-autosave-config"
+                data-revision="<?php echo $simulation_escape($view_draft_revision); ?>"
                 data-activity-id="<?php echo intval($activity_id); ?>"
                 data-editor-id="simulation-code"
                 data-token="<?php echo $simulation_escape(
@@ -349,6 +350,16 @@ $canvas_height = intval($view_simulation['canvas_height']);
                 method="post"
                 action="course_simulation_draft_save.php"
             >
+
+                <input
+                    id="simulation-draft-revision"
+                    type="hidden"
+                    name="expected_revision"
+                    value="<?php echo $simulation_escape(
+                        $view_draft_revision
+                    ); ?>"
+                >
+
                 <?php
                 ob_start();
                 include("./csrf.php");
@@ -672,7 +683,7 @@ $canvas_height = intval($view_simulation['canvas_height']);
 <script src="/ace/mode-javascript.js"></script>
 <script src="/ace/theme-chrome.js"></script>
 <script src="/template/syzoj/js/course-simulation-runner.js?v=8"></script>
-<script src="/template/syzoj/js/course-simulation-autosave.js?v=1" defer></script>
+<script src="/template/syzoj/js/course-simulation-autosave.js?v=4" defer></script>
 
 <?php
 include("template/$OJ_TEMPLATE/footer.php");

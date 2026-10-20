@@ -269,13 +269,14 @@ if (
 }
 
 $view_draft_code = null;
+$view_draft_revision = '0';
 
 if (
     $is_student &&
     intval($view_simulation['allow_edit']) === 1
 ) {
     $draft_rows = pdo_query(
-        "SELECT source_code
+        "SELECT source_code, CAST(revision AS CHAR) AS revision
          FROM course_simulation_draft
          WHERE activity_id = ?
            AND user_id = ?
@@ -293,6 +294,8 @@ if (
     }
 
     if (isset($draft_rows[0])) {
+        $view_draft_revision = (string)$draft_rows[0]['revision'];
+
         $view_draft_code =
             (string)$draft_rows[0]['source_code'];
     }
