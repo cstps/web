@@ -305,6 +305,44 @@ $canvas_height = intval($view_simulation['canvas_height']);
 
         <?php if ($can_save_draft) { ?>
 
+            <?php
+            $autosave_session_key = $OJ_NAME . '_simulation_autosave';
+            $autosave_owner = (string)$_SESSION[$OJ_NAME . '_user_id'];
+            $autosave_settings = $_SESSION[$autosave_session_key] ?? null;
+
+            if (
+                !is_array($autosave_settings) ||
+                !isset(
+                    $autosave_settings['user_id'],
+                    $autosave_settings['token']
+                ) ||
+                $autosave_settings['user_id'] !== $autosave_owner ||
+                !is_string($autosave_settings['token']) ||
+                !preg_match('/^[a-f0-9]{64}$/D', $autosave_settings['token'])
+            ) {
+                $autosave_settings = array(
+                    'user_id' => $autosave_owner,
+                    'token' => bin2hex(random_bytes(32)),
+                );
+                $_SESSION[$autosave_session_key] = $autosave_settings;
+            }
+            ?>
+
+            <div
+                id="simulation-autosave-config"
+                data-activity-id="<?php echo intval($activity_id); ?>"
+                data-editor-id="simulation-code"
+                data-token="<?php echo $simulation_escape(
+                    $autosave_settings['token']
+                ); ?>"
+                hidden
+            ></div>
+
+            <p id="simulation-autosave-status" role="status">
+                자동 저장 대기
+            </p>
+
+
             <form
                 id="simulation-draft-form"
                 class="ui form"
@@ -633,7 +671,8 @@ $canvas_height = intval($view_simulation['canvas_height']);
 <script src="/ace/ace.js"></script>
 <script src="/ace/mode-javascript.js"></script>
 <script src="/ace/theme-chrome.js"></script>
-<script src="/template/syzoj/js/course-simulation-runner.js?v=7"></script>
+<script src="/template/syzoj/js/course-simulation-runner.js?v=8"></script>
+<script src="/template/syzoj/js/course-simulation-autosave.js?v=1" defer></script>
 
 <?php
 include("template/$OJ_TEMPLATE/footer.php");

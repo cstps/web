@@ -894,6 +894,11 @@ require_once(
     let currentContestId = 0;
     let currentProblemId = 0;
     let currentUpdatedAt = "";
+    let currentSourceKind = "coding";
+    let currentActivityId = 0;
+    let currentSourceHash = "";
+    let currentSourceGeneration = 0;
+
     let sourceRefreshing = false;
 
     const tileSourceCache =
@@ -927,6 +932,7 @@ require_once(
 
 
     function closeModal() {
+        currentSourceGeneration++;
 
         modal.classList.remove(
             "is-open"
@@ -939,128 +945,110 @@ require_once(
     }
 
 
+    function buildCourseMonitorSourceUrl(userId, current) {
+        const simulation = current.source_kind === "simulation";
+        const url = new URL(
+            simulation
+                ? "course_simulation_code_monitor_source.php"
+                : "contest_code_monitor_source.php",
+            window.location.href
+        );
+        url.searchParams.set("user_id", String(userId));
+
+        if (simulation) {
+            const activityId = Number(current.activity_id);
+            if (!Number.isInteger(activityId) || activityId <= 0) {
+                throw new Error("시뮬레이션 활동 번호가 올바르지 않습니다.");
+            }
+            url.searchParams.set("course_id", String(courseId));
+            url.searchParams.set("activity_id", String(activityId));
+        } else {
+            const contestId = Number(current.contest_id);
+            const problemId = Number(current.problem_id);
+            if (!Number.isInteger(contestId) || contestId <= 0 ||
+                !Number.isInteger(problemId) || problemId <= 0) {
+                throw new Error("코딩 실습 조회 번호가 올바르지 않습니다.");
+            }
+            url.searchParams.set("cid", String(contestId));
+            url.searchParams.set("problem_id", String(problemId));
+        }
+        return url;
+    }
+
     async function loadCurrentCode(
         userId,
         contestId,
-        problemId
+        problemId,
+        sourceKind = "coding",
+        activityId = 0
     ) {
+        const generation = ++currentSourceGeneration;
+        currentUserId = userId;
+        currentContestId = Number(contestId) || 0;
+        currentProblemId = Number(problemId) || 0;
+        currentSourceKind = sourceKind === "simulation" ? "simulation" : "coding";
+        currentActivityId = Number(activityId) || 0;
+        currentUpdatedAt = "";
+        currentSourceHash = "";
 
-        currentUserId =
-            userId;
-
-        currentContestId =
-            contestId;
-
-        currentProblemId =
-            problemId;
-
-        currentUpdatedAt =
-            "";
-
-        modalTitle.textContent =
-            userId + " · 현재 작성 코드";
-
-        modalMeta.textContent =
-            "코드를 불러오는 중입니다.";
-
+        modalTitle.textContent = userId + " · 현재 작성 코드";
+        modalMeta.textContent = "코드를 불러오는 중입니다.";
         modalSource.textContent = "";
         modalSource.hidden = true;
-
         modalMessage.hidden = false;
-        modalMessage.textContent =
-            "현재 코드를 불러오는 중입니다.";
-
+        modalMessage.textContent = "현재 코드를 불러오는 중입니다.";
         openModal();
 
-
         try {
+            const url = buildCourseMonitorSourceUrl(userId, {
+                source_kind: currentSourceKind,
+                activity_id: currentActivityId,
+                contest_id: currentContestId,
+                problem_id: currentProblemId
+            });
+            const response = await fetch(url.toString(), {
+                credentials: "same-origin",
+                cache: "no-store"
+            });
+            const data = await response.json();
 
-            const url =
-                new URL(
-                    "contest_code_monitor_source.php",
-                    window.location.href
-                );
+            if (generation !== currentSourceGeneration ||
+                !modal.classList.contains("is-open")) return;
 
-            url.searchParams.set(
-                "cid",
-                String(contestId)
-            );
-
-            url.searchParams.set(
-                "user_id",
-                userId
-            );
-
-            url.searchParams.set(
-                "problem_id",
-                String(problemId)
-            );
-
-            const response =
-                await fetch(
-                    url.toString(),
-                    {
-                        credentials: "same-origin",
-                        cache: "no-store"
-                    }
-                );
-
-            const data =
-                await response.json();
-
-            if (
-                !response.ok ||
-                data.ok !== true
-            ) {
-                throw new Error(
-                    data.message ||
-                    "학생 코드를 불러오지 못했습니다."
-                );
+            if (!response.ok || data.ok !== true) {
+                throw new Error(data.message || "학생 코드를 불러오지 못했습니다.");
             }
 
-            modalTitle.textContent =
-                data.user_id +
-                " · 문제 #" +
-                data.problem_id;
-
+            modalTitle.textContent = currentSourceKind === "simulation"
+                ? userId + " · 시뮬레이션 · " + (data.activity_title || "")
+                : userId + " · 문제 #" + currentProblemId;
             modalMeta.textContent =
-                data.language_name +
-                " · 마지막 저장 " +
-                data.updated_at;
-
-            modalSource.textContent =
-                data.source || "";
-
-            currentUpdatedAt =
-                data.updated_at || "";
-
+                data.language_name + " · 마지막 저장 " + data.updated_at;
+            modalSource.textContent = data.source || "";
+            currentUpdatedAt = data.updated_at || "";
+            currentSourceHash = data.source_sha256 || "";
             modalMessage.hidden = true;
             modalSource.hidden = false;
-
-        }
-        catch (error) {
-
+        } catch (error) {
+            if (generation !== currentSourceGeneration ||
+                !modal.classList.contains("is-open")) return;
             modalSource.hidden = true;
             modalMessage.hidden = false;
-            modalMessage.textContent =
-                error.message;
+            modalMessage.textContent = error.message;
         }
     }
 
 
     function getTileKey(student) {
-
-        if (!student.current) {
-            return "";
-        }
-
+        if (!student.current) return "";
+        const current = student.current;
         return [
             String(student.user_id),
-            Number(student.current.contest_id),
-            Number(student.current.problem_id),
-            String(
-                student.current.updated_at || ""
-            )
+            String(current.source_kind || "coding"),
+            Number(current.activity_id || 0),
+            Number(current.contest_id || 0),
+            Number(current.problem_id || 0),
+            String(current.updated_at || "")
         ].join(":");
     }
 
@@ -1123,31 +1111,9 @@ require_once(
 
         try {
 
-            const url =
-                new URL(
-                    "contest_code_monitor_source.php",
-                    window.location.href
-                );
-
-            url.searchParams.set(
-                "cid",
-                String(
-                    student.current.contest_id
-                )
-            );
-
-            url.searchParams.set(
-                "user_id",
-                String(
-                    student.user_id
-                )
-            );
-
-            url.searchParams.set(
-                "problem_id",
-                String(
-                    student.current.problem_id
-                )
+            const url = buildCourseMonitorSourceUrl(
+                student.user_id,
+                student.current
             );
 
             const response =
@@ -1379,10 +1345,13 @@ require_once(
                         "course-code-tile-problem";
 
                     problemLink.href =
-                        "problem.php?cid=" +
+                        (current.source_kind === "simulation"
+                        ? "course_simulation_view.php?activity_id=" +
+                            encodeURIComponent(String(current.activity_id))
+                        : ("problem.php?cid=" +
                         Number(current.contest_id) +
                         "&pid=" +
-                        Number(current.problem_num);
+                        Number(current.problem_num)));
 
                     problemLink.target =
                         "_blank";
@@ -1487,6 +1456,7 @@ require_once(
                     "course_code_monitor_ajax.php",
                     window.location.href
                 );
+            url.searchParams.set("include_simulation", "1");
 
             url.searchParams.set(
                 "course_id",
@@ -1713,10 +1683,13 @@ require_once(
                         );
 
                     problemLink.href =
-                        "problem.php?cid=" +
+                        (current.source_kind === "simulation"
+                        ? "course_simulation_view.php?activity_id=" +
+                            encodeURIComponent(String(current.activity_id))
+                        : ("problem.php?cid=" +
                         Number(current.contest_id) +
                         "&pid=" +
-                        Number(current.problem_num);
+                        Number(current.problem_num)));
 
                     problemLink.target =
                         "_blank";
@@ -1769,6 +1742,12 @@ require_once(
                         cells[6].innerHTML =
                             '<button type="button"' +
                             ' class="ui tiny primary button course-code-open"' +
+                            ' data-source-kind="' +
+                            (current.source_kind === "simulation"
+                                ? "simulation" : "coding") +
+                            '" data-activity-id="' +
+                            Number(current.activity_id || 0) +
+                            '"' +
                             ' data-contest-id="' +
                             Number(current.contest_id) +
                             '"' +
@@ -1784,6 +1763,12 @@ require_once(
                         cells[6].innerHTML =
                             '<button type="button"' +
                             ' class="ui tiny button course-code-open"' +
+                            ' data-source-kind="' +
+                            (current.source_kind === "simulation"
+                                ? "simulation" : "coding") +
+                            '" data-activity-id="' +
+                            Number(current.activity_id || 0) +
+                            '"' +
                             ' data-contest-id="' +
                             Number(current.contest_id) +
                             '"' +
@@ -1838,90 +1823,56 @@ require_once(
 
 
     async function refreshOpenSource() {
+        if (!modal.classList.contains("is-open") ||
+            !currentUserId || sourceRefreshing) return;
 
-        if (
-            !modal.classList.contains("is-open") ||
-            !currentUserId ||
-            currentContestId <= 0 ||
-            currentProblemId <= 0 ||
-            sourceRefreshing
-        ) {
+        if (currentSourceKind === "simulation") {
+            if (currentActivityId <= 0) return;
+        } else if (currentContestId <= 0 || currentProblemId <= 0) {
             return;
         }
 
+        const generation = currentSourceGeneration;
         sourceRefreshing = true;
 
         try {
+            const url = buildCourseMonitorSourceUrl(currentUserId, {
+                source_kind: currentSourceKind,
+                activity_id: currentActivityId,
+                contest_id: currentContestId,
+                problem_id: currentProblemId
+            });
+            const response = await fetch(url.toString(), {
+                credentials: "same-origin",
+                cache: "no-store"
+            });
+            const data = await response.json();
 
-            const url =
-                new URL(
-                    "contest_code_monitor_source.php",
-                    window.location.href
-                );
+            if (generation !== currentSourceGeneration ||
+                !modal.classList.contains("is-open")) return;
 
-            url.searchParams.set(
-                "cid",
-                String(currentContestId)
-            );
-
-            url.searchParams.set(
-                "user_id",
-                currentUserId
-            );
-
-            url.searchParams.set(
-                "problem_id",
-                String(currentProblemId)
-            );
-
-            const response =
-                await fetch(
-                    url.toString(),
-                    {
-                        credentials: "same-origin",
-                        cache: "no-store"
-                    }
-                );
-
-            const data =
-                await response.json();
-
-            if (
-                !response.ok ||
-                data.ok !== true
-            ) {
-                return;
+            if (!response.ok || data.ok !== true) {
+                throw new Error(data.message || "학생 코드 갱신에 실패했습니다.");
             }
 
-            if (
-                data.updated_at ===
-                currentUpdatedAt
-            ) {
-                return;
-            }
+            if (data.updated_at === currentUpdatedAt &&
+                (!data.source_sha256 ||
+                 data.source_sha256 === currentSourceHash)) return;
 
-            modalSource.textContent =
-                data.source || "";
-
+            modalSource.textContent = data.source || "";
             modalMeta.textContent =
-                data.language_name +
-                " · 마지막 저장 " +
-                data.updated_at;
-
-            currentUpdatedAt =
-                data.updated_at || "";
-
-        }
-        catch (error) {
-
-            console.warn(
-                "열린 학생 코드 갱신 실패",
-                error
-            );
-
-        }
-        finally {
-
+                data.language_name + " · 마지막 저장 " + data.updated_at;
+            currentUpdatedAt = data.updated_at || "";
+            currentSourceHash = data.source_sha256 || "";
+            modalMessage.hidden = true;
+            modalSource.hidden = false;
+        } catch (error) {
+            if (generation === currentSourceGeneration &&
+                modal.classList.contains("is-open")) {
+                modalMessage.hidden = false;
+                modalMessage.textContent = error.message;
+            }
+        } finally {
             sourceRefreshing = false;
         }
     }
@@ -1951,6 +1902,18 @@ require_once(
 
             const userId =
                 row.dataset.userId || "";
+
+            if (button.dataset.sourceKind === "simulation") {
+                const activityId = Number(button.dataset.activityId);
+                if (!userId || !Number.isInteger(activityId) ||
+                    activityId <= 0) return;
+
+                loadCurrentCode(
+                    userId, 0, 0, "simulation", activityId
+                );
+                return;
+            }
+
 
             const contestId =
                 Number(

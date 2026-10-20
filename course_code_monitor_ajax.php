@@ -273,6 +273,115 @@ if ($draft_rows) {
     }
 }
 
+// 시뮬레이션을 포함한 확장 조회
+if (($_GET['include_simulation'] ?? '') === '1') {
+    $simulation_rows = pdo_query(
+        "SELECT
+            d.activity_id,
+            d.user_id,
+            d.updated_at,
+            TIMESTAMPDIFF(
+                SECOND, d.updated_at, NOW()
+            ) AS age_seconds,
+            l.lesson_no,
+            l.title AS lesson_title,
+            a.title AS activity_title
+         FROM course_simulation_draft d
+         INNER JOIN course_activity a
+           ON a.activity_id = d.activity_id
+          AND a.course_id = ?
+          AND a.activity_type = 'simulation'
+          AND a.status = 1
+          AND a.visible = 1
+         INNER JOIN course_lesson l
+           ON l.lesson_id = a.lesson_id
+          AND l.course_id = a.course_id
+          AND l.status = 1
+          AND l.visible = 1
+         INNER JOIN course c
+           ON c.course_id = a.course_id
+          AND c.status = 1
+         INNER JOIN course_simulation s
+           ON s.activity_id = a.activity_id
+         INNER JOIN course_student cs
+           ON cs.course_id = a.course_id
+          AND cs.user_id = d.user_id
+          AND cs.status = 1
+         ORDER BY
+            d.user_id,
+            d.updated_at DESC,
+            d.activity_id DESC",
+        $course_id
+    );
+
+    if ($simulation_rows === false) {
+        http_response_code(500);
+        echo json_encode(
+            array(
+                'ok' => false,
+                'message' => '시뮬레이션 작업 현황을 조회하지 못했습니다.'
+            ),
+            JSON_UNESCAPED_UNICODE
+        );
+        exit;
+    }
+
+    foreach ($students as &$simulation_monitor_student) {
+        if ($simulation_monitor_student['current'] !== null) {
+            $simulation_monitor_student['current']['source_kind'] = 'coding';
+        }
+    }
+    unset($simulation_monitor_student);
+
+    foreach ($simulation_rows as $simulation_row) {
+        $simulation_user_id = trim((string)$simulation_row['user_id']);
+
+        if (
+            $simulation_user_id === '' ||
+            !isset($students[$simulation_user_id])
+        ) {
+            continue;
+        }
+
+        $existing = $students[$simulation_user_id]['current'];
+        $simulation_updated_at = (string)$simulation_row['updated_at'];
+
+        // 같은 저장 시각이면 이미 선택한 항목을 유지한다.
+        if (
+            $existing !== null &&
+            strcmp(
+                (string)$existing['updated_at'],
+                $simulation_updated_at
+            ) >= 0
+        ) {
+            continue;
+        }
+
+        $students[$simulation_user_id]['current'] = array(
+            'source_kind' => 'simulation',
+            'activity_id' => intval($simulation_row['activity_id']),
+            'activity_title' => (string)$simulation_row['activity_title'],
+            'lesson_no' => intval($simulation_row['lesson_no']),
+            'lesson_title' => (string)$simulation_row['lesson_title'],
+            'contest_id' => 0,
+            'contest_title' =>
+                '시뮬레이션 · ' . (string)$simulation_row['lesson_title'],
+            'problem_id' => 0,
+            'problem_num' => 0,
+            'problem_label' =>
+                '활동 ' . intval($simulation_row['activity_id']),
+            'problem_title' => (string)$simulation_row['activity_title'],
+            'language' => -1,
+            'language_name' => 'JavaScript · p5.js',
+            'updated_at' => $simulation_updated_at,
+            'active' =>
+                intval($simulation_row['age_seconds']) >= 0 &&
+                intval($simulation_row['age_seconds']) <= 120,
+        );
+    }
+}
+
+
 
 // ============================================================
 // 6. JSON용 배열 변환

@@ -53,6 +53,7 @@
             // 학생이 코드를 입력하면 textarea에도 즉시 반영한다.
             aceEditor.session.on("change", function () {
                 editor.value = aceEditor.getValue();
+                editor.dispatchEvent(new Event("input", { bubbles: true }));
             });
 
             editor.style.display = "none";
@@ -75,6 +76,8 @@
         if (aceEditor) {
             aceEditor.setValue(code, -1);
             aceEditor.focus();
+        } else {
+            editor.dispatchEvent(new Event("input", { bubbles: true }));
         }
     }
 
