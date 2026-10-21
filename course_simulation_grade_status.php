@@ -139,7 +139,10 @@ try {
             s.submission_id,
             g.grading_status,
             g.score,
-            g.max_score
+            g.max_score,
+            JSON_EXTRACT(
+                g.feedback_json, '$.result.metrics.region_comparison'
+            ) AS grade_region_comparison_json
          FROM course_simulation_submission s
          LEFT JOIN course_simulation_grade g
            ON g.grade_id = (
@@ -161,9 +164,24 @@ try {
         throw new RuntimeException('제출 결과 조회 실패');
     }
 
+    $simulation_escape = static function ($value) {
+        return htmlspecialchars(
+            (string)$value,
+            ENT_QUOTES | ENT_SUBSTITUTE,
+            'UTF-8'
+        );
+    };
+
     $results = array();
 
     foreach ($submissions as $submission) {
+        ob_start();
+        require(
+            __DIR__ .
+            '/template/syzoj/course_simulation_student_grade_details.php'
+        );
+        $region_html = ob_get_clean();
+
         $results[] = array(
             // 큰 정수 식별자는 문자열로 전달한다.
             'submission_id' => (string)$submission['submission_id'],
@@ -172,6 +190,7 @@ try {
                 ? null : (string)$submission['score'],
             'max_score' => $submission['max_score'] === null
                 ? null : (string)$submission['max_score'],
+            'region_html' => $region_html,
         );
     }
 

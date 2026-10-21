@@ -103,6 +103,22 @@
             return {label: label, score: scoreText};
         }
 
+        function regionPresentation(item) {
+            if (typeof item.region_html !== "string" ||
+                item.region_html.length > 131072) {
+                throw new Error("잘못된 영역별 결과");
+            }
+
+            // 본인 제출 권한 검사를 거쳐 서버에서 만든 표시 내용이다.
+            var fragment = document.createElement("template");
+            fragment.innerHTML = item.region_html;
+
+            return {
+                html: item.region_html,
+                fragment: fragment.content
+            };
+        }
+
         async function poll() {
             if (!enabled || suspended || document.hidden ||
                 inFlight || !hasPending()) return;
@@ -152,11 +168,18 @@
                     }
                     returned.add(item.submission_id);
                     var view = presentation(item);
+                    var regionView = regionPresentation(item);
                     if (rows.has(item.submission_id)) {
+                        if (!rows.get(item.submission_id).querySelector(
+                            "[data-grade-region-result]"
+                        )) {
+                            throw new Error("영역별 결과 표시 위치 없음");
+                        }
                         updates.push({
                             row: rows.get(item.submission_id),
                             item: item,
-                            view: view
+                            view: view,
+                            regionView: regionView
                         });
                     }
                 });
@@ -187,6 +210,38 @@
                     row.dataset.gradeState = update.item.grading_status;
                     statusCell.textContent = update.view.label;
                     scoreCell.textContent = update.view.score;
+
+                    var regionCell = row.querySelector(
+                        "[data-grade-region-result]"
+                    );
+
+                    if (row.dataset.regionResultHtml !==
+                        update.regionView.html) {
+                        var oldDetails = regionCell.querySelector("details");
+                        var wasOpen = oldDetails && oldDetails.open;
+                        var hadFocus = regionCell.contains(
+                            document.activeElement
+                        );
+
+                        regionCell.replaceChildren(
+                            update.regionView.fragment
+                        );
+
+                        var newDetails = regionCell.querySelector("details");
+                        if (newDetails) {
+                            newDetails.open = Boolean(wasOpen);
+
+                            if (hadFocus) {
+                                var summary = newDetails.querySelector(
+                                    "summary"
+                                );
+                                if (summary) summary.focus();
+                            }
+                        }
+
+                        row.dataset.regionResultHtml = update.regionView.html;
+                        changed = true;
+                    }
                 });
                 failures = 0;
                 delay = changed ? 2000 : Math.min(10000, delay + 1000);

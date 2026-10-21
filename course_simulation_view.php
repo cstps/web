@@ -210,7 +210,10 @@ if ($is_student) {
             s.submitted_at,
             g.grading_status,
             g.score AS grade_score,
-            g.max_score AS grade_max_score
+            g.max_score AS grade_max_score,
+            JSON_EXTRACT(
+                g.feedback_json, '$.result.metrics.region_comparison'
+            ) AS grade_region_comparison_json
          FROM course_simulation_submission s
          LEFT JOIN course_simulation_grade g
            ON g.grade_id = (

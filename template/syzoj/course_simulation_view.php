@@ -155,8 +155,9 @@ $canvas_height = intval($view_simulation['canvas_height']);
         <?php if ($simulation_mode === 'drawing') { ?>
 
             <div class="ui warning message">
-                그림 문제 자동채점은 현재 개발 중입니다.
-                이 화면에서는 아직 점수를 산출하지 않습니다.
+                정답이 등록된 그림 문제는 제출 후 서버에서 자동 채점합니다.
+                점수와 영역별 결과는 아래 제출 이력에서 확인할 수 있습니다.
+                비교 지표만 저장하는 정답 버전은 점수를 산정하지 않습니다.
             </div>
 
         <?php } ?>
@@ -467,6 +468,7 @@ $canvas_height = intval($view_simulation['canvas_height']);
                                 <th>제출 일시</th>
                                 <th>채점 상태</th>
                                 <th>점수</th>
+                                <th>채점 상세</th>
                                 <th>기능</th>
                             </tr>
                         </thead>
@@ -584,6 +586,13 @@ $canvas_height = intval($view_simulation['canvas_height']);
                                         <?php } ?>
                                     </td>
 
+                                    <td data-grade-region-result>
+                                        <?php require(
+                                            __DIR__ .
+                                            '/course_simulation_student_grade_details.php'
+                                        ); ?>
+                                    </td>
+
                                     <td>
 
                                         <?php if ($can_edit_code) { ?>
@@ -624,7 +633,7 @@ $canvas_height = intval($view_simulation['canvas_height']);
 
                     </table>
                     <script
-                        src="/template/syzoj/js/course-simulation-grade-status.js?v=1"
+                        src="/template/syzoj/js/course-simulation-grade-status.js?v=2"
                         defer
                     ></script>
 
