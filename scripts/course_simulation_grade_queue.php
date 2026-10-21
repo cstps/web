@@ -104,6 +104,10 @@ function simulation_enqueue_teacher_grade(
         );
     }
 
+    // 선택된 정답 버전의 목표 이미지와 영역 검사 기록을 확인한다.
+    require_once(__DIR__ . '/course_simulation_reference_readiness.php');
+    simulation_assert_reference_ready($connection, $reference);
+
     $feedback = array(
         'schema_version' => 1,
         'request' => array(

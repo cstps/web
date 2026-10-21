@@ -235,6 +235,7 @@ try {
 
     $saved_submission_id = (string)$dbh->lastInsertId();
     $simulation_grade_queued = false;
+    $simulation_reference_blocked = false;
 
     // 정답이 등록된 그림 그리기 활동만 자동 채점 대기 등록.
     // 제출과 채점 요청을 같은 트랜잭션으로 저장한다.
@@ -262,6 +263,18 @@ try {
         $reference_check->closeCursor();
 
         if ($reference) {
+            require_once(
+                __DIR__ .
+                '/scripts/course_simulation_reference_readiness.php'
+            );
+
+            try {
+                simulation_assert_reference_ready($dbh, $reference);
+            } catch (Throwable $readiness_error) {
+                $simulation_reference_blocked = true;
+                throw $readiness_error;
+            }
+
             // CLI 대기 등록과 같은 메타데이터 형식을 사용한다.
             $grade_feedback = array(
                 'schema_version' => 1,
@@ -335,8 +348,44 @@ try {
         $e->getMessage()
     );
 
-    $view_errors =
-        '<h2>시뮬레이션 코드 제출에 실패했습니다.</h2>';
+    if (!empty($simulation_reference_blocked)) {
+        http_response_code(409);
+
+        $view_errors =
+            '<h2>정답의 채점 준비 상태를 확인하지 못해 제출하지 않았습니다.</h2>' .
+            '<p>목표 이미지 생성 또는 영역 검사가 진행 중이거나, ' .
+            '교사의 정답 설정 확인이 필요합니다. 잠시 후 다시 시도하거나 ' .
+            '교사에게 문의해 주세요.</p>';
+    } else {
+        $view_errors =
+            '<h2>시뮬레이션 코드 제출에 실패했습니다.</h2>';
+    }
+
+    // DB 저장 실패와 별개로 학생이 보낸 코드를 복사할 수 있게 표시한다.
+    if (
+        isset($source_code) &&
+        is_string($source_code) &&
+        strlen($source_code) <= 200000
+    ) {
+        $preserved_code = htmlspecialchars(
+            $source_code,
+            ENT_QUOTES | ENT_SUBSTITUTE,
+            'UTF-8'
+        );
+
+        $view_errors .=
+            '<p>이번 요청은 제출 완료로 저장되지 않았습니다. ' .
+            '아래 코드를 복사해 보관한 뒤 활동 화면에서 다시 제출해 주세요.</p>' .
+            '<textarea readonly rows="16" spellcheck="false" ' .
+            'aria-label="제출하지 못한 입력 코드" ' .
+            'style="width:100%;box-sizing:border-box;font-family:monospace;">' .
+            $preserved_code .
+            '</textarea>' .
+            '<p><a target="_blank" rel="noopener" ' .
+            'href="course_simulation_view.php?activity_id=' .
+            intval($activity_id) .
+            '">활동 화면을 새 창으로 열기</a></p>';
+    }
 
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);

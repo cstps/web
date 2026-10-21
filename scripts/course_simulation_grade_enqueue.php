@@ -140,6 +140,10 @@ try {
         throw new RuntimeException('해당 활동의 정답을 찾을 수 없습니다.');
     }
 
+    // 선택된 정답 버전의 목표 이미지와 영역 검사 기록을 확인한다.
+    require_once(__DIR__ . '/course_simulation_reference_readiness.php');
+    simulation_assert_reference_ready($connection, $reference);
+
     $feedback = array(
         'schema_version' => 1,
         'request' => array(
