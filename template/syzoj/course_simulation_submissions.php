@@ -20,6 +20,8 @@ $lesson_title = $simulation_escape(
 );
 ?>
 
+<link rel="stylesheet" href="/template/syzoj/css/course-simulation-submission-history.css?v=1">
+
 <div class="ui main container"
      style="margin-top:2rem;margin-bottom:3rem;">
 
@@ -96,6 +98,7 @@ $lesson_title = $simulation_escape(
                             <th>학번</th>
                             <th>제출 횟수</th>
                             <th>최근 제출</th>
+                            <th>최근 제출 점수</th>
                             <th>제출 기록</th>
                         </tr>
                     </thead>
@@ -114,6 +117,63 @@ $lesson_title = $simulation_escape(
                         $submission_count = intval(
                             $student['submission_count']
                         );
+
+                        // 제출 기록은 제출 회차 내림차순으로 조회되어 있다.
+                        $latest_submission_for_summary =
+                            $student_history[0] ?? null;
+                        $latest_submission_grade_text = '-';
+
+                        if (is_array($latest_submission_for_summary)) {
+                            $latest_grade_state = (string)(
+                                $latest_submission_for_summary['grading_status']
+                                ?? ''
+                            );
+                            $latest_grade_score =
+                                $latest_submission_for_summary['grade_score']
+                                ?? null;
+                            $latest_grade_max =
+                                $latest_submission_for_summary['grade_max_score']
+                                ?? null;
+
+                            $latest_grade_valid = (
+                                $latest_grade_state === 'graded' &&
+                                is_numeric($latest_grade_score) &&
+                                is_numeric($latest_grade_max) &&
+                                is_finite((float)$latest_grade_score) &&
+                                is_finite((float)$latest_grade_max) &&
+                                (float)$latest_grade_score >= 0 &&
+                                (float)$latest_grade_max > 0 &&
+                                (float)$latest_grade_score <=
+                                    (float)$latest_grade_max
+                            );
+
+                            if ($latest_grade_valid) {
+                                $latest_submission_grade_text =
+                                    number_format(
+                                        (float)$latest_grade_score, 2, '.', ''
+                                    ) . ' / ' .
+                                    number_format(
+                                        (float)$latest_grade_max, 2, '.', ''
+                                    ) . '점';
+                            } elseif (
+                                $latest_grade_state === 'graded' &&
+                                $latest_grade_score === null &&
+                                $latest_grade_max === null
+                            ) {
+                                $latest_submission_grade_text = '미산정';
+                            } else {
+                                $latest_grade_labels = array(
+                                    '' => '채점 기록 없음',
+                                    'pending' => '채점 대기',
+                                    'running' => '채점 중',
+                                    'error' => '처리 오류',
+                                );
+
+                                $latest_submission_grade_text =
+                                    $latest_grade_labels[$latest_grade_state]
+                                    ?? '점수 확인 필요';
+                            }
+                        }
                         ?>
 
                         <tr>
@@ -153,10 +213,31 @@ $lesson_title = $simulation_escape(
                                 <?php } ?>
                             </td>
 
+                            <td
+                                class="simulation-latest-grade"
+                                data-latest-submission-id="<?php
+                                    echo $simulation_escape(
+                                        (string)(
+                                            $latest_submission_for_summary['submission_id']
+                                            ?? ''
+                                        )
+                                    );
+                                ?>"
+                            >
+                                <?php echo $simulation_escape(
+                                    $latest_submission_grade_text
+                                ); ?>
+                            </td>
+
                             <td>
                                 <?php if (!empty($student_history)) { ?>
 
-                                    <details>
+                                    <details
+                                        class="simulation-student-history"
+                                        data-student-id="<?php echo $simulation_escape(
+                                            $student_id
+                                        ); ?>"
+                                    >
                                         <summary>
                                             제출 기록 보기
                                         </summary>
@@ -305,8 +386,9 @@ $lesson_title = $simulation_escape(
 
 </div>
 
-<script src="/template/syzoj/js/course-simulation-submissions.js?v=1"></script>
-<script src="/template/syzoj/js/course-simulation-teacher-grade-status.js?v=1" defer></script>
+<script src="/template/syzoj/js/course-simulation-submissions.js?v=2"></script>
+<script src="/template/syzoj/js/course-simulation-submission-history.js?v=1" defer></script>
+<script src="/template/syzoj/js/course-simulation-teacher-grade-status.js?v=2" defer></script>
 
 <?php
 include("template/$OJ_TEMPLATE/footer.php");

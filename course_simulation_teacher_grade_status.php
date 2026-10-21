@@ -180,6 +180,10 @@ SQL;
             'submission_id' => (string)$submission['submission_id'],
             'grading_status' => (string)($submission['grading_status'] ?? ''),
             'html' => $html,
+            'score' => $submission['grade_score'] === null
+                ? null : (string)$submission['grade_score'],
+            'max_score' => $submission['grade_max_score'] === null
+                ? null : (string)$submission['grade_max_score'],
         );
     }
 

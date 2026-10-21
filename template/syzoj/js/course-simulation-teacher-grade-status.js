@@ -18,6 +18,16 @@
             }
         });
 
+        const latestCells = new Map();
+        document.querySelectorAll(
+            "[data-latest-submission-id]"
+        ).forEach(function (cell) {
+            const id = cell.dataset.latestSubmissionId || "";
+            if (/^[1-9][0-9]*$/.test(id)) {
+                latestCells.set(id, cell);
+            }
+        });
+
         let timer = null;
         let inFlight = false;
         let stopped = false;
@@ -34,6 +44,34 @@
         notice.hidden = true;
         const table = elements[0].closest("table");
         if (table) table.insertAdjacentElement("beforebegin", notice);
+
+        function latestGradeText(item) {
+            const labels = {
+                "": "채점 기록 없음",
+                pending: "채점 대기",
+                running: "채점 중",
+                graded: "미산정",
+                error: "처리 오류"
+            };
+
+            if (item.score === null && item.max_score === null) {
+                return labels[item.grading_status];
+            }
+
+            const pattern = /^(?:0|[1-9][0-9]{0,4})\.[0-9]{2}$/;
+
+            if (item.grading_status !== "graded" ||
+                typeof item.score !== "string" ||
+                typeof item.max_score !== "string" ||
+                !pattern.test(item.score) ||
+                !pattern.test(item.max_score) ||
+                Number(item.max_score) <= 0 ||
+                Number(item.score) > Number(item.max_score)) {
+                throw new Error("최근 제출 점수 형식 확인 실패");
+            }
+
+            return item.score + " / " + item.max_score + "점";
+        }
 
         function pendingNodes() {
             return Array.from(nodes.values()).filter(function (node) {
@@ -131,6 +169,7 @@
 
                 const seen = new Set();
                 const allowed = ["", "pending", "running", "graded", "error"];
+                const latestScores = new Map();
 
                 data.submissions.forEach(function (item) {
                     if (!item || typeof item.submission_id !== "string" ||
@@ -142,6 +181,10 @@
                         throw new Error("채점 결과 형식 확인 실패");
                     }
                     seen.add(item.submission_id);
+                    latestScores.set(
+                        item.submission_id,
+                        latestGradeText(item)
+                    );
                 });
 
                 let changed = false;
@@ -154,6 +197,14 @@
                     // 권한 검사 후 서버가 생성한 결과 표시 영역만 교체한다.
                     node.innerHTML = item.html;
                     node.dataset.gradeState = item.grading_status;
+
+                    // 해당 학생의 가장 최근 제출과 일치할 때만 갱신한다.
+                    const latestCell = latestCells.get(item.submission_id);
+                    if (latestCell) {
+                        latestCell.textContent = latestScores.get(
+                            item.submission_id
+                        );
+                    }
 
                     const segment = node.closest(".ui.segment");
                     const form = segment && segment.querySelector(

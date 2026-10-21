@@ -16,6 +16,16 @@
 
             const originalText = button.textContent;
 
+            function revealCode() {
+                let parent = codeElement.parentElement;
+                while (parent) {
+                    if (parent.tagName === "DETAILS") {
+                        parent.open = true;
+                    }
+                    parent = parent.parentElement;
+                }
+            }
+
             try {
                 if (
                     navigator.clipboard &&
@@ -25,17 +35,19 @@
                         codeElement.value
                     );
                 } else {
+                    revealCode();
                     codeElement.focus();
                     codeElement.select();
 
                     if (!document.execCommand("copy")) {
-                        throw new Error("copy failed");
+                        throw new Error("코드 복사 실패");
                     }
                 }
 
                 button.textContent = "복사 완료";
             } catch (error) {
-                codeElement.focus();
+                revealCode();
+                    codeElement.focus();
                 codeElement.select();
 
                 button.textContent =
