@@ -199,10 +199,23 @@ function simulation_edit_escape($value)
                     기본 p5.js 코드
                 </label>
 
+                <div
+                    id="simulation-starter-ace-editor"
+                    aria-label="기본 p5.js 코드 편집기"
+                    style="width:100%;height:260px;min-height:160px;max-height:80vh;resize:vertical;overflow:hidden;border:1px solid #cbd5e1;border-radius:4px;"
+                    hidden
+                ></div>
+
+                <p
+                    id="simulation-starter-editor-message"
+                    role="alert"
+                    hidden
+                ></p>
+
                 <textarea
                     id="starter_code"
                     name="starter_code"
-                    rows="20"
+                    rows="15"
                     spellcheck="false"
                     required
                     style="font-family: monospace; tab-size: 4;"
@@ -323,6 +336,11 @@ function simulation_edit_escape($value)
     </div>
 
 </div>
+
+<script src="/ace/ace.js"></script>
+<script src="/ace/mode-javascript.js"></script>
+<script src="/ace/theme-chrome.js"></script>
+<script src="/template/syzoj/js/course-simulation-edit.js?v=2"></script>
 
 <?php
 include("template/$OJ_TEMPLATE/footer.php");
