@@ -77,9 +77,11 @@ try {
 
     $exporter = $root_dir . '/scripts/course_simulation_render_reference.py';
     $renderer = $root_dir . '/scripts/course_simulation_render_grade.py';
+    $metrics_script = $root_dir . '/scripts/course_simulation_image_metrics.py';
+    $region_script = $root_dir . '/scripts/course_simulation_region_metrics.py';
     $p5_file = $root_dir . '/template/syzoj/js/vendor/p5.min.js';
 
-    foreach (array($exporter, $renderer, $p5_file) as $file) {
+    foreach (array($exporter, $renderer, $metrics_script, $region_script, $p5_file) as $file) {
         if (!is_readable($file)) {
             throw new RuntimeException('필요한 파일을 읽을 수 없습니다: ' . $file);
         }
@@ -124,6 +126,7 @@ try {
         'SELECT
             r.reference_id, r.activity_id, r.reference_no,
             r.source_code, r.canvas_width, r.canvas_height, r.p5_version,
+            r.grading_config, r.max_score,
             i.image_status, i.source_sha256
          FROM course_simulation_reference r
          INNER JOIN course_simulation_reference_image i
@@ -178,11 +181,63 @@ try {
         throw new RuntimeException('현재 400×400, p5.js 2.3.4만 지원합니다.');
     }
 
+    $grading_config = json_decode(
+        $reference['grading_config'],
+        true
+    );
+
+    if (!is_array($grading_config)) {
+        throw new RuntimeException('정답 채점 설정이 올바르지 않습니다.');
+    }
+
+    $image_scoring_mode =
+        $grading_config['scoring_mode'] ?? 'metrics_only';
+
+    if (
+        !is_string($image_scoring_mode) ||
+        !in_array(
+            $image_scoring_mode,
+            array('metrics_only', 'whole_image', 'regions'),
+            true
+        )
+    ) {
+        throw new RuntimeException('지원하지 않는 점수 산정 방식입니다.');
+    }
+
+    if ($image_scoring_mode === 'regions') {
+        require_once(
+            $root_dir . '/scripts/course_simulation_region_result.php'
+        );
+
+        if (
+            ($grading_config['metric'] ?? '') !==
+                'symmetric_foreground_color_coverage' ||
+            ($grading_config['neighborhood'] ?? '') !== 'euclidean_disk' ||
+            ($grading_config['scoring_method'] ?? '') !==
+                'region_coverage_linear_v1' ||
+            !is_int($grading_config['position_tolerance_px'] ?? null) ||
+            $grading_config['position_tolerance_px'] < 0 ||
+            $grading_config['position_tolerance_px'] > 10 ||
+            ($grading_config['color_tolerance'] ?? null) !== 0
+        ) {
+            throw new RuntimeException('영역별 채점 설정이 올바르지 않습니다.');
+        }
+
+        $grading_config['regions'] = simulation_validate_region_config(
+            $grading_config['regions'] ?? null,
+            (string)$reference['max_score'],
+            400,
+            400
+        );
+    }
+
     $payload = array(
         'activity_id' => (int)$reference['activity_id'],
         'reference_id' => (int)$reference['reference_id'],
         'reference_no' => (int)$reference['reference_no'],
         'reference_code' => (string)$reference['source_code'],
+        'grading_config' => $grading_config,
+        'reference_max_score' => (string)$reference['max_score'],
         'canvas_width' => 400,
         'canvas_height' => 400,
         'p5_version' => '2.3.4',
@@ -241,6 +296,8 @@ try {
             '--tmpfs', '/tmp:rw,nosuid,nodev,size=256m',
             '-v', $exporter . ':/work/course_simulation_render_reference.py:ro',
             '-v', $renderer . ':/work/course_simulation_render_grade.py:ro',
+            '-v', $metrics_script . ':/work/course_simulation_image_metrics.py:ro',
+            '-v', $region_script . ':/work/course_simulation_region_metrics.py:ro',
             '-v', $p5_file . ':/work/p5.min.js:ro',
             '-v', $input_file . ':/work/input.json:ro',
             '-v', $temp_dir . '/output:/output:rw',
@@ -325,6 +382,56 @@ try {
         $safe_metadata[$key] = $metadata[$key];
     }
     $safe_metadata['docker_image'] = $image_name;
+    $safe_metadata['grading_config_sha256'] = hash(
+        'sha256',
+        $reference['grading_config']
+    );
+
+    if ($image_scoring_mode === 'regions') {
+        $validation = $metadata['region_validation'] ?? null;
+
+        if (!is_array($validation)) {
+            throw new RuntimeException(
+                '정답 그림의 영역 검사 결과가 없습니다.'
+            );
+        }
+
+        $validated_regions = simulation_validate_region_result(
+            $validation['comparison'] ?? null,
+            $grading_config['regions'],
+            (string)$reference['max_score'],
+            $grading_config['position_tolerance_px'],
+            $validation['tolerance'] ?? null
+        );
+
+        if (
+            (float)$validated_regions['final_coverage'] !== 100.0 ||
+            $validated_regions['outside_student_foreground'] !== 0
+        ) {
+            throw new RuntimeException(
+                '정답 그림이 영역 설정을 충족하지 않습니다.'
+            );
+        }
+
+        $safe_metadata['region_validation'] = array(
+            'status' => 'valid',
+            'comparison' => $validated_regions,
+        );
+
+        $safe_metadata['region_validation_scripts'] = array(
+            'exporter_sha256' => hash_file('sha256', $exporter),
+            'metrics_sha256' => hash_file('sha256', $metrics_script),
+            'regions_sha256' => hash_file('sha256', $region_script),
+            'config_validator_sha256' => hash_file(
+                'sha256',
+                $root_dir . '/scripts/course_simulation_region_config.php'
+            ),
+            'result_validator_sha256' => hash_file(
+                'sha256',
+                $root_dir . '/scripts/course_simulation_region_result.php'
+            ),
+        );
+    }
 
     $metadata_json = json_encode(
         $safe_metadata,

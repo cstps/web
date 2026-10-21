@@ -31,6 +31,67 @@ def positive_integer(payload: dict, key: str) -> int:
     return value
 
 
+def validate_reference_regions(pixels, payload: dict):
+    config = payload.get("grading_config")
+
+    # 기존 목표 이미지 생성 요청도 계속 지원한다.
+    if config is None:
+        return None
+
+    if not isinstance(config, dict):
+        raise RuntimeError("채점 설정은 JSON 객체여야 합니다.")
+
+    mode = config.get("scoring_mode", "metrics_only")
+    if mode not in ("metrics_only", "whole_image", "regions"):
+        raise RuntimeError("지원하지 않는 점수 산정 방식입니다.")
+
+    if mode != "regions":
+        return None
+
+    if (
+        config.get("metric") != "symmetric_foreground_color_coverage"
+        or config.get("neighborhood") != "euclidean_disk"
+        or config.get("scoring_method") != "region_coverage_linear_v1"
+    ):
+        raise RuntimeError("지원하지 않는 영역별 채점 설정입니다.")
+
+    max_score = payload.get("reference_max_score")
+    if not isinstance(max_score, str):
+        raise RuntimeError("영역 검사에 필요한 전체 배점이 없습니다.")
+
+    from course_simulation_image_metrics import (
+        symmetric_foreground_color_coverage,
+    )
+    from course_simulation_region_metrics import (
+        weighted_region_color_coverage,
+    )
+
+    # 정답 그림 자체를 비교하여 영역 구성의 유효성을 검사한다.
+    comparison = weighted_region_color_coverage(
+        pixels,
+        pixels,
+        regions=config.get("regions"),
+        max_score=max_score,
+        position_tolerance_px=config.get("position_tolerance_px"),
+        color_tolerance=config.get("color_tolerance"),
+    )
+
+    tolerance = symmetric_foreground_color_coverage(
+        pixels,
+        pixels,
+        position_tolerance_px=config.get("position_tolerance_px"),
+        color_tolerance=config.get("color_tolerance"),
+    )
+
+    if comparison["final_coverage"] != 100.0:
+        raise RuntimeError("정답 그림의 영역별 충족률이 100%가 아닙니다.")
+
+    return {
+        "comparison": comparison,
+        "tolerance": tolerance,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="정답 코드에서 학생용 목표 PNG 생성"
@@ -95,6 +156,9 @@ def main() -> None:
         finally:
             browser.close()
 
+    # 영역 검사가 실패하면 PNG 파일을 생성하지 않는다.
+    region_validation = validate_reference_regions(pixels, payload)
+
     buffer = BytesIO()
     Image.fromarray(pixels).save(buffer, format="PNG")
     png = buffer.getvalue()
@@ -128,7 +192,10 @@ def main() -> None:
         "elapsed_seconds": time.perf_counter() - started,
     }
 
-    print(json.dumps(result, ensure_ascii=False))
+    if region_validation is not None:
+        result["region_validation"] = region_validation
+
+    print(json.dumps(result, ensure_ascii=False, allow_nan=False))
 
 
 if __name__ == "__main__":
