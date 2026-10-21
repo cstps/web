@@ -10,7 +10,7 @@ function simulation_reference_escape($value)
     );
 }
 ?>
-<link rel="stylesheet" href="/template/syzoj/css/course-simulation-reference.css?v=3">
+<link rel="stylesheet" href="/template/syzoj/css/course-simulation-reference.css?v=4">
 <div class="ui container">
     <h2 class="ui header">그림 문제 정답 관리</h2>
 
@@ -300,6 +300,7 @@ function simulation_reference_escape($value)
 <script src="/ace/theme-chrome.js"></script>
 <script src="/template/syzoj/js/course-simulation-reference.js?v=1"></script>
 <script src="/template/syzoj/js/course-simulation-reference-regions.js?v=1"></script>
+<script src="/template/syzoj/js/course-simulation-reference-region-overlay.js?v=2"></script>
 <script src="/template/syzoj/js/course-simulation-reference-image-status.js?v=1"></script>
 <script src="/template/syzoj/js/course-simulation-reference-preview.js?v=1"></script>
 <?php include("template/$OJ_TEMPLATE/footer.php"); ?>
