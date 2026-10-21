@@ -22,8 +22,8 @@ function simulation_reference_escape($value)
     </p>
 
     <div class="ui info message">
-        <p>정답 코드는 저장만 하며 이 화면에서는 실행하지 않습니다.</p>
-        <p>저장할 때마다 새 버전을 추가합니다. 공식 채점은 아직 연결되지 않았습니다.</p>
+        <p>정답을 저장하면 새 버전을 추가하고 서버에서 목표 이미지를 생성합니다.</p>
+        <p>학생 제출은 제출 시 선택된 정답 버전과 점수 산정 방식으로 자동 채점합니다.</p>
         <p>실행 조건: 캔버스 400×400, p5.js 2.3.4, 픽셀 밀도 1, 흰 배경</p>
     </div>
 
@@ -32,6 +32,10 @@ function simulation_reference_escape($value)
             새 정답 버전을 저장했습니다.
         </div>
     <?php endif; ?>
+
+    <?php require(
+        __DIR__ . '/course_simulation_reference_image_status.php'
+    ); ?>
 
     <form class="ui form" method="post"
           action="course_simulation_reference.php">
@@ -296,5 +300,6 @@ function simulation_reference_escape($value)
 <script src="/ace/theme-chrome.js"></script>
 <script src="/template/syzoj/js/course-simulation-reference.js?v=1"></script>
 <script src="/template/syzoj/js/course-simulation-reference-regions.js?v=1"></script>
+<script src="/template/syzoj/js/course-simulation-reference-image-status.js?v=1"></script>
 <script src="/template/syzoj/js/course-simulation-reference-preview.js?v=1"></script>
 <?php include("template/$OJ_TEMPLATE/footer.php"); ?>

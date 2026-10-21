@@ -378,14 +378,29 @@ if ($method === 'POST') {
 
 $reference_rows = pdo_query(
     "SELECT
-        reference_no,
-        source_code,
-        max_score,
-        grading_config,
-        created_at
-     FROM course_simulation_reference
-     WHERE activity_id = ?
-     ORDER BY reference_no DESC
+        r.reference_id,
+        r.reference_no,
+        r.source_code,
+        r.max_score,
+        r.grading_config,
+        r.created_at,
+        i.image_status,
+        i.generated_at AS image_generated_at,
+        CASE
+            WHEN i.source_sha256 = LOWER(SHA2(r.source_code, 256))
+            THEN 1 ELSE 0
+        END AS image_source_matches,
+        JSON_UNQUOTE(JSON_EXTRACT(
+            i.render_metadata, '$.region_validation.status'
+        )) AS image_region_validation,
+        JSON_UNQUOTE(JSON_EXTRACT(
+            i.render_metadata, '$.grading_config_sha256'
+        )) AS image_grading_config_sha256
+     FROM course_simulation_reference r
+     LEFT JOIN course_simulation_reference_image i
+       ON i.reference_id = r.reference_id
+     WHERE r.activity_id = ?
+     ORDER BY r.reference_no DESC
      LIMIT 1",
     $activity_id
 );
@@ -457,6 +472,51 @@ if ($view_reference_scoring_mode === 'regions') {
             500
         );
     }
+}
+
+// 기존 교사 권한 검사를 통과한 요청에만 상태를 반환한다.
+if (($_GET['image_status'] ?? null) === '1') {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store, private');
+    header('X-Content-Type-Options: nosniff');
+
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+
+    if (!function_exists('simulation_reference_escape')) {
+        function simulation_reference_escape($value)
+        {
+            return htmlspecialchars(
+                (string)$value,
+                ENT_QUOTES | ENT_SUBSTITUTE,
+                'UTF-8'
+            );
+        }
+    }
+
+    ob_start();
+    require(
+        __DIR__ .
+        '/template/syzoj/course_simulation_reference_image_status.php'
+    );
+    $image_status_html = ob_get_clean();
+
+    echo json_encode(
+        array(
+            'ok' => true,
+            'reference_no' => (string)$view_reference['reference_no'],
+            'image_status' => (string)(
+                $view_reference['image_status'] ?? ''
+            ),
+            'html' => $image_status_html,
+        ),
+        JSON_UNESCAPED_UNICODE |
+        JSON_UNESCAPED_SLASHES |
+        JSON_INVALID_UTF8_SUBSTITUTE |
+        JSON_THROW_ON_ERROR
+    );
+    exit;
 }
 
 require(
