@@ -193,7 +193,10 @@ $history_rows = pdo_query(
         )) AS grade_tolerance_coverage,
         JSON_UNQUOTE(JSON_EXTRACT(
             g.feedback_json, '$.result.metrics.tolerance.position_tolerance_px'
-        )) AS grade_tolerance_radius
+        )) AS grade_tolerance_radius,
+        JSON_EXTRACT(
+            g.feedback_json, '$.result.metrics.region_comparison'
+        ) AS grade_region_comparison_json
      FROM course_simulation_submission s
      INNER JOIN course_student cs
        ON cs.course_id = ?

@@ -255,6 +255,32 @@ def render_and_compare(
             color_tolerance=config.get("color_tolerance"),
         )
 
+        scoring_mode = config.get("scoring_mode", "metrics_only")
+        if scoring_mode not in ("metrics_only", "whole_image", "regions"):
+            raise RuntimeError("지원하지 않는 점수 산정 방식입니다.")
+
+        if scoring_mode == "regions":
+            if config.get("scoring_method") != "region_coverage_linear_v1":
+                raise RuntimeError("지원하지 않는 영역별 점수 산정 규칙입니다.")
+
+            reference_max_score = payload.get("reference_max_score")
+            if not isinstance(reference_max_score, str):
+                raise RuntimeError("영역별 비교에 필요한 전체 배점이 없습니다.")
+
+            from course_simulation_region_metrics import (
+                weighted_region_color_coverage,
+            )
+
+            metrics["region_comparison"] = weighted_region_color_coverage(
+                reference,
+                student,
+                regions=config.get("regions"),
+                max_score=reference_max_score,
+                position_tolerance_px=config.get("position_tolerance_px"),
+                color_tolerance=config.get("color_tolerance"),
+            )
+
+
     elapsed = time.perf_counter() - started
 
     return metrics, elapsed

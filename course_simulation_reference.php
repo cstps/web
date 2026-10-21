@@ -163,7 +163,7 @@ if ($method === 'POST') {
         !is_string($radius) ||
         !in_array($radius, array('0', '1', '2'), true) ||
         !is_string($scoring_mode) ||
-        !in_array($scoring_mode, array('metrics_only', 'whole_image'), true) ||
+        !in_array($scoring_mode, array('metrics_only', 'whole_image', 'regions'), true) ||
         !is_string($max_score) ||
         !preg_match('/^[0-9]{1,5}(?:\.[0-9]{1,2})?$/D', $max_score)
     ) {
@@ -193,7 +193,7 @@ if ($method === 'POST') {
         'background_rgb' => array(255, 255, 255)
     ), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
-    $grading_config = json_encode(array(
+    $grading_settings = array(
         'schema_version' => 1,
         'experimental' => true,
         'metric' => 'symmetric_foreground_color_coverage',
@@ -204,7 +204,41 @@ if ($method === 'POST') {
         'scoring_method' => $scoring_mode === 'whole_image'
             ? 'coverage_linear_v1'
             : null
-    ), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    );
+
+    if ($scoring_mode === 'regions') {
+        require_once(
+            __DIR__ . '/scripts/course_simulation_region_config.php'
+        );
+
+        try {
+            $grading_settings['regions'] =
+                simulation_validate_region_config(
+                    $_POST['regions'] ?? null,
+                    $normalized_score,
+                    400,
+                    400
+                );
+        } catch (Throwable $e) {
+            error_log(
+                '[simulation_reference_regions] ' . $e->getMessage()
+            );
+
+            simulation_reference_error(
+                '영역 설정이 올바르지 않습니다. 영역 이름·좌표·크기·배점을 ' .
+                '확인해 주세요. 영역은 서로 겹치지 않아야 하며, ' .
+                '영역별 배점 합계는 전체 배점과 일치해야 합니다.'
+            );
+        }
+
+        $grading_settings['scoring_method'] =
+            'region_coverage_linear_v1';
+    }
+
+    $grading_config = json_encode(
+        $grading_settings,
+        JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+    );
 
     global $dbh;
     $transaction_started = false;
@@ -379,13 +413,50 @@ if (
     !is_string($view_reference_scoring_mode) ||
     !in_array(
         $view_reference_scoring_mode,
-        array('metrics_only', 'whole_image'),
+        array('metrics_only', 'whole_image', 'regions'),
         true
     )
 ) {
     simulation_reference_error(
         '지원하지 않는 점수 산정 방식이 저장돼 있습니다.'
     );
+}
+
+// 저장된 영역 설정을 검증한 뒤 교사용 입력 표에 전달한다.
+$view_reference_regions = array();
+
+if ($view_reference_scoring_mode === 'regions') {
+    require_once(
+        __DIR__ . '/scripts/course_simulation_region_config.php'
+    );
+
+    if (
+        ($config['scoring_method'] ?? '') !==
+        'region_coverage_linear_v1'
+    ) {
+        simulation_reference_error(
+            '지원하지 않는 영역별 점수 계산 방식이 저장돼 있습니다.',
+            500
+        );
+    }
+
+    try {
+        $view_reference_regions = simulation_validate_region_config(
+            $config['regions'] ?? null,
+            (string)$view_reference['max_score'],
+            400,
+            400
+        );
+    } catch (Throwable $e) {
+        error_log(
+            '[simulation_reference_regions_load] ' . $e->getMessage()
+        );
+
+        simulation_reference_error(
+            '저장된 영역 설정을 불러오지 못했습니다.',
+            500
+        );
+    }
 }
 
 require(

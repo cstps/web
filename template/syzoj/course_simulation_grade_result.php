@@ -109,7 +109,7 @@ if (
                                                         <p>
                                                             <?php if ($tolerance_valid) { ?>
                                                                 <span class="ui blue basic label">
-                                                                    허용 오차 충족률:
+                                                                    전체 그림 허용 오차 충족률:
                                                                     <?php echo $simulation_escape(
                                                                         number_format(
                                                                             (float)$tolerance_value,
@@ -190,6 +190,12 @@ if (
                                                                 점수 정보 확인이 필요합니다.
                                                             <?php } ?>
                                                         </p>
+                                                    <?php
+                                                        require(
+                                                            __DIR__ .
+                                                            '/course_simulation_region_grade_result.php'
+                                                        );
+                                                    ?>
                                                     <?php } elseif ($grade_status === 'error') { ?>
                                                         <p>
                                                             코드 실행 또는 그림 비교 처리 중

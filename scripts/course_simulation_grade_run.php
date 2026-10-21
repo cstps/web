@@ -98,9 +98,10 @@ try {
 
     $python_script = $root_dir . '/scripts/course_simulation_render_grade.py';
     $metrics_script = $root_dir . '/scripts/course_simulation_image_metrics.py';
+    $region_script = $root_dir . '/scripts/course_simulation_region_metrics.py';
     $p5_file = $root_dir . '/template/syzoj/js/vendor/p5.min.js';
 
-    foreach (array($python_script, $metrics_script, $p5_file) as $file) {
+    foreach (array($python_script, $metrics_script, $region_script, $p5_file) as $file) {
         if (!is_readable($file)) {
             throw new RuntimeException('필요한 파일을 읽을 수 없습니다: ' . $file);
         }
@@ -269,7 +270,7 @@ try {
 
     if (
         !is_string($scoring_mode) ||
-        !in_array($scoring_mode, array('metrics_only', 'whole_image'), true)
+        !in_array($scoring_mode, array('metrics_only', 'whole_image', 'regions'), true)
     ) {
         throw new RuntimeException('지원하지 않는 점수 산정 방식입니다.');
     }
@@ -287,6 +288,32 @@ try {
         );
     }
 
+    if ($scoring_mode === 'regions') {
+        if (
+            ($grading_config['scoring_method'] ?? '') !==
+            'region_coverage_linear_v1'
+        ) {
+            throw new RuntimeException(
+                '지원하지 않는 영역별 점수 계산 방식입니다.'
+            );
+        }
+
+        require_once(
+            $root_dir . '/scripts/course_simulation_region_result.php'
+        );
+        require_once(
+            $root_dir . '/include/course_simulation_scoring.inc.php'
+        );
+
+        // 해시 검사를 마친 정답 버전의 설정을 검증하고 정규화한다.
+        $grading_config['regions'] = simulation_validate_region_config(
+            $grading_config['regions'] ?? null,
+            (string)$reference['max_score'],
+            400,
+            400
+        );
+    }
+
     $payload = array(
         'activity_id' => (int)$submission['activity_id'],
         'reference_no' => (int)$reference['reference_no'],
@@ -297,6 +324,7 @@ try {
         'canvas_width' => 400,
         'canvas_height' => 400,
         'grading_config' => $grading_config,
+        'reference_max_score' => (string)$reference['max_score'],
     );
 
     foreach (array('input', 'output', 'error') as $label) {
@@ -353,6 +381,7 @@ try {
         '--tmpfs', '/tmp:rw,nosuid,nodev,size=256m',
         '-v', $python_script . ':/work/course_simulation_render_grade.py:ro',
         '-v', $metrics_script . ':/work/course_simulation_image_metrics.py:ro',
+        '-v', $region_script . ':/work/course_simulation_region_metrics.py:ro',
         '-v', $p5_file . ':/work/p5.min.js:ro',
         '-v', $temp_files['input'] . ':/work/input.json:ro',
         '--entrypoint', 'python',
@@ -499,6 +528,16 @@ try {
 
     $metrics['tolerance'] = $validated_tolerance;
 
+    if ($scoring_mode === 'regions') {
+        $metrics['region_comparison'] = simulation_validate_region_result(
+            $result['metrics']['region_comparison'] ?? null,
+            $grading_config['regions'],
+            (string)$reference['max_score'],
+            $grading_config['position_tolerance_px'],
+            $validated_tolerance
+        );
+    }
+
     $elapsed = isset($result['elapsed_seconds']) ? $result['elapsed_seconds'] : null;
     if ((!is_int($elapsed) && !is_float($elapsed)) ||
         !is_finite((float)$elapsed) || $elapsed < 0) {
@@ -532,6 +571,43 @@ try {
             'scoring_script_sha256' => hash_file(
                 'sha256',
                 $root_dir . '/include/course_simulation_scoring.inc.php'
+            ),
+        );
+    }
+
+    if ($scoring_mode === 'regions') {
+        $region_coverage =
+            $metrics['region_comparison']['final_coverage'];
+
+        $calculated_score = course_simulation_calculate_score(
+            $region_coverage,
+            (string)$reference['max_score']
+        );
+
+        $score_value = $calculated_score['score'];
+        $max_score_value = $calculated_score['max_score'];
+
+        $feedback['scoring'] = array(
+            'mode' => 'regions',
+            'method' => 'region_coverage_linear_v1',
+            'coverage_used' => $region_coverage,
+            'score' => $score_value,
+            'max_score' => $max_score_value,
+            'scoring_script_sha256' => hash_file(
+                'sha256',
+                $root_dir . '/include/course_simulation_scoring.inc.php'
+            ),
+            'region_metrics_script_sha256' => hash_file(
+                'sha256',
+                $region_script
+            ),
+            'region_config_script_sha256' => hash_file(
+                'sha256',
+                $root_dir . '/scripts/course_simulation_region_config.php'
+            ),
+            'region_result_script_sha256' => hash_file(
+                'sha256',
+                $root_dir . '/scripts/course_simulation_region_result.php'
             ),
         );
     }

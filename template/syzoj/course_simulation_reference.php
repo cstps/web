@@ -103,6 +103,7 @@ function simulation_reference_escape($value)
                     <?php foreach (array(
                         'metrics_only' => '비교 지표만 저장',
                         'whole_image' => '전체 그림 충족률로 점수 산정',
+                        'regions' => '영역별 배점으로 점수 산정',
                     ) as $mode_value => $mode_label): ?>
                         <option
                             value="<?= simulation_reference_escape($mode_value) ?>"
@@ -140,10 +141,146 @@ function simulation_reference_escape($value)
 
         <p>
             비교 지표만 저장하면 점수를 산정하지 않습니다.
-            전체 그림 방식은 허용 오차 충족률에 배점을 곱해 점수를 산정하며,
-            단일 도형 문제에 적합합니다.
+            전체 그림 방식은 전체 충족률로, 영역별 방식은 각 영역의
+            충족률과 배점으로 점수를 산정합니다.
             선택한 방식은 새 정답 버전에 저장됩니다.
         </p>
+
+        <fieldset
+            id="reference-regions"
+            class="ui segment"
+            <?= $view_reference_scoring_mode !== 'regions'
+                ? 'hidden disabled' : '' ?>
+        >
+            <legend>영역별 배점 설정</legend>
+
+            <p>
+                좌표는 캔버스 왼쪽 위가 (0, 0)입니다.
+                영역은 서로 겹치지 않아야 하며,
+                모든 정답 도형이 영역 안에 포함되어야 합니다.
+                도형 주변에는 위치 허용 반경 이상의 여백을 두세요.
+                영역 밖에 추가한 도형도 감점에 반영됩니다.
+            </p>
+
+            <p>
+                도형 포함 여부와 여백은 렌더링된 그림으로 확인해야 합니다.
+                저장 후 동일한 정답 코드로 시험 제출하여
+                채점 결과를 확인해 주세요.
+            </p>
+
+            <?php
+            $region_form_rows = $view_reference_regions;
+            if (empty($region_form_rows)) {
+                $region_form_rows = array(array(
+                    'id' => 'region_1',
+                    'label' => '',
+                    'x' => 0,
+                    'y' => 0,
+                    'width' => 100,
+                    'height' => 100,
+                    'max_score' => ''
+                ));
+            }
+
+            $region_fields = array(
+                'label' => '영역 이름',
+                'x' => '왼쪽 좌표',
+                'y' => '위쪽 좌표',
+                'width' => '너비',
+                'height' => '높이',
+                'max_score' => '영역 배점'
+            );
+            ?>
+
+            <div style="overflow-x:auto;">
+                <table class="ui compact table">
+                    <thead>
+                        <tr>
+                            <th>영역 이름</th>
+                            <th>왼쪽 x</th>
+                            <th>위쪽 y</th>
+                            <th>너비</th>
+                            <th>높이</th>
+                            <th>배점</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reference-region-rows">
+                        <?php foreach ($region_form_rows as $region_index => $region): ?>
+                            <tr>
+                                <?php foreach ($region_fields as $field_key => $field_label): ?>
+                                    <td>
+                                        <?php if ($field_key === 'label'): ?>
+                                            <input
+                                                type="hidden"
+                                                data-region-key="id"
+                                                name="regions[<?= intval($region_index) ?>][id]"
+                                                value="<?= simulation_reference_escape($region['id']) ?>"
+                                            >
+                                        <?php endif; ?>
+                                        <input
+                                            data-region-key="<?= $field_key ?>"
+                                            style="min-width:<?= $field_key === 'label'
+                                                ? '140px'
+                                                : ($field_key === 'max_score'
+                                                    ? '110px' : '90px') ?>;"
+                                            name="regions[<?= intval($region_index) ?>][<?= $field_key ?>]"
+                                            aria-label="<?= $field_label ?>"
+                                            value="<?= simulation_reference_escape(
+                                                (string)$region[$field_key]
+                                            ) ?>"
+                                            required
+                                            <?php if ($field_key === 'label'): ?>
+                                                type="text" maxlength="80"
+                                            <?php elseif ($field_key === 'max_score'): ?>
+                                                type="number"
+                                                min="0.01" max="99999.99" step="0.01"
+                                            <?php else: ?>
+                                                type="number"
+                                                min="<?= in_array(
+                                                    $field_key,
+                                                    array('width', 'height'),
+                                                    true
+                                                ) ? 1 : 0 ?>"
+                                                max="<?= in_array(
+                                                    $field_key,
+                                                    array('width', 'height'),
+                                                    true
+                                                ) ? 400 : 399 ?>"
+                                                step="1"
+                                            <?php endif; ?>
+                                        >
+                                    </td>
+                                <?php endforeach; ?>
+                                <td>
+                                    <button
+                                        type="button"
+                                        class="ui mini basic red button"
+                                        data-region-remove
+                                    >삭제</button>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <button
+                id="reference-region-add"
+                type="button"
+                class="ui small basic button"
+            >영역 추가</button>
+
+            <p
+                id="reference-region-message"
+                role="status"
+                aria-live="polite"
+            ></p>
+
+            <noscript>
+                영역 추가와 점수 산정 방식 변경에는 JavaScript가 필요합니다.
+            </noscript>
+        </fieldset>
 
         <button class="ui primary button" type="submit">
             새 정답 버전 저장
@@ -158,5 +295,6 @@ function simulation_reference_escape($value)
 <script src="/ace/mode-javascript.js"></script>
 <script src="/ace/theme-chrome.js"></script>
 <script src="/template/syzoj/js/course-simulation-reference.js?v=1"></script>
+<script src="/template/syzoj/js/course-simulation-reference-regions.js?v=1"></script>
 <script src="/template/syzoj/js/course-simulation-reference-preview.js?v=1"></script>
 <?php include("template/$OJ_TEMPLATE/footer.php"); ?>
