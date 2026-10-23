@@ -111,7 +111,7 @@ $header_is_course_manage_page =
                                     echo  "<a class='item' href='http://" .  $_SESSION[$OJ_NAME . '_' . 'user_id'] . ".$DOMAIN'><i class='globe icon' ></i>MyOJ</a>"; ?>
                             <?php } ?>
                             <?php if (isset($_SESSION[$OJ_NAME . '_' . 'administrator']) || isset($_SESSION[$OJ_NAME . '_' . 'contest_creator']) || isset($_SESSION[$OJ_NAME . '_' . 'problem_editor']) || isset($_SESSION[$OJ_NAME . '_' . 'password_setter'])) { ?>
-                                <a class="item" href="admin/"><i class="settings icon"></i><?php echo $MSG_ADMIN; ?></a>
+                                <a class="item" href="/admin/"><i class="settings icon"></i><?php echo $MSG_ADMIN; ?></a>
                             <?php } ?>
                             <a class="item" href="logout.php"><i class="power icon"></i><?php echo $MSG_LOGOUT; ?></a>
                         </div>
