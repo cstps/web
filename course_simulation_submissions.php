@@ -19,8 +19,20 @@ function simulation_submissions_error($message, $status = 400)
     http_response_code($status);
 
     $view_errors = '<h2>' .
-        htmlspecialchars($message, ENT_QUOTES, 'UTF-8') .
-        '</h2>';
+        htmlspecialchars(
+            $message,
+            ENT_QUOTES | ENT_SUBSTITUTE,
+            'UTF-8'
+        ) .
+        '</h2>' .
+        '<p><a class="ui basic button" href="/">홈으로 이동</a></p>';
+
+    // 함수 안에서 불러오는 공통 헤더에도 사이트 설정과 메뉴 문구를 전달한다.
+    // 함수의 인수와 이미 설정한 오류 내용은 덮어쓰지 않는다.
+    $simulation_error_context = $GLOBALS;
+    unset($simulation_error_context['GLOBALS']);
+    extract($simulation_error_context, EXTR_SKIP);
+    unset($simulation_error_context);
 
     require("template/".$OJ_TEMPLATE."/error.php");
     exit;
