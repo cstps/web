@@ -5,7 +5,8 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 require_once('./include/course_functions.inc.php');
-require_once('./scripts/course_simulation_draft_store.php');
+require_once('./scripts/course_simulation_scoped_draft_store.php');
+require_once('./scripts/course_simulation_performance_policy.php');
 require_once('./include/csrf_check.php');
 
 $view_title = '시뮬레이션 코드 임시 저장';
@@ -35,6 +36,7 @@ $user_id = (string)$_SESSION[$OJ_NAME.'_user_id'];
 $activity_id_raw = $_POST['activity_id'] ?? '';
 $source_code = $_POST['source_code'] ?? null;
 $expected_revision = $_POST['expected_revision'] ?? null;
+$expected_performance_context = $_POST['performance_context'] ?? null;
 
 if (
     !is_string($activity_id_raw) ||
@@ -185,12 +187,20 @@ try {
     }
 
     // 학생·활동별 최신 작업 코드 하나만 저장한다.
-    $saved_revision = simulation_store_versioned_draft(
+    // 현재 수행모드를 확인한 뒤 서버에서 초안 저장 위치를 결정한다.
+    $current_performance_cutoff = simulation_checked_performance_context(
+        $user_id,
+        $expected_performance_context,
+        isset($_SESSION[$OJ_NAME.'_source_browser'])
+    );
+
+    $saved_revision = simulation_store_scoped_draft(
         $dbh,
         $activity_id,
         $user_id,
         $source_code,
-        $expected_revision
+        $expected_revision,
+        $current_performance_cutoff
     );
 
     $dbh->commit();
@@ -211,11 +221,17 @@ try {
     );
 
     http_response_code(
-        $e instanceof SimulationDraftConflictException ? 409 : 400
+        (
+            $e instanceof SimulationDraftConflictException ||
+            $e instanceof SimulationPerformanceContextException
+        ) ? 409 : 400
     );
 
     $draft_failure_message =
-        $e instanceof SimulationDraftConflictException
+        (
+            $e instanceof SimulationDraftConflictException ||
+            $e instanceof SimulationPerformanceContextException
+        )
             ? $e->getMessage()
             : '코드를 저장하지 못했습니다. 아래 코드를 보관한 뒤 최신 작업 화면을 다시 열어 주세요.';
 

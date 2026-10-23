@@ -1,5 +1,7 @@
 <?php
 
+require_once(__DIR__ . '/scripts/course_simulation_performance_policy.php');
+
 require_once('./include/db_info.inc.php');
 require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
@@ -216,6 +218,13 @@ try {
             '제출 횟수가 허용 범위를 초과했습니다.'
         );
     }
+
+    // 화면을 연 뒤 수행모드가 변경됐으면 기존 코드의 제출을 차단한다.
+    simulation_checked_performance_context(
+        $user_id,
+        $_POST['performance_context'] ?? null,
+        isset($_SESSION[$OJ_NAME.'_source_browser'])
+    );
 
     // 기존 제출은 변경하지 않고 신규 기록으로 저장
     $save = $dbh->prepare(

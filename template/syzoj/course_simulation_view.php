@@ -334,6 +334,9 @@ $canvas_height = intval($view_simulation['canvas_height']);
                 data-revision="<?php echo $simulation_escape($view_draft_revision); ?>"
                 data-activity-id="<?php echo intval($activity_id); ?>"
                 data-editor-id="simulation-code"
+                data-performance-context="<?php echo $simulation_escape(
+                    $view_simulation_performance_cutoff ?? ''
+                ); ?>"
                 data-token="<?php echo $simulation_escape(
                     $autosave_settings['token']
                 ); ?>"
@@ -351,6 +354,14 @@ $canvas_height = intval($view_simulation['canvas_height']);
                 method="post"
                 action="course_simulation_draft_save.php"
             >
+                <input
+                    type="hidden"
+                    name="performance_context"
+                    value="<?php echo $simulation_escape(
+                        $view_simulation_performance_cutoff ?? ''
+                    ); ?>"
+                >
+
 
                 <input
                     id="simulation-draft-revision"
@@ -402,6 +413,14 @@ $canvas_height = intval($view_simulation['canvas_height']);
                 method="post"
                 action="course_simulation_submit.php"
             >
+                <input
+                    type="hidden"
+                    name="performance_context"
+                    value="<?php echo $simulation_escape(
+                        $view_simulation_performance_cutoff ?? ''
+                    ); ?>"
+                >
+
                 <?php
                 ob_start();
                 include("./csrf.php");
@@ -692,7 +711,7 @@ $canvas_height = intval($view_simulation['canvas_height']);
 <script src="/ace/mode-javascript.js"></script>
 <script src="/ace/theme-chrome.js"></script>
 <script src="/template/syzoj/js/course-simulation-runner.js?v=8"></script>
-<script src="/template/syzoj/js/course-simulation-autosave.js?v=4" defer></script>
+<script src="/template/syzoj/js/course-simulation-autosave.js?v=5" defer></script>
 
 <?php
 include("template/$OJ_TEMPLATE/footer.php");

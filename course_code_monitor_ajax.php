@@ -279,6 +279,8 @@ if (($_GET['include_simulation'] ?? '') === '1') {
         "SELECT
             d.activity_id,
             d.user_id,
+            d.revision,
+            d.performance_started_at,
             d.updated_at,
             TIMESTAMPDIFF(
                 SECOND, d.updated_at, NOW()
@@ -286,7 +288,35 @@ if (($_GET['include_simulation'] ?? '') === '1') {
             l.lesson_no,
             l.title AS lesson_title,
             a.title AS activity_title
-         FROM course_simulation_draft d
+         FROM (
+             SELECT d.activity_id, d.user_id, d.updated_at, CAST(d.revision AS CHAR) AS revision,
+                    NULL AS performance_started_at
+             FROM course_simulation_draft d
+             WHERE NOT EXISTS (
+                 SELECT 1
+                 FROM course_performance_session cps
+                 INNER JOIN course_student pcs
+                   ON pcs.course_id = cps.course_id
+                  AND pcs.user_id = d.user_id
+                  AND pcs.status = 1
+                 WHERE cps.status = 1
+             )
+
+             UNION ALL
+
+             SELECT d.activity_id, d.user_id, d.updated_at, CAST(d.revision AS CHAR) AS revision,
+                    d.performance_started_at
+             FROM course_simulation_performance_draft d
+             WHERE d.performance_started_at = (
+                 SELECT MIN(cps.started_at)
+                 FROM course_performance_session cps
+                 INNER JOIN course_student pcs
+                   ON pcs.course_id = cps.course_id
+                  AND pcs.user_id = d.user_id
+                  AND pcs.status = 1
+                 WHERE cps.status = 1
+             )
+         ) d
          INNER JOIN course_activity a
            ON a.activity_id = d.activity_id
           AND a.course_id = ?
@@ -359,6 +389,9 @@ if (($_GET['include_simulation'] ?? '') === '1') {
 
         $students[$simulation_user_id]['current'] = array(
             'source_kind' => 'simulation',
+            'draft_revision' => (string)$simulation_row['revision'],
+            'performance_context' =>
+                (string)($simulation_row['performance_started_at'] ?? ''),
             'activity_id' => intval($simulation_row['activity_id']),
             'activity_title' => (string)$simulation_row['activity_title'],
             'lesson_no' => intval($simulation_row['lesson_no']),

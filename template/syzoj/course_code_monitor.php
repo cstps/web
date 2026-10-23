@@ -1045,6 +1045,8 @@ require_once(
         return [
             String(student.user_id),
             String(current.source_kind || "coding"),
+            String(current.performance_context || ""),
+            String(current.draft_revision || ""),
             Number(current.activity_id || 0),
             Number(current.contest_id || 0),
             Number(current.problem_id || 0),
@@ -1869,6 +1871,10 @@ require_once(
         } catch (error) {
             if (generation === currentSourceGeneration &&
                 modal.classList.contains("is-open")) {
+                modalSource.textContent = "";
+                modalSource.hidden = true;
+                currentSourceHash = "";
+                currentUpdatedAt = "";
                 modalMessage.hidden = false;
                 modalMessage.textContent = error.message;
             }

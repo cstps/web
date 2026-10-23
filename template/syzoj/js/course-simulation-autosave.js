@@ -22,6 +22,7 @@
         const revisionField = document.getElementById("simulation-draft-revision");
         const activity = config.dataset.activityId;
         const token = config.dataset.token;
+        const performanceContext = config.dataset.performanceContext;
         let revision = config.dataset.revision;
         function validRevision(value) {
             return typeof value === "string" &&
@@ -29,7 +30,8 @@
                 (value.length < 20 || value <= "18446744073709551615");
         }
         if (!editor || editor.readOnly) return;
-        if (!revisionField || !validRevision(revision) ||
+        if (typeof performanceContext !== "string" ||
+            !revisionField || !validRevision(revision) ||
             !/^[1-9][0-9]*$/.test(activity) || !/^[a-f0-9]{64}$/.test(token)) {
             status.textContent = "저장 설정을 확인하지 못했습니다. 코드를 보관한 뒤 화면을 새로고침해 주세요.";
             return;
@@ -102,6 +104,7 @@
                     body.set("source_code", code);
                     body.set("autosave_token", token);
                     body.set("expected_revision", expectedRevision);
+                    body.set("performance_context", performanceContext);
                     const response = await fetch("/course_simulation_draft_autosave.php", {
                         method: "POST", credentials: "same-origin",
                         cache: "no-store", redirect: "error",
@@ -116,7 +119,8 @@
                     const result = await response.json();
                     if (response.status === 409 && result &&
                         (result.code === "draft_conflict" ||
-                         result.code === "revision_required")) {
+                         result.code === "revision_required" ||
+                         result.code === "performance_context_changed")) {
                         locked = true;
                         lockedMessage = result.message ||
                             "다른 탭에서 코드가 변경됐습니다. 현재 코드를 복사해 보관해 주세요.";

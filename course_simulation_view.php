@@ -200,7 +200,27 @@ if ((string)$view_simulation['simulation_mode'] === 'drawing') {
 $view_simulation_submissions = [];
 $view_latest_simulation_submission = null;
 
+$view_simulation_performance_cutoff = null;
+
 if ($is_student) {
+    require_once(
+        __DIR__ . '/scripts/course_simulation_performance_policy.php'
+    );
+
+    try {
+        $view_simulation_performance_cutoff =
+            simulation_performance_history_cutoff(
+                (string)$_SESSION[$OJ_NAME.'_user_id'],
+                isset($_SESSION[$OJ_NAME.'_source_browser'])
+            );
+    } catch (Throwable $e) {
+        error_log('[simulation_performance_view] ' . $e->getMessage());
+        http_response_code(500);
+        $view_errors =
+            '<h2>수행모드 적용 상태를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.</h2>';
+        require("template/".$OJ_TEMPLATE."/error.php");
+        exit(0);
+    }
 
     $submission_rows = pdo_query(
         "SELECT
@@ -225,10 +245,13 @@ if ($is_student) {
            )
          WHERE s.activity_id = ?
            AND s.user_id = ?
+           AND (? IS NULL OR s.submitted_at >= ?)
          ORDER BY s.submission_no DESC
          LIMIT 10",
         $activity_id,
-        (string)$_SESSION[$OJ_NAME.'_user_id']
+        (string)$_SESSION[$OJ_NAME.'_user_id'],
+        $view_simulation_performance_cutoff,
+        $view_simulation_performance_cutoff
     );
 
     if ($submission_rows === false) {
@@ -278,15 +301,24 @@ if (
     $is_student &&
     intval($view_simulation['allow_edit']) === 1
 ) {
-    $draft_rows = pdo_query(
-        "SELECT source_code, CAST(revision AS CHAR) AS revision
-         FROM course_simulation_draft
-         WHERE activity_id = ?
-           AND user_id = ?
-         LIMIT 1",
-        $activity_id,
-        (string)$_SESSION[$OJ_NAME.'_user_id']
+    require_once(
+        __DIR__ . '/scripts/course_simulation_scoped_draft_store.php'
     );
+
+    try {
+        $scoped_draft = simulation_load_scoped_draft(
+            $dbh,
+            $activity_id,
+            (string)$_SESSION[$OJ_NAME.'_user_id'],
+            $view_simulation_performance_cutoff
+        );
+        $draft_rows = $scoped_draft === null
+            ? array()
+            : array($scoped_draft);
+    } catch (Throwable $e) {
+        error_log('[simulation_draft_load] ' . $e->getMessage());
+        $draft_rows = false;
+    }
 
     if ($draft_rows === false) {
         $view_errors =

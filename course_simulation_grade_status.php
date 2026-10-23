@@ -130,6 +130,15 @@ try {
         );
     }
 
+    require_once(
+        __DIR__ . '/scripts/course_simulation_performance_policy.php'
+    );
+
+    $simulation_history_cutoff = simulation_performance_history_cutoff(
+        $user_id,
+        isset($_SESSION[$OJ_NAME . '_source_browser'])
+    );
+
     if (session_status() === PHP_SESSION_ACTIVE) {
         session_write_close();
     }
@@ -154,10 +163,13 @@ try {
            )
          WHERE s.activity_id = ?
            AND s.user_id = ?
+           AND (? IS NULL OR s.submitted_at >= ?)
          ORDER BY s.submission_no DESC
          LIMIT 10",
         $activity_id,
-        $user_id
+        $user_id,
+        $simulation_history_cutoff,
+        $simulation_history_cutoff
     );
 
     if ($submissions === false) {
