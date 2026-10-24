@@ -84,10 +84,10 @@ if (!function_exists("admin_menu_link_class")) {
 
         <a
           class="<?php
-          echo admin_menu_link_class(
-            "news_list"
-          );
-          ?>"
+                  echo admin_menu_link_class(
+                    "news_list"
+                  );
+                  ?>"
           href="news_list.php"
           target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_NEWS_LIST; ?>">
@@ -96,10 +96,10 @@ if (!function_exists("admin_menu_link_class")) {
 
         <a
           class="<?php
-          echo admin_menu_link_class(
-            "news_add"
-          );
-          ?>"
+                  echo admin_menu_link_class(
+                    "news_add"
+                  );
+                  ?>"
           href="news_add_page.php"
           target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_ADD_NEWS; ?>">
@@ -129,10 +129,10 @@ if (!function_exists("admin_menu_link_class")) {
 
         <a
           class="<?php
-          echo admin_menu_link_class(
-            "coding_news_list"
-          );
-          ?>"
+                  echo admin_menu_link_class(
+                    "coding_news_list"
+                  );
+                  ?>"
           href="coding_news_list.php"
           target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_NEWS_LIST; ?>">
@@ -141,10 +141,10 @@ if (!function_exists("admin_menu_link_class")) {
 
         <a
           class="<?php
-          echo admin_menu_link_class(
-            "coding_news_add"
-          );
-          ?>"
+                  echo admin_menu_link_class(
+                    "coding_news_add"
+                  );
+                  ?>"
           href="coding_news_add_page.php"
           target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_ADD_NEWS; ?>">
@@ -174,42 +174,42 @@ if (!function_exists("admin_menu_link_class")) {
 
         <a
           class="<?php
-            echo admin_menu_link_class(
-              "user_list"
-            );
-            ?>"
+                  echo admin_menu_link_class(
+                    "user_list"
+                  );
+                  ?>"
           href="user_list.php"
           target="<?php echo $admin_internal_target; ?>"
           title="<?php echo $MSG_HELP_USER_LIST; ?>">
           사용자 목록
         </a>
-          <?php
-          if (oj_can_create_admin_users()) {
-          ?>
-            <a
-              class="<?php
-              echo admin_menu_link_class(
-                "user_add"
-              );
-              ?>"
-              href="user_add.php"
-              target="<?php echo $admin_internal_target; ?>"
-              title="<?php echo $MSG_HELP_USER_ADD; ?>">
-              사용자 추가
-            </a>
-          <?php
-          }
-          ?>
+        <?php
+        if (oj_can_create_admin_users()) {
+        ?>
+          <a
+            class="<?php
+                    echo admin_menu_link_class(
+                      "user_add"
+                    );
+                    ?>"
+            href="user_add.php"
+            target="<?php echo $admin_internal_target; ?>"
+            title="<?php echo $MSG_HELP_USER_ADD; ?>">
+            사용자 추가
+          </a>
+        <?php
+        }
+        ?>
 
         <?php
         if (oj_can_manage_admin_users()) {
         ?>
           <a
             class="<?php
-            echo admin_menu_link_class(
-              "school_admin"
-            );
-            ?>"
+                    echo admin_menu_link_class(
+                      "school_admin"
+                    );
+                    ?>"
             href="school_admin.php"
             target="<?php echo $admin_internal_target; ?>"
             title="<?php echo $MSG_SCHOOL_MANAGE; ?>">
@@ -218,10 +218,10 @@ if (!function_exists("admin_menu_link_class")) {
 
           <a
             class="<?php
-            echo admin_menu_link_class(
-              "privilege_list"
-            );
-            ?>"
+                    echo admin_menu_link_class(
+                      "privilege_list"
+                    );
+                    ?>"
             href="privilege_list.php"
             target="<?php echo $admin_internal_target; ?>"
             title="<?php echo $MSG_HELP_PRIVILEGE_LIST; ?>">
@@ -298,7 +298,7 @@ if (!function_exists("admin_menu_link_class")) {
         <?php
         if (oj_is_admin()) {
         ?>
-<?php
+        <?php
         }
         ?>
 
@@ -416,6 +416,13 @@ if (!function_exists("admin_menu_link_class")) {
           단축 URL 관리
         </a>
 
+        <!-- 워드 클라우드 관리 -->
+        <a
+          class="<?php echo admin_menu_link_class('wordcloud_list'); ?>"
+          href="wordcloud.php"
+          target="<?php echo $admin_internal_target; ?>">
+          워드 클라우드 관리
+        </a>
       </div>
 
     </div>

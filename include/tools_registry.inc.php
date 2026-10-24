@@ -121,13 +121,15 @@ return [
         'category' => '학습 도구',
     ],
 
+
     [
         'id' => 'wordcloud',
         'url' => '/tools/wordcloud.php',
         'icon' => 'cloud',
-        'title' => '워드 클라우드 생성기',
-        'meta' => '텍스트 단어 빈도 시각화',
-        'description' => '입력한 문장이나 데이터에서 자주 등장하는 핵심 단어들을 시각적 워드 클라우드로 빠르게 변환합니다.',
+        'title' => '워드클라우드',
+        'meta' => '수업 응답 시각화',
+        'description' => '공유 코드를 만들고 학생 응답을 단어 구름으로 확인합니다.',
         'category' => '학습 도구',
     ],
+
 ];

@@ -281,7 +281,7 @@ require(__DIR__ . "/admin-layout-start.php");
           <?php } ?>
 
           <?php if (oj_is_admin()) { ?>
-<?php } ?>
+          <?php } ?>
 
         </div>
 
@@ -394,6 +394,15 @@ require(__DIR__ . "/admin-layout-start.php");
             </span>
             <span class="admin-dashboard-action-description">
               생성된 단축 주소를 검색하고 관리합니다.
+            </span>
+          </a>
+          <!-- 워드 클라우드 바로가기 -->
+          <a class="admin-dashboard-action" href="wordcloud.php">
+            <span class="admin-dashboard-action-title">
+              워드 클라우드 관리
+            </span>
+            <span class="admin-dashboard-action-description">
+              등록된 수업 질문 방 및 학생 답변 데이터를 관리합니다.
             </span>
           </a>
 
