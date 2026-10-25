@@ -3,6 +3,7 @@
 require_once(__DIR__ . '/simulation_problem_permissions.php');
 require_once(__DIR__ . '/simulation_problem_input.php');
 require_once(__DIR__ . '/course_simulation_region_config.php');
+require_once(__DIR__ . '/simulation_problem_image_request.php');
 
 
 class SimulationProblemVersionConflict extends RuntimeException
@@ -289,6 +290,12 @@ function simulation_store_problem_version(
                 )
             );
             $statement->closeCursor();
+
+            // 새 정답과 이미지 생성 요청을 같은 트랜잭션에 저장한다.
+            simulation_enqueue_problem_reference_image(
+                $connection,
+                $version_id
+            );
         }
 
         $statement = simulation_problem_store_statement(
