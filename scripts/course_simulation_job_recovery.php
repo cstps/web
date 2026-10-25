@@ -16,7 +16,7 @@ function simulation_recover_interrupted_jobs()
 
     $message = '실행 시작 후 5분이 지났으며 실행 잠금이 해제되어 중단된 작업으로 정리했습니다.';
 
-    foreach (array('grade', 'image') as $kind) {
+    foreach (array('grade', 'image', 'bank_image') as $kind) {
         if ($kind === 'grade') {
             $select_sql =
                 "SELECT grade_id AS job_id
@@ -24,6 +24,14 @@ function simulation_recover_interrupted_jobs()
                  WHERE grading_status = 'running'
                    AND started_at < DATE_SUB(NOW(), INTERVAL 5 MINUTE)
                  ORDER BY started_at, grade_id
+                 LIMIT 100";
+        } elseif ($kind === 'bank_image') {
+            $select_sql =
+                "SELECT version_id AS job_id
+                 FROM simulation_problem_reference_image
+                 WHERE image_status = 'running'
+                   AND started_at < DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+                 ORDER BY started_at, version_id
                  LIMIT 100";
         } else {
             $select_sql =
@@ -67,6 +75,15 @@ function simulation_recover_interrupted_jobs()
                          WHERE grade_id = ?
                            AND grading_status = 'running'
                            AND started_at < DATE_SUB(NOW(), INTERVAL 5 MINUTE)";
+                } elseif ($kind === 'bank_image') {
+                    $update_sql =
+                        "UPDATE simulation_problem_reference_image
+                         SET image_status = 'error',
+                             error_message = ?,
+                             claim_token = NULL
+                         WHERE version_id = ?
+                           AND image_status = 'running'
+                           AND started_at < DATE_SUB(NOW(), INTERVAL 5 MINUTE)";
                 } else {
                     $update_sql =
                         "UPDATE course_simulation_reference_image
@@ -84,7 +101,8 @@ function simulation_recover_interrupted_jobs()
 
                 if ($changed === 1) {
                     echo '중단 작업 정리: ' .
-                        ($kind === 'grade' ? '채점 ID ' : '정답 ID ') .
+                        ($kind === 'grade' ? '채점 ID ' :
+                            ($kind === 'bank_image' ? '문제은행 버전 ID ' : '정답 ID ')) .
                         $id . " / 오류 상태로 전환\n";
                 }
             } finally {

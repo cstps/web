@@ -52,6 +52,24 @@ function simulation_daemon_next_job()
                  ORDER BY created_at, reference_id
                  LIMIT 1
              )
+             UNION ALL
+             (
+                 SELECT
+                     'bank_image' AS job_type,
+                     i.version_id AS job_id,
+                     i.created_at AS queued_at,
+                     0 AS job_priority
+                 FROM simulation_problem_reference_image i
+                 INNER JOIN simulation_problem_version v
+                   ON v.version_id = i.version_id
+                 WHERE i.image_status = 'pending'
+                   AND v.source_language = 'javascript'
+                   AND v.execution_engine = 'p5js'
+                   AND v.execution_version = '2.3.4'
+                   AND v.p5_version = '2.3.4'
+                 ORDER BY i.created_at, i.version_id
+                 LIMIT 1
+             )
          ) AS jobs
          ORDER BY queued_at, job_priority, job_id
          LIMIT 1"
@@ -110,7 +128,10 @@ try {
     $image_worker = $root_dir .
         '/scripts/course_simulation_reference_image_run.php';
 
-    foreach (array($worker, $image_worker) as $required_worker) {
+    $bank_image_worker = $root_dir .
+        '/scripts/simulation_problem_reference_image_run.php';
+
+    foreach (array($worker, $image_worker, $bank_image_worker) as $required_worker) {
         if (!is_readable($required_worker)) {
             throw new RuntimeException(
                 '작업 실행기를 읽을 수 없습니다: ' . $required_worker
@@ -214,6 +235,13 @@ try {
                     PHP_BINARY,
                     $image_worker,
                     '--reference-id=' . $before_job['id'],
+                );
+            } elseif ($before_job['type'] === 'bank_image') {
+                $job_label = '문제은행 목표 이미지 생성';
+                $job_command = array(
+                    PHP_BINARY,
+                    $bank_image_worker,
+                    '--version-id=' . $before_job['id'],
                 );
             } elseif ($before_job['type'] === 'grade') {
                 $job_label = '학생 제출 비교';

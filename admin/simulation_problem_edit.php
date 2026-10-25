@@ -206,6 +206,35 @@ if (!$fatal) {
                 $base_version
             );
 
+            // 저장 함수가 커밋을 완료한 뒤 처리기에 알린다.
+            // 알림 실패는 이미 저장된 문제 버전의 성공 여부에 영향을 주지 않는다.
+            try {
+                $bank_notify_errno = 0;
+                $bank_notify_error = '';
+                $bank_notify_socket = @stream_socket_client(
+                    'unix:///run/1024kr-simulation-grade/notify.sock',
+                    $bank_notify_errno,
+                    $bank_notify_error,
+                    0.05,
+                    STREAM_CLIENT_CONNECT
+                );
+
+                if ($bank_notify_socket !== false) {
+                    fclose($bank_notify_socket);
+                } else {
+                    error_log(
+                        '[simulation_problem_save] 처리기 알림 실패. ' .
+                        '문제 버전과 이미지 요청은 보존됨. 오류 번호: ' .
+                        $bank_notify_errno
+                    );
+                }
+            } catch (Throwable $bank_notify_exception) {
+                error_log(
+                    '[simulation_problem_save] 처리기 알림 처리 실패. ' .
+                    '문제 버전과 이미지 요청은 보존됨.'
+                );
+            }
+
             header(
                 'Location: simulation_problem_edit.php?problem_id=' .
                 rawurlencode($saved['problem_id']) . '&saved=1',
