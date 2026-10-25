@@ -112,13 +112,13 @@ def load_pixels(path, expected_hash):
         if (
             image.format != "PNG" or
             image.size != (400, 400) or
-            image.mode != "RGBA" or
+            image.mode not in ("RGB", "RGBA") or
             getattr(image, "n_frames", 1) != 1
         ):
             raise ValueError("비교할 PNG 이미지 조건이 올바르지 않습니다.")
 
         image.load()
-        rgba = np.array(image, dtype=np.uint8)
+        rgba = np.array(image.convert("RGBA"), dtype=np.uint8)
 
     if rgba.shape != (400, 400, 4):
         raise ValueError("PNG 픽셀 배열의 크기가 올바르지 않습니다.")
