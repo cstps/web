@@ -11,6 +11,7 @@ require_once('./include/setlang.php');
 require_once('./scripts/simulation_problem_reader.php');
 require_once('./scripts/simulation_problem_draft_token.php');
 require_once('./scripts/simulation_problem_submission_token.php');
+require_once('./scripts/simulation_problem_submission_history_view.php');
 require_once('./scripts/simulation_execution_config.php');
 require_once('./include/course_content_sanitizer.inc.php');
 
@@ -136,6 +137,28 @@ try {
                 $draw_reader_problem['version_id'],
                 $draw_reader_cutoff ?? ''
             );
+    }
+
+    $draw_reader_history = null;
+    $draw_reader_history_pending = false;
+
+    if ($draw_reader_logged_in) {
+        $draw_reader_history = simulation_problem_submission_history(
+            $dbh,
+            $draw_reader_problem['problem_id']
+        );
+
+        foreach ($draw_reader_history['submissions'] as $draw_history_item) {
+            if (in_array(
+                $draw_history_item['grading_status'],
+                array('pending', 'running'),
+                true
+            )) {
+                $draw_reader_history_pending = true;
+                break;
+            }
+        }
+        unset($draw_history_item);
     }
 
     $view_title = $draw_reader_problem['title'] . ' - 그림 문제';

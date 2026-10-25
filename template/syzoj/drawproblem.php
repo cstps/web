@@ -3,6 +3,7 @@ $show_title = $view_title;
 include('template/' . $OJ_TEMPLATE . '/header.php');
 ?>
 <link rel="stylesheet" href="/template/syzoj/css/drawproblem-runner.css?v=3">
+<link rel="stylesheet" href="/template/syzoj/css/drawproblem-region-dialog.css?v=1">
 <div class="ui main container" style="margin-top:2rem;margin-bottom:3rem;">
     <section class="ui segment">
         <h2 class="ui header"><?= drawproblem_escape(
@@ -164,6 +165,33 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
             <a class="ui primary button" href="/loginpage.php">로그인 후 제출</a>
         </div>
     <?php endif; ?>
+
+    <?php if ($draw_reader_logged_in): ?>
+        <section class="ui segment" aria-labelledby="drawproblem-history-heading">
+            <h3 class="ui header" id="drawproblem-history-heading">
+                나의 제출 이력
+            </h3>
+            <p>최근 제출 10건과 각 제출의 최신 채점 결과입니다.</p>
+
+            <div id="drawproblem-history-config" hidden
+                 data-problem-id="<?= drawproblem_escape(
+                     $draw_reader_history['problem_id']
+                 ) ?>"
+                 data-performance-context="<?= drawproblem_escape(
+                     $draw_reader_history['performance_context']
+                 ) ?>"
+                 data-has-pending="<?= $draw_reader_history_pending ? '1' : '0' ?>"></div>
+
+            <button type="button" class="ui small basic button"
+                    id="drawproblem-history-refresh">다시 확인</button>
+
+            <p id="drawproblem-history-status" role="status" aria-live="polite"></p>
+
+            <div id="drawproblem-history-content"><?= simulation_problem_render_submission_history(
+                $draw_reader_history
+            ) ?></div>
+        </section>
+    <?php endif; ?>
 </div>
 <?php if ($draw_reader_logged_in): ?>
     <?php foreach (array(
@@ -179,6 +207,8 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
     <script src="/template/syzoj/js/drawproblem-editor.js?v=1"></script>
     <script src="/template/syzoj/js/drawproblem-runner.js?v=3"></script>
     <script src="/template/syzoj/js/drawproblem-draft.js?v=1"></script>
-    <script src="/template/syzoj/js/drawproblem-submit.js?v=1"></script>
+    <script src="/template/syzoj/js/drawproblem-submit.js?v=2"></script>
+    <script src="/template/syzoj/js/drawproblem-history.js?v=1"></script>
+    <script src="/template/syzoj/js/drawproblem-region-dialog.js?v=1"></script>
 <?php endif; ?>
 <?php include('template/' . $OJ_TEMPLATE . '/footer.php'); ?>

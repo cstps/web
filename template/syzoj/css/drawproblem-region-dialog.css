@@ -1,0 +1,76 @@
+.drawproblem-region-dialog {
+    width: min(900px, calc(100% - 24px));
+    max-height: 85vh;
+    padding: 0;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #1f2937;
+    box-sizing: border-box;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+}
+
+.drawproblem-region-dialog[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.drawproblem-region-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.drawproblem-region-dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.drawproblem-region-dialog-head h3 {
+    margin: 0;
+}
+
+.drawproblem-region-dialog-head .ui.button {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.drawproblem-region-dialog-body {
+    padding: 16px 20px;
+    overflow: auto;
+    min-height: 0;
+    overflow-wrap: anywhere;
+}
+
+.drawproblem-region-dialog-body > .ui.divider:first-child {
+    display: none;
+}
+
+.drawproblem-region-dialog-enabled details > summary {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.65em 0.85em;
+    border: 1px solid #2185d0;
+    border-radius: 4px;
+    color: #1678c2;
+    background: #fff;
+    cursor: pointer;
+    list-style: none;
+    font-size: 0.85rem;
+}
+
+.drawproblem-region-dialog-enabled details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.drawproblem-region-dialog-enabled details > summary:hover {
+    background: #eff6ff;
+}
+
+.drawproblem-region-dialog-enabled details > summary:focus-visible {
+    outline: 2px solid #2185d0;
+    outline-offset: 3px;
+}

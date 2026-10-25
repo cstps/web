@@ -131,6 +131,10 @@
 
             status.textContent = message;
 
+            document.dispatchEvent(new CustomEvent("drawproblem:submitted", {
+                detail: {problemId: config.dataset.problemId}
+            }));
+
         } catch (error) {
             status.textContent =
                 "제출 응답을 확인하지 못했습니다. 코드는 그대로 유지됩니다. " +
