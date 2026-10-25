@@ -90,6 +90,18 @@ function simulation_daemon_next_job()
                  ORDER BY i.created_at, i.version_id
                  LIMIT 1
              )
+             UNION ALL
+             (
+                 SELECT
+                     'bank_grade' AS job_type,
+                     grade_id AS job_id,
+                     created_at AS queued_at,
+                     1 AS job_priority
+                 FROM simulation_problem_grade
+                 WHERE grading_status = 'pending'
+                 ORDER BY created_at, grade_id
+                 LIMIT 1
+             )
          ) AS jobs
          ORDER BY queued_at, job_priority, job_id
          LIMIT 1"
@@ -102,6 +114,49 @@ function simulation_daemon_next_job()
         'type' => (string)$job['job_type'],
         'id' => (string)$job['job_id'],
     );
+}
+
+// 서비스 계정의 docker 그룹 권한으로 로컬 이미지 ID만 조회한다.
+// 실행 이미지는 작업 시작 전에 고정하며 외부에서 내려받지 않는다.
+function simulation_daemon_bank_grade_image_id()
+{
+    $process = proc_open(
+        array(
+            '/usr/bin/timeout', '--kill-after=2s', '10s',
+            '/usr/bin/docker', 'image', 'inspect',
+            '--format', '{{.Id}}',
+            '1024kr/p5-render-poc:playwright-1.63.0',
+        ),
+        array(
+            0 => array('file', '/dev/null', 'r'),
+            1 => array('pipe', 'w'),
+            2 => array('pipe', 'w'),
+        ),
+        $pipes
+    );
+
+    if (!is_resource($process)) {
+        throw new RuntimeException('채점 이미지 확인을 시작하지 못했습니다.');
+    }
+
+    $output = stream_get_contents($pipes[1], 4097);
+    $error = stream_get_contents($pipes[2], 4097);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    $exit_code = proc_close($process);
+
+    $image_id = is_string($output) ? trim($output) : '';
+
+    if (
+        $exit_code !== 0 ||
+        !is_string($output) ||
+        strlen($output) > 4096 ||
+        preg_match('/^sha256:[0-9a-f]{64}$/D', $image_id) !== 1
+    ) {
+        throw new RuntimeException('로컬 채점 이미지 ID를 확인하지 못했습니다.');
+    }
+
+    return $image_id;
 }
 
 function simulation_daemon_drain_notifications($server)
@@ -154,8 +209,12 @@ try {
     $bank_python_image_worker = $root_dir .
         '/scripts/simulation_problem_python_reference_image_run.php';
 
+    $bank_grade_worker = $root_dir .
+        '/scripts/simulation_problem_grade_run.php';
+
     foreach (array(
-        $worker, $image_worker, $bank_image_worker, $bank_python_image_worker
+        $worker, $image_worker, $bank_image_worker,
+        $bank_python_image_worker, $bank_grade_worker
     ) as $required_worker) {
         if (!is_readable($required_worker)) {
             throw new RuntimeException(
@@ -274,6 +333,14 @@ try {
                     PHP_BINARY,
                     $bank_python_image_worker,
                     '--version-id=' . $before_job['id'],
+                );
+            } elseif ($before_job['type'] === 'bank_grade') {
+                $job_label = '문제은행 학생 제출 채점';
+                $job_command = array(
+                    PHP_BINARY,
+                    $bank_grade_worker,
+                    '--grade-id=' . $before_job['id'],
+                    '--image-id=' . simulation_daemon_bank_grade_image_id(),
                 );
             } elseif ($before_job['type'] === 'grade') {
                 $job_label = '학생 제출 비교';

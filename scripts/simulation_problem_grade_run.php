@@ -5,6 +5,7 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
+require_once(__DIR__ . '/course_simulation_job_lock.php');
 require_once(__DIR__ . '/simulation_problem_grade_job.php');
 require_once(__DIR__ . '/simulation_problem_grade_request.php');
 
@@ -125,6 +126,15 @@ function simulation_problem_process_grade(
         preg_match('/^sha256:[0-9a-f]{64}$/D', $image_id) !== 1
     ) {
         throw new InvalidArgumentException('전체 로컬 이미지 ID가 필요합니다.');
+    }
+
+    $grade_id = simulation_problem_submission_id($grade_id);
+
+    // 실행 종료까지 전용 연결을 보관하여 복구 처리와 충돌하지 않게 한다.
+    $job_lock = simulation_job_acquire_lock('bank_grade', $grade_id);
+
+    if ($job_lock === null) {
+        return null;
     }
 
     $claim = simulation_problem_grade_job_claim($connection, $grade_id);
@@ -269,6 +279,8 @@ function simulation_problem_process_grade(
             }
             rmdir($directory);
         }
+
+        $job_lock = null;
     }
 }
 

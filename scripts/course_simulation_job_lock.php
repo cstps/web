@@ -8,7 +8,7 @@ function simulation_job_acquire_lock($kind, $id)
     global $DB_HOST, $DB_NAME, $DB_USER, $DB_PASS;
 
     if (
-        !in_array($kind, array('grade', 'image', 'bank_image'), true) ||
+        !in_array($kind, array('grade', 'image', 'bank_image', 'bank_grade'), true) ||
         !preg_match('/^[1-9][0-9]{0,19}$/D', (string)$id)
     ) {
         throw new RuntimeException('작업 잠금 식별자가 올바르지 않습니다.');
