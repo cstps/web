@@ -9,6 +9,7 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 require_once('./scripts/simulation_problem_reader.php');
+require_once('./scripts/simulation_problem_draft_token.php');
 require_once('./scripts/simulation_execution_config.php');
 require_once('./include/course_content_sanitizer.inc.php');
 
@@ -58,6 +59,43 @@ try {
         $draw_reader_problem['description']
     );
     $draw_reader_logged_in = $draw_reader_actor['user_id'] !== '';
+
+    $draw_reader_source = $draw_reader_problem['starter_code'];
+    $draw_reader_revision = '0';
+    $draw_reader_cutoff = null;
+    $draw_reader_draft_token = '';
+    $draw_reader_has_draft = false;
+
+    if (
+        $draw_reader_logged_in &&
+        (string)$draw_reader_problem['status'] === '1' &&
+        (string)$draw_reader_problem['allow_edit'] === '1'
+    ) {
+        $draw_reader_cutoff = simulation_performance_history_cutoff(
+            $draw_reader_actor['user_id'],
+            isset($_SESSION[$OJ_NAME . '_source_browser'])
+        );
+
+        $draw_reader_draft = simulation_problem_load_draft(
+            $dbh,
+            $draw_reader_problem['version_id'],
+            $draw_reader_actor['user_id'],
+            $draw_reader_cutoff
+        );
+
+        if ($draw_reader_draft !== null) {
+            $draw_reader_source = $draw_reader_draft['source_code'];
+            $draw_reader_revision = $draw_reader_draft['revision'];
+            $draw_reader_has_draft = true;
+        }
+
+        $draw_reader_draft_token = simulation_problem_draft_token_issue(
+            $draw_reader_actor['user_id'],
+            $draw_reader_problem['version_id'],
+            $draw_reader_cutoff
+        );
+    }
+
 
     $view_title = $draw_reader_problem['title'] . ' - 그림 문제';
     $show_title = $view_title;

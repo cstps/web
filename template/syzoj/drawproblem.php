@@ -84,6 +84,20 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
         <h3 class="ui header">
             <label for="drawproblem-source">기본 코드</label>
         </h3>
+        <?php if ($draw_reader_draft_token !== ''): ?>
+            <div id="drawproblem-draft-config" hidden
+                 data-problem-id="<?= drawproblem_escape($draw_reader_problem['problem_id']) ?>"
+                 data-version-id="<?= drawproblem_escape($draw_reader_problem['version_id']) ?>"
+                 data-revision="<?= drawproblem_escape($draw_reader_revision) ?>"
+                 data-performance-context="<?= drawproblem_escape($draw_reader_cutoff ?? '') ?>"
+                 data-token="<?= drawproblem_escape($draw_reader_draft_token) ?>"></div>
+            <button type="button" class="ui teal button"
+                    id="drawproblem-draft-save">코드 저장</button>
+            <p id="drawproblem-draft-status" role="status" aria-live="polite"><?= $draw_reader_has_draft
+                ? '저장된 작업 코드를 불러왔습니다.'
+                : '코드를 수정한 뒤 저장 버튼을 눌러 주세요.' ?></p>
+        <?php endif; ?>
+
         <div id="drawproblem-ace-editor" hidden
              data-language="<?= drawproblem_escape(
                  $draw_reader_problem['source_language']
@@ -96,7 +110,7 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
                       ? '' : 'readonly' ?>
                   spellcheck="false"
                   style="width:100%;box-sizing:border-box;font-family:monospace;tab-size:4;"
-        ><?= drawproblem_escape($draw_reader_problem['starter_code']) ?></textarea>
+        ><?= drawproblem_escape($draw_reader_source) ?></textarea>
 
         <form id="drawproblem-run-settings" hidden
               data-problem-id="<?= drawproblem_escape($draw_reader_problem['problem_id']) ?>"
@@ -151,5 +165,6 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
     <?php endforeach; ?>
     <script src="/template/syzoj/js/drawproblem-editor.js?v=1"></script>
     <script src="/template/syzoj/js/drawproblem-runner.js?v=1"></script>
+    <script src="/template/syzoj/js/drawproblem-draft.js?v=1"></script>
 <?php endif; ?>
 <?php include('template/' . $OJ_TEMPLATE . '/footer.php'); ?>
