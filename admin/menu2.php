@@ -240,7 +240,10 @@ if (!function_exists("admin_menu_link_class")) {
 
   <!-- 문제 관리 -->
   <?php
-  if (oj_can_view_admin_problems()) {
+  if (
+      oj_can_view_admin_problems() ||
+      ($admin_can_manage_simulation_problems ?? false) === true
+  ) {
   ?>
 
     <div class="admin-nav-group">
@@ -251,7 +254,8 @@ if (!function_exists("admin_menu_link_class")) {
 
       <div class="admin-nav-items">
 
-        <a
+        <?php if (oj_can_view_admin_problems()) { ?>
+<a
           href="problem_list.php"
           class="<?php
                   echo admin_menu_link_class(
@@ -260,6 +264,7 @@ if (!function_exists("admin_menu_link_class")) {
                   ?>">
           문제 목록
         </a>
+      <?php } ?>
 
 
         <?php
@@ -301,6 +306,24 @@ if (!function_exists("admin_menu_link_class")) {
         <?php
         }
         ?>
+      <?php
+      if (($admin_can_manage_simulation_problems ?? false) === true) {
+      ?>
+        <a
+          href="simulation_problem_list.php"
+          class="<?php echo admin_menu_link_class('simulation_problem_list'); ?>">
+          그림 문제 목록
+        </a>
+
+        <a
+          href="simulation_problem_edit.php"
+          class="<?php echo admin_menu_link_class('simulation_problem_add'); ?>">
+          그림 문제 추가
+        </a>
+      <?php
+      }
+      ?>
+
 
       </div>
 

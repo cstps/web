@@ -119,6 +119,8 @@ require(__DIR__ . '/admin-layout-start.php');
                     : '본인이 등록한 그림 문제를 관리합니다.' ?>
             </p>
         </div>
+        <a class="admin-btn admin-btn-primary"
+           href="simulation_problem_edit.php">그림 문제 추가</a>
     </div>
 
     <section class="admin-card">
@@ -166,7 +168,13 @@ require(__DIR__ . '/admin-layout-start.php');
                             <?php foreach ($simulation_list_rows as $problem): ?>
                                 <tr>
                                     <td><?= simulation_admin_list_escape($problem['problem_id']) ?></td>
-                                    <td><?= simulation_admin_list_escape($problem['title']) ?></td>
+                                    <td>
+                                        <a href="simulation_problem_edit.php?problem_id=<?= simulation_admin_list_escape(
+                                            rawurlencode((string)$problem['problem_id'])
+                                        ) ?>">
+                                            <?= simulation_admin_list_escape($problem['title']) ?>
+                                        </a>
+                                    </td>
                                     <td><?= $problem['simulation_mode'] === 'drawing'
                                         ? '그림 문제' : '자유 실습' ?></td>
                                     <td><?= simulation_admin_list_escape($problem['owner_user_id']) ?></td>
