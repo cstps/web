@@ -1,6 +1,25 @@
 <?php
 
 require_once(__DIR__ . '/simulation_execution_config.php');
+require_once(__DIR__ . '/../include/course_content_sanitizer.inc.php');
+
+
+function simulation_problem_sanitize_description(array $input)
+{
+    $raw = simulation_problem_input_string(
+        $input, 'description', 65535, false
+    );
+
+    $clean = course_content_sanitize_html($raw);
+
+    if (strlen($clean) > 65535) {
+        throw new InvalidArgumentException(
+            '서식을 포함한 문제 설명은 65535바이트 이하여야 합니다.'
+        );
+    }
+
+    return $clean;
+}
 
 function simulation_problem_input_string(
     array $input,
@@ -79,9 +98,7 @@ function simulation_validate_problem_input(array $input)
         );
     }
 
-    $description = simulation_problem_input_string(
-        $input, 'description', 65535, false
-    );
+    $description = simulation_problem_sanitize_description($input);
 
     $starter = simulation_problem_input_string(
         $input, 'starter_code', 200000

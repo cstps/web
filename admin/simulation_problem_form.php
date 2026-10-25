@@ -7,6 +7,7 @@ if (
     exit('문제 편집 화면에서 이용해 주세요.');
 }
 ?>
+<link rel="stylesheet" href="simulation-problem-preview.css?v=3">
 <div class="admin-page">
     <div class="admin-page-header">
         <div>
@@ -39,23 +40,18 @@ if (
         <input type="hidden" name="simulation_problem_csrf"
                value="<?= simulation_problem_form_escape($simulation_problem_form_csrf_token) ?>">
 
-        <section class="admin-card">
+        <section class="admin-card bank-basic-settings">
             <h2>기본 정보</h2>
             <p>현재 버전: <?= simulation_problem_form_escape($base_version) ?></p>
 
-            <div class="admin-form-field">
+            <div class="admin-form-field bank-title-field">
                 <label class="admin-form-label" for="bank-title">문제 제목</label>
                 <input class="admin-form-input" id="bank-title"
                        name="title" maxlength="255" required
                        value="<?= simulation_problem_form_escape($values['title']) ?>">
             </div>
 
-            <div class="admin-form-field">
-                <label class="admin-form-label" for="bank-description">문제 설명</label>
-                <textarea class="admin-form-input" id="bank-description"
-                          name="description" rows="6"><?= simulation_problem_form_escape($values['description']) ?></textarea>
-                <p>문제 설명은 일반 텍스트로 입력합니다.</p>
-            </div>
+
 
             <?php
             $choices = array(
@@ -116,21 +112,68 @@ if (
             <p>그림 문제와 Python 실험은 400×400으로 설정합니다.</p>
         </section>
 
+
+        <section class="admin-card bank-authoring-workspace">
+            <div class="bank-description-panel">
+            <div class="admin-form-field bank-description-field">
+                <label class="admin-form-label" for="bank-description">문제 설명</label>
+                <textarea class="admin-form-input" id="bank-description"
+                          name="description" rows="4"><?= simulation_problem_form_escape($values['description']) ?></textarea>
+                <p>문단·글자 강조·목록·표 등의 서식을 함께 저장합니다.</p>
+            </div>
+            </div>
+
+            <div class="bank-starter-panel">
+                <label class="admin-form-label" for="bank-starter-source">
+                    학생에게 제공할 기본 코드
+                </label>
+                <div id="bank-editor-starter_code" hidden
+                     style="height:320px;min-height:180px;resize:vertical;overflow:hidden;border:1px solid #cbd5e1"></div>
+                <textarea id="bank-starter-source"
+                          class="admin-form-input simulation-bank-source"
+                          name="starter_code" rows="15"
+                          aria-label="학생에게 제공할 기본 코드"
+                          data-editor-id="bank-editor-starter_code"
+                          spellcheck="false"><?= simulation_problem_form_escape($values['starter_code']) ?></textarea>
+            </div>
+        </section>
+
         <?php foreach (array(
-            'starter_code' => '학생에게 제공할 기본 코드',
             'reference_source' => '교사용 정답 코드',
         ) as $key => $label): ?>
             <section class="admin-card">
                 <h2><?= $label ?></h2>
                 <div id="bank-editor-<?= $key ?>" hidden
-                     style="height:280px;min-height:180px;resize:vertical;overflow:hidden;border:1px solid #cbd5e1"></div>
+                     style="height:<?= $key === 'reference_source' ? '500' : '240' ?>px;min-height:180px;resize:vertical;overflow:hidden;border:1px solid #cbd5e1"></div>
                 <textarea class="admin-form-input simulation-bank-source"
-                          name="<?= $key ?>" rows="15"
+                          name="<?= $key ?>" rows="<?= $key === 'reference_source' ? '25' : '12' ?>"
                           aria-label="<?= $label ?>"
                           data-editor-id="bank-editor-<?= $key ?>"
                           spellcheck="false"><?= simulation_problem_form_escape($values[$key]) ?></textarea>
                 <?php if ($key === 'reference_source'): ?>
                     <p>그림 문제에만 필요하며 학생용 문제 목록에는 표시하지 않습니다.</p>
+                    <div id="bank-reference-preview">
+                        <div class="bank-preview-toolbar">
+                            <h3>정답 그림 미리보기</h3>
+                            <div class="bank-preview-actions">
+                            <button type="button" id="bank-preview-run"
+                                    class="admin-btn admin-btn-primary">미리보기 실행</button>
+                            <button type="button" id="bank-preview-stop"
+                                    class="admin-btn admin-btn-secondary" disabled>중지</button>
+
+                            </div>
+                        </div>
+                        <p id="bank-preview-status" role="status" aria-live="polite">
+                            정답 코드를 실행하고 결과 그림을 확인해 주세요.
+                        </p>
+                        <div class="bank-preview-output">
+                            <div id="bank-preview-host"></div>
+                            <canvas id="bank-preview-canvas"
+                                    width="400" height="400" hidden></canvas>
+                        </div>
+                        <p>Python 정적 미리보기는 setup 실행 직후인 프레임 0을 표시합니다.</p>
+                    </div>
+
                 <?php endif; ?>
             </section>
         <?php endforeach; ?>
@@ -200,6 +243,9 @@ if (
             <script src="<?= simulation_problem_form_escape($asset) ?>"></script>
         <?php endif; ?>
     <?php endforeach; ?>
-    <script src="simulation-problem-editor.js?v=1"></script>
+    <script src="/tinymce/tinymce.min.js?v=8.9.0"></script>
+    <script src="simulation-problem-description.js?v=1"></script>
+    <script src="simulation-problem-editor.js?v=2"></script>
+    <script src="simulation-problem-preview.js?v=1"></script>
     <?php endif; ?>
 </div>

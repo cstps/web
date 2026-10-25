@@ -1,0 +1,151 @@
+
+.bank-reference-layout {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+.bank-reference-code,
+#bank-reference-preview {
+    min-width: 0;
+}
+.bank-preview-output {
+    width: 100%;
+    max-width: 402px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    box-sizing: border-box;
+}
+.bank-preview-output iframe,
+#bank-preview-canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border: 0;
+}
+#bank-preview-canvas[hidden] {
+    display: none;
+}
+#bank-preview-status {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+@media (max-width: 1000px) {
+    .bank-reference-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+
+/* 기본 설정을 화면 너비에 맞춰 여러 열로 배치한다. */
+#simulation-bank-form .bank-basic-settings {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+}
+
+#simulation-bank-form .bank-basic-settings > h2,
+#simulation-bank-form .bank-basic-settings > p,
+#simulation-bank-form .bank-title-field,
+#simulation-bank-form .bank-description-field {
+    grid-column: 1 / -1;
+}
+
+#simulation-bank-form .bank-basic-settings > h2,
+#simulation-bank-form .bank-basic-settings > p {
+    margin: 0;
+}
+
+#simulation-bank-form .bank-basic-settings .admin-form-field {
+    min-width: 0;
+    margin: 0;
+}
+
+#simulation-bank-form .bank-basic-settings .admin-form-label {
+    display: block;
+    margin-bottom: 6px;
+}
+
+#simulation-bank-form .bank-basic-settings .admin-form-input {
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100%;
+}
+
+.bank-reference-code {
+    width: 100%;
+}
+
+#bank-reference-preview .bank-preview-output {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (max-width: 1100px) {
+    #simulation-bank-form .bank-basic-settings {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    #simulation-bank-form .bank-basic-settings {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+
+.bank-authoring-workspace {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+
+.bank-description-panel,
+.bank-starter-panel {
+    min-width: 0;
+}
+
+.bank-authoring-workspace .admin-form-field {
+    margin: 0;
+}
+
+.bank-authoring-workspace .admin-form-label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.bank-description-panel .tox-tinymce {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.bank-preview-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.bank-preview-toolbar h3 {
+    margin: 0;
+}
+
+.bank-preview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.bank-preview-actions .admin-btn {
+    margin: 0;
+}
+
+@media (max-width: 1000px) {
+    .bank-authoring-workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

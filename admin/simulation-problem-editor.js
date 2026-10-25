@@ -41,6 +41,7 @@
                 );
                 editor.session.on("change", function () {
                     source.value = editor.getValue();
+                    source.dispatchEvent(new Event("input", {bubbles: true}));
                 });
 
                 source.hidden = true;
