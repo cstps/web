@@ -28,9 +28,68 @@
         grid.className = "drawproblem-reference-layout";
         const codePanel = document.createElement("div");
         codePanel.className = "drawproblem-reference-code";
+
+        // 제목·저장 버튼·안내문·편집기를 함께 왼쪽 열로 옮긴다.
+        const codeNodes = Array.from(section.childNodes).filter(function (node) {
+            return node !== preview;
+        });
+
         section.appendChild(grid);
-        codePanel.append(aceBox, source);
+        codeNodes.forEach(function (node) {
+            codePanel.appendChild(node);
+        });
         grid.append(codePanel, preview);
+
+        // 기존 버튼 요소를 이동하므로 연결된 이벤트는 유지된다.
+        const actions = document.createElement("div");
+        actions.className = "drawproblem-preview-actions";
+        preview.insertBefore(actions, runButton);
+        actions.append(runButton, stopButton);
+
+        const submitButton = document.getElementById("drawproblem-submit");
+        const submitStatus = document.getElementById("drawproblem-submit-status");
+
+        if (submitButton) {
+            actions.appendChild(submitButton);
+        }
+        if (submitStatus) {
+            preview.insertBefore(submitStatus, status.nextSibling);
+        }
+
+        // 상단 안내 영역과 실제 편집·출력 영역을 나눠 시작선을 맞춘다.
+        const codeHeading = document.createElement("div");
+        codeHeading.className =
+            "drawproblem-panel-heading drawproblem-code-heading";
+        const codeBody = document.createElement("div");
+        codeBody.className = "drawproblem-code-body";
+        const editorMessage =
+            document.getElementById("drawproblem-editor-message");
+
+        const bodyNodes = new Set([aceBox, source, editorMessage, form]);
+        Array.from(codePanel.childNodes).forEach(function (node) {
+            if (!bodyNodes.has(node)) codeHeading.appendChild(node);
+        });
+
+        codeBody.append(aceBox, source);
+        if (editorMessage) codeBody.appendChild(editorMessage);
+        codeBody.appendChild(form);
+        codePanel.append(codeHeading, codeBody);
+
+        const previewHeading = document.createElement("div");
+        previewHeading.className =
+            "drawproblem-panel-heading drawproblem-preview-heading";
+        const previewBody = document.createElement("div");
+        previewBody.className = "drawproblem-preview-body";
+        const previewOutput =
+            preview.querySelector(".drawproblem-preview-output");
+        let outputStarted = false;
+
+        Array.from(preview.childNodes).forEach(function (node) {
+            if (node === previewOutput) outputStarted = true;
+            (outputStarted ? previewBody : previewHeading).appendChild(node);
+        });
+
+        preview.append(previewHeading, previewBody);
     }
 
     function signature() {

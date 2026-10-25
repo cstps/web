@@ -42,3 +42,87 @@
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+/* 양쪽 제목의 시작 높이를 맞춘다. */
+.drawproblem-reference-code > .ui.header,
+#drawproblem-preview > .ui.header {
+    margin-top: 0;
+}
+
+.drawproblem-preview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.drawproblem-preview-actions > .ui.button {
+    margin: 0;
+}
+
+#drawproblem-submit-status {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* 안내문 들여쓰기와 줄바꿈이 빈 공간으로 표시되지 않게 한다. */
+#drawproblem-run-status,
+#drawproblem-submit-status {
+    white-space: normal;
+    margin: 0.4rem 0 0;
+}
+
+#drawproblem-submit-status:empty {
+    display: none;
+}
+
+.drawproblem-panel-heading,
+.drawproblem-code-body,
+.drawproblem-preview-body {
+    min-width: 0;
+}
+
+.drawproblem-panel-heading > .ui.header {
+    margin: 0 0 0.65rem;
+}
+
+.drawproblem-code-body,
+.drawproblem-preview-body {
+    margin-top: 12px;
+}
+
+@media (min-width: 1001px) {
+    .drawproblem-reference-layout {
+        row-gap: 12px;
+    }
+
+    .drawproblem-reference-code,
+    #drawproblem-preview {
+        display: contents;
+    }
+
+    .drawproblem-code-heading {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .drawproblem-preview-heading {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .drawproblem-code-body {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .drawproblem-preview-body {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .drawproblem-code-body,
+    .drawproblem-preview-body {
+        margin-top: 0;
+    }
+}

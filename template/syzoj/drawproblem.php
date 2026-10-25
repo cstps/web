@@ -2,7 +2,7 @@
 $show_title = $view_title;
 include('template/' . $OJ_TEMPLATE . '/header.php');
 ?>
-<link rel="stylesheet" href="/template/syzoj/css/drawproblem-runner.css?v=1">
+<link rel="stylesheet" href="/template/syzoj/css/drawproblem-runner.css?v=3">
 <div class="ui main container" style="margin-top:2rem;margin-bottom:3rem;">
     <section class="ui segment">
         <h2 class="ui header"><?= drawproblem_escape(
@@ -98,6 +98,19 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
                 : '코드를 수정한 뒤 저장 버튼을 눌러 주세요.' ?></p>
         <?php endif; ?>
 
+        <?php if ($draw_reader_can_submit): ?>
+            <div id="drawproblem-submit-config" hidden
+                 data-problem-id="<?= drawproblem_escape($draw_reader_problem['problem_id']) ?>"
+                 data-version-id="<?= drawproblem_escape($draw_reader_problem['version_id']) ?>"
+                 data-performance-context="<?= drawproblem_escape($draw_reader_cutoff ?? '') ?>"
+                 data-token="<?= drawproblem_escape($draw_reader_submission_token) ?>"></div>
+            <button type="button" class="ui orange button"
+                    id="drawproblem-submit">정식 제출</button>
+            <p id="drawproblem-submit-status" role="status" aria-live="polite"></p>
+        <?php else: ?>
+            <p>현재 이 문제의 정식 제출을 사용할 수 없습니다.</p>
+        <?php endif; ?>
+
         <div id="drawproblem-ace-editor" hidden
              data-language="<?= drawproblem_escape(
                  $draw_reader_problem['source_language']
@@ -148,7 +161,7 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
     <?php else: ?>
         <div class="ui message">
             기본 코드는 로그인 후 확인할 수 있습니다.
-            <a href="/loginpage.php">로그인</a>
+            <a class="ui primary button" href="/loginpage.php">로그인 후 제출</a>
         </div>
     <?php endif; ?>
 </div>
@@ -164,7 +177,8 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
         <?php endif; ?>
     <?php endforeach; ?>
     <script src="/template/syzoj/js/drawproblem-editor.js?v=1"></script>
-    <script src="/template/syzoj/js/drawproblem-runner.js?v=1"></script>
+    <script src="/template/syzoj/js/drawproblem-runner.js?v=3"></script>
     <script src="/template/syzoj/js/drawproblem-draft.js?v=1"></script>
+    <script src="/template/syzoj/js/drawproblem-submit.js?v=1"></script>
 <?php endif; ?>
 <?php include('template/' . $OJ_TEMPLATE . '/footer.php'); ?>

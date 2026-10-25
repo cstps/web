@@ -10,6 +10,7 @@ require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 require_once('./scripts/simulation_problem_reader.php');
 require_once('./scripts/simulation_problem_draft_token.php');
+require_once('./scripts/simulation_problem_submission_token.php');
 require_once('./scripts/simulation_execution_config.php');
 require_once('./include/course_content_sanitizer.inc.php');
 
@@ -96,6 +97,46 @@ try {
         );
     }
 
+
+    $draw_reader_submission_token = '';
+
+    $draw_reader_can_submit = (
+        $draw_reader_logged_in &&
+        (string)$draw_reader_problem['status'] === '1' &&
+        (string)$draw_reader_problem['allow_submit'] === '1'
+    );
+
+    if (
+        $draw_reader_problem['simulation_mode'] === 'drawing' &&
+        $draw_reader_problem['image_status'] !== 'ready'
+    ) {
+        $draw_reader_can_submit = false;
+    }
+
+    if (
+        $draw_reader_problem['execution_engine'] === 'python-stdlib-rgba-poc' &&
+        (string)$draw_reader_problem['published'] !== '0'
+    ) {
+        $draw_reader_can_submit = false;
+    }
+
+    if ($draw_reader_can_submit) {
+        // 편집 불가 문제는 초안 조회가 없어 수행 기준을 여기서 확인한다.
+        if ($draw_reader_draft_token === '') {
+            $draw_reader_cutoff = simulation_performance_history_cutoff(
+                $draw_reader_actor['user_id'],
+                isset($_SESSION[$OJ_NAME . '_source_browser'])
+            );
+        }
+
+        $draw_reader_submission_token =
+            simulation_problem_submission_token_issue(
+                $draw_reader_actor['user_id'],
+                $draw_reader_problem['problem_id'],
+                $draw_reader_problem['version_id'],
+                $draw_reader_cutoff ?? ''
+            );
+    }
 
     $view_title = $draw_reader_problem['title'] . ' - 그림 문제';
     $show_title = $view_title;
