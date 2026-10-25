@@ -2,6 +2,7 @@
 $show_title = $view_title;
 include('template/' . $OJ_TEMPLATE . '/header.php');
 ?>
+<link rel="stylesheet" href="/template/syzoj/css/drawproblem-runner.css?v=1">
 <div class="ui main container" style="margin-top:2rem;margin-bottom:3rem;">
     <section class="ui segment">
         <h2 class="ui header"><?= drawproblem_escape(
@@ -96,6 +97,39 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
                   spellcheck="false"
                   style="width:100%;box-sizing:border-box;font-family:monospace;tab-size:4;"
         ><?= drawproblem_escape($draw_reader_problem['starter_code']) ?></textarea>
+
+        <form id="drawproblem-run-settings" hidden
+              data-problem-id="<?= drawproblem_escape($draw_reader_problem['problem_id']) ?>"
+              data-version-id="<?= drawproblem_escape($draw_reader_problem['version_id']) ?>">
+            <input type="hidden" id="drawproblem-run-profile"
+                   value="<?= $draw_reader_problem['source_language'] === 'python'
+                       ? 'python-draw-poc-v1' : 'p5js-2.3.4' ?>">
+            <input type="hidden" id="drawproblem-run-mode"
+                   value="<?= drawproblem_escape($draw_reader_problem['simulation_mode']) ?>">
+            <input type="hidden" name="canvas_width"
+                   value="<?= drawproblem_escape($draw_reader_problem['canvas_width']) ?>">
+            <input type="hidden" name="canvas_height"
+                   value="<?= drawproblem_escape($draw_reader_problem['canvas_height']) ?>">
+        </form>
+
+        <div id="drawproblem-preview">
+            <h3 class="ui header">실행 결과</h3>
+            <button type="button" id="drawproblem-run"
+                    class="ui primary button">실행</button>
+            <button type="button" id="drawproblem-stop"
+                    class="ui button" disabled>중지</button>
+            <p id="drawproblem-run-status" role="status" aria-live="polite">
+                실행 버튼을 누르면 현재 코드의 그림을 표시합니다.
+            </p>
+            <div class="drawproblem-preview-output"
+                 style="aspect-ratio:<?= (int)$draw_reader_problem['canvas_width'] ?>/<?= (int)$draw_reader_problem['canvas_height'] ?>;">
+                <div id="drawproblem-run-host"></div>
+                <canvas id="drawproblem-run-canvas"
+                        width="400" height="400" hidden></canvas>
+            </div>
+            <p>실행은 제출과 별개이며 점수를 산정하지 않습니다.</p>
+        </div>
+
     </section>
     <?php else: ?>
         <div class="ui message">
@@ -116,5 +150,6 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
         <?php endif; ?>
     <?php endforeach; ?>
     <script src="/template/syzoj/js/drawproblem-editor.js?v=1"></script>
+    <script src="/template/syzoj/js/drawproblem-runner.js?v=1"></script>
 <?php endif; ?>
 <?php include('template/' . $OJ_TEMPLATE . '/footer.php'); ?>
