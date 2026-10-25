@@ -70,6 +70,26 @@ function simulation_daemon_next_job()
                  ORDER BY i.created_at, i.version_id
                  LIMIT 1
              )
+             UNION ALL
+             (
+                 SELECT
+                     'bank_python_image' AS job_type,
+                     i.version_id AS job_id,
+                     i.created_at AS queued_at,
+                     0 AS job_priority
+                 FROM simulation_problem_reference_image i
+                 INNER JOIN simulation_problem_version v
+                   ON v.version_id = i.version_id
+                 INNER JOIN simulation_problem p
+                   ON p.problem_id = v.problem_id
+                 WHERE i.image_status = 'pending'
+                   AND p.published = 0
+                   AND v.source_language = 'python'
+                   AND v.execution_engine = 'python-stdlib-rgba-poc'
+                   AND v.execution_version = '1'
+                 ORDER BY i.created_at, i.version_id
+                 LIMIT 1
+             )
          ) AS jobs
          ORDER BY queued_at, job_priority, job_id
          LIMIT 1"
@@ -131,7 +151,12 @@ try {
     $bank_image_worker = $root_dir .
         '/scripts/simulation_problem_reference_image_run.php';
 
-    foreach (array($worker, $image_worker, $bank_image_worker) as $required_worker) {
+    $bank_python_image_worker = $root_dir .
+        '/scripts/simulation_problem_python_reference_image_run.php';
+
+    foreach (array(
+        $worker, $image_worker, $bank_image_worker, $bank_python_image_worker
+    ) as $required_worker) {
         if (!is_readable($required_worker)) {
             throw new RuntimeException(
                 '작업 실행기를 읽을 수 없습니다: ' . $required_worker
@@ -241,6 +266,13 @@ try {
                 $job_command = array(
                     PHP_BINARY,
                     $bank_image_worker,
+                    '--version-id=' . $before_job['id'],
+                );
+            } elseif ($before_job['type'] === 'bank_python_image') {
+                $job_label = '문제은행 Python 목표 이미지 생성';
+                $job_command = array(
+                    PHP_BINARY,
+                    $bank_python_image_worker,
                     '--version-id=' . $before_job['id'],
                 );
             } elseif ($before_job['type'] === 'grade') {
