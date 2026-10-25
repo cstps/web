@@ -235,6 +235,39 @@ if (!$fatal) {
     $simulation_problem_form_csrf_token = simulation_problem_csrf_issue($context);
 }
 
+
+$simulation_problem_saved_image = null;
+
+if (!$fatal && $problem_id !== null && $base_version !== '0') {
+    try {
+        require_once(__DIR__ . '/../scripts/simulation_problem_image_view.php');
+
+        $statement = simulation_problem_store_statement(
+            $dbh,
+            'SELECT CAST(version_id AS CHAR)
+             FROM simulation_problem_version
+             WHERE problem_id = ? AND version_no = ?',
+            array($problem_id, $base_version)
+        );
+        $simulation_saved_version_id = $statement->fetchColumn();
+        $statement->closeCursor();
+
+        if ($simulation_saved_version_id !== false) {
+            $simulation_problem_saved_image = simulation_problem_image_view(
+                $dbh,
+                $simulation_admin_actor,
+                $simulation_saved_version_id
+            );
+        }
+    } catch (Throwable $exception) {
+        error_log('[simulation_problem_saved_image] ' . $exception->getMessage());
+        $simulation_problem_saved_image = array(
+            'state' => 'unavailable',
+            'label' => '저장된 목표 이미지 상태를 확인하지 못했습니다.',
+        );
+    }
+}
+
 $admin_page_title = $problem_id === null ? '그림 문제 추가' : '그림 문제 수정';
 $admin_active_menu = $problem_id === null
     ? 'simulation_problem_add'

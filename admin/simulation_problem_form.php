@@ -7,7 +7,7 @@ if (
     exit('문제 편집 화면에서 이용해 주세요.');
 }
 ?>
-<link rel="stylesheet" href="simulation-problem-preview.css?v=3">
+<link rel="stylesheet" href="simulation-problem-preview.css?v=4">
 <div class="admin-page">
     <div class="admin-page-header">
         <div>
@@ -178,6 +178,8 @@ if (
             </section>
         <?php endforeach; ?>
 
+        <?php require(__DIR__ . '/simulation_problem_saved_image.php'); ?>
+
         <section class="admin-card">
             <h2>그림 문제 채점 설정</h2>
             <p>자유 실습에서는 이 설정을 사용하지 않습니다.</p>
@@ -247,5 +249,6 @@ if (
     <script src="simulation-problem-description.js?v=1"></script>
     <script src="simulation-problem-editor.js?v=2"></script>
     <script src="simulation-problem-preview.js?v=1"></script>
+    <script src="simulation-problem-saved-image.js?v=1"></script>
     <?php endif; ?>
 </div>
