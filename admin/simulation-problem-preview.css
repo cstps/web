@@ -177,3 +177,70 @@
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+
+/* 문제은행 영역 입력과 미리보기 표시 */
+.bank-regions-scroll {
+    overflow-x: auto;
+    margin-bottom: 12px;
+}
+.bank-regions-table {
+    width: 100%;
+    min-width: 820px;
+    border-collapse: collapse;
+}
+.bank-regions-table caption {
+    text-align: left;
+    margin-bottom: 8px;
+}
+.bank-regions-table th,
+.bank-regions-table td {
+    padding: 6px;
+    border: 1px solid #cbd5e1;
+    text-align: left;
+}
+.bank-regions-table input {
+    width: 100%;
+    min-width: 64px;
+    box-sizing: border-box;
+}
+.bank-regions-table td:nth-child(1),
+.bank-regions-table td:nth-child(2) {
+    min-width: 120px;
+}
+.bank-regions-error {
+    color: #b91c1c;
+}
+.bank-preview-output {
+    position: relative;
+}
+.bank-region-overlay {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+    overflow: hidden;
+}
+.bank-region-overlay text {
+    font-size: 12px;
+    font-weight: bold;
+    paint-order: stroke;
+    stroke: white;
+    stroke-width: 3px;
+    stroke-linejoin: round;
+}
+.bank-region-overlay[hidden],
+.bank-region-controls[hidden],
+#bank-regions[hidden],
+label[for="bank-regions"][hidden] {
+    display: none !important;
+}
+.bank-region-controls {
+    margin: 10px 0;
+}
+.bank-region-controls p {
+    font-size: 13px;
+}

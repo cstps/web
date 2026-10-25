@@ -7,14 +7,14 @@ if (
     exit('문제 편집 화면에서 이용해 주세요.');
 }
 ?>
-<link rel="stylesheet" href="simulation-problem-preview.css?v=4">
+<link rel="stylesheet" href="simulation-problem-preview.css?v=5">
 <div class="admin-page">
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title"><?= simulation_problem_form_escape($admin_page_title) ?></h1>
             <p class="admin-page-description">
                 저장할 때마다 새 버전을 추가합니다.
-                이 화면에서 코드를 실행하지 않습니다.
+                정답 코드는 미리보기로 확인하고, 저장 후 서버에서 목표 그림을 생성합니다.
             </p>
         </div>
         <a class="admin-btn admin-btn-secondary"
@@ -138,48 +138,6 @@ if (
             </div>
         </section>
 
-        <?php foreach (array(
-            'reference_source' => '교사용 정답 코드',
-        ) as $key => $label): ?>
-            <section class="admin-card">
-                <h2><?= $label ?></h2>
-                <div id="bank-editor-<?= $key ?>" hidden
-                     style="height:<?= $key === 'reference_source' ? '500' : '240' ?>px;min-height:180px;resize:vertical;overflow:hidden;border:1px solid #cbd5e1"></div>
-                <textarea class="admin-form-input simulation-bank-source"
-                          name="<?= $key ?>" rows="<?= $key === 'reference_source' ? '25' : '12' ?>"
-                          aria-label="<?= $label ?>"
-                          data-editor-id="bank-editor-<?= $key ?>"
-                          spellcheck="false"><?= simulation_problem_form_escape($values[$key]) ?></textarea>
-                <?php if ($key === 'reference_source'): ?>
-                    <p>그림 문제에만 필요하며 학생용 문제 목록에는 표시하지 않습니다.</p>
-                    <div id="bank-reference-preview">
-                        <div class="bank-preview-toolbar">
-                            <h3>정답 그림 미리보기</h3>
-                            <div class="bank-preview-actions">
-                            <button type="button" id="bank-preview-run"
-                                    class="admin-btn admin-btn-primary">미리보기 실행</button>
-                            <button type="button" id="bank-preview-stop"
-                                    class="admin-btn admin-btn-secondary" disabled>중지</button>
-
-                            </div>
-                        </div>
-                        <p id="bank-preview-status" role="status" aria-live="polite">
-                            정답 코드를 실행하고 결과 그림을 확인해 주세요.
-                        </p>
-                        <div class="bank-preview-output">
-                            <div id="bank-preview-host"></div>
-                            <canvas id="bank-preview-canvas"
-                                    width="400" height="400" hidden></canvas>
-                        </div>
-                        <p>Python 정적 미리보기는 setup 실행 직후인 프레임 0을 표시합니다.</p>
-                    </div>
-
-                <?php endif; ?>
-            </section>
-        <?php endforeach; ?>
-
-        <?php require(__DIR__ . '/simulation_problem_saved_image.php'); ?>
-
         <section class="admin-card">
             <h2>그림 문제 채점 설정</h2>
             <p>자유 실습에서는 이 설정을 사용하지 않습니다.</p>
@@ -225,6 +183,51 @@ if (
             </div>
         </section>
 
+        <?php foreach (array(
+            'reference_source' => '교사용 정답 코드',
+        ) as $key => $label): ?>
+            <section class="admin-card">
+                <h2><?= $label ?></h2>
+                <div id="bank-editor-<?= $key ?>" hidden
+                     style="height:<?= $key === 'reference_source' ? '500' : '240' ?>px;min-height:180px;resize:vertical;overflow:hidden;border:1px solid #cbd5e1"></div>
+                <textarea class="admin-form-input simulation-bank-source"
+                          name="<?= $key ?>" rows="<?= $key === 'reference_source' ? '25' : '12' ?>"
+                          aria-label="<?= $label ?>"
+                          data-editor-id="bank-editor-<?= $key ?>"
+                          spellcheck="false"><?= simulation_problem_form_escape($values[$key]) ?></textarea>
+                <?php if ($key === 'reference_source'): ?>
+                    <p>그림 문제에만 필요하며 학생용 문제 목록에는 표시하지 않습니다.</p>
+                    <div id="bank-reference-preview">
+                        <div class="bank-preview-toolbar">
+                            <h3>정답 그림 미리보기</h3>
+                            <div class="bank-preview-actions">
+                            <button type="button" id="bank-preview-run"
+                                    class="admin-btn admin-btn-primary">미리보기 실행</button>
+                            <button type="button" id="bank-preview-stop"
+                                    class="admin-btn admin-btn-secondary" disabled>중지</button>
+
+                            </div>
+                        </div>
+                        <p id="bank-preview-status" role="status" aria-live="polite">
+                            정답 코드를 실행하고 결과 그림을 확인해 주세요.
+                        </p>
+                        <div class="bank-preview-output">
+                            <div id="bank-preview-host"></div>
+                            <canvas id="bank-preview-canvas"
+                                    width="400" height="400" hidden></canvas>
+                        </div>
+                        <p>Python 정적 미리보기는 setup 실행 직후인 프레임 0을 표시합니다.</p>
+                    </div>
+
+                <?php endif; ?>
+            </section>
+        <?php endforeach; ?>
+
+
+
+
+        <?php require(__DIR__ . '/simulation_problem_saved_image.php'); ?>
+
         <p id="simulation-bank-message" role="alert" hidden></p>
         <button class="admin-btn admin-btn-primary" type="submit">새 버전 저장</button>
         <a class="admin-btn admin-btn-secondary"
@@ -250,5 +253,6 @@ if (
     <script src="simulation-problem-editor.js?v=2"></script>
     <script src="simulation-problem-preview.js?v=1"></script>
     <script src="simulation-problem-saved-image.js?v=1"></script>
+    <script src="simulation-problem-regions.js?v=1"></script>
     <?php endif; ?>
 </div>

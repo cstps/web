@@ -357,6 +357,39 @@ try {
     }
 
     if (($state['OOMKilled'] ?? false) || ($state['ExitCode'] ?? -1) !== 0) {
+        fwrite(
+            STDERR,
+            '컨테이너 종료 코드: ' . (string)($state['ExitCode'] ?? -1) .
+            ' / 메모리 제한 종료: ' .
+            (($state['OOMKilled'] ?? false) ? '예' : '아니오') . "\n"
+        );
+
+        try {
+            $failure_output = bank_image_docker(
+                array('logs', '--tail', '20', $container_name),
+                'render-failure.out'
+            );
+            if (trim($failure_output) !== '') {
+                fwrite(
+                    STDERR,
+                    "실행 표준 출력:\n" . substr($failure_output, 0, 8192) . "\n"
+                );
+            }
+        } catch (Throwable $log_error) {
+            fwrite(STDERR, "컨테이너 표준 출력 조회 실패\n");
+        }
+
+        // Docker는 컨테이너의 표준 오류를 별도 파일로 전달한다.
+        $failure_error_file = $temp_dir . '/docker-error.log';
+        if (is_file($failure_error_file)) {
+            $failure_errors = file_get_contents(
+                $failure_error_file, false, null, 0, 8192
+            );
+            if (is_string($failure_errors) && trim($failure_errors) !== '') {
+                fwrite(STDERR, "실행 상세 오류:\n" . $failure_errors . "\n");
+            }
+        }
+
         throw new RuntimeException('목표 이미지 렌더링 실패');
     }
 
