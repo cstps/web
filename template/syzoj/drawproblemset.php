@@ -149,9 +149,11 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
                                 </td>
 
                                 <td>
-                                    <?php echo drawproblemset_escape(
+                                    <a href="/drawproblem.php?problem_id=<?= drawproblemset_escape(
+                                        $problem['problem_id']
+                                    ) ?>"><?= drawproblemset_escape(
                                         $problem['title']
-                                    ); ?>
+                                    ) ?></a>
                                 </td>
 
                                 <td>
@@ -179,9 +181,10 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
                                 </td>
 
                                 <td>
-                                    <span class="ui small grey text">
-                                        풀이 화면 준비 중
-                                    </span>
+                                    <a class="ui small basic button"
+                                       href="/drawproblem.php?problem_id=<?= drawproblemset_escape(
+                                           $problem['problem_id']
+                                       ) ?>">문제 보기</a>
                                 </td>
                             </tr>
 

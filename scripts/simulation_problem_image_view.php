@@ -47,6 +47,18 @@ function simulation_problem_image_view(
         throw new UnexpectedValueException('목표 이미지 조회 권한이 없습니다.');
     }
 
+    return simulation_problem_image_validated_view($row, $include_png);
+}
+
+// 호출하는 처리기에서 열람 권한을 먼저 검사해야 한다.
+function simulation_problem_image_validated_view(
+    array $row,
+    $include_png = false
+) {
+    $version_id = simulation_problem_image_positive_id(
+        $row['version_id'] ?? null
+    );
+
     $view = array(
         'version_id' => $version_id,
         'version_no' => (int)$row['version_no'],
