@@ -1,6 +1,8 @@
 #!/usr/bin/env php
 <?php
 
+require_once(__DIR__ . '/simulation_execution_config.php');
+
 // 등록된 채점 요청 하나를 처리하는 CLI.
 // 현재는 비교 지표만 저장하고 공식 점수는 계산하지 않는다.
 
@@ -206,6 +208,7 @@ try {
         $db,
         'SELECT reference_id, activity_id, reference_no, source_code,
                 canvas_width, canvas_height, p5_version,
+                source_language, execution_engine, execution_version,
                 render_config, grading_config, max_score
          FROM course_simulation_reference
          WHERE reference_id = ?',
@@ -217,6 +220,10 @@ try {
     if (!$submission || !$reference) {
         throw new RuntimeException('제출 또는 등록된 정답을 찾을 수 없습니다.');
     }
+
+    // 활동의 현재 설정이 아닌 채점 대상 정답 버전을 검사한다.
+    // Python 실험 엔진은 기존 p5.js 채점 경로에서 차단한다.
+    simulation_validate_execution_metadata($reference);
 
     $expected = array(
         'activity_id' => (int)$submission['activity_id'],

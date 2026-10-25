@@ -1,5 +1,7 @@
 <?php
 
+require_once(__DIR__ . '/scripts/simulation_execution_config.php');
+
 require_once('./include/db_info.inc.php');
 require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
@@ -36,7 +38,10 @@ function simulation_reference_context($activity_id, $lock = false)
             cl.status AS lesson_status,
             s.simulation_mode,
             s.canvas_width,
-            s.canvas_height
+            s.canvas_height,
+            s.source_language,
+            s.execution_engine,
+            s.execution_version
          FROM course_activity ca
          INNER JOIN course c
            ON c.course_id = ca.course_id
@@ -91,6 +96,9 @@ function simulation_reference_context($activity_id, $lock = false)
             '현재 정답 관리는 400×400 캔버스만 지원합니다.'
         );
     }
+
+    // 현재 정답 관리 화면은 기존 p5.js 처리 경로만 허용한다.
+    simulation_validate_execution_metadata($row);
 
     return $row;
 }
@@ -256,7 +264,13 @@ if ($method === 'POST') {
         $transaction_started = true;
 
         // 활동별 설정 행을 잠가 동시 버전 저장을 직렬화한다.
-        simulation_reference_context($activity_id, true);
+        $locked_reference_activity =
+            simulation_reference_context($activity_id, true);
+
+        // 요청값 대신 잠근 활동 행의 설정을 정답 버전에 복사한다.
+        $reference_execution = simulation_validate_execution_metadata(
+            $locked_reference_activity
+        );
 
         $latest = $dbh->prepare(
             "SELECT reference_no
@@ -287,10 +301,11 @@ if ($method === 'POST') {
                 (
                     activity_id, reference_no, source_code,
                     canvas_width, canvas_height, p5_version,
+                    source_language, execution_engine, execution_version,
                     render_config, grading_config, max_score,
                     created_by
                 )
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
 
         $save->execute(array(
@@ -299,7 +314,10 @@ if ($method === 'POST') {
             $source,
             400,
             400,
-            '2.3.4',
+            $reference_execution['execution_version'],
+            $reference_execution['source_language'],
+            $reference_execution['execution_engine'],
+            $reference_execution['execution_version'],
             $render_config,
             $grading_config,
             $normalized_score,

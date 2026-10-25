@@ -1,6 +1,8 @@
 #!/usr/bin/env php
 <?php
 
+require_once(__DIR__ . '/simulation_execution_config.php');
+
 // 목표 이미지 생성 대기 요청 하나를 처리하는 CLI.
 
 if (PHP_SAPI !== 'cli') {
@@ -126,6 +128,7 @@ try {
         'SELECT
             r.reference_id, r.activity_id, r.reference_no,
             r.source_code, r.canvas_width, r.canvas_height, r.p5_version,
+            r.source_language, r.execution_engine, r.execution_version,
             r.grading_config, r.max_score,
             i.image_status, i.source_sha256
          FROM course_simulation_reference r
@@ -174,6 +177,10 @@ try {
     if ($source_sha256 !== $reference['source_sha256']) {
         throw new RuntimeException('생성 요청과 정답 코드의 해시가 다릅니다.');
     }
+
+    // 요청 확보 후 검사하여 기존 오류 처리·상태 기록을 이용한다.
+    // Python 실험 엔진은 기존 p5.js 이미지 생성 경로에서 차단한다.
+    simulation_validate_execution_metadata($reference);
 
     if ((int)$reference['canvas_width'] !== 400 ||
         (int)$reference['canvas_height'] !== 400 ||
