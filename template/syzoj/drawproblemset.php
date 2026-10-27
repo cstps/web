@@ -109,6 +109,22 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
             총 <?php echo number_format($view_problem_total); ?>개
         </p>
 
+        <?php if ($user_id !== ''): ?>
+            <?php if (!$view_problem_progress_available): ?>
+                <div class="ui warning message" role="status">
+                    풀이 상태를 불러오지 못했습니다. 새로고침해 주세요.
+                </div>
+            <?php else: ?>
+                <p>
+                    <i class="green checkmark icon" aria-hidden="true"></i> 통과
+                    · <i class="red checkmark icon" aria-hidden="true"></i> 시도함
+                    · 기록이 없으면 빈칸으로 표시합니다.<br>
+                    이전 문제 버전의 기록도 포함하며,
+                    수행모드에서는 현재 수행 범위만 반영합니다.
+                </p>
+            <?php endif; ?>
+        <?php endif; ?>
+
         <?php if (empty($view_problem_rows)) { ?>
 
             <div class="ui message">
@@ -127,7 +143,9 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
 
                     <thead>
                         <tr>
-                            <th>번호</th>
+                            <?php if ($user_id !== ''): ?>
+                                <th class="collapsing center aligned" scope="col">통과</th>
+                            <?php endif; ?>
                             <th>제목</th>
                             <th>유형</th>
                             <th>작성자</th>
@@ -142,11 +160,31 @@ include('template/' . $OJ_TEMPLATE . '/header.php');
                         <?php foreach ($view_problem_rows as $problem) { ?>
 
                             <tr>
-                                <td>
-                                    <?php echo drawproblemset_escape(
-                                        $problem['problem_id']
-                                    ); ?>
-                                </td>
+                                <?php if ($user_id !== ''): ?>
+                                    <?php $progress_state = $view_problem_progress[
+                                        (string)$problem['problem_id']
+                                    ] ?? 'none'; ?>
+
+                                    <td class="collapsing center aligned">
+                                        <?php if (!$view_problem_progress_available): ?>
+                                            <span aria-label="풀이 상태 조회 불가">—</span>
+                                        <?php elseif ($progress_state === 'solved'): ?>
+                                            <span class="status accepted"
+                                                  role="img"
+                                                  aria-label="통과"
+                                                  title="이전 버전을 포함한 본인 제출 중 만점 기록이 있습니다.">
+                                                <i class="green checkmark icon" aria-hidden="true"></i>
+                                            </span>
+                                        <?php elseif ($progress_state === 'submitted'): ?>
+                                            <span class="status wrong_answer"
+                                                  role="img"
+                                                  aria-label="시도함, 아직 통과하지 못함"
+                                                  title="제출 기록은 있지만 만점 기록은 없습니다.">
+                                                <i class="red checkmark icon" aria-hidden="true"></i>
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                <?php endif; ?>
 
                                 <td>
                                     <a href="/drawproblem.php?problem_id=<?= drawproblemset_escape(

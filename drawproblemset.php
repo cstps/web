@@ -8,6 +8,9 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 
+header('Cache-Control: private, no-store');
+header('Vary: Cookie', false);
+
 $view_title = '그림 문제 목록';
 $show_title = $view_title;
 
@@ -17,6 +20,8 @@ $view_problem_pages = 1;
 $view_problem_page = 1;
 $view_problem_scope = 'public';
 $view_problem_search = '';
+$view_problem_progress = array();
+$view_problem_progress_available = false;
 
 function drawproblemset_error($message, $status = 400)
 {
@@ -153,6 +158,25 @@ try {
         '그림 문제 목록을 불러오지 못했습니다.',
         500
     );
+}
+
+if ($user_id !== '') {
+    try {
+        require_once(__DIR__ . '/scripts/simulation_problem_list_progress.php');
+
+        $view_problem_progress = simulation_problem_list_progress(
+            $dbh,
+            array_map(
+                'strval',
+                array_column($view_problem_rows, 'problem_id')
+            )
+        );
+
+        $view_problem_progress_available = true;
+
+    } catch (Throwable $exception) {
+        error_log('[drawproblemset_progress] ' . $exception->getMessage());
+    }
 }
 
 require('template/' . $OJ_TEMPLATE . '/drawproblemset.php');
