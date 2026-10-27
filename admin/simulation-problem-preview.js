@@ -38,8 +38,23 @@
             source.value,
             profile.value,
             form.elements.namedItem("canvas_width").value,
-            form.elements.namedItem("canvas_height").value
+            form.elements.namedItem("canvas_height").value,
+            mode.value,
+            form.elements.namedItem("scoring_mode").value,
+            form.elements.namedItem("position_tolerance").value,
+            form.elements.namedItem("max_score").value,
+            form.elements.namedItem("regions_json").value
         ]);
+    }
+
+    // GET 화면의 검사 완료 정답과 같은 설정일 때만 이전 확인을 이용한다.
+    const savedSignature = form.dataset.previewBaseline === "1"
+        ? signature()
+        : null;
+
+    if (savedSignature !== null) {
+        status.textContent =
+            "저장된 정답 그림 검사가 완료됐습니다. 정답·실행·채점 설정이 같으면 바로 저장할 수 있습니다.";
     }
 
     function stopActive() {
@@ -338,7 +353,8 @@
     });
 
     form.addEventListener("submit", function (event) {
-        if (mode.value !== "drawing" || verified === signature()) return;
+        if (mode.value !== "drawing" || verified === signature() ||
+            savedSignature === signature()) return;
         event.preventDefault();
         status.textContent = "저장 전에 현재 정답 코드의 미리보기를 실행하고 그림을 확인해 주세요.";
         status.scrollIntoView({block: "center"});

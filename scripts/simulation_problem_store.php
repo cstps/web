@@ -121,7 +121,8 @@ function simulation_store_problem_version(
     PDO $connection,
     array $input,
     $problem_id,
-    $expected_version
+    $expected_version,
+    $content_only = false
 ) {
     if ($connection->inTransaction()) {
         throw new RuntimeException('이미 진행 중인 트랜잭션이 있습니다.');
@@ -152,6 +153,20 @@ function simulation_store_problem_version(
 
     if ($is_new && $expected_version !== '0') {
         throw new InvalidArgumentException('새 문제의 기준 버전은 0이어야 합니다.');
+    }
+
+    // 기존 문제의 공개 정책은 별도 저장 경로에서만 변경한다.
+    if (!$is_new) {
+        $input['sharing'] = 'private';
+        $input['published'] = '0';
+
+        if ($content_only === true) {
+            // 실행 설정 저장 시 기본 정보는 서버의 기존 저장본을 이용한다.
+            $input['title'] = '저장된 문제';
+            $input['description'] = '';
+            $input['allow_edit'] = '1';
+            $input['allow_submit'] = '1';
+        }
     }
 
     $version = simulation_validate_problem_input($input);
@@ -205,9 +220,22 @@ function simulation_store_problem_version(
                 throw new RuntimeException('이 문제를 수정할 권한이 없습니다.');
             }
 
+            // 다른 창에서 저장한 공개 정책을 이전 화면의 값으로 덮어쓰지 않는다.
+            $version['sharing'] = $problem['sharing'];
+            $version['published'] = (int)$problem['published'];
+
+            if (
+                $version['execution_engine'] !== 'p5js' &&
+                $version['published'] === 1
+            ) {
+                throw new InvalidArgumentException(
+                    'Python으로 변경하려면 먼저 공개 설정을 비공개로 저장해 주세요.'
+                );
+            }
+
             $statement = simulation_problem_store_statement(
                 $connection,
-                'SELECT version_no
+                'SELECT version_no, title, description, allow_edit, allow_submit
                  FROM simulation_problem_version
                  WHERE problem_id = ?
                  ORDER BY version_no DESC
@@ -221,6 +249,15 @@ function simulation_store_problem_version(
 
             if (!$latest) {
                 throw new RuntimeException('기존 문제 버전을 찾지 못했습니다.');
+            }
+
+            if ($content_only === true) {
+                // 잠근 최신 버전의 기본 정보를 그대로 유지한다.
+                foreach (array(
+                    'title', 'description', 'allow_edit', 'allow_submit'
+                ) as $key) {
+                    $version[$key] = $latest[$key];
+                }
             }
 
             $latest_no = (int)$latest['version_no'];

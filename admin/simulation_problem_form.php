@@ -13,8 +13,8 @@ if (
         <div>
             <h1 class="admin-page-title"><?= simulation_problem_form_escape($admin_page_title) ?></h1>
             <p class="admin-page-description">
-                저장할 때마다 새 버전을 추가합니다.
-                정답 코드는 미리보기로 확인하고, 저장 후 서버에서 목표 그림을 생성합니다.
+                기본 정보 저장과 코드·실행·채점 설정 저장을 구분하여 사용합니다.
+                검사 완료된 정답의 실행·채점 설정이 같으면 미리보기를 다시 실행하지 않아도 됩니다.
             </p>
         </div>
         <a class="admin-btn admin-btn-secondary"
@@ -28,21 +28,50 @@ if (
         </div>
     <?php elseif (($_GET['saved'] ?? '') === '1'): ?>
         <p role="status">새 문제 버전을 저장했습니다.</p>
+    <?php elseif (in_array(
+        $_GET['basic_saved'] ?? '',
+        array('version', 'policy', 'unchanged'),
+        true
+    )): ?>
+        <p role="status"><?php echo array(
+            'version' => '기본 정보와 공개 설정을 저장했습니다. 새 버전을 생성하고 기존 코드·실행·채점 설정을 유지했습니다.',
+            'policy' => '공개·공유 설정을 저장했습니다. 문제 버전은 유지됩니다.',
+            'unchanged' => '변경된 기본 정보가 없습니다. 문제 버전은 유지됩니다.',
+        )[$_GET['basic_saved']]; ?></p>
+    <?php elseif (($_GET['policy_saved'] ?? '') === '1'): ?>
+        <p role="status">공개·공유 설정을 저장했습니다. 문제 버전은 유지됩니다.</p>
     <?php endif; ?>
 
     <?php if (!$fatal): ?>
     <form method="post" action="simulation_problem_edit.php"
-          id="simulation-bank-form" accept-charset="UTF-8">
+          id="simulation-bank-form" accept-charset="UTF-8"
+          data-preview-baseline="<?= !$is_post && ($simulation_problem_saved_image['state'] ?? '') === 'ready' ? '1' : '0' ?>">
         <input type="hidden" name="problem_id"
                value="<?= simulation_problem_form_escape($problem_id ?? '') ?>">
         <input type="hidden" name="base_version"
                value="<?= simulation_problem_form_escape($base_version) ?>">
+        <input type="hidden" name="expected_published"
+               value="<?= simulation_problem_form_escape($is_post
+                   ? ($_POST['expected_published'] ?? '')
+                   : ($problem['published'] ?? '0')) ?>">
+        <input type="hidden" name="expected_sharing"
+               value="<?= simulation_problem_form_escape($is_post
+                   ? ($_POST['expected_sharing'] ?? '')
+                   : ($problem['sharing'] ?? 'private')) ?>">
         <input type="hidden" name="simulation_problem_csrf"
                value="<?= simulation_problem_form_escape($simulation_problem_form_csrf_token) ?>">
 
         <section class="admin-card bank-basic-settings">
             <h2>기본 정보</h2>
             <p>현재 버전: <?= simulation_problem_form_escape($base_version) ?></p>
+
+            <?php if ($problem_id !== null): ?>
+                <button type="button" id="bank-basic-save"
+                        class="admin-btn admin-btn-primary" hidden>기본 정보 저장</button>
+                <p>제목·설명·학생 공개·다른 교사 공유·학생 코드 편집 및 제출 허용을 저장합니다.
+                   공개·공유만 변경하면 버전을 유지합니다.
+                   작성 중인 코드·실행·채점 설정 변경은 포함하지 않습니다.</p>
+            <?php endif; ?>
 
             <div class="admin-form-field bank-title-field">
                 <label class="admin-form-label" for="bank-title">문제 제목</label>
@@ -109,7 +138,7 @@ if (
                            value="<?= simulation_problem_form_escape($values[$key]) ?>">
                 </div>
             <?php endforeach; ?>
-            <p>그림 문제와 Python 실험은 400×400으로 설정합니다.</p>
+
         </section>
 
 
@@ -229,7 +258,13 @@ if (
         <?php require(__DIR__ . '/simulation_problem_saved_image.php'); ?>
 
         <p id="simulation-bank-message" role="alert" hidden></p>
-        <button class="admin-btn admin-btn-primary" type="submit">새 버전 저장</button>
+        <button class="admin-btn admin-btn-primary" type="submit" <?= $problem_id !== null ? 'formnovalidate' : '' ?>><?= $problem_id === null
+                ? '문제 등록'
+                : '코드·실행·채점 설정 저장' ?></button>
+
+        <?php if ($problem_id !== null): ?>
+            <p>이 버튼은 작성 중인 기본 정보·공개·공유 설정 변경을 저장하지 않습니다.</p>
+        <?php endif; ?>
         <a class="admin-btn admin-btn-secondary"
            href="<?= $problem_id === null
                ? 'simulation_problem_edit.php'
@@ -251,8 +286,9 @@ if (
     <script src="/tinymce/tinymce.min.js?v=8.9.0"></script>
     <script src="simulation-problem-description.js?v=1"></script>
     <script src="simulation-problem-editor.js?v=2"></script>
-    <script src="simulation-problem-preview.js?v=1"></script>
+    <script src="simulation-problem-preview.js?v=2"></script>
     <script src="simulation-problem-saved-image.js?v=1"></script>
     <script src="simulation-problem-regions.js?v=1"></script>
+    <script src="simulation-problem-basic.js?v=1"></script>
     <?php endif; ?>
 </div>

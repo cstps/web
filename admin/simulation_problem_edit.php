@@ -2,6 +2,7 @@
 require_once(__DIR__ . '/simulation-problem-init.php');
 require_once(__DIR__ . '/../scripts/simulation_problem_store.php');
 require_once(__DIR__ . '/../scripts/simulation_problem_csrf.php');
+require_once(__DIR__ . '/../scripts/simulation_problem_basic_store.php');
 
 function simulation_problem_form_escape($value)
 {
@@ -66,6 +67,25 @@ try {
     }
 
     $problem_id = $raw_id === '' ? null : $raw_id;
+
+    if ($is_post && $problem_id !== null) {
+        if (
+            !in_array(
+                $_POST['expected_published'] ?? null,
+                array('0', '1'),
+                true
+            ) ||
+            !in_array(
+                $_POST['expected_sharing'] ?? null,
+                array('private', 'shared'),
+                true
+            )
+        ) {
+            throw new InvalidArgumentException(
+                '기준 공개 설정이 올바르지 않습니다. 편집 화면을 다시 열어 주세요.'
+            );
+        }
+    }
 
     if ($problem_id !== null) {
         $statement = simulation_problem_store_statement(
@@ -186,7 +206,14 @@ try {
 
 if (!$fatal) {
     $context = ($problem_id === null ? 'new' : 'edit:' . $problem_id)
-        . ':' . $base_version;
+        . ':' . $base_version
+        . ($problem_id === null ? '' : ':' .
+            ($is_post
+                ? $_POST['expected_published']
+                : (string)$problem['published']) . ':' .
+            ($is_post
+                ? $_POST['expected_sharing']
+                : $problem['sharing']));
 
     if ($is_post) {
         try {
@@ -199,12 +226,30 @@ if (!$fatal) {
                 );
             }
 
-            $saved = simulation_store_problem_version(
-                $dbh,
-                $values,
-                $problem_id,
-                $base_version
-            );
+            $save_action = $_POST['save_action'] ?? 'version';
+
+            if (
+                !is_string($save_action) ||
+                !in_array($save_action, array('version', 'basic'), true)
+            ) {
+                throw new InvalidArgumentException('저장 작업이 올바르지 않습니다.');
+            }
+
+            if ($save_action === 'basic') {
+                $saved = simulation_store_problem_basic(
+                    $dbh,
+                    $values + array(
+                        'expected_published' => $_POST['expected_published'] ?? null,
+                        'expected_sharing' => $_POST['expected_sharing'] ?? null,
+                    ),
+                    $problem_id,
+                    $base_version
+                );
+            } else {
+                $saved = simulation_store_problem_version(
+                    $dbh, $values, $problem_id, $base_version, true
+                );
+            }
 
             // 저장 함수가 커밋을 완료한 뒤 처리기에 알린다.
             // 알림 실패는 이미 저장된 문제 버전의 성공 여부에 영향을 주지 않는다.
@@ -237,7 +282,10 @@ if (!$fatal) {
 
             header(
                 'Location: simulation_problem_edit.php?problem_id=' .
-                rawurlencode($saved['problem_id']) . '&saved=1',
+                rawurlencode($saved['problem_id']) .
+                ($save_action === 'basic'
+                    ? '&basic_saved=' . rawurlencode($saved['change'])
+                    : '&saved=1'),
                 true,
                 303
             );
