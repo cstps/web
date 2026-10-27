@@ -114,12 +114,6 @@ try {
         $draw_reader_can_submit = false;
     }
 
-    if (
-        $draw_reader_problem['execution_engine'] === 'python-stdlib-rgba-poc' &&
-        (string)$draw_reader_problem['published'] !== '0'
-    ) {
-        $draw_reader_can_submit = false;
-    }
 
     if ($draw_reader_can_submit) {
         // 편집 불가 문제는 초안 조회가 없어 수행 기준을 여기서 확인한다.

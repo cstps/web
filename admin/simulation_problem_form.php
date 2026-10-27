@@ -123,7 +123,7 @@ if (
                 </div>
             <?php endforeach; ?>
 
-            <p>Python 문제는 현재 비공개로만 저장할 수 있습니다.</p>
+            <p>Python 그림 문제도 학생에게 공개할 수 있습니다. 정식 제출은 목표 그림 검사 완료 후 가능합니다.</p>
 
             <?php foreach (array(
                 'canvas_width' => '캔버스 너비',

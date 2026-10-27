@@ -144,11 +144,6 @@ function simulation_validate_problem_input(array $input)
             'execution_version' => '1',
         );
 
-        if ($published !== '0') {
-            throw new InvalidArgumentException(
-                'Python 문제는 현재 비공개로만 저장할 수 있습니다.'
-            );
-        }
     }
 
     $execution = simulation_validate_execution_metadata(

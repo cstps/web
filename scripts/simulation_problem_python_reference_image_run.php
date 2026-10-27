@@ -165,15 +165,15 @@ try {
         throw new RuntimeException('생성 대기 상태의 요청만 처리할 수 있습니다.');
     }
 
-    // Python 실험 경로는 비공개 문제의 지정된 엔진만 허용한다.
+    // 공개 여부와 관계없이 지정된 Python 실행 엔진과 버전만 허용한다.
     $execution = simulation_validate_execution_metadata($reference, true);
     if (
         $execution['source_language'] !== 'python' ||
         $execution['execution_engine'] !== 'python-stdlib-rgba-poc' ||
         $execution['execution_version'] !== '1' ||
-        !in_array($reference['published'] ?? null, array(0, '0'), true)
+        !in_array($reference['published'] ?? null, array(0, '0', 1, '1'), true)
     ) {
-        throw new RuntimeException('비공개 Python 그림 문제만 처리할 수 있습니다.');
+        throw new RuntimeException('지원하는 Python 그림 문제만 처리할 수 있습니다.');
     }
 
     $claim_token = bin2hex(random_bytes(16));
@@ -470,8 +470,8 @@ try {
     $db->beginTransaction();
     $fresh = bank_image_load($db, $version_id);
     bank_image_check_snapshot($fresh, $snapshot);
-    if (!in_array($fresh['published'] ?? null, array(0, '0'), true)) {
-        throw new RuntimeException('처리 중 문제 공개 상태가 변경됐습니다.');
+    if (!in_array($fresh['published'] ?? null, array(0, '0', 1, '1'), true)) {
+        throw new RuntimeException('문제 공개 설정이 올바르지 않습니다.');
     }
 
     if (

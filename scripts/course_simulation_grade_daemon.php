@@ -83,7 +83,7 @@ function simulation_daemon_next_job()
                  INNER JOIN simulation_problem p
                    ON p.problem_id = v.problem_id
                  WHERE i.image_status = 'pending'
-                   AND p.published = 0
+                   AND p.published IN (0, 1)
                    AND v.source_language = 'python'
                    AND v.execution_engine = 'python-stdlib-rgba-poc'
                    AND v.execution_version = '1'

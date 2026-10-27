@@ -224,14 +224,6 @@ function simulation_store_problem_version(
             $version['sharing'] = $problem['sharing'];
             $version['published'] = (int)$problem['published'];
 
-            if (
-                $version['execution_engine'] !== 'p5js' &&
-                $version['published'] === 1
-            ) {
-                throw new InvalidArgumentException(
-                    'Python으로 변경하려면 먼저 공개 설정을 비공개로 저장해 주세요.'
-                );
-            }
 
             $statement = simulation_problem_store_statement(
                 $connection,

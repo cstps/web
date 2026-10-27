@@ -117,14 +117,6 @@ function simulation_problem_store_submission(
 
         $execution = simulation_validate_execution_metadata($problem, true);
 
-        if (
-            $execution['execution_engine'] === 'python-stdlib-rgba-poc' &&
-            (string)$problem['published'] !== '0'
-        ) {
-            throw new UnexpectedValueException(
-                'Python 실험 문제는 비공개 상태에서만 제출할 수 있습니다.'
-            );
-        }
 
         simulation_checked_performance_context(
             $user_id,
