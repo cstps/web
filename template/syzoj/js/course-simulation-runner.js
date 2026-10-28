@@ -15,6 +15,33 @@
         return;
     }
 
+    const sourceLanguage = editor.dataset.sourceLanguage || "javascript";
+    const executionEngine = editor.dataset.executionEngine || "p5js";
+    const executionVersion = editor.dataset.executionVersion || "2.3.4";
+
+    const isPython = sourceLanguage === "python" &&
+        executionEngine === "python-stdlib-rgba-poc" &&
+        executionVersion === "1";
+
+    const isP5 = sourceLanguage === "javascript" &&
+        executionEngine === "p5js" &&
+        executionVersion === "2.3.4";
+
+    if (
+        (!isPython && !isP5) ||
+        (
+            isPython &&
+            typeof window.createCourseSimulationPythonRunner !== "function"
+        )
+    ) {
+        runButton.disabled = true;
+        stopButton.disabled = true;
+        resetButton.disabled = true;
+        status.textContent =
+            "실행 환경을 준비하지 못했습니다. 화면을 새로고침해 주세요.";
+        return;
+    }
+
     // Ace 편집기는 화면 입력을 담당하고,
     // 기존 textarea는 실행·저장·제출 데이터를 유지한다.
     const aceContainer = document.getElementById(
@@ -32,7 +59,7 @@
             aceEditor = ace.edit(aceContainer);
 
             aceEditor.setTheme("ace/theme/chrome");
-            aceEditor.session.setMode("ace/mode/javascript");
+            aceEditor.session.setMode(isPython ? "ace/mode/python" : "ace/mode/javascript");
             aceEditor.session.setUseWrapMode(true);
 
             aceEditor.setOptions({
@@ -94,12 +121,23 @@
     let runId = 0;
     let errorReported = false;
 
+    const pythonRunner = isPython
+        ? window.createCourseSimulationPythonRunner({
+            frame: frame,
+            stopButton: stopButton,
+            activityId: editor.dataset.activityId,
+            setStatus: setStatus
+        })
+        : null;
+
     function setStatus(message) {
         status.textContent = message;
     }
 
     function stopSimulation() {
         runId += 1;
+
+        if (pythonRunner) pythonRunner.stop();
 
         frame.onload = null;
         frame.removeAttribute("srcdoc");
@@ -188,7 +226,7 @@
             return;
         }
 
-        if (code.length > 200000) {
+        if (new TextEncoder().encode(code).length > 200000) {
             setStatus("코드 길이가 허용 범위를 초과했습니다.");
             return;
         }
@@ -197,6 +235,17 @@
 
         const currentRun = runId;
         errorReported = false;
+
+        if (pythonRunner) {
+            pythonRunner.run(code).catch(function (error) {
+                stopSimulation();
+                setStatus(
+                    "Python 실행 오류: " +
+                    String(error.message || error).slice(0, 300)
+                );
+            });
+            return;
+        }
 
         setStatus("p5.js 코드를 실행하는 중입니다.");
 

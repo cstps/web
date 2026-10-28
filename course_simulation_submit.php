@@ -1,6 +1,7 @@
 <?php
 
 require_once(__DIR__ . '/scripts/course_simulation_performance_policy.php');
+require_once(__DIR__ . '/scripts/course_simulation_grade_request.php');
 
 require_once('./include/db_info.inc.php');
 require_once('./include/const.inc.php');
@@ -147,7 +148,9 @@ try {
             s.allow_edit,
             s.allow_submit,
             s.simulation_mode,
-            s.starter_code
+            s.starter_code,
+            s.canvas_width, s.canvas_height,
+            s.source_language, s.execution_engine, s.execution_version
          FROM course_activity ca
          INNER JOIN course c
            ON c.course_id = ca.course_id
@@ -181,6 +184,20 @@ try {
     ) {
         throw new RuntimeException(
             '현재 제출할 수 없는 시뮬레이션입니다.'
+        );
+    }
+
+    $activity_execution = simulation_validate_execution_metadata(
+        $settings, true
+    );
+
+    if (
+        $activity_execution['source_language'] === 'python' &&
+        ((int)$settings['canvas_width'] !== 400 ||
+         (int)$settings['canvas_height'] !== 400)
+    ) {
+        throw new RuntimeException(
+            'Python 활동의 캔버스 설정이 올바르지 않습니다.'
         );
     }
 
@@ -252,11 +269,13 @@ try {
         $reference_check = $dbh->prepare(
             "SELECT
                 reference_id,
+                activity_id,
                 reference_no,
                 source_code,
                 canvas_width,
                 canvas_height,
                 p5_version,
+                source_language, execution_engine, execution_version,
                 render_config,
                 grading_config,
                 max_score
@@ -272,46 +291,34 @@ try {
         $reference_check->closeCursor();
 
         if ($reference) {
-            require_once(
-                __DIR__ .
-                '/scripts/course_simulation_reference_readiness.php'
-            );
-
             try {
-                simulation_assert_reference_ready($dbh, $reference);
+                $reference_execution = simulation_validate_execution_metadata(
+                    $reference, true
+                );
+
+                if (
+                    $reference_execution !== $activity_execution ||
+                    (int)$reference['canvas_width'] !==
+                        (int)$settings['canvas_width'] ||
+                    (int)$reference['canvas_height'] !==
+                        (int)$settings['canvas_height']
+                ) {
+                    throw new RuntimeException(
+                        '활동과 정답의 실행 설정이 다릅니다.'
+                    );
+                }
+
+                $grade_request = course_simulation_build_grade_request(
+                    $dbh, $activity_id, $reference, $source_code
+                );
             } catch (Throwable $readiness_error) {
                 $simulation_reference_blocked = true;
                 throw $readiness_error;
             }
 
-            // CLI 대기 등록과 같은 메타데이터 형식을 사용한다.
             $grade_feedback = array(
                 'schema_version' => 1,
-                'request' => array(
-                    'activity_id' => (int)$activity_id,
-                    'reference_id' => (int)$reference['reference_id'],
-                    'reference_no' => (int)$reference['reference_no'],
-                    'canvas_width' => (int)$reference['canvas_width'],
-                    'canvas_height' => (int)$reference['canvas_height'],
-                    'p5_version' => (string)$reference['p5_version'],
-                    'reference_max_score' => (string)$reference['max_score'],
-                    'reference_source_sha256' => hash(
-                        'sha256',
-                        (string)$reference['source_code']
-                    ),
-                    'student_source_sha256' => hash(
-                        'sha256',
-                        (string)$source_code
-                    ),
-                    'render_config_sha256' => hash(
-                        'sha256',
-                        (string)$reference['render_config']
-                    ),
-                    'grading_config_sha256' => hash(
-                        'sha256',
-                        (string)$reference['grading_config']
-                    ),
-                ),
+                'request' => $grade_request,
             );
 
             $grade_feedback_json = json_encode(

@@ -5,6 +5,7 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 require_once('./include/course_functions.inc.php');
+require_once(__DIR__ . '/scripts/simulation_execution_config.php');
 require_once('./include/csrf_check.php');
 
 $view_title = "시뮬레이션 설정 저장";
@@ -45,6 +46,14 @@ $canvas_height_raw = $_POST['canvas_height'] ?? '';
 $allow_edit_raw = $_POST['allow_edit'] ?? '';
 $allow_submit_raw = $_POST['allow_submit'] ?? '';
 
+// 화면을 연 뒤 실행 언어가 변경됐는지 확인하는 기준이다.
+// 이 값으로 DB의 실행 언어나 엔진을 변경하지 않는다.
+$expected_execution = array(
+    'source_language' => $_POST['expected_source_language'] ?? null,
+    'execution_engine' => $_POST['expected_execution_engine'] ?? null,
+    'execution_version' => $_POST['expected_execution_version'] ?? null,
+);
+
 $input_values = array(
     $course_id_raw,
     $activity_id_raw,
@@ -58,6 +67,8 @@ $input_values = array(
     $allow_edit_raw,
     $allow_submit_raw
 );
+
+$input_values = array_merge($input_values, array_values($expected_execution));
 
 foreach ($input_values as $value) {
     if (!is_string($value)) {
@@ -92,6 +103,8 @@ if (
     !in_array($simulation_mode, array('free', 'drawing'), true) ||
     trim($starter_code) === '' ||
     strlen($starter_code) > 200000 ||
+    strpos($starter_code, "\0") !== false ||
+    preg_match('//u', $starter_code) !== 1 ||
     !preg_match('/^[0-9]+$/D', $canvas_width_raw) ||
     !preg_match('/^[0-9]+$/D', $canvas_height_raw) ||
     strlen($canvas_width_raw) > 4 ||
@@ -306,6 +319,42 @@ try {
         );
     }
 
+    // 활동 정보가 변경되기 전에 시뮬레이션 설정을 잠근다.
+    $execution_check = $dbh->prepare(
+        'SELECT source_language, execution_engine, execution_version
+         FROM course_simulation
+         WHERE activity_id = ? FOR UPDATE'
+    );
+    $execution_check->execute(array($activity_id));
+    $locked_simulation = $execution_check->fetch(PDO::FETCH_ASSOC);
+    $execution_check->closeCursor();
+
+    if (!$locked_simulation) {
+        throw new RuntimeException('시뮬레이션 설정이 없습니다.');
+    }
+
+    $saved_execution = simulation_validate_execution_metadata(
+        $locked_simulation, true
+    );
+
+    foreach ($expected_execution as $key => $value) {
+        if ($saved_execution[$key] !== $value) {
+            throw new UnexpectedValueException(
+                '활동의 실행 설정이 변경됐습니다. 편집 화면을 다시 열어 주세요.'
+            );
+        }
+    }
+
+    if (
+        ($saved_execution['source_language'] === 'python' ||
+         $simulation_mode === 'drawing') &&
+        ($canvas_width !== 400 || $canvas_height !== 400)
+    ) {
+        throw new UnexpectedValueException(
+            'Python 활동과 그림 문제의 캔버스는 400×400이어야 합니다.'
+        );
+    }
+
     // 기존 Activity 정보 수정
     $update_activity = $dbh->prepare(
         "UPDATE course_activity
@@ -387,6 +436,21 @@ try {
 
     $view_errors =
         "<h2>시뮬레이션 설정 저장에 실패했습니다.</h2>";
+
+    if ($e instanceof UnexpectedValueException) {
+        http_response_code(409);
+        $view_errors .= '<p>' . htmlspecialchars(
+            $e->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'
+        ) . '</p>';
+    }
+
+    // 저장 실패 시 교사가 작성한 코드를 복사할 수 있게 보존한다.
+    $view_errors .=
+        '<p>입력한 기본 코드를 복사해 보관한 뒤 편집 화면을 다시 열어 주세요.</p>' .
+        '<textarea readonly rows="12" aria-label="저장하지 못한 기본 코드" ' .
+        'style="width:100%;font-family:monospace;">' .
+        htmlspecialchars($starter_code, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') .
+        '</textarea>';
 
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);

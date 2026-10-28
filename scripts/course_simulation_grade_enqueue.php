@@ -123,8 +123,9 @@ try {
 
     // 등록 시점의 최신 정답 버전을 선택한다.
     $stmt = $connection->prepare(
-        'SELECT reference_id, reference_no, source_code,
+        'SELECT reference_id, activity_id, reference_no, source_code,
                 canvas_width, canvas_height, p5_version,
+                source_language, execution_engine, execution_version,
                 render_config, grading_config, max_score
          FROM course_simulation_reference
          WHERE activity_id = ?
@@ -140,36 +141,16 @@ try {
         throw new RuntimeException('해당 활동의 정답을 찾을 수 없습니다.');
     }
 
-    // 선택된 정답 버전의 목표 이미지와 영역 검사 기록을 확인한다.
-    require_once(__DIR__ . '/course_simulation_reference_readiness.php');
-    simulation_assert_reference_ready($connection, $reference);
+    // 웹 제출과 같은 함수로 정답·이미지·실행 설정을 고정한다.
+    require_once(__DIR__ . '/course_simulation_grade_request.php');
 
     $feedback = array(
         'schema_version' => 1,
-        'request' => array(
-            'activity_id' => (int)$submission['activity_id'],
-            'reference_id' => (int)$reference['reference_id'],
-            'reference_no' => (int)$reference['reference_no'],
-            'canvas_width' => (int)$reference['canvas_width'],
-            'canvas_height' => (int)$reference['canvas_height'],
-            'p5_version' => (string)$reference['p5_version'],
-            'reference_max_score' => (string)$reference['max_score'],
-            'reference_source_sha256' => hash(
-                'sha256',
-                (string)$reference['source_code']
-            ),
-            'student_source_sha256' => hash(
-                'sha256',
-                (string)$submission['source_code']
-            ),
-            'render_config_sha256' => hash(
-                'sha256',
-                (string)$reference['render_config']
-            ),
-            'grading_config_sha256' => hash(
-                'sha256',
-                (string)$reference['grading_config']
-            ),
+        'request' => course_simulation_build_grade_request(
+            $connection,
+            $submission['activity_id'],
+            $reference,
+            $submission['source_code']
         ),
     );
 

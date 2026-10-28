@@ -129,7 +129,7 @@ try {
             r.reference_id, r.activity_id, r.reference_no,
             r.source_code, r.canvas_width, r.canvas_height, r.p5_version,
             r.source_language, r.execution_engine, r.execution_version,
-            r.grading_config, r.max_score,
+            r.render_config, r.grading_config, r.max_score,
             i.image_status, i.source_sha256
          FROM course_simulation_reference r
          INNER JOIN course_simulation_reference_image i
@@ -178,266 +178,319 @@ try {
         throw new RuntimeException('생성 요청과 정답 코드의 해시가 다릅니다.');
     }
 
-    // 요청 확보 후 검사하여 기존 오류 처리·상태 기록을 이용한다.
-    // Python 실험 엔진은 기존 p5.js 이미지 생성 경로에서 차단한다.
-    simulation_validate_execution_metadata($reference);
-
-    if ((int)$reference['canvas_width'] !== 400 ||
-        (int)$reference['canvas_height'] !== 400 ||
-        $reference['p5_version'] !== '2.3.4') {
-        throw new RuntimeException('현재 400×400, p5.js 2.3.4만 지원합니다.');
-    }
-
-    $grading_config = json_decode(
-        $reference['grading_config'],
+    $reference_execution = simulation_validate_execution_metadata(
+        $reference,
         true
     );
+    $is_python_reference =
+        $reference_execution['source_language'] === 'python';
 
-    if (!is_array($grading_config)) {
-        throw new RuntimeException('정답 채점 설정이 올바르지 않습니다.');
-    }
+    if ($is_python_reference) {
+        require_once(__DIR__ . '/course_simulation_python_reference_render.php');
 
-    $image_scoring_mode =
-        $grading_config['scoring_mode'] ?? 'metrics_only';
+        $inspect = proc_open(
+            array_merge(
+                array('/usr/bin/timeout', '--kill-after=2s', '5s'),
+                $docker_prefix,
+                array(
+                    'image', 'inspect', '--format', '{{.Id}}',
+                    '1024kr/p5-render-poc:playwright-1.63.0'
+                )
+            ),
+            array(
+                0 => array('file', '/dev/null', 'r'),
+                1 => array('pipe', 'w'),
+                2 => array('file', '/dev/null', 'w'),
+            ),
+            $inspect_pipes,
+            $root_dir
+        );
 
-    if (
-        !is_string($image_scoring_mode) ||
-        !in_array(
-            $image_scoring_mode,
-            array('metrics_only', 'whole_image', 'regions'),
+        if (!is_resource($inspect)) {
+            throw new RuntimeException('로컬 Python 실행 이미지를 조회하지 못했습니다.');
+        }
+
+        $image_id = trim(stream_get_contents($inspect_pipes[1], 256));
+        fclose($inspect_pipes[1]);
+        $inspect_code = proc_close($inspect);
+
+        if (
+            $inspect_code !== 0 ||
+            preg_match('/^sha256:[0-9a-f]{64}$/D', $image_id) !== 1
+        ) {
+            throw new RuntimeException('로컬 Python 실행 이미지 ID 확인 실패');
+        }
+
+        $rendered = course_simulation_render_python_reference(
+            $reference,
+            $image_id
+        );
+        $png = $rendered['png_data'];
+        $png_sha256 = $rendered['png_sha256'];
+        $safe_metadata = $rendered['render_metadata'];
+
+    } else {
+        // 기존 p5.js 생성·영역 검사 절차를 유지한다.
+        simulation_validate_execution_metadata($reference);
+
+        if ((int)$reference['canvas_width'] !== 400 ||
+            (int)$reference['canvas_height'] !== 400 ||
+            $reference['p5_version'] !== '2.3.4') {
+            throw new RuntimeException('현재 400×400, p5.js 2.3.4만 지원합니다.');
+        }
+
+        $grading_config = json_decode(
+            $reference['grading_config'],
             true
-        )
-    ) {
-        throw new RuntimeException('지원하지 않는 점수 산정 방식입니다.');
-    }
-
-    if ($image_scoring_mode === 'regions') {
-        require_once(
-            $root_dir . '/scripts/course_simulation_region_result.php'
         );
+
+        if (!is_array($grading_config)) {
+            throw new RuntimeException('정답 채점 설정이 올바르지 않습니다.');
+        }
+
+        $image_scoring_mode =
+            $grading_config['scoring_mode'] ?? 'metrics_only';
 
         if (
-            ($grading_config['metric'] ?? '') !==
-                'symmetric_foreground_color_coverage' ||
-            ($grading_config['neighborhood'] ?? '') !== 'euclidean_disk' ||
-            ($grading_config['scoring_method'] ?? '') !==
-                'region_coverage_linear_v1' ||
-            !is_int($grading_config['position_tolerance_px'] ?? null) ||
-            $grading_config['position_tolerance_px'] < 0 ||
-            $grading_config['position_tolerance_px'] > 10 ||
-            ($grading_config['color_tolerance'] ?? null) !== 0
+            !is_string($image_scoring_mode) ||
+            !in_array(
+                $image_scoring_mode,
+                array('metrics_only', 'whole_image', 'regions'),
+                true
+            )
         ) {
-            throw new RuntimeException('영역별 채점 설정이 올바르지 않습니다.');
+            throw new RuntimeException('지원하지 않는 점수 산정 방식입니다.');
         }
 
-        $grading_config['regions'] = simulation_validate_region_config(
-            $grading_config['regions'] ?? null,
-            (string)$reference['max_score'],
-            400,
-            400
-        );
-    }
-
-    $payload = array(
-        'activity_id' => (int)$reference['activity_id'],
-        'reference_id' => (int)$reference['reference_id'],
-        'reference_no' => (int)$reference['reference_no'],
-        'reference_code' => (string)$reference['source_code'],
-        'grading_config' => $grading_config,
-        'reference_max_score' => (string)$reference['max_score'],
-        'canvas_width' => 400,
-        'canvas_height' => 400,
-        'p5_version' => '2.3.4',
-    );
-
-    $input_json = json_encode(
-        $payload,
-        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
-    );
-    if ($input_json === false) {
-        throw new RuntimeException('렌더링 입력 JSON 생성에 실패했습니다.');
-    }
-
-    umask(0077);
-    $candidate = sys_get_temp_dir() .
-        '/simulation-reference-' . bin2hex(random_bytes(16));
-
-    if (!mkdir($candidate, 0700)) {
-        throw new RuntimeException('임시 디렉터리 생성에 실패했습니다.');
-    }
-    $temp_dir = $candidate;
-
-    if (!mkdir($temp_dir . '/output', 0700)) {
-        throw new RuntimeException('이미지 출력 디렉터리 생성에 실패했습니다.');
-    }
-
-    $input_file = $temp_dir . '/input.json';
-    $result_file = $temp_dir . '/result.json';
-    $error_file = $temp_dir . '/error.log';
-    $png_file = $temp_dir . '/output/target.png';
-
-    if (file_put_contents($input_file, $input_json) !== strlen($input_json)) {
-        throw new RuntimeException('렌더링 입력 저장에 실패했습니다.');
-    }
-
-    $container_name = 'simulation-reference-' .
-        $reference_id . '-' . bin2hex(random_bytes(8));
-    $image_name = '1024kr/p5-render-poc:playwright-1.63.0';
-
-    $command = array_merge(
-        array(
-            '/usr/bin/timeout', '--signal=TERM',
-            '--kill-after=5s', '40s'
-        ),
-        $docker_prefix,
-        array(
-            'run', '--name', $container_name,
-            '--network=none',
-            '--user=' . fileowner($input_file) . ':' . filegroup($input_file),
-            '--cap-drop=ALL',
-            '--security-opt=no-new-privileges',
-            '--cpus=1',
-            '--memory=512m',
-            '--memory-swap=512m',
-            '--pids-limit=128',
-            '--tmpfs', '/tmp:rw,nosuid,nodev,size=256m',
-            '-v', $exporter . ':/work/course_simulation_render_reference.py:ro',
-            '-v', $renderer . ':/work/course_simulation_render_grade.py:ro',
-            '-v', $metrics_script . ':/work/course_simulation_image_metrics.py:ro',
-            '-v', $region_script . ':/work/course_simulation_region_metrics.py:ro',
-            '-v', $p5_file . ':/work/p5.min.js:ro',
-            '-v', $input_file . ':/work/input.json:ro',
-            '-v', $temp_dir . '/output:/output:rw',
-            '--entrypoint', 'python',
-            $image_name,
-            '/work/course_simulation_render_reference.py',
-            '--input-json', '/work/input.json',
-            '--p5', '/work/p5.min.js',
-            '--output-png', '/output/target.png',
-        )
-    );
-
-    $render_code = reference_image_exec($command, $result_file, $error_file);
-
-    if ($render_code !== 0) {
-        throw new RuntimeException(
-            '목표 그림 렌더링 실패. 종료 코드: ' . $render_code
-        );
-    }
-
-    $metadata_text = file_get_contents($result_file, false, null, 0, 65537);
-
-    if ($metadata_text === false || strlen($metadata_text) > 65536) {
-        throw new RuntimeException('렌더링 결과 크기가 올바르지 않습니다.');
-    }
-
-    $metadata = json_decode($metadata_text, true);
-
-    if (!is_array($metadata) ||
-        ($metadata['status'] ?? '') !== 'ok' ||
-        ($metadata['comparison_mode'] ?? '') !== 'static-image-poc-v1') {
-        throw new RuntimeException('렌더링 결과 JSON이 올바르지 않습니다.');
-    }
-
-    foreach (array(
-        'activity_id', 'reference_id', 'reference_no',
-        'canvas_width', 'canvas_height', 'p5_version'
-    ) as $key) {
-        if (($metadata[$key] ?? null) !== $payload[$key]) {
-            throw new RuntimeException('렌더링 결과 식별 정보가 다릅니다: ' . $key);
-        }
-    }
-
-    if (($metadata['reference_source_sha256'] ?? '') !== $source_sha256 ||
-        ($metadata['p5_file_sha256'] ?? '') !== hash_file('sha256', $p5_file)) {
-        throw new RuntimeException('정답 또는 p5.js 해시가 다릅니다.');
-    }
-
-    if (!is_file($png_file) || is_link($png_file)) {
-        throw new RuntimeException('출력 PNG 파일이 올바르지 않습니다.');
-    }
-
-    $png = file_get_contents($png_file, false, null, 0, 1048577);
-    if ($png === false || strlen($png) === 0 || strlen($png) > 1048576) {
-        throw new RuntimeException('출력 PNG 크기가 올바르지 않습니다.');
-    }
-
-    $png_sha256 = hash('sha256', $png);
-    $info = @getimagesizefromstring($png);
-
-    if ($info === false ||
-        $info[2] !== IMAGETYPE_PNG ||
-        $info[0] !== 400 || $info[1] !== 400 ||
-        ($metadata['png_sha256'] ?? '') !== $png_sha256 ||
-        ($metadata['png_bytes'] ?? null) !== strlen($png)) {
-        throw new RuntimeException('출력 PNG 형식·크기·해시 검증에 실패했습니다.');
-    }
-
-    $elapsed = $metadata['elapsed_seconds'] ?? null;
-    if ((!is_int($elapsed) && !is_float($elapsed)) ||
-        !is_finite((float)$elapsed) || $elapsed < 0) {
-        throw new RuntimeException('렌더링 시간이 올바르지 않습니다.');
-    }
-
-    $safe_metadata = array();
-    foreach (array(
-        'status', 'comparison_mode', 'activity_id', 'reference_id',
-        'reference_no', 'canvas_width', 'canvas_height', 'p5_version',
-        'reference_source_sha256', 'p5_file_sha256',
-        'png_sha256', 'png_bytes', 'elapsed_seconds'
-    ) as $key) {
-        $safe_metadata[$key] = $metadata[$key];
-    }
-    $safe_metadata['docker_image'] = $image_name;
-    $safe_metadata['grading_config_sha256'] = hash(
-        'sha256',
-        $reference['grading_config']
-    );
-
-    if ($image_scoring_mode === 'regions') {
-        $validation = $metadata['region_validation'] ?? null;
-
-        if (!is_array($validation)) {
-            throw new RuntimeException(
-                '정답 그림의 영역 검사 결과가 없습니다.'
-            );
-        }
-
-        $validated_regions = simulation_validate_region_result(
-            $validation['comparison'] ?? null,
-            $grading_config['regions'],
-            (string)$reference['max_score'],
-            $grading_config['position_tolerance_px'],
-            $validation['tolerance'] ?? null
-        );
-
-        if (
-            (float)$validated_regions['final_coverage'] !== 100.0 ||
-            $validated_regions['outside_student_foreground'] !== 0
-        ) {
-            throw new RuntimeException(
-                '정답 그림이 영역 설정을 충족하지 않습니다.'
-            );
-        }
-
-        $safe_metadata['region_validation'] = array(
-            'status' => 'valid',
-            'comparison' => $validated_regions,
-        );
-
-        $safe_metadata['region_validation_scripts'] = array(
-            'exporter_sha256' => hash_file('sha256', $exporter),
-            'metrics_sha256' => hash_file('sha256', $metrics_script),
-            'regions_sha256' => hash_file('sha256', $region_script),
-            'config_validator_sha256' => hash_file(
-                'sha256',
-                $root_dir . '/scripts/course_simulation_region_config.php'
-            ),
-            'result_validator_sha256' => hash_file(
-                'sha256',
+        if ($image_scoring_mode === 'regions') {
+            require_once(
                 $root_dir . '/scripts/course_simulation_region_result.php'
-            ),
+            );
+
+            if (
+                ($grading_config['metric'] ?? '') !==
+                    'symmetric_foreground_color_coverage' ||
+                ($grading_config['neighborhood'] ?? '') !== 'euclidean_disk' ||
+                ($grading_config['scoring_method'] ?? '') !==
+                    'region_coverage_linear_v1' ||
+                !is_int($grading_config['position_tolerance_px'] ?? null) ||
+                $grading_config['position_tolerance_px'] < 0 ||
+                $grading_config['position_tolerance_px'] > 10 ||
+                ($grading_config['color_tolerance'] ?? null) !== 0
+            ) {
+                throw new RuntimeException('영역별 채점 설정이 올바르지 않습니다.');
+            }
+
+            $grading_config['regions'] = simulation_validate_region_config(
+                $grading_config['regions'] ?? null,
+                (string)$reference['max_score'],
+                400,
+                400
+            );
+        }
+
+        $payload = array(
+            'activity_id' => (int)$reference['activity_id'],
+            'reference_id' => (int)$reference['reference_id'],
+            'reference_no' => (int)$reference['reference_no'],
+            'reference_code' => (string)$reference['source_code'],
+            'grading_config' => $grading_config,
+            'reference_max_score' => (string)$reference['max_score'],
+            'canvas_width' => 400,
+            'canvas_height' => 400,
+            'p5_version' => '2.3.4',
         );
+
+        $input_json = json_encode(
+            $payload,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        );
+        if ($input_json === false) {
+            throw new RuntimeException('렌더링 입력 JSON 생성에 실패했습니다.');
+        }
+
+        umask(0077);
+        $candidate = sys_get_temp_dir() .
+            '/simulation-reference-' . bin2hex(random_bytes(16));
+
+        if (!mkdir($candidate, 0700)) {
+            throw new RuntimeException('임시 디렉터리 생성에 실패했습니다.');
+        }
+        $temp_dir = $candidate;
+
+        if (!mkdir($temp_dir . '/output', 0700)) {
+            throw new RuntimeException('이미지 출력 디렉터리 생성에 실패했습니다.');
+        }
+
+        $input_file = $temp_dir . '/input.json';
+        $result_file = $temp_dir . '/result.json';
+        $error_file = $temp_dir . '/error.log';
+        $png_file = $temp_dir . '/output/target.png';
+
+        if (file_put_contents($input_file, $input_json) !== strlen($input_json)) {
+            throw new RuntimeException('렌더링 입력 저장에 실패했습니다.');
+        }
+
+        $container_name = 'simulation-reference-' .
+            $reference_id . '-' . bin2hex(random_bytes(8));
+        $image_name = '1024kr/p5-render-poc:playwright-1.63.0';
+
+        $command = array_merge(
+            array(
+                '/usr/bin/timeout', '--signal=TERM',
+                '--kill-after=5s', '40s'
+            ),
+            $docker_prefix,
+            array(
+                'run', '--name', $container_name,
+                '--network=none',
+                '--user=' . fileowner($input_file) . ':' . filegroup($input_file),
+                '--cap-drop=ALL',
+                '--security-opt=no-new-privileges',
+                '--cpus=1',
+                '--memory=512m',
+                '--memory-swap=512m',
+                '--pids-limit=128',
+                '--tmpfs', '/tmp:rw,nosuid,nodev,size=256m',
+                '-v', $exporter . ':/work/course_simulation_render_reference.py:ro',
+                '-v', $renderer . ':/work/course_simulation_render_grade.py:ro',
+                '-v', $metrics_script . ':/work/course_simulation_image_metrics.py:ro',
+                '-v', $region_script . ':/work/course_simulation_region_metrics.py:ro',
+                '-v', $p5_file . ':/work/p5.min.js:ro',
+                '-v', $input_file . ':/work/input.json:ro',
+                '-v', $temp_dir . '/output:/output:rw',
+                '--entrypoint', 'python',
+                $image_name,
+                '/work/course_simulation_render_reference.py',
+                '--input-json', '/work/input.json',
+                '--p5', '/work/p5.min.js',
+                '--output-png', '/output/target.png',
+            )
+        );
+
+        $render_code = reference_image_exec($command, $result_file, $error_file);
+
+        if ($render_code !== 0) {
+            throw new RuntimeException(
+                '목표 그림 렌더링 실패. 종료 코드: ' . $render_code
+            );
+        }
+
+        $metadata_text = file_get_contents($result_file, false, null, 0, 65537);
+
+        if ($metadata_text === false || strlen($metadata_text) > 65536) {
+            throw new RuntimeException('렌더링 결과 크기가 올바르지 않습니다.');
+        }
+
+        $metadata = json_decode($metadata_text, true);
+
+        if (!is_array($metadata) ||
+            ($metadata['status'] ?? '') !== 'ok' ||
+            ($metadata['comparison_mode'] ?? '') !== 'static-image-poc-v1') {
+            throw new RuntimeException('렌더링 결과 JSON이 올바르지 않습니다.');
+        }
+
+        foreach (array(
+            'activity_id', 'reference_id', 'reference_no',
+            'canvas_width', 'canvas_height', 'p5_version'
+        ) as $key) {
+            if (($metadata[$key] ?? null) !== $payload[$key]) {
+                throw new RuntimeException('렌더링 결과 식별 정보가 다릅니다: ' . $key);
+            }
+        }
+
+        if (($metadata['reference_source_sha256'] ?? '') !== $source_sha256 ||
+            ($metadata['p5_file_sha256'] ?? '') !== hash_file('sha256', $p5_file)) {
+            throw new RuntimeException('정답 또는 p5.js 해시가 다릅니다.');
+        }
+
+        if (!is_file($png_file) || is_link($png_file)) {
+            throw new RuntimeException('출력 PNG 파일이 올바르지 않습니다.');
+        }
+
+        $png = file_get_contents($png_file, false, null, 0, 1048577);
+        if ($png === false || strlen($png) === 0 || strlen($png) > 1048576) {
+            throw new RuntimeException('출력 PNG 크기가 올바르지 않습니다.');
+        }
+
+        $png_sha256 = hash('sha256', $png);
+        $info = @getimagesizefromstring($png);
+
+        if ($info === false ||
+            $info[2] !== IMAGETYPE_PNG ||
+            $info[0] !== 400 || $info[1] !== 400 ||
+            ($metadata['png_sha256'] ?? '') !== $png_sha256 ||
+            ($metadata['png_bytes'] ?? null) !== strlen($png)) {
+            throw new RuntimeException('출력 PNG 형식·크기·해시 검증에 실패했습니다.');
+        }
+
+        $elapsed = $metadata['elapsed_seconds'] ?? null;
+        if ((!is_int($elapsed) && !is_float($elapsed)) ||
+            !is_finite((float)$elapsed) || $elapsed < 0) {
+            throw new RuntimeException('렌더링 시간이 올바르지 않습니다.');
+        }
+
+        $safe_metadata = array();
+        foreach (array(
+            'status', 'comparison_mode', 'activity_id', 'reference_id',
+            'reference_no', 'canvas_width', 'canvas_height', 'p5_version',
+            'reference_source_sha256', 'p5_file_sha256',
+            'png_sha256', 'png_bytes', 'elapsed_seconds'
+        ) as $key) {
+            $safe_metadata[$key] = $metadata[$key];
+        }
+        $safe_metadata['docker_image'] = $image_name;
+        $safe_metadata['grading_config_sha256'] = hash(
+            'sha256',
+            $reference['grading_config']
+        );
+
+        if ($image_scoring_mode === 'regions') {
+            $validation = $metadata['region_validation'] ?? null;
+
+            if (!is_array($validation)) {
+                throw new RuntimeException(
+                    '정답 그림의 영역 검사 결과가 없습니다.'
+                );
+            }
+
+            $validated_regions = simulation_validate_region_result(
+                $validation['comparison'] ?? null,
+                $grading_config['regions'],
+                (string)$reference['max_score'],
+                $grading_config['position_tolerance_px'],
+                $validation['tolerance'] ?? null
+            );
+
+            if (
+                (float)$validated_regions['final_coverage'] !== 100.0 ||
+                $validated_regions['outside_student_foreground'] !== 0
+            ) {
+                throw new RuntimeException(
+                    '정답 그림이 영역 설정을 충족하지 않습니다.'
+                );
+            }
+
+            $safe_metadata['region_validation'] = array(
+                'status' => 'valid',
+                'comparison' => $validated_regions,
+            );
+
+            $safe_metadata['region_validation_scripts'] = array(
+                'exporter_sha256' => hash_file('sha256', $exporter),
+                'metrics_sha256' => hash_file('sha256', $metrics_script),
+                'regions_sha256' => hash_file('sha256', $region_script),
+                'config_validator_sha256' => hash_file(
+                    'sha256',
+                    $root_dir . '/scripts/course_simulation_region_config.php'
+                ),
+                'result_validator_sha256' => hash_file(
+                    'sha256',
+                    $root_dir . '/scripts/course_simulation_region_result.php'
+                ),
+            );
+        }
+
     }
 
     $metadata_json = json_encode(
@@ -446,6 +499,50 @@ try {
     );
     if ($metadata_json === false) {
         throw new RuntimeException('저장용 이미지 정보 생성에 실패했습니다.');
+    }
+
+    if ($is_python_reference) {
+        if (
+            hash_file('sha256', __DIR__ . '/course_simulation_python_runtime_poc.py') !==
+                $safe_metadata['runtime_sha256'] ||
+            hash_file('sha256', __DIR__ . '/simulation_problem_python_reference.py') !==
+                $safe_metadata['adapter_sha256']
+        ) {
+            throw new RuntimeException('저장 전 Python 실행 파일이 변경됐습니다.');
+        }
+
+        // 렌더링 중에는 트랜잭션을 유지하지 않고, 저장 직전에 다시 잠근다.
+        if (!$db->beginTransaction()) {
+            throw new RuntimeException('목표 이미지 저장 트랜잭션 시작 실패');
+        }
+
+        $fresh_statement = $db->prepare(
+            'SELECT activity_id, reference_no, source_code,
+                    canvas_width, canvas_height, p5_version,
+                    source_language, execution_engine, execution_version,
+                    render_config, grading_config, max_score
+             FROM course_simulation_reference
+             WHERE reference_id = ?
+             FOR UPDATE'
+        );
+        $fresh_statement->execute(array($reference_id));
+        $fresh_reference = $fresh_statement->fetch(PDO::FETCH_ASSOC);
+        $fresh_statement->closeCursor();
+
+        if (!$fresh_reference) {
+            throw new RuntimeException('저장할 정답 버전을 찾지 못했습니다.');
+        }
+
+        foreach (array(
+            'activity_id', 'reference_no', 'source_code',
+            'canvas_width', 'canvas_height', 'p5_version',
+            'source_language', 'execution_engine', 'execution_version',
+            'render_config', 'grading_config', 'max_score'
+        ) as $key) {
+            if ((string)$fresh_reference[$key] !== (string)$reference[$key]) {
+                throw new RuntimeException('목표 이미지 생성 중 정답 설정이 변경됐습니다.');
+            }
+        }
     }
 
     // 실행 중인 요청의 소유 토큰과 현재 정답 해시를 재확인한다.
@@ -475,6 +572,10 @@ try {
         throw new RuntimeException('목표 이미지 완료 상태를 저장하지 못했습니다.');
     }
     $stmt->closeCursor();
+
+    if ($is_python_reference && !$db->commit()) {
+        throw new RuntimeException('Python 목표 이미지 저장을 완료하지 못했습니다.');
+    }
 
     echo "정답 ID: " . $reference_id . "\n";
     echo "정답 버전: " . $reference['reference_no'] . "\n";

@@ -4,7 +4,7 @@
 require_once(__DIR__ . '/simulation_execution_config.php');
 
 // 등록된 채점 요청 하나를 처리하는 CLI.
-// 현재는 비교 지표만 저장하고 공식 점수는 계산하지 않는다.
+// 정답 설정에 따라 비교 지표와 점수를 저장한다.
 
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
@@ -60,6 +60,7 @@ $feedback = array();
 $temp_files = array();
 $container_name = null;
 $exit_code = 0;
+$is_python_grade = false;
 
 try {
     if (!isset($_SERVER['HTTP_HOST'])) {
@@ -221,8 +222,245 @@ try {
         throw new RuntimeException('제출 또는 등록된 정답을 찾을 수 없습니다.');
     }
 
-    // 활동의 현재 설정이 아닌 채점 대상 정답 버전을 검사한다.
-    // Python 실험 엔진은 기존 p5.js 채점 경로에서 차단한다.
+    // 현재 활동 설정 대신 요청에 고정된 정답 버전을 사용한다.
+    $execution = simulation_validate_execution_metadata($reference, true);
+    $is_python_grade =
+        $execution['execution_engine'] === 'python-stdlib-rgba-poc';
+
+    if ($is_python_grade) {
+        require_once(__DIR__ . '/course_simulation_grade_request.php');
+        require_once(__DIR__ . '/course_simulation_python_grade_execute.php');
+
+        // 객체의 키 순서만 정규화하고 값의 자료형은 유지한다.
+        $normalize = null;
+        $normalize = static function ($value) use (&$normalize) {
+            if (!is_array($value)) {
+                return $value;
+            }
+
+            foreach ($value as $key => $item) {
+                $value[$key] = $normalize($item);
+            }
+
+            ksort($value);
+            return $value;
+        };
+
+        // 실행 전과 저장 직전에 원본과 채점 요청을 재검사한다.
+        $snapshot = static function () use (
+            $db, $grade, $request, $normalize
+        ) {
+            if (!$db->inTransaction()) {
+                throw new RuntimeException(
+                    '채점 원본 검사는 트랜잭션 안에서 수행해야 합니다.'
+                );
+            }
+
+            $stmt = simulation_grade_statement(
+                $db,
+                'SELECT submission_id, grading_no, grading_status,
+                        feedback_json, started_at
+                 FROM course_simulation_grade
+                 WHERE grade_id = ? FOR UPDATE',
+                array($grade['grade_id'])
+            );
+            $current = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt->closeCursor();
+
+            if (
+                !$current ||
+                $current['grading_status'] !== 'running' ||
+                (string)$current['submission_id'] !==
+                    (string)$grade['submission_id'] ||
+                (string)$current['grading_no'] !==
+                    (string)$grade['grading_no'] ||
+                $current['feedback_json'] !== $grade['feedback_json'] ||
+                !is_string($current['started_at']) ||
+                $current['started_at'] === ''
+            ) {
+                throw new RuntimeException(
+                    '실행 중인 수업 채점 요청이 변경됐습니다.'
+                );
+            }
+
+            $stmt = simulation_grade_statement(
+                $db,
+                'SELECT submission_id, submission_no, activity_id, source_code
+                 FROM course_simulation_submission
+                 WHERE submission_id = ? FOR UPDATE',
+                array($grade['submission_id'])
+            );
+            $student = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt->closeCursor();
+
+            $stmt = simulation_grade_statement(
+                $db,
+                'SELECT reference_id, activity_id, reference_no, source_code,
+                        canvas_width, canvas_height, p5_version,
+                        source_language, execution_engine, execution_version,
+                        render_config, grading_config, max_score
+                 FROM course_simulation_reference
+                 WHERE reference_id = ? FOR UPDATE',
+                array($request['reference_id'] ?? 0)
+            );
+            $answer = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt->closeCursor();
+
+            if (!$student || !$answer) {
+                throw new RuntimeException(
+                    '제출 또는 정답 버전이 없습니다.'
+                );
+            }
+
+            $stmt = simulation_grade_statement(
+                $db,
+                'SELECT reference_id, image_status, source_sha256,
+                        png_data, png_sha256, render_metadata, generated_at
+                 FROM course_simulation_reference_image
+                 WHERE reference_id = ? FOR UPDATE',
+                array($answer['reference_id'])
+            );
+            $image = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt->closeCursor();
+
+            $expected_request = course_simulation_grade_request_metadata(
+                $student['activity_id'],
+                $answer,
+                $student['source_code'],
+                $image
+            );
+
+            if ($normalize($expected_request) !== $normalize($request)) {
+                throw new RuntimeException(
+                    '현재 채점 원본과 저장된 수업 요청이 다릅니다.'
+                );
+            }
+
+            return array(
+                'source_code' => $student['source_code'],
+                'submission_no' => (string)$student['submission_no'],
+                'png_data' => $image['png_data'],
+                'started_at' => $current['started_at'],
+            );
+        };
+
+        $db->beginTransaction();
+        $python_start = $snapshot();
+        $db->commit();
+
+        $pipes = array();
+        $inspect_process = proc_open(
+            array_merge(
+                array('/usr/bin/timeout', '--kill-after=2s', '5s'),
+                $docker_prefix,
+                array(
+                    'image', 'inspect', '--format', '{{.Id}}',
+                    '1024kr/p5-render-poc:playwright-1.63.0'
+                )
+            ),
+            array(
+                0 => array('file', '/dev/null', 'r'),
+                1 => array('pipe', 'w'),
+                2 => array('file', '/dev/null', 'w'),
+            ),
+            $pipes
+        );
+
+        if (!is_resource($inspect_process)) {
+            throw new RuntimeException(
+                '로컬 채점 이미지 확인을 시작하지 못했습니다.'
+            );
+        }
+
+        $pinned_image = trim(stream_get_contents($pipes[1], 256));
+        fclose($pipes[1]);
+        $inspect_code = proc_close($inspect_process);
+
+        if (
+            $inspect_code !== 0 ||
+            preg_match('/^sha256:[0-9a-f]{64}$/D', $pinned_image) !== 1
+        ) {
+            throw new RuntimeException(
+                '로컬 채점 이미지에 접근하지 못했습니다.'
+            );
+        }
+
+        // 실행 중에는 DB 트랜잭션과 행 잠금을 유지하지 않는다.
+        $python_result = course_simulation_execute_python_grade(
+            $request,
+            $python_start['source_code'],
+            $python_start['png_data'],
+            $pinned_image
+        );
+
+        $db->beginTransaction();
+        $python_finish = $snapshot();
+
+        if (
+            $python_start['started_at'] !== $python_finish['started_at'] ||
+            $python_start['submission_no'] !==
+                $python_finish['submission_no'] ||
+            $python_start['source_code'] !== $python_finish['source_code'] ||
+            $python_start['png_data'] !== $python_finish['png_data']
+        ) {
+            throw new RuntimeException(
+                '실행 중 채점 작업 또는 원본이 변경됐습니다.'
+            );
+        }
+
+        $python_feedback = $python_result['feedback'];
+        $python_feedback['request'] = $request;
+
+        $python_feedback_json = json_encode(
+            $python_feedback,
+            JSON_UNESCAPED_UNICODE |
+            JSON_UNESCAPED_SLASHES |
+            JSON_THROW_ON_ERROR
+        );
+
+        $stmt = simulation_grade_statement(
+            $db,
+            "UPDATE course_simulation_grade
+             SET grading_status = ?, score = ?, max_score = ?,
+                 feedback_json = ?, graded_at = NOW()
+             WHERE grade_id = ? AND grading_status = 'running'",
+            array(
+                $python_result['grading_status'],
+                $python_result['score'],
+                $python_result['max_score'],
+                $python_feedback_json,
+                $grade_id,
+            )
+        );
+
+        if ($stmt->rowCount() !== 1) {
+            throw new RuntimeException(
+                'Python 채점 결과를 저장하지 못했습니다.'
+            );
+        }
+
+        $stmt->closeCursor();
+        $db->commit();
+        $claimed = false;
+
+        echo "채점 ID: " . $grade_id . "\n";
+        echo "제출 ID: " . $grade['submission_id'] . "\n";
+        echo "정답 버전: " . $request['reference_no'] . "\n";
+        echo "채점 상태: " . $python_result['grading_status'] . "\n";
+
+        if ($python_result['grading_status'] === 'error') {
+            echo $python_feedback['error']['message'] . "\n";
+            $exit_code = 1;
+        } elseif ($python_result['score'] !== null) {
+            echo "점수: " . $python_result['score'] .
+                " / " . $python_result['max_score'] . "\n";
+            echo "결과: Python 비교 지표·점수 저장 완료\n";
+        } else {
+            echo "결과: Python 비교 지표 저장 완료 / 공식 점수 미산정\n";
+        }
+
+    } else {
+    // 기존 p5.js 채점의 지표 검사와 점수 계산은 그대로 유지한다.
     simulation_validate_execution_metadata($reference);
 
     $expected = array(
@@ -670,6 +908,8 @@ try {
         echo "결과: 비교 지표 저장 완료 / 공식 점수 미산정\n";
     }
 
+    }
+
 } catch (Throwable $e) {
     if ($db instanceof PDO && $db->inTransaction()) {
         $db->rollBack();
@@ -677,7 +917,19 @@ try {
 
     if ($claimed) {
         try {
-            $feedback['error'] = array('message' => $e->getMessage());
+            if ($is_python_grade) {
+                // 내부 실행 경로나 상세 오류는 학생용 피드백에 남기지 않는다.
+                $feedback = array(
+                    'schema_version' => 1,
+                    'request' => $request,
+                    'error' => array(
+                        'code' => 'grading_error',
+                        'message' => '수업 Python 채점 처리에 실패했습니다. 교사 확인이 필요합니다.',
+                    ),
+                );
+            } else {
+                $feedback['error'] = array('message' => $e->getMessage());
+            }
             $error_json = json_encode(
                 $feedback,
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
@@ -692,8 +944,13 @@ try {
                  SET grading_status = 'error',
                      score = NULL, max_score = NULL,
                      feedback_json = ?, graded_at = NOW()
-                 WHERE grade_id = ? AND grading_status = 'running'",
-                array($error_json, $grade_id)
+                 WHERE grade_id = ? AND grading_status = 'running'" .
+                ($is_python_grade
+                    ? ' AND feedback_json = CAST(? AS JSON)'
+                    : ''),
+                $is_python_grade
+                    ? array($error_json, $grade_id, $grade['feedback_json'])
+                    : array($error_json, $grade_id)
             );
             if ($stmt->rowCount() !== 1) {
                 throw new RuntimeException('오류 상태 저장 대상이 없습니다.');

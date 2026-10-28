@@ -16,6 +16,12 @@ $course_url = $is_manager
 
 $can_edit_code = intval($view_simulation['allow_edit']) === 1;
 
+$simulation_is_python =
+    $view_simulation_execution['source_language'] === 'python';
+$simulation_language_label = $simulation_is_python
+    ? 'Python'
+    : 'p5.js JavaScript';
+
 $simulation_mode = (string)$view_simulation['simulation_mode'];
 
 $canvas_width = intval($view_simulation['canvas_width']);
@@ -133,7 +139,7 @@ $canvas_height = intval($view_simulation['canvas_height']);
         <div class="ui small labels">
 
             <span class="ui blue label">
-                p5.js 2.3.4
+                <?php echo $simulation_is_python ? 'Python' : 'p5.js 2.3.4'; ?>
             </span>
 
             <span class="ui basic label">
@@ -176,12 +182,12 @@ $canvas_height = intval($view_simulation['canvas_height']);
                 <div class="field">
 
                     <label for="simulation-code">
-                        p5.js JavaScript 코드
+                        <?php echo $simulation_escape($simulation_language_label); ?> 코드
                     </label>
 
                     <div
                         id="simulation-ace-editor"
-                        aria-label="p5.js JavaScript 코드 편집기"
+                        aria-label="<?php echo $simulation_escape($simulation_language_label); ?> 코드 편집기"
                         style="display:none;width:100%;height:420px;min-height:300px;border:1px solid #ddd;"
                     ></div>
 
@@ -189,7 +195,17 @@ $canvas_height = intval($view_simulation['canvas_height']);
                         id="simulation-code"
                         name="source_code"
                         form="simulation-draft-form"
-                        aria-label="p5.js JavaScript 코드"
+                        aria-label="<?php echo $simulation_escape($simulation_language_label); ?> 코드"
+                        data-source-language="<?php echo $simulation_escape(
+                            $view_simulation_execution['source_language']
+                        ); ?>"
+                        data-execution-engine="<?php echo $simulation_escape(
+                            $view_simulation_execution['execution_engine']
+                        ); ?>"
+                        data-execution-version="<?php echo $simulation_escape(
+                            $view_simulation_execution['execution_version']
+                        ); ?>"
+                        data-activity-id="<?php echo intval($activity_id); ?>"
                         rows="24"
                         spellcheck="false"
                         <?php echo $can_edit_code ? '' : 'readonly'; ?>
@@ -235,7 +251,7 @@ $canvas_height = intval($view_simulation['canvas_height']);
 
                     <iframe
                         id="simulation-frame"
-                        title="p5.js 시뮬레이션 실행 결과"
+                        title="<?php echo $simulation_escape($simulation_language_label); ?> 실행 결과"
                         sandbox="allow-scripts"
                         referrerpolicy="no-referrer"
                         style="display:block;width:100%;height:auto;aspect-ratio:<?php echo $canvas_width; ?> / <?php echo $canvas_height; ?>;border:0;background:#fff;"
@@ -698,7 +714,7 @@ $canvas_height = intval($view_simulation['canvas_height']);
         <?php } ?>
 
         <div class="ui small info message">
-            JavaScript 코드는 격리된 실행 영역에서 동작합니다.
+            <?php echo $simulation_escape($simulation_language_label); ?> 코드는 격리된 실행 영역에서 동작합니다.
             코드를 임시 저장하거나 정식 제출할 수 있으며,
             이전 제출 기록도 확인할 수 있습니다.
         </div>
@@ -708,9 +724,14 @@ $canvas_height = intval($view_simulation['canvas_height']);
 </div>
 
 <script src="/ace/ace.js"></script>
+<?php if ($simulation_is_python) { ?>
+<script src="/ace/mode-python.js"></script>
+<?php } else { ?>
 <script src="/ace/mode-javascript.js"></script>
+<?php } ?>
 <script src="/ace/theme-chrome.js"></script>
-<script src="/template/syzoj/js/course-simulation-runner.js?v=8"></script>
+<script src="/template/syzoj/js/course-simulation-python-runner.js?v=1"></script>
+<script src="/template/syzoj/js/course-simulation-runner.js?v=9"></script>
 <script src="/template/syzoj/js/course-simulation-autosave.js?v=5" defer></script>
 
 <?php

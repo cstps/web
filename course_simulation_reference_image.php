@@ -69,7 +69,9 @@ try {
             cl.status AS lesson_status,
             cl.visible AS lesson_visible,
             c.status AS course_status,
-            s.simulation_mode
+            s.simulation_mode,
+            s.canvas_width, s.canvas_height,
+            s.source_language, s.execution_engine, s.execution_version
          FROM course_activity ca
          INNER JOIN course_lesson cl
            ON cl.lesson_id = ca.lesson_id
@@ -132,41 +134,19 @@ try {
         session_write_close();
     }
 
-    // 최신 정답에 해당하는 준비 완료 이미지만 조회한다.
-    // 정답 소스는 PHP 응답 데이터로 가져오지 않는다.
-    $images = pdo_query(
-        "SELECT
-            i.png_data,
-            i.png_sha256,
-            r.canvas_width,
-            r.canvas_height
-         FROM course_simulation_reference r
-         INNER JOIN course_simulation_reference_image i
-           ON i.reference_id = r.reference_id
-         WHERE r.activity_id = ?
-           AND r.reference_no = (
-               SELECT MAX(r2.reference_no)
-               FROM course_simulation_reference r2
-               WHERE r2.activity_id = r.activity_id
-           )
-           AND i.image_status = 'ready'
-           AND i.source_sha256 = LOWER(SHA2(r.source_code, 256))
-         LIMIT 1",
-        $activity_id
+    require_once(__DIR__ . '/scripts/course_simulation_target_image.php');
+
+    $image = course_simulation_target_image(
+        $dbh, $activity_id, $activity
     );
 
-    if ($images === false) {
-        throw new RuntimeException('목표 이미지 조회에 실패했습니다.');
-    }
-
-    if (!isset($images[0])) {
+    if ($image === null) {
         simulation_reference_image_fail(
             '최신 정답의 목표 그림이 아직 준비되지 않았습니다.',
             404
         );
     }
 
-    $image = $images[0];
     $png = $image['png_data'];
 
     if (

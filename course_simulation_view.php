@@ -5,6 +5,7 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 require_once('./include/course_functions.inc.php');
+require_once(__DIR__ . '/scripts/simulation_execution_config.php');
 
 $view_title = 'p5.js 시뮬레이션';
 
@@ -140,7 +141,10 @@ $simulation_rows = pdo_query(
         canvas_width,
         canvas_height,
         allow_edit,
-        allow_submit
+        allow_submit,
+        source_language,
+        execution_engine,
+        execution_version
 
      FROM course_simulation
 
@@ -160,36 +164,57 @@ if (
 
 $view_simulation = $simulation_rows[0];
 
-// 최신 정답의 목표 이미지 준비 여부만 조회한다.
-// 정답 코드와 생성 메타데이터는 학생 화면으로 전달하지 않는다.
+try {
+    $view_simulation_execution = simulation_validate_execution_metadata(
+        $view_simulation,
+        true
+    );
+
+    if (
+        $view_simulation_execution['source_language'] === 'python' &&
+        (
+            (int)$view_simulation['canvas_width'] !== 400 ||
+            (int)$view_simulation['canvas_height'] !== 400
+        )
+    ) {
+        throw new RuntimeException('Python 캔버스 설정 불일치');
+    }
+
+    $view_title = $view_simulation_execution['source_language'] === 'python'
+        ? 'Python 시뮬레이션'
+        : 'p5.js 시뮬레이션';
+
+} catch (Throwable $exception) {
+    error_log('[course_simulation_execution] ' . $exception->getMessage());
+    http_response_code(500);
+    $view_errors = '<h2>시뮬레이션 실행 설정을 확인하지 못했습니다.</h2>';
+    require("template/".$OJ_TEMPLATE."/error.php");
+    exit(0);
+}
+
+// 검사 완료된 최신 목표 그림의 표시 정보만 템플릿에 전달한다.
 $view_simulation_target = null;
 
 if ((string)$view_simulation['simulation_mode'] === 'drawing') {
-    $target_rows = pdo_query(
-        "SELECT
-            r.canvas_width,
-            r.canvas_height,
-            CASE
-                WHEN i.image_status = 'ready'
-                 AND i.source_sha256 = LOWER(SHA2(r.source_code, 256))
-                THEN 1
-                ELSE 0
-            END AS target_ready
-         FROM course_simulation_reference r
-         LEFT JOIN course_simulation_reference_image i
-           ON i.reference_id = r.reference_id
-         WHERE r.activity_id = ?
-         ORDER BY r.reference_no DESC
-         LIMIT 1",
-        $activity_id
-    );
+    try {
+        require_once(__DIR__ . '/scripts/course_simulation_target_image.php');
 
-    if ($target_rows === false) {
-        error_log(
-            '[course_simulation_view] 목표 그림 준비 상태 조회 실패'
+        $verified_target = course_simulation_target_image(
+            $dbh, $activity_id, $view_simulation
         );
-    } elseif (isset($target_rows[0])) {
-        $view_simulation_target = $target_rows[0];
+
+        if ($verified_target !== null) {
+            $view_simulation_target = array(
+                'canvas_width' => $verified_target['canvas_width'],
+                'canvas_height' => $verified_target['canvas_height'],
+                'target_ready' => 1,
+            );
+        }
+
+        unset($verified_target);
+
+    } catch (Throwable $error) {
+        error_log('[course_simulation_view] ' . $error->getMessage());
     }
 }
 

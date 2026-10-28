@@ -5,6 +5,7 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 require_once('./include/course_functions.inc.php');
+require_once(__DIR__ . '/scripts/simulation_execution_config.php');
 
 $view_title = "시뮬레이션 편집";
 
@@ -130,7 +131,8 @@ $simulation_rows = pdo_query(
         canvas_width,
         canvas_height,
         allow_edit,
-        allow_submit
+        allow_submit,
+        source_language, execution_engine, execution_version
      FROM course_simulation
      WHERE activity_id = ?
      LIMIT 1",
@@ -144,6 +146,34 @@ if (!$simulation_rows || !isset($simulation_rows[0])) {
 }
 
 $view_simulation = $simulation_rows[0];
+
+try {
+    $view_simulation_execution = simulation_validate_execution_metadata(
+        $view_simulation, true
+    );
+    $view_simulation_is_python =
+        $view_simulation_execution['source_language'] === 'python';
+
+    if (
+        $view_simulation_is_python &&
+        ((int)$view_simulation['canvas_width'] !== 400 ||
+         (int)$view_simulation['canvas_height'] !== 400)
+    ) {
+        throw new RuntimeException('Python 캔버스 설정 불일치');
+    }
+
+    $view_simulation_language_label =
+        $view_simulation_is_python ? 'Python' : 'p5.js';
+    $view_simulation_fixed_canvas = $view_simulation_is_python ||
+        $view_simulation['simulation_mode'] === 'drawing';
+
+} catch (Throwable $error) {
+    error_log('[course_simulation_edit] ' . $error->getMessage());
+    http_response_code(409);
+    $view_errors = '<h2>시뮬레이션의 실행 설정을 확인해 주세요.</h2>';
+    require('template/' . $OJ_TEMPLATE . '/error.php');
+    exit;
+}
 
 // ============================================================
 // 5. 편집 화면 출력

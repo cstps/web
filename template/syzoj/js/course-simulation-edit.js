@@ -9,10 +9,31 @@
         "simulation-starter-editor-message"
     );
 
-    if (!source || !source.form || !container || !message ||
-        typeof window.ace === "undefined") {
+    if (!source || !source.form || !container || !message) {
         return;
     }
+
+    const isPython = source.dataset.sourceLanguage === "python";
+    const languageLabel = isPython ? "Python" : "p5.js";
+    const mode = document.getElementById("simulation_mode");
+
+    function syncCanvasLimits() {
+        const fixed = isPython || (mode && mode.value === "drawing");
+
+        ["canvas_width", "canvas_height"].forEach(function (id) {
+            const input = document.getElementById(id);
+            if (!input) return;
+            input.min = fixed ? "400" : "100";
+            input.max = fixed ? "400" : "2000";
+            input.readOnly = Boolean(fixed);
+            if (fixed) input.value = "400";
+        });
+    }
+
+    syncCanvasLimits();
+    if (mode) mode.addEventListener("change", syncCanvasLimits);
+
+    if (typeof window.ace === "undefined") return;
 
     const form = source.form;
     const wasRequired = source.required;
@@ -34,7 +55,7 @@
 
         editor = window.ace.edit(container);
         editor.setTheme("ace/theme/chrome");
-        editor.session.setMode("ace/mode/javascript");
+        editor.session.setMode(isPython ? "ace/mode/python" : "ace/mode/javascript");
         editor.session.setUseWorker(false);
         editor.session.setUseWrapMode(true);
 
@@ -52,7 +73,7 @@
         editor.setReadOnly(source.readOnly || source.disabled);
         editor.setValue(source.value, -1);
         editor.textInput.getElement().setAttribute(
-            "aria-label", "기본 p5.js 코드"
+            "aria-label", "기본 " + languageLabel + " 코드"
         );
 
         editor.session.on("change", function () {
@@ -94,7 +115,7 @@
 
         let error = "";
         if (!source.value.trim()) {
-            error = "기본 p5.js 코드를 입력해 주세요.";
+            error = "기본 " + languageLabel + " 코드를 입력해 주세요.";
         } else if (new TextEncoder().encode(source.value).length > 200000) {
             error = "기본 코드는 200,000바이트 이하여야 합니다.";
         }
