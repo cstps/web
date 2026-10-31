@@ -13,7 +13,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
         <a
             class="ui small basic button"
-            href="course_contest_add.php?course_id=<?php echo intval($course_id); ?>"
+            href="course_contest_add.php?<?php if ($course_existing_lesson !== null) echo 'lesson_id=' . (int)$course_existing_lesson['lesson_id'] . '&amp;'; ?>course_id=<?php echo intval($course_id); ?>"
         >
             <i class="left arrow icon"></i>
             이전으로
@@ -77,6 +77,9 @@ include("template/$OJ_TEMPLATE/header.php");
         method="post"
         action="course_contest_create.php"
     >
+        <?php if ($course_existing_lesson !== null): ?>
+            <input type="hidden" name="lesson_id" value="<?= (int)$course_existing_lesson['lesson_id'] ?>">
+        <?php endif; ?>
         <?php include("./csrf.php"); ?>
 
         <input
@@ -262,14 +265,14 @@ include("template/$OJ_TEMPLATE/header.php");
         <div class="ui segment">
 
             <h3 class="ui dividing header">
-                새 차시 기본 정보
+                Contest 기본 정보
             </h3>
 
 
             <div class="field">
 
                 <label>
-                    차시 제목
+                    Contest 제목
                 </label>
 
                 <input

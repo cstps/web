@@ -278,7 +278,7 @@ if ($view_can_manage_contests) {
           AND cl.course_id = ca.course_id
          WHERE ca.course_id = ?
            AND ca.status = 0
-           AND ca.activity_type IN ('material', 'assignment')
+           AND ca.activity_type IN ('material', 'assignment', 'simulation')
          ORDER BY
             cl.lesson_no,
             ca.sort_order,

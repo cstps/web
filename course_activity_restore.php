@@ -161,7 +161,7 @@ if (intval($activity['activity_status']) !== 0) {
 if (
     !in_array(
         $activity['activity_type'],
-        array('material', 'assignment'),
+        array('material', 'assignment', 'simulation'),
         true
     )
 ) {
@@ -188,7 +188,7 @@ $result = pdo_query(
        AND course_id = ?
        AND lesson_id = ?
        AND status = 0
-       AND activity_type IN ('material', 'assignment')",
+       AND activity_type IN ('material', 'assignment', 'simulation')",
     $activity_id,
     $course_id,
     intval($activity['lesson_id'])

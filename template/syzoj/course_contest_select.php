@@ -33,12 +33,12 @@ include("template/$OJ_TEMPLATE/header.php");
 
         <a
             class="ui small basic button"
-            href="course_contest_add.php?course_id=<?php
+            href="course_contest_add.php?<?php if ($course_existing_lesson !== null) echo 'lesson_id=' . (int)$course_existing_lesson['lesson_id'] . '&amp;'; ?>course_id=<?php
                 echo intval($course_id);
             ?>"
         >
             <i class="left arrow icon"></i>
-            차시 추가로 돌아가기
+            Contest 구성 방식 선택으로 돌아가기
         </a>
 
 
@@ -100,6 +100,9 @@ include("template/$OJ_TEMPLATE/header.php");
             method="get"
             action="course_contest_select.php"
         >
+        <?php if ($course_existing_lesson !== null): ?>
+            <input type="hidden" name="lesson_id" value="<?= (int)$course_existing_lesson['lesson_id'] ?>">
+        <?php endif; ?>
 
             <input
                 type="hidden"
@@ -321,7 +324,7 @@ include("template/$OJ_TEMPLATE/header.php");
                             종료
                         </th>
 
-                        
+
 
                     </tr>
 
@@ -482,7 +485,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
                                 <a
                                     class="ui tiny teal button"
-                                    href="course_contest_problem_select.php?course_id=<?php
+                                    href="course_contest_problem_select.php?<?php if ($course_existing_lesson !== null) echo 'lesson_id=' . (int)$course_existing_lesson['lesson_id'] . '&amp;'; ?>course_id=<?php
                                         echo intval($course_id);
                                     ?>&lesson_no=<?php
                                         echo intval($lesson_no);
@@ -500,7 +503,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
                                 <a
                                     class="ui tiny blue button"
-                                    href="course_contest_add.php?course_id=<?php
+                                    href="course_contest_add.php?<?php if ($course_existing_lesson !== null) echo 'lesson_id=' . (int)$course_existing_lesson['lesson_id'] . '&amp;'; ?>course_id=<?php
                                         echo intval($course_id);
                                     ?>&preview_existing=1&link_lesson_no=<?php
                                         echo intval($lesson_no);
@@ -678,7 +681,7 @@ include("template/$OJ_TEMPLATE/header.php");
                         </td>
 
 
-                        
+
 
                     </tr>
 

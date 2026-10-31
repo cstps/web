@@ -134,13 +134,52 @@ if (intval($view_lesson['status']) !== 1) {
 $view_activity_types = array(
     'material' => '학습 자료 안내',
     'assignment' => '학습 활동·과제 안내',
-    'simulation' => '시뮬레이션 (p5.js)'
+    'contest' => '코딩 실습 (Contest)',
+    'simulation' => '시뮬레이션 직접 만들기',
+    'simulation_import' => '시뮬레이션 문제 가져오기'
 );
 
 
 // ============================================================
 // 8. 생성 화면 출력
 // ============================================================
+
+// 가져오기는 생성 POST와 분리하여 수업·차시를 유지한 GET 화면으로 이동한다.
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
+    header('Allow: GET');
+    http_response_code(405);
+    $view_errors = '<h2>GET 요청으로 활동 추가 화면을 열어 주세요.</h2>';
+    require('template/' . $OJ_TEMPLATE . '/error.php');
+    exit;
+}
+
+$view_selected_activity_type = $_GET['activity_type'] ?? 'material';
+if (!is_string($view_selected_activity_type) ||
+    !array_key_exists($view_selected_activity_type, $view_activity_types)) {
+    http_response_code(400);
+    $view_errors = '<h2>올바른 활동 유형을 선택해 주세요.</h2>';
+    require('template/' . $OJ_TEMPLATE . '/error.php');
+    exit;
+}
+
+if ($view_selected_activity_type === 'contest') {
+    header('Cache-Control: no-store, private');
+    header('Location: course_contest_add.php?' . http_build_query(array(
+        'course_id' => (string)$course_id,
+        'lesson_id' => (string)$view_lesson['lesson_id'],
+    )), true, 302);
+    exit;
+}
+
+if ($view_selected_activity_type === 'simulation_import') {
+    header('Cache-Control: no-store, private');
+    header('Location: course_simulation_problem_import_list.php?' .
+        http_build_query(array(
+            'course_id' => (string)$course_id,
+            'lesson_id' => (string)$view_lesson['lesson_id'],
+        )), true, 302);
+    exit;
+}
 
 require(
     "template/" .

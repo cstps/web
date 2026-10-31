@@ -1,0 +1,108 @@
+.course-page .course-activity-item > .content {
+    display: block;
+    width: 100%;
+    min-width: 0;
+}
+.course-page .course-activity-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px 20px;
+    width: 100%;
+    margin: 0;
+}
+.course-page .course-activity-name {
+    min-width: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+.course-page .course-activity-primary {
+    display: flex;
+    justify-content: flex-end;
+}
+.course-page .course-activity-primary .ui.button {
+    margin: 0;
+    white-space: nowrap;
+}
+.course-page .course-activity-management {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #edf0f2;
+}
+.course-page .course-activity-management form,
+.course-page .course-activity-management .ui.button,
+.course-page .course-activity-management .ui.label {
+    margin: 0;
+}
+.course-page .course-activity-management form {
+    display: inline-flex;
+}
+.course-page .course-activity-secondary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.course-page .course-activity-secondary-actions > .ui.button {
+    margin: 8px 0 0;
+}
+@media (max-width: 600px) {
+    .course-page .course-activity-heading {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+    .course-page .course-activity-primary {
+        justify-content: flex-start;
+    }
+}
+
+/* student-activity-cards-v1 */
+.course-page .ui.relaxed.divided.list > .item.course-student-activity {
+    border: 1px solid #e1e7ee !important;
+    border-radius: 10px;
+    padding: 16px !important;
+    margin: 12px 0 !important;
+    background: #fff;
+}
+.course-page .course-student-activity-heading {
+    grid-template-columns: 180px minmax(0, 1fr);
+    grid-template-areas: "action title";
+    gap: 12px 20px;
+}
+.course-page .course-student-activity-heading > .course-activity-name {
+    grid-area: title;
+    font-size: 1rem;
+    line-height: 1.55;
+}
+.course-page .course-student-activity-heading > .course-activity-primary {
+    grid-area: action;
+    width: 100%;
+}
+.course-page .course-student-activity-heading .course-activity-primary > .ui.button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    border-radius: 8px;
+    line-height: 1.2;
+}
+.course-page .course-student-activity-no-action {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "title";
+}
+@media (max-width: 600px) {
+    .course-page .course-student-activity-heading {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: "title" "action";
+        gap: 12px;
+    }
+    .course-page .course-student-activity-no-action {
+        grid-template-areas: "title";
+    }
+}

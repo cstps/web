@@ -7,6 +7,7 @@ require_once('./include/setlang.php');
 require_once('./include/course_functions.inc.php');
 require_once(__DIR__ . '/scripts/simulation_execution_config.php');
 require_once('./include/csrf_check.php');
+require_once(__DIR__ . '/include/simulation_description.inc.php');
 
 $view_title = "시뮬레이션 설정 저장";
 
@@ -115,6 +116,14 @@ if (
     $view_errors = "<h2>시뮬레이션 입력값이 올바르지 않습니다.</h2>";
     require("template/".$OJ_TEMPLATE."/error.php");
     exit(0);
+}
+
+try {
+    $description = simulation_description_store($description);
+} catch (InvalidArgumentException $error) {
+    $view_errors = '<h2>' . htmlspecialchars($error->getMessage(), ENT_QUOTES, 'UTF-8') . '</h2>';
+    require('template/' . $OJ_TEMPLATE . '/error.php');
+    exit;
 }
 
 $course_id = intval($course_id_raw);

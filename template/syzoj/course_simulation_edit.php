@@ -1,4 +1,5 @@
 <?php
+require_once(dirname(__DIR__, 2) . '/include/simulation_description.inc.php');
 include("template/$OJ_TEMPLATE/header.php");
 
 function simulation_edit_escape($value)
@@ -125,7 +126,7 @@ function simulation_edit_escape($value)
                     name="description"
                     rows="4"
                     maxlength="65535"
-                ><?php echo simulation_edit_escape($view_activity['description'] ?? ''); ?></textarea>
+                ><?php echo simulation_edit_escape(simulation_description_html($view_activity['description'] ?? '')); ?></textarea>
             </div>
 
             <div class="ui divider"></div>
@@ -345,6 +346,8 @@ function simulation_edit_escape($value)
 
 </div>
 
+<script src="/tinymce/tinymce.min.js?v=8.9.0"></script>
+<script src="/template/syzoj/js/course-simulation-description.js?v=1"></script>
 <script src="/ace/ace.js"></script>
 <script src="/ace/mode-<?php echo $view_simulation_is_python ? 'python' : 'javascript'; ?>.js"></script>
 <script src="/ace/theme-chrome.js"></script>

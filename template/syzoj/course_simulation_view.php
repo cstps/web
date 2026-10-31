@@ -1,4 +1,5 @@
 <?php
+require_once(dirname(__DIR__, 2) . '/include/simulation_description.inc.php');
 
 include("template/$OJ_TEMPLATE/header.php");
 
@@ -95,9 +96,7 @@ $canvas_height = intval($view_simulation['canvas_height']);
 
             <div class="ui message">
                 <?php
-                echo nl2br(
-                    $simulation_escape($view_activity['description'])
-                );
+                echo simulation_description_html($view_activity['description']);
                 ?>
             </div>
 

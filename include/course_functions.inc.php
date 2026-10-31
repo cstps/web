@@ -27,7 +27,8 @@
 // null
 // ============================================================
 
-function course_get_role($course_id) {
+function course_get_role($course_id)
+{
 
     global $OJ_NAME;
 
@@ -42,18 +43,18 @@ function course_get_role($course_id) {
     // 로그인 확인
     // --------------------------------------------------------
 
-    if (!isset($_SESSION[$OJ_NAME.'_user_id'])) {
+    if (!isset($_SESSION[$OJ_NAME . '_user_id'])) {
         return null;
     }
 
-    $user_id = $_SESSION[$OJ_NAME.'_user_id'];
+    $user_id = $_SESSION[$OJ_NAME . '_user_id'];
 
 
     // --------------------------------------------------------
     // 사이트 관리자는 모든 Course에 대한 관리자 권한
     // --------------------------------------------------------
 
-    if (isset($_SESSION[$OJ_NAME.'_administrator'])) {
+    if (isset($_SESSION[$OJ_NAME . '_administrator'])) {
         return 'administrator';
     }
 
@@ -100,7 +101,8 @@ function course_get_role($course_id) {
 // 현재 사용자가 해당 Course에 접근 가능한지 확인
 // ============================================================
 
-function course_can_access($course_id) {
+function course_can_access($course_id)
+{
 
     $role = course_get_role($course_id);
 
@@ -168,18 +170,19 @@ function course_is_active_student_user(
 // 개별 학생의 수강 상태가 status=0이면 접근을 허용하지 않는다.
 // ============================================================
 
-function course_is_active_student($course_id) {
+function course_is_active_student($course_id)
+{
 
     global $OJ_NAME;
 
-    if (!isset($_SESSION[$OJ_NAME.'_user_id'])) {
+    if (!isset($_SESSION[$OJ_NAME . '_user_id'])) {
         return false;
     }
 
 
     return course_is_active_student_user(
         $course_id,
-        $_SESSION[$OJ_NAME.'_user_id']
+        $_SESSION[$OJ_NAME . '_user_id']
     );
 }
 
@@ -267,10 +270,10 @@ function course_should_block_code_clipboard(
         isset(
             $rows[0]['block_code_clipboard']
         )
-            ? intval(
-                $rows[0]['block_code_clipboard']
-            )
-            : 0;
+        ? intval(
+            $rows[0]['block_code_clipboard']
+        )
+        : 0;
 
 
     if ($block_code_clipboard !== 1) {
@@ -449,7 +452,8 @@ function course_should_restrict_student_record(
 // administrator / owner
 // ============================================================
 
-function course_can_edit($course_id) {
+function course_can_edit($course_id)
+{
 
     $role = course_get_role($course_id);
 
@@ -466,7 +470,8 @@ function course_can_edit($course_id) {
 // administrator / owner
 // ============================================================
 
-function course_can_manage_teachers($course_id) {
+function course_can_manage_teachers($course_id)
+{
 
     $role = course_get_role($course_id);
 
@@ -512,7 +517,8 @@ function course_should_restrict_student_history(
 // administrator / owner / teacher
 // ============================================================
 
-function course_can_manage_students($course_id) {
+function course_can_manage_students($course_id)
+{
 
     $role = course_get_role($course_id);
 
@@ -530,7 +536,8 @@ function course_can_manage_students($course_id) {
 // administrator / owner / teacher
 // ============================================================
 
-function course_can_manage_contests($course_id) {
+function course_can_manage_contests($course_id)
+{
 
     $role = course_get_role($course_id);
 
@@ -553,7 +560,8 @@ function course_can_manage_contests($course_id) {
 // assistant는 수행평가 시작·종료 권한에서 제외한다.
 // ============================================================
 
-function course_can_manage_performance($course_id) {
+function course_can_manage_performance($course_id)
+{
 
     $role = course_get_role($course_id);
 
@@ -600,12 +608,10 @@ function course_start_performance_session(
 
     $user_id =
         isset($_SESSION[$OJ_NAME . '_user_id'])
-            ? trim(
-                (string)$_SESSION[
-                    $OJ_NAME . '_user_id'
-                ]
-            )
-            : '';
+        ? trim(
+            (string)$_SESSION[$OJ_NAME . '_user_id']
+        )
+        : '';
 
     if ($user_id === '') {
         return false;
@@ -702,7 +708,6 @@ function course_start_performance_session(
         }
 
         return $session_id;
-
     } catch (Throwable $e) {
 
         if (
@@ -714,7 +719,7 @@ function course_start_performance_session(
 
         error_log(
             'course_start_performance_session: ' .
-            $e->getMessage()
+                $e->getMessage()
         );
 
         return false;
@@ -732,7 +737,8 @@ function course_start_performance_session(
 // - 실패: false
 // ============================================================
 
-function course_end_performance_session($course_id) {
+function course_end_performance_session($course_id)
+{
 
     global $dbh, $OJ_NAME;
 
@@ -755,12 +761,10 @@ function course_end_performance_session($course_id) {
 
     $user_id =
         isset($_SESSION[$OJ_NAME . '_user_id'])
-            ? trim(
-                (string)$_SESSION[
-                    $OJ_NAME . '_user_id'
-                ]
-            )
-            : '';
+        ? trim(
+            (string)$_SESSION[$OJ_NAME . '_user_id']
+        )
+        : '';
 
     if ($user_id === '') {
         return false;
@@ -858,7 +862,6 @@ function course_end_performance_session($course_id) {
         }
 
         return true;
-
     } catch (Throwable $e) {
 
         if (
@@ -870,7 +873,7 @@ function course_end_performance_session($course_id) {
 
         error_log(
             'course_end_performance_session: ' .
-            $e->getMessage()
+                $e->getMessage()
         );
 
         return false;
@@ -891,7 +894,8 @@ function course_end_performance_session($course_id) {
 // course.status는 검사하지 않는다.
 // ============================================================
 
-function course_can_view_contest_process($contest_id) {
+function course_can_view_contest_process($contest_id)
+{
 
     $contest_id = intval($contest_id);
 
@@ -967,7 +971,7 @@ function course_grant_linked_student_right(
 
 
     $rightstr =
-        "c".$contest_id;
+        "c" . $contest_id;
 
 
     // --------------------------------------------------------
@@ -1133,7 +1137,6 @@ function course_grant_linked_student_right(
         }
 
         return true;
-
     }
 
 
@@ -1261,9 +1264,7 @@ function course_grant_linked_student_right(
                     $user_id,
                     $rightstr
                 );
-
-            }
-            catch (Exception $cleanup_error) {
+            } catch (Exception $cleanup_error) {
 
                 // 정리 실패는 여기서 별도 출력하지 않는다.
             }
@@ -1315,7 +1316,7 @@ function course_revoke_linked_student_right(
 
 
     $rightstr =
-        "c".$contest_id;
+        "c" . $contest_id;
 
 
     // --------------------------------------------------------
@@ -1407,9 +1408,7 @@ function course_revoke_linked_student_right(
                 "학생의 Contest 참가권한 회수에 실패했습니다."
             );
         }
-
-    }
-    catch (Exception $e) {
+    } catch (Exception $e) {
 
         try {
 
@@ -1421,9 +1420,7 @@ function course_revoke_linked_student_right(
                  WHERE id = ?",
                 $grant_id
             );
-
-        }
-        catch (Exception $restore_error) {
+        } catch (Exception $restore_error) {
 
             // 복구 실패는 여기서 별도 출력하지 않는다.
         }
@@ -1441,7 +1438,8 @@ function course_revoke_linked_student_right(
 // Course Lesson 조회
 // ============================================================
 
-function course_get_lesson($lesson_id) {
+function course_get_lesson($lesson_id)
+{
 
     $lesson_id = intval($lesson_id);
 
@@ -1496,7 +1494,8 @@ function course_get_lesson($lesson_id) {
 // course_contest.lesson_no / contest 정보를 사용한다.
 // ============================================================
 
-function course_get_lesson_by_contest($contest_id) {
+function course_get_lesson_by_contest($contest_id)
+{
 
     $contest_id = intval($contest_id);
 
@@ -1584,7 +1583,8 @@ function course_get_lesson_by_contest($contest_id) {
 // Course Contest 행에서 유효한 차시 번호 반환
 // ============================================================
 
-function course_get_effective_lesson_no($row) {
+function course_get_effective_lesson_no($row)
+{
 
     if (!is_array($row)) {
         return 0;
@@ -1625,7 +1625,8 @@ function course_get_effective_lesson_no($row) {
 // 호출하는 페이지에서 Course 접근 권한을 먼저 검사해야 한다.
 // ============================================================
 
-function course_get_activities($course_id) {
+function course_get_activities($course_id)
+{
 
     $course_id = intval($course_id);
 
@@ -1742,7 +1743,8 @@ function course_get_activities($course_id) {
 // 호출 페이지에서 Course 접근 권한을 먼저 검사해야 한다.
 // ============================================================
 
-function course_get_lessons($course_id) {
+function course_get_lessons($course_id)
+{
 
     $course_id = intval($course_id);
 
@@ -1769,8 +1771,8 @@ function course_get_lessons($course_id) {
          WHERE course_id = ?
            AND status = 1
          ORDER BY
+            lesson_no DESC,
             sort_order,
-            lesson_no,
             lesson_id",
         $course_id
     );
@@ -1786,7 +1788,8 @@ function course_get_lessons($course_id) {
 // 현재 로그인한 활성 수강생에게만 공개 Lesson을 반환한다.
 // ============================================================
 
-function course_get_visible_student_lessons($course_id) {
+function course_get_visible_student_lessons($course_id)
+{
 
     $course_id = intval($course_id);
 
@@ -1814,8 +1817,8 @@ function course_get_visible_student_lessons($course_id) {
            AND status = 1
            AND visible = 1
          ORDER BY
+            lesson_no DESC,
             sort_order,
-            lesson_no,
             lesson_id",
         $course_id
     );
@@ -1833,7 +1836,8 @@ function course_get_visible_student_lessons($course_id) {
 // 별도로 검사해야 한다.
 // ============================================================
 
-function course_get_visible_student_activities($course_id) {
+function course_get_visible_student_activities($course_id)
+{
 
     $course_id = intval($course_id);
 
@@ -1911,8 +1915,8 @@ function course_get_visible_student_activities($course_id) {
            )
 
          ORDER BY
+            cl.lesson_no DESC,
             cl.sort_order,
-            cl.lesson_no,
             ca.sort_order,
             ca.activity_id",
         $course_id
@@ -1925,7 +1929,8 @@ function course_get_visible_student_activities($course_id) {
 // ============================================================
 // 학생 학습기록 조회
 // administrator / owner / teacher / assistant
-function course_can_view_student_records($course_id) {
+function course_can_view_student_records($course_id)
+{
 
     $role = course_get_role($course_id);
 
@@ -1944,7 +1949,8 @@ function course_can_view_student_records($course_id) {
 
 // 학생 학습기록 작성·변경
 // administrator / owner / teacher
-function course_can_manage_student_records($course_id) {
+function course_can_manage_student_records($course_id)
+{
 
     $role = course_get_role($course_id);
 

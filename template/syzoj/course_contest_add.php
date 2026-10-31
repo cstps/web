@@ -20,7 +20,7 @@ include("template/$OJ_TEMPLATE/header.php");
         </a>
 
         <h1 class="ui header">
-            차시 추가
+            <?= $course_existing_lesson !== null ? 'Contest 활동 추가' : '차시 추가' ?>
         </h1>
 
         <div class="course-page-description">
@@ -38,6 +38,16 @@ include("template/$OJ_TEMPLATE/header.php");
     </div>
 
 
+    <?php if ($course_existing_lesson !== null): ?>
+        <div class="ui info message">
+            <strong><?= (int)$course_existing_lesson['lesson_no'] ?>차시:
+                <?= htmlspecialchars($course_existing_lesson['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></strong>
+            <p>현재 차시에 Contest 활동을 추가합니다. 차시 제목·일정·공개 상태는 유지되며 새 활동은 비공개로 저장됩니다.</p>
+            <p>구성 방식을 선택하세요. 현재 구조에서는 차시마다 Contest를 하나 연결할 수 있습니다.</p>
+            <a href="course_activity_add.php?lesson_id=<?= (int)$course_existing_lesson['lesson_id'] ?>">활동 유형 다시 선택</a>
+        </div>
+    <?php endif; ?>
+
     <div class="ui stackable three column grid">
 
         <!-- ======================================================
@@ -54,7 +64,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
                 <p>
                     기존 대회를 검색한 뒤 필요한 문제를 선택하여
-                    새로운 Course 전용 차시를 생성합니다.
+                    <?= $course_existing_lesson !== null ? '새 Contest를 만들어 현재 차시에 추가합니다.' : '새로운 Course 전용 차시를 생성합니다.' ?>
                     기존 제출 기록은 가져오지 않습니다
                 </p>
 
@@ -63,6 +73,9 @@ include("template/$OJ_TEMPLATE/header.php");
                     method="get"
                     action="course_contest_problem_select.php"
                 >
+        <?php if ($course_existing_lesson !== null): ?>
+            <input type="hidden" name="lesson_id" value="<?= (int)$course_existing_lesson['lesson_id'] ?>">
+        <?php endif; ?>
 
                     <input
                         type="hidden"
@@ -79,6 +92,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
                         <input
                             type="number"
+                            <?php if ($course_existing_lesson !== null) echo 'readonly'; ?>
                             id="copy-lesson-no"
                             name="lesson_no"
                             min="1"
@@ -122,7 +136,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
                 <p>
                     특정 대회에 포함되지 않은 문제도 문제은행에서 직접 골라
-                    Course 전용 차시를 생성합니다.
+                    <?= $course_existing_lesson !== null ? '새 Contest를 만들어 현재 차시에 추가합니다.' : 'Course 전용 차시를 생성합니다.' ?>
                 </p>
 
                 <form
@@ -130,6 +144,9 @@ include("template/$OJ_TEMPLATE/header.php");
                     method="get"
                     action="course_problem_select.php"
                 >
+        <?php if ($course_existing_lesson !== null): ?>
+            <input type="hidden" name="lesson_id" value="<?= (int)$course_existing_lesson['lesson_id'] ?>">
+        <?php endif; ?>
 
                     <input
                         type="hidden"
@@ -145,6 +162,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
                         <input
                             type="number"
+                            <?php if ($course_existing_lesson !== null) echo 'readonly'; ?>
                             name="lesson_no"
                             min="1"
                             value="<?php
@@ -182,10 +200,10 @@ include("template/$OJ_TEMPLATE/header.php");
                 </h3>
 
                 <p>
-                    
+
                         대회 진행 상태와 관계없이 기존 Contest를 그대로 연결합니다.
                         기존 기록을 원본에서 직접 참조해 Course 학습현황에 반영합니다.
-                    
+
                 </p>
 
                 <form
@@ -193,6 +211,9 @@ include("template/$OJ_TEMPLATE/header.php");
                     method="get"
                     action="course_contest_add.php"
                 >
+        <?php if ($course_existing_lesson !== null): ?>
+            <input type="hidden" name="lesson_id" value="<?= (int)$course_existing_lesson['lesson_id'] ?>">
+        <?php endif; ?>
 
                     <input
                         type="hidden"
@@ -215,6 +236,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
                         <input
                             type="number"
+                            <?php if ($course_existing_lesson !== null) echo 'readonly'; ?>
                             id="link-lesson-no"
                             name="link_lesson_no"
                             min="1"
@@ -332,7 +354,7 @@ include("template/$OJ_TEMPLATE/header.php");
                                 ?>
                             </td>
                         </tr>
-                        
+
                         <tr>
                             <td>대회 상태</td>
                             <td>
@@ -500,7 +522,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
                     기존 Contest, 문제 구성과 제출 기록은 변경하지 않습니다.
                     Course와의 연결 관계만 추가하며 처음에는 숨김 상태로
-                    등록됩니다. 차시를 공개하면 활성 Course 학생에게
+                    등록됩니다. Contest 활동을 공개하면 활성 Course 학생에게
                     해당 대회의 참가 권한이 자동으로 부여됩니다.
 
                 </div>
@@ -513,6 +535,9 @@ include("template/$OJ_TEMPLATE/header.php");
                         '이 기존 대회와 채점기록을 현재 수업에 연결하시겠습니까?'
                     );"
                 >
+        <?php if ($course_existing_lesson !== null): ?>
+            <input type="hidden" name="lesson_id" value="<?= (int)$course_existing_lesson['lesson_id'] ?>">
+        <?php endif; ?>
 
                     <?php include("./csrf.php"); ?>
 
@@ -606,6 +631,7 @@ function openContestSelector(mode) {
     window.location.href =
         'course_contest_select.php' +
         '?course_id=<?php echo intval($course_id); ?>' +
+        '<?php if ($course_existing_lesson !== null) echo '&lesson_id=' . (int)$course_existing_lesson['lesson_id']; ?>' +
         '&lesson_no=' +
         encodeURIComponent(lessonNo) +
         '&mode=' +

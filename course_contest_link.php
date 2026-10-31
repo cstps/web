@@ -5,6 +5,7 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 require_once('./include/course_functions.inc.php');
+require_once(__DIR__ . '/include/course_contest_activity.inc.php');
 require_once('./include/csrf_check.php');
 
 $view_title = "기존 대회 연결";
@@ -25,6 +26,10 @@ if (!isset($_SESSION[$OJ_NAME.'_user_id'])) {
 
 $user_id =
     $_SESSION[$OJ_NAME.'_user_id'];
+
+// lesson_id를 전달한 경우에만 기존 차시 활동 경로로 처리한다.
+$course_existing_lesson = course_contest_activity_request($_POST);
+
 
 $is_administrator =
     isset($_SESSION[$OJ_NAME.'_administrator']);
@@ -301,17 +306,20 @@ if (
 // 중복 검사에서 제외하지 않는다.
 // ============================================================
 
-$duplicate_lesson_rows = pdo_query(
-    "SELECT
-        contest_id,
-        status
-     FROM course_contest
-     WHERE course_id = ?
-       AND lesson_no = ?
-     LIMIT 1",
-    $course_id,
-    $lesson_no
-);
+$duplicate_lesson_rows = array();
+if ($course_existing_lesson === null) {
+    $duplicate_lesson_rows = pdo_query(
+        "SELECT
+            contest_id,
+            status
+         FROM course_contest
+         WHERE course_id = ?
+           AND lesson_no = ?
+         LIMIT 1",
+        $course_id,
+        $lesson_no
+    );
+}
 
 
 if (
@@ -375,6 +383,11 @@ if ($sort_order <= 0) {
 // 기존 대회이므로 source_contest_id는 NULL이다.
 // 처음 연결할 때는 교사가 확인 후 공개하도록 visible=0.
 // ============================================================
+
+if ($course_existing_lesson !== null) {
+    course_contest_activity_save_and_return($course_existing_lesson, 'link',
+        array('source_id' => $contest_id));
+}
 
 $new_lesson_id = 0;
 

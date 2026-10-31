@@ -5,6 +5,7 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 require_once('./include/course_functions.inc.php');
+require_once(__DIR__ . '/include/course_contest_activity.inc.php');
 require_once('./include/csrf_check.php');
 
 $view_title = "차시 생성";
@@ -25,6 +26,10 @@ if (!isset($_SESSION[$OJ_NAME.'_user_id'])) {
 
 $user_id =
     $_SESSION[$OJ_NAME.'_user_id'];
+
+// lesson_id를 전달한 경우에만 기존 차시 활동 경로로 처리한다.
+$course_existing_lesson = course_contest_activity_request($_POST);
+
 
 
 // ============================================================
@@ -481,16 +486,19 @@ if (intval($view_course['status']) !== 1) {
 // 동일한 차시 번호로 새로 생성하지 않는다.
 // ============================================================
 
-$duplicate_lesson_rows = pdo_query(
-    "SELECT
-        contest_id
-     FROM course_contest
-     WHERE course_id = ?
-       AND lesson_no = ?
-     LIMIT 1",
-    $course_id,
-    $lesson_no
-);
+$duplicate_lesson_rows = array();
+if ($course_existing_lesson === null) {
+    $duplicate_lesson_rows = pdo_query(
+        "SELECT
+            contest_id
+         FROM course_contest
+         WHERE course_id = ?
+           AND lesson_no = ?
+         LIMIT 1",
+        $course_id,
+        $lesson_no
+    );
+}
 
 
 if (
@@ -823,6 +831,17 @@ $password = '';
 // ============================================================
 // 14. Contest 생성 시작
 // ============================================================
+
+// 기존 차시 경로는 검증된 설정으로 연결·활동·매핑을 함께 저장한다.
+if ($course_existing_lesson !== null) {
+    course_contest_activity_save_and_return($course_existing_lesson, 'direct', array(
+        'source_id' => null,
+        'title' => $contest_title,
+        'start_time' => $start_time,
+        'end_time' => $end_time,
+        'langmask' => $langmask,
+    ), $problems_to_add);
+}
 
 $new_contest_id = 0;
 $new_lesson_id = 0;

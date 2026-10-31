@@ -6,6 +6,8 @@ include("template/$OJ_TEMPLATE/header.php");
     rel="stylesheet"
     href="template/<?php echo $OJ_TEMPLATE; ?>/css/course.css"
 >
+<link rel="stylesheet" href="/template/syzoj/css/course-activity-heading.css?v=2">
+
 
 
 <div class="course-page">
@@ -395,53 +397,14 @@ include("template/$OJ_TEMPLATE/header.php");
                                 );
                             ?>
 
-                                <div class="item">
+                                <div class="item course-activity-item course-student-activity">
 
                                     <div class="content">
 
-                                        <div class="header">
-                                            <?php
-                                            $type_colors = array(
-                                                'material' => 'blue',
-                                                'assignment' => 'orange',
-                                                'contest' => 'green',
-                                                'simulation' => 'teal'
-                                            );
-
-                                            $type_icons = array(
-                                                'material' => 'book',
-                                                'assignment' => 'clipboard',
-                                                'contest' => 'code',
-                                                'simulation' => 'play'
-                                            );
-
-                                            $type_color =
-                                                $type_colors[$activity_type] ?? '';
-
-                                            $type_icon =
-                                                $type_icons[$activity_type] ?? 'tasks';
-                                            ?>
-
-                                            <span class="ui tiny <?php
-                                                echo $type_color;
-                                            ?> label">
-                                                <i class="<?php
-                                                    echo $type_icon;
-                                                ?> icon"></i>
-                                                <?php
-                                                echo htmlspecialchars(
-                                                    $type_label,
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                );
-                                                ?>
-                                            </span>
-
-                                            <?php echo $activity_title; ?>
-                                        </div>
+                                        <?php $course_activity_teacher = false; require(__DIR__ . '/course_activity_heading.php'); ?>
 
                                         <?php
-                                        if ($activity_description !== '') {
+                                        if (false /* 수업 목록의 활동 설명 숨김 */) {
                                         ?>
                                             <div class="description">
                                                 <?php
@@ -449,70 +412,6 @@ include("template/$OJ_TEMPLATE/header.php");
                                                     $activity_description
                                                 );
                                                 ?>
-                                            </div>
-                                        <?php } ?>
-
-                                        <?php
-                                        // 학생용 학습 자료 상세 열람 버튼
-                                        if ($activity_type === 'material') {
-                                        ?>
-
-                                            <div
-                                                class="course-actions"
-                                                style="margin-top:0.75rem;"
-                                            >
-                                                <a
-                                                    class="ui small basic blue button"
-                                                    href="course_material_view.php?activity_id=<?php
-                                                        echo intval($activity['activity_id']);
-                                                    ?>"
-                                                >
-                                                    <i class="book open icon"></i>
-                                                    학습 자료 보기
-                                                </a>
-                                            </div>
-
-                                        <?php } ?>
-
-                                        <?php
-                                        // 학생용 과제 상세 열람 버튼
-                                        if ($activity_type === 'assignment') {
-                                        ?>
-
-                                            <div
-                                                class="course-actions"
-                                                style="margin-top:0.75rem;"
-                                            >
-                                                <a
-                                                    class="ui small basic orange button"
-                                                    href="course_assignment_view.php?activity_id=<?php
-                                                        echo intval($activity['activity_id']);
-                                                    ?>"
-                                                >
-                                                    <i class="clipboard outline icon"></i>
-                                                    과제 보기
-                                                </a>
-                                            </div>
-
-                                        <?php } ?>
-
-                                        <?php
-                                        // 학생용 시뮬레이션 실행 버튼
-                                        if ($activity_type === 'simulation') {
-                                        ?>
-                                            <div
-                                                class="course-actions"
-                                                style="margin-top:0.75rem;"
-                                            >
-                                                <a
-                                                    class="ui small basic teal button"
-                                                    href="course_simulation_view.php?activity_id=<?php
-                                                        echo intval($activity['activity_id']);
-                                                    ?>"
-                                                >
-                                                    <i class="play icon"></i>
-                                                    시뮬레이션 실행
-                                                </a>
                                             </div>
                                         <?php } ?>
 
@@ -591,59 +490,7 @@ include("template/$OJ_TEMPLATE/header.php");
                                                 intval($view_course['status']) === 1;
                                             ?>
 
-                                            <div
-                                                class="course-actions"
-                                                style="margin-top:0.75rem;"
-                                            >
-
-                                                <?php
-                                                if (
-                                                    $activity_course_active &&
-                                                    $activity_contest_id > 0 &&
-                                                    $activity_lesson_status === 'ongoing'
-                                                ) {
-                                                ?>
-
-                                                    <a
-                                                        class="ui small green button"
-                                                        href="contest.php?cid=<?php echo $activity_contest_id; ?>"
-                                                    >
-                                                        <i class="play icon"></i>
-                                                        학습하기
-                                                    </a>
-
-                                                <?php
-                                                } elseif (
-                                                    $activity_course_active &&
-                                                    $activity_contest_id > 0 &&
-                                                    $activity_lesson_status === 'ended'
-                                                ) {
-                                                ?>
-
-                                                    <a
-                                                        class="ui small blue button"
-                                                        href="contest.php?cid=<?php echo $activity_contest_id; ?>"
-                                                    >
-                                                        차시 보기
-                                                    </a>
-
-                                                <?php
-                                                } else {
-                                                ?>
-
-                                                    <button
-                                                        type="button"
-                                                        class="ui small disabled button"
-                                                        disabled
-                                                    >
-                                                        <?php
-                                                        echo $activity_course_active
-                                                            ? '시작 전'
-                                                            : '수업 종료';
-                                                        ?>
-                                                    </button>
-
-                                                <?php } ?>
+                                            <div class="course-activity-secondary-actions">
 
                                                 <?php
                                                 // 학생용 Contest Activity 제출 기록 버튼

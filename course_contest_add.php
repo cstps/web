@@ -5,6 +5,7 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 require_once('./include/course_functions.inc.php');
+require_once(__DIR__ . '/include/course_contest_activity.inc.php');
 
 $view_title = "차시 추가";
 
@@ -22,6 +23,10 @@ if (!isset($_SESSION[$OJ_NAME.'_user_id'])) {
 }
 
 $user_id = $_SESSION[$OJ_NAME.'_user_id'];
+
+// lesson_id를 전달한 경우에만 기존 차시 활동 경로로 처리한다.
+$course_existing_lesson = course_contest_activity_request($_GET);
+
 
 
 // ============================================================
@@ -142,6 +147,11 @@ if ($view_next_lesson_no <= 0) {
 // 8. 기존 Contest 연결 미리보기
 // ============================================================
 
+if ($course_existing_lesson !== null) {
+    $view_title = 'Contest 활동 추가';
+    $view_next_lesson_no = (int)$course_existing_lesson['lesson_no'];
+}
+
 $view_link_preview_requested =
     isset($_GET['preview_existing']) &&
     intval($_GET['preview_existing']) === 1;
@@ -197,16 +207,19 @@ if ($view_link_preview_requested) {
 
     if ($view_link_error_message === '') {
 
-        $duplicate_lesson_rows = pdo_query(
-            "SELECT
-                contest_id
-             FROM course_contest
-             WHERE course_id = ?
-               AND lesson_no = ?
-             LIMIT 1",
-            $course_id,
-            $view_link_lesson_no
-        );
+        $duplicate_lesson_rows = array();
+        if ($course_existing_lesson === null) {
+            $duplicate_lesson_rows = pdo_query(
+                "SELECT
+                    contest_id
+                 FROM course_contest
+                 WHERE course_id = ?
+                   AND lesson_no = ?
+                 LIMIT 1",
+                $course_id,
+                $view_link_lesson_no
+            );
+        }
 
 
         if (

@@ -1,11 +1,13 @@
 <?php
+require_once(dirname(__DIR__, 2) . '/include/simulation_description.inc.php');
 include("template/$OJ_TEMPLATE/header.php");
 ?>
 
 <link
     rel="stylesheet"
-    href="template/<?php echo $OJ_TEMPLATE; ?>/css/course.css"
->
+    href="template/<?php echo $OJ_TEMPLATE; ?>/css/course.css">
+<link rel="stylesheet" href="/template/syzoj/css/course-activity-heading.css?v=1">
+
 
 <div class="course-page">
 
@@ -13,8 +15,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
         <a
             href="course_list.php"
-            class="ui small basic button"
-        >
+            class="ui small basic button">
             <i class="left arrow icon"></i>
             수업 목록
         </a>
@@ -43,14 +44,11 @@ include("template/$OJ_TEMPLATE/header.php");
 
             if ($semester == 1) {
                 echo '1학기';
-            }
-            elseif ($semester == 2) {
+            } elseif ($semester == 2) {
                 echo '2학기';
-            }
-            elseif ($semester > 0) {
-                echo $semester.'학기';
-            }
-            else {
+            } elseif ($semester > 0) {
+                echo $semester . '학기';
+            } else {
                 echo '학기 구분 없음';
             }
             ?>
@@ -161,8 +159,7 @@ include("template/$OJ_TEMPLATE/header.php");
         </div>
 
     <?php
-    }
-    else {
+    } else {
     ?>
 
         <table class="ui celled table">
@@ -178,73 +175,73 @@ include("template/$OJ_TEMPLATE/header.php");
 
             <tbody>
 
-            <?php
-            foreach ($view_teachers as $teacher) {
+                <?php
+                foreach ($view_teachers as $teacher) {
 
-                switch ($teacher['role']) {
+                    switch ($teacher['role']) {
 
-                    case 'owner':
-                        $role_label = '책임교사';
-                        break;
+                        case 'owner':
+                            $role_label = '책임교사';
+                            break;
 
-                    case 'teacher':
-                        $role_label = '담당교사';
-                        break;
+                        case 'teacher':
+                            $role_label = '담당교사';
+                            break;
 
-                    case 'assistant':
-                        $role_label = '보조교사';
-                        break;
+                        case 'assistant':
+                            $role_label = '보조교사';
+                            break;
 
-                    default:
-                        $role_label = '-';
+                        default:
+                            $role_label = '-';
+                    }
+                ?>
+
+                    <tr>
+
+                        <td>
+                            <?php
+                            echo htmlspecialchars(
+                                $teacher['user_id'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+                        </td>
+
+                        <td>
+                            <?php
+                            echo htmlspecialchars(
+                                isset($teacher['nick'])
+                                    ? $teacher['nick']
+                                    : '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+                        </td>
+
+                        <td>
+                            <?php
+                            echo htmlspecialchars(
+                                isset($teacher['school'])
+                                    ? $teacher['school']
+                                    : '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+                        </td>
+
+                        <td>
+                            <?php echo $role_label; ?>
+                        </td>
+
+                    </tr>
+
+                <?php
                 }
-            ?>
-
-                <tr>
-
-                    <td>
-                        <?php
-                        echo htmlspecialchars(
-                            $teacher['user_id'],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
-                        ?>
-                    </td>
-
-                    <td>
-                        <?php
-                        echo htmlspecialchars(
-                            isset($teacher['nick'])
-                                ? $teacher['nick']
-                                : '',
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
-                        ?>
-                    </td>
-
-                    <td>
-                        <?php
-                        echo htmlspecialchars(
-                            isset($teacher['school'])
-                                ? $teacher['school']
-                                : '',
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
-                        ?>
-                    </td>
-
-                    <td>
-                        <?php echo $role_label; ?>
-                    </td>
-
-                </tr>
-
-            <?php
-            }
-            ?>
+                ?>
 
             </tbody>
 
@@ -276,21 +273,10 @@ include("template/$OJ_TEMPLATE/header.php");
             <a
                 class="ui primary button"
                 href="course_lesson_add.php?course_id=<?php
-                    echo intval($course_id);
-                ?>"
-            >
+                                                        echo intval($course_id);
+                                                        ?>">
                 <i class="plus icon"></i>
                 새 차시 만들기
-            </a>
-
-            <a
-                class="ui teal button"
-                href="course_contest_add.php?course_id=<?php
-                    echo intval($course_id);
-                ?>"
-            >
-                <i class="code icon"></i>
-                Contest 추가
             </a>
 
         </div>
@@ -339,587 +325,493 @@ include("template/$OJ_TEMPLATE/header.php");
 
                 <div class="course-lesson-card">
 
-                <h4 class="ui dividing header course-lesson-heading">
-                    <?php echo intval($lesson['lesson_no']); ?>차시
-                    —
-                    <?php
-                    echo htmlspecialchars(
-                        (string)$lesson['title'],
-                        ENT_QUOTES,
-                        'UTF-8'
-                    );
-                    ?>
-                    <span class="ui mini basic label">
-                        활동 <?php echo count($activities); ?>개
-                    </span>
-
-                    <span class="ui mini basic label">
+                    <h4 class="ui dividing header course-lesson-heading">
+                        <?php echo intval($lesson['lesson_no']); ?>차시
+                        —
                         <?php
-                        echo (
-                            intval($lesson['status']) === 1 &&
-                            intval($lesson['visible']) === 1
-                        )
-                            ? '차시 공개'
-                            : '차시 비공개';
+                        echo htmlspecialchars(
+                            (string)$lesson['title'],
+                            ENT_QUOTES,
+                            'UTF-8'
+                        );
                         ?>
-                    </span>
+                        <span class="ui mini basic label">
+                            활동 <?php echo count($activities); ?>개
+                        </span>
 
-                    <?php
-                    if (
-                        $view_can_manage_contests &&
-                        intval($view_course['status']) === 1 &&
-                        intval($lesson['status']) === 1
-                    ) {
-                    ?>
-                        <a
-                            class="ui mini teal basic button"
-                            href="course_lesson_edit.php?lesson_id=<?php
-                                echo intval($lesson['lesson_id']);
-                            ?>"
-                        >
-                            <i class="edit icon"></i>
-                            차시 수정
-                        </a>
-
-                        <a
-                            class="ui mini blue basic button"
-                            href="course_activity_add.php?lesson_id=<?php
-                                echo intval($lesson['lesson_id']);
-                            ?>"
-                        >
-                            <i class="plus icon"></i>
-                            학습 활동 추가
-                        </a>
-                    <?php } ?>
-                </h4>
-
-                <?php if (empty($activities)) { ?>
-
-                    <p>등록된 활동이 없습니다.</p>
-
-                <?php } else { ?>
-
-                    <div class="ui relaxed divided list course-lesson-activities">
+                        <span class="ui mini basic label">
+                            <?php
+                            echo (
+                                intval($lesson['status']) === 1 &&
+                                intval($lesson['visible']) === 1
+                            )
+                                ? '차시 공개'
+                                : '차시 비공개';
+                            ?>
+                        </span>
 
                         <?php
-                        $activity_count = count($activities);
-
-                        foreach ($activities as $activity_index => $activity) {
+                        if (
+                            $view_can_manage_contests &&
+                            intval($view_course['status']) === 1 &&
+                            intval($lesson['status']) === 1
+                        ) {
                         ?>
+                            <a
+                                class="ui mini teal basic button"
+                                href="course_lesson_edit.php?lesson_id=<?php
+                                                                        echo intval($lesson['lesson_id']);
+                                                                        ?>">
+                                <i class="edit icon"></i>
+                                차시 수정
+                            </a>
 
-                            <div class="item course-lesson-activity">
-                                <div class="content">
-
-                                    <div class="course-activity-title-row">
-                                        <div class="course-activity-title">
-                                        <?php
-                                        $activity_type = (string)$activity['activity_type'];
-
-                                        $activity_type_labels = array(
-                                            'material' => '학습 자료',
-                                            'assignment' => '학습 과제',
-                                            'contest' => '코딩 실습'
-                                        );
-
-                                        $activity_type_colors = array(
-                                            'material' => 'blue',
-                                            'assignment' => 'orange',
-                                            'contest' => 'green'
-                                        );
-
-                                        $activity_type_icons = array(
-                                            'material' => 'book',
-                                            'assignment' => 'clipboard',
-                                            'contest' => 'code'
-                                        );
-
-                                        $activity_type_label =
-                                            $activity_type_labels[$activity_type]
-                                            ?? '학습 활동';
-
-                                        $activity_type_color =
-                                            $activity_type_colors[$activity_type]
-                                            ?? '';
-
-                                        $activity_type_icon =
-                                            $activity_type_icons[$activity_type]
-                                            ?? 'tasks';
-                                        ?>
-
-                                        <span class="ui tiny <?php
-                                            echo $activity_type_color;
-                                        ?> label">
-                                            <i class="<?php
-                                                echo $activity_type_icon;
-                                            ?> icon"></i>
-                                            <?php
-                                            echo htmlspecialchars(
-                                                $activity_type_label,
-                                                ENT_QUOTES,
-                                                'UTF-8'
-                                            );
-                                            ?>
-                                        </span>
-
-                                    <?php
-                                    $activity_title =
-                                        isset($activity['display_title'])
-                                            ? (string)$activity['display_title']
-                                            : (string)$activity['activity_title'];
-
-                                    if (
-                                        $activity['activity_type'] === 'contest' &&
-                                        intval($activity['contest_id']) > 0
-                                    ) {
-                                    ?>
-                                        <a href="contest.php?cid=<?php
-                                            echo intval($activity['contest_id']);
-                                        ?>">
-                                            <?php
-                                            echo htmlspecialchars(
-                                                $activity_title,
-                                                ENT_QUOTES,
-                                                'UTF-8'
-                                            );
-                                            ?>
-                                        </a>
-                                    <?php } else { ?>
-                                        <?php
-                                        echo htmlspecialchars(
-                                            $activity_title,
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        );
-                                        ?>
-                                    <?php } ?>
-
-                                        </div>
-
-                                    <?php
-                                    if (
-                                        $view_can_manage_contests &&
-                                        intval($view_course['status']) === 1 &&
-                                        intval($lesson['status']) === 1 &&
-                                        $activity_count > 1
-                                    ) {
-                                    ?>
-                                        <div class="course-activity-move-controls">
-
-                                            <?php if ($activity_index > 0) { ?>
-                                                <form
-                                                    method="post"
-                                                    action="course_activity_move.php"
-                                                    class="course-activity-move-form"
-                                                >
-                                                    <?php echo $view_csrf_input; ?>
-
-                                                    <input type="hidden"
-                                                           name="course_id"
-                                                           value="<?php echo intval($course_id); ?>">
-                                                    <input type="hidden"
-                                                           name="activity_id"
-                                                           value="<?php echo intval($activity['activity_id']); ?>">
-                                                    <input type="hidden"
-                                                           name="direction"
-                                                           value="up">
-
-                                                    <button type="submit"
-                                                            class="ui mini basic button">
-                                                        <i class="arrow up icon"></i>
-                                                        위로 이동
-                                                    </button>
-                                                </form>
-                                            <?php } ?>
-
-                                            <?php if ($activity_index < $activity_count - 1) { ?>
-                                                <form
-                                                    method="post"
-                                                    action="course_activity_move.php"
-                                                    class="course-activity-move-form"
-                                                >
-                                                    <?php echo $view_csrf_input; ?>
-
-                                                    <input type="hidden"
-                                                           name="course_id"
-                                                           value="<?php echo intval($course_id); ?>">
-                                                    <input type="hidden"
-                                                           name="activity_id"
-                                                           value="<?php echo intval($activity['activity_id']); ?>">
-                                                    <input type="hidden"
-                                                           name="direction"
-                                                           value="down">
-
-                                                    <button type="submit"
-                                                            class="ui mini basic button">
-                                                        <i class="arrow down icon"></i>
-                                                        아래로 이동
-                                                    </button>
-                                                </form>
-                                            <?php } ?>
-
-                                        </div>
-                                    <?php } ?>
-
-                                    </div>
-
-                                    <?php
-                                    if (
-                                        $activity['activity_type'] !== 'contest' &&
-                                        !empty($activity['description'])
-                                    ) {
-                                    ?>
-                                        <div class="description course-activity-description"><?php
-                                            echo htmlspecialchars(
-                                                (string)$activity['description'],
-                                                ENT_QUOTES,
-                                                'UTF-8'
-                                            );
-                                        ?></div>
-                                    <?php } ?>
-
-                                    <?php
-                                    // Contest Activity의 대회 설정 수정
-                                    if (
-                                        $view_can_manage_contests &&
-                                        intval($view_course['status']) === 1 &&
-                                        intval($lesson['status']) === 1 &&
-                                        $activity['activity_type'] === 'contest' &&
-                                        intval($activity['contest_id']) > 0
-                                    ) {
-                                    ?>
-                                        <a
-                                            class="ui mini teal basic button course-contest-action-button"
-                                            href="course_contest_edit.php?course_id=<?php
-                                                echo intval($course_id);
-                                            ?>&amp;contest_id=<?php
-                                                echo intval($activity['contest_id']);
-                                            ?>"
-                                        >
-                                            <i class="edit icon"></i>
-                                            대회 설정 수정
-                                        </a>
-                                    <?php } ?>
-
-                                    <?php
-                                    // Course에서 생성한 Contest만 문제 구성 허용
-                                    if (
-                                        $view_can_manage_contests &&
-                                        intval($view_course['status']) === 1 &&
-                                        intval($lesson['status']) === 1 &&
-                                        $activity['activity_type'] === 'contest' &&
-                                        intval($activity['contest_id']) > 0 &&
-                                        isset($activity['contest_link_type']) &&
-                                        $activity['contest_link_type'] === 'created'
-                                    ) {
-                                    ?>
-                                        <a
-                                            class="ui mini orange basic button course-contest-action-button"
-                                            href="course_contest_problem_edit.php?course_id=<?php
-                                                echo intval($course_id);
-                                            ?>&amp;contest_id=<?php
-                                                echo intval($activity['contest_id']);
-                                            ?>"
-                                        >
-                                            <i class="tasks icon"></i>
-                                            문제 구성
-                                        </a>
-                                    <?php } ?>
-
-                                    <?php
-                                    // Contest Activity 공개·숨김
-                                    if (
-                                        $view_can_manage_contests &&
-                                        intval($view_course['status']) === 1 &&
-                                        intval($lesson['status']) === 1 &&
-                                        $activity['activity_type'] === 'contest' &&
-                                        intval($activity['contest_id']) > 0
-                                    ) {
-                                        $contest_is_visible =
-                                            intval($activity['contest_visible']) === 1;
-                                    ?>
-                                        <form
-                                            method="post"
-                                            action="course_contest_visibility.php"
-                                            style="display:inline;"
-                                        >
-                                            <?php echo $view_csrf_input; ?>
-
-                                            <input
-                                                type="hidden"
-                                                name="course_id"
-                                                value="<?php echo intval($course_id); ?>"
-                                            >
-
-                                            <input
-                                                type="hidden"
-                                                name="contest_id"
-                                                value="<?php echo intval($activity['contest_id']); ?>"
-                                            >
-
-                                            <input
-                                                type="hidden"
-                                                name="visible"
-                                                value="<?php echo $contest_is_visible ? 0 : 1; ?>"
-                                            >
-
-                                            <button
-                                                type="submit"
-                                                class="ui mini basic <?php
-                                                    echo $contest_is_visible
-                                                        ? 'orange'
-                                                        : 'teal';
-                                                ?> button"
-                                            >
-                                                <?php if ($contest_is_visible) { ?>
-                                                    <i class="eye slash icon"></i>
-                                                    대회 숨김
-                                                <?php } else { ?>
-                                                    <i class="eye icon"></i>
-                                                    대회 공개
-                                                <?php } ?>
-                                            </button>
-                                        </form>
-                                    <?php } ?>
-
-                                    <?php
-                                    // Contest Activity의 수업 연결 제거
-                                    if (
-                                        $view_can_manage_contests &&
-                                        intval($view_course['status']) === 1 &&
-                                        intval($lesson['status']) === 1 &&
-                                        $activity['activity_type'] === 'contest' &&
-                                        intval($activity['contest_id']) > 0
-                                    ) {
-                                    ?>
-                                        <form
-                                            method="post"
-                                            action="course_contest_remove.php"
-                                            style="display:inline;"
-                                            onsubmit="return confirm(
-                                                '이 대회를 수업에서 제거하시겠습니까?\n\n기존 제출 기록은 삭제되지 않습니다.'
-                                            );"
-                                        >
-                                            <?php echo $view_csrf_input; ?>
-
-                                            <input type="hidden"
-                                                   name="course_id"
-                                                   value="<?php echo intval($course_id); ?>">
-
-                                            <input type="hidden"
-                                                   name="contest_id"
-                                                   value="<?php echo intval($activity['contest_id']); ?>">
-
-                                            <button type="submit"
-                                                    class="ui mini red basic button">
-                                                <i class="archive icon"></i>
-                                                대회 연결 제거
-                                            </button>
-                                        </form>
-                                    <?php } ?>
-
-                                    <?php
-                                    // 교사용 과제 상세 보기 및 제출 현황
-                                    if (
-                                        $view_can_manage_contests &&
-                                        $activity['activity_type'] === 'assignment'
-                                    ) {
-                                    ?>
-                                        <a
-                                            class="ui mini orange basic button"
-                                            href="course_assignment_view.php?activity_id=<?php
-                                                echo intval($activity['activity_id']);
-                                            ?>"
-                                        >
-                                            <i class="eye icon"></i>
-                                            과제 상세 보기
-                                        </a>
-
-                                        <a
-                                            class="ui mini blue basic button"
-                                            href="course_assignment_submissions.php?activity_id=<?php
-                                                echo intval($activity['activity_id']);
-                                            ?>"
-                                        >
-                                            <i class="tasks icon"></i>
-                                            제출 현황
-                                        </a>
-                                    <?php } ?>
-
-                                    <?php
-                                    if (
-                                        $view_can_manage_contests &&
-                                        intval($view_course['status']) === 1 &&
-                                        $activity['activity_type'] === 'simulation'
-                                    ) {
-                                    ?>
-                                        <a
-                                            class="ui mini teal basic button"
-                                            href="course_simulation_edit.php?activity_id=<?php
-                                                echo intval($activity['activity_id']);
-                                            ?>"
-                                        >
-                                            <i class="edit icon"></i>
-                                            시뮬레이션 편집
-                                        </a>
-
-                                        <a
-                                            class="ui mini blue basic button"
-                                            href="course_simulation_submissions.php?activity_id=<?php
-                                                echo intval($activity['activity_id']);
-                                            ?>"
-                                        >
-                                            <i class="tasks icon"></i>
-                                            제출 현황
-                                        </a>
-                                    <?php } ?>
-
-                                    <?php
-                                    if (
-                                        $view_can_manage_contests &&
-                                        intval($view_course['status']) === 1 &&
-                                        in_array(
-                                            $activity['activity_type'],
-                                            array('material', 'assignment'),
-                                            true
-                                        )
-                                    ) {
-                                    ?>
-                                        <a
-                                            class="ui mini teal basic button"
-                                            href="course_activity_edit.php?activity_id=<?php
-                                                echo intval($activity['activity_id']);
-                                            ?>"
-                                        >
-                                            <i class="edit icon"></i>
-                                            <?php
-                                            echo $activity['activity_type'] === 'material'
-                                                ? '자료 편집'
-                                                : '과제 편집';
-                                            ?>
-                                        </a>
-
-                                        <form
-                                            class="course-activity-visibility-form"
-                                            method="post"
-                                            action="course_activity_visibility.php"
-                                        >
-                                            <?php echo $view_csrf_input; ?>
-
-                                            <input
-                                                type="hidden"
-                                                name="course_id"
-                                                value="<?php echo intval($view_course['course_id']); ?>"
-                                            >
-
-                                            <input
-                                                type="hidden"
-                                                name="activity_id"
-                                                value="<?php echo intval($activity['activity_id']); ?>"
-                                            >
-
-                                            <input
-                                                type="hidden"
-                                                name="visible"
-                                                value="<?php
-                                                    echo intval($activity['activity_visible']) === 1
-                                                        ? 0
-                                                        : 1;
-                                                ?>"
-                                            >
-
-                                            <button
-                                                type="submit"
-                                                class="ui mini basic button"
-                                            >
-                                                <?php
-                                                if (intval($activity['activity_visible']) === 1) {
-                                                ?>
-                                                    <i class="eye slash icon"></i>
-                                                    활동 숨김
-                                                <?php } else { ?>
-                                                    <i class="eye icon"></i>
-                                                    활동 공개
-                                                <?php } ?>
-                                            </button>
-                                        </form>
-
-                                        <form
-                                            class="course-activity-visibility-form"
-                                            method="post"
-                                            action="course_activity_remove.php"
-                                        >
-                                            <?php echo $view_csrf_input; ?>
-
-                                            <input
-                                                type="hidden"
-                                                name="course_id"
-                                                value="<?php echo intval($course_id); ?>"
-                                            >
-
-                                            <input
-                                                type="hidden"
-                                                name="activity_id"
-                                                value="<?php echo intval($activity['activity_id']); ?>"
-                                            >
-
-                                            <button
-                                                type="submit"
-                                                class="ui mini red basic button"
-                                            >
-                                                <i class="archive icon"></i>
-                                                활동 비활성화
-                                            </button>
-                                        </form>
-                                    <?php } ?>
-
-                                    <span class="ui mini basic <?php
-                                            echo intval($activity['activity_visible']) === 1
-                                                ? 'blue'
-                                                : 'grey';
-                                        ?> label">
-                                        <?php
-                                        echo intval($activity['activity_visible']) === 1
-                                            ? '활동 공개'
-                                            : '활동 비공개';
-                                        ?>
-                                    </span>
-
-                                    <?php if ($activity['activity_type'] === 'contest') { ?>
-                                        <span class="ui mini basic <?php
-                                                echo intval($activity['contest_visible']) === 1
-                                                    ? 'teal'
-                                                    : 'grey';
-                                            ?> label">
-                                            <?php
-                                            echo intval($activity['contest_visible']) === 1
-                                                ? '대회 공개'
-                                                : '대회 비공개';
-                                            ?>
-                                        </span>
-                                    <?php } ?>
-
-                                    <span class="ui mini basic <?php
-                                            echo intval($activity['visible']) === 1
-                                                ? 'green'
-                                                : 'orange';
-                                        ?> label">
-                                        <?php
-                                        echo intval($activity['visible']) === 1
-                                            ? '학생 표시 가능'
-                                            : '학생 표시 제한';
-                                        ?>
-                                    </span>
-
-
-
-                                </div>
-                            </div>
-
+                            <a
+                                class="ui mini blue basic button"
+                                href="course_activity_add.php?lesson_id=<?php
+                                                                        echo intval($lesson['lesson_id']);
+                                                                        ?>">
+                                <i class="plus icon"></i>
+                                학습 활동 추가
+                            </a>
                         <?php } ?>
+                    </h4>
 
-                    </div>
+                    <?php if (empty($activities)) { ?>
 
-                <?php } ?>
+                        <p>등록된 활동이 없습니다.</p>
+
+                    <?php } else { ?>
+
+                        <div class="ui relaxed divided list course-lesson-activities">
+
+                            <?php
+                            $activity_count = count($activities);
+
+                            foreach ($activities as $activity_index => $activity) {
+                            ?>
+
+                                <div class="item course-lesson-activity course-activity-item">
+                                    <div class="content">
+
+                                        <?php $course_activity_teacher = true; require(__DIR__ . '/course_activity_heading.php'); ?>
+<div class="course-activity-management">
+
+                                            <?php
+                                            if (
+                                                $view_can_manage_contests &&
+                                                intval($view_course['status']) === 1 &&
+                                                intval($lesson['status']) === 1 &&
+                                                $activity_count > 1
+                                            ) {
+                                            ?>
+                                                <div class="course-activity-move-controls">
+
+                                                    <?php if ($activity_index > 0) { ?>
+                                                        <form
+                                                            method="post"
+                                                            action="course_activity_move.php"
+                                                            class="course-activity-move-form">
+                                                            <?php echo $view_csrf_input; ?>
+
+                                                            <input type="hidden"
+                                                                name="course_id"
+                                                                value="<?php echo intval($course_id); ?>">
+                                                            <input type="hidden"
+                                                                name="activity_id"
+                                                                value="<?php echo intval($activity['activity_id']); ?>">
+                                                            <input type="hidden"
+                                                                name="direction"
+                                                                value="up">
+
+                                                            <button type="submit"
+                                                                class="ui mini basic button">
+                                                                <i class="arrow up icon"></i>
+                                                                위로 이동
+                                                            </button>
+                                                        </form>
+                                                    <?php } ?>
+
+                                                    <?php if ($activity_index < $activity_count - 1) { ?>
+                                                        <form
+                                                            method="post"
+                                                            action="course_activity_move.php"
+                                                            class="course-activity-move-form">
+                                                            <?php echo $view_csrf_input; ?>
+
+                                                            <input type="hidden"
+                                                                name="course_id"
+                                                                value="<?php echo intval($course_id); ?>">
+                                                            <input type="hidden"
+                                                                name="activity_id"
+                                                                value="<?php echo intval($activity['activity_id']); ?>">
+                                                            <input type="hidden"
+                                                                name="direction"
+                                                                value="down">
+
+                                                            <button type="submit"
+                                                                class="ui mini basic button">
+                                                                <i class="arrow down icon"></i>
+                                                                아래로 이동
+                                                            </button>
+                                                        </form>
+                                                    <?php } ?>
+
+                                                </div>
+                                            <?php } ?>
+
+                                        <?php
+                                        if (
+                                            $activity['activity_type'] !== 'contest' &&
+                                            false /* 수업 목록의 활동 설명 숨김 */
+                                        ) {
+                                        ?>
+                                            <div class="description course-activity-description"><?php
+                                                                                                    if ($activity['activity_type'] === 'simulation') {
+        echo '<div style="white-space:normal;overflow-wrap:anywhere;overflow-x:auto;">';
+        echo simulation_description_html($activity['description']);
+        echo '</div>';
+    } else {
+        echo htmlspecialchars(
+                                                                                                        (string)$activity['description'],
+                                                                                                        ENT_QUOTES,
+                                                                                                        'UTF-8'
+                                                                                                    );
+    }
+                                                                                                    ?></div>
+                                        <?php } ?>
+
+                                        <?php
+                                        // Contest Activity의 대회 설정 수정
+                                        if (
+                                            $view_can_manage_contests &&
+                                            intval($view_course['status']) === 1 &&
+                                            intval($lesson['status']) === 1 &&
+                                            $activity['activity_type'] === 'contest' &&
+                                            intval($activity['contest_id']) > 0
+                                        ) {
+                                        ?>
+                                            <a
+                                                class="ui mini teal basic button course-contest-action-button"
+                                                href="course_contest_edit.php?course_id=<?php
+                                                                                        echo intval($course_id);
+                                                                                        ?>&amp;contest_id=<?php
+                                                                echo intval($activity['contest_id']);
+                                                                ?>">
+                                                <i class="edit icon"></i>
+                                                대회 설정 수정
+                                            </a>
+                                        <?php } ?>
+
+                                        <?php
+                                        // Course에서 생성한 Contest만 문제 구성 허용
+                                        if (
+                                            $view_can_manage_contests &&
+                                            intval($view_course['status']) === 1 &&
+                                            intval($lesson['status']) === 1 &&
+                                            $activity['activity_type'] === 'contest' &&
+                                            intval($activity['contest_id']) > 0 &&
+                                            isset($activity['contest_link_type']) &&
+                                            $activity['contest_link_type'] === 'created'
+                                        ) {
+                                        ?>
+                                            <a
+                                                class="ui mini orange basic button course-contest-action-button"
+                                                href="course_contest_problem_edit.php?course_id=<?php
+                                                                                                echo intval($course_id);
+                                                                                                ?>&amp;contest_id=<?php
+                                                                echo intval($activity['contest_id']);
+                                                                ?>">
+                                                <i class="tasks icon"></i>
+                                                문제 구성
+                                            </a>
+                                        <?php } ?>
+
+                                        <?php
+                                        // Contest Activity 공개·숨김
+                                        if (
+                                            $view_can_manage_contests &&
+                                            intval($view_course['status']) === 1 &&
+                                            intval($lesson['status']) === 1 &&
+                                            $activity['activity_type'] === 'contest' &&
+                                            intval($activity['contest_id']) > 0
+                                        ) {
+                                            $contest_is_visible =
+                                                intval($activity['contest_visible']) === 1;
+                                        ?>
+                                            <form
+                                                method="post"
+                                                action="course_contest_visibility.php"
+                                                style="display:inline;">
+                                                <?php echo $view_csrf_input; ?>
+
+                                                <input
+                                                    type="hidden"
+                                                    name="course_id"
+                                                    value="<?php echo intval($course_id); ?>">
+
+                                                <input
+                                                    type="hidden"
+                                                    name="contest_id"
+                                                    value="<?php echo intval($activity['contest_id']); ?>">
+
+                                                <input
+                                                    type="hidden"
+                                                    name="visible"
+                                                    value="<?php echo $contest_is_visible ? 0 : 1; ?>">
+
+                                                <button
+                                                    type="submit"
+                                                    class="ui mini basic <?php
+                                                                            echo $contest_is_visible
+                                                                                ? 'orange'
+                                                                                : 'teal';
+                                                                            ?> button">
+                                                    <?php if ($contest_is_visible) { ?>
+                                                        <i class="eye slash icon"></i>
+                                                        대회 숨김
+                                                    <?php } else { ?>
+                                                        <i class="eye icon"></i>
+                                                        대회 공개
+                                                    <?php } ?>
+                                                </button>
+                                            </form>
+                                        <?php } ?>
+
+                                        <?php
+                                        // Contest Activity의 수업 연결 제거
+                                        if (
+                                            $view_can_manage_contests &&
+                                            intval($view_course['status']) === 1 &&
+                                            intval($lesson['status']) === 1 &&
+                                            $activity['activity_type'] === 'contest' &&
+                                            intval($activity['contest_id']) > 0
+                                        ) {
+                                        ?>
+                                            <form
+                                                method="post"
+                                                action="course_contest_remove.php"
+                                                style="display:inline;"
+                                                onsubmit="return confirm(
+                                                '이 대회를 수업에서 제거하시겠습니까?\n\n기존 제출 기록은 삭제되지 않습니다.'
+                                            );">
+                                                <?php echo $view_csrf_input; ?>
+
+                                                <input type="hidden"
+                                                    name="course_id"
+                                                    value="<?php echo intval($course_id); ?>">
+
+                                                <input type="hidden"
+                                                    name="contest_id"
+                                                    value="<?php echo intval($activity['contest_id']); ?>">
+
+                                                <button type="submit"
+                                                    class="ui mini red basic button">
+                                                    <i class="archive icon"></i>
+                                                    대회 연결 제거
+                                                </button>
+                                            </form>
+                                        <?php } ?>
+
+                                        <?php
+                                        // 교사용 과제 상세 보기 및 제출 현황
+                                        if (
+                                            $view_can_manage_contests &&
+                                            $activity['activity_type'] === 'assignment'
+                                        ) {
+                                        ?>
+
+
+                                            <a
+                                                class="ui mini blue basic button"
+                                                href="course_assignment_submissions.php?activity_id=<?php
+                                                                                                    echo intval($activity['activity_id']);
+                                                                                                    ?>">
+                                                <i class="tasks icon"></i>
+                                                제출 현황
+                                            </a>
+                                        <?php } ?>
+
+                                        <?php
+                                        if (
+                                            $view_can_manage_contests &&
+                                            intval($view_course['status']) === 1 &&
+                                            $activity['activity_type'] === 'simulation'
+                                        ) {
+                                        ?>
+                                            <a
+                                                class="ui mini teal basic button"
+                                                href="course_simulation_edit.php?activity_id=<?php
+                                                                                                echo intval($activity['activity_id']);
+                                                                                                ?>">
+                                                <i class="edit icon"></i>
+                                                시뮬레이션 편집
+                                            </a>
+
+                                            <a
+                                                class="ui mini blue basic button"
+                                                href="course_simulation_submissions.php?activity_id=<?php
+                                                                                                    echo intval($activity['activity_id']);
+                                                                                                    ?>">
+                                                <i class="tasks icon"></i>
+                                                제출 현황
+                                            </a>
+                                            <!-- simulation-remove-control:v1 -->
+                                            <form
+                                                class="course-activity-visibility-form"
+                                                method="post"
+                                                action="course_activity_remove.php"
+                                                style="display:inline-block;"
+                                                onsubmit="return confirm('이 활동을 목록에서 제거할까요? 제출 기록은 보존되며 비활성 학습 활동에서 복구할 수 있습니다.');"
+                                            >
+                                                <?php echo $view_csrf_input; ?>
+                                                <input type="hidden" name="course_id" value="<?php echo intval($course_id); ?>">
+                                                <input type="hidden" name="activity_id" value="<?php echo intval($activity['activity_id']); ?>">
+                                                <button type="submit" class="ui mini red basic button">
+                                                    <i class="archive icon"></i>활동 제거
+                                                </button>
+                                            </form>
+
+                                        <?php } ?>
+
+                                        <?php
+                                        if (
+                                            $view_can_manage_contests &&
+                                            intval($view_course['status']) === 1 &&
+                                            in_array(
+                                                $activity['activity_type'],
+                                                array('material', 'assignment'),
+                                                true
+                                            )
+                                        ) {
+                                        ?>
+                                            <a
+                                                class="ui mini teal basic button"
+                                                href="course_activity_edit.php?activity_id=<?php
+                                                                                            echo intval($activity['activity_id']);
+                                                                                            ?>">
+                                                <i class="edit icon"></i>
+                                                <?php
+                                                echo $activity['activity_type'] === 'material'
+                                                    ? '자료 편집'
+                                                    : '과제 편집';
+                                                ?>
+                                            </a>
+
+                                            <form
+                                                class="course-activity-visibility-form"
+                                                method="post"
+                                                action="course_activity_visibility.php">
+                                                <?php echo $view_csrf_input; ?>
+
+                                                <input
+                                                    type="hidden"
+                                                    name="course_id"
+                                                    value="<?php echo intval($view_course['course_id']); ?>">
+
+                                                <input
+                                                    type="hidden"
+                                                    name="activity_id"
+                                                    value="<?php echo intval($activity['activity_id']); ?>">
+
+                                                <input
+                                                    type="hidden"
+                                                    name="visible"
+                                                    value="<?php
+                                                            echo intval($activity['activity_visible']) === 1
+                                                                ? 0
+                                                                : 1;
+                                                            ?>">
+
+                                                <button
+                                                    type="submit"
+                                                    class="ui mini basic button">
+                                                    <?php
+                                                    if (intval($activity['activity_visible']) === 1) {
+                                                    ?>
+                                                        <i class="eye slash icon"></i>
+                                                        활동 숨김
+                                                    <?php } else { ?>
+                                                        <i class="eye icon"></i>
+                                                        활동 공개
+                                                    <?php } ?>
+                                                </button>
+                                            </form>
+
+                                            <form
+                                                class="course-activity-visibility-form"
+                                                method="post"
+                                                action="course_activity_remove.php">
+                                                <?php echo $view_csrf_input; ?>
+
+                                                <input
+                                                    type="hidden"
+                                                    name="course_id"
+                                                    value="<?php echo intval($course_id); ?>">
+
+                                                <input
+                                                    type="hidden"
+                                                    name="activity_id"
+                                                    value="<?php echo intval($activity['activity_id']); ?>">
+
+                                                <button
+                                                    type="submit"
+                                                    class="ui mini red basic button">
+                                                    <i class="archive icon"></i>
+                                                    활동 비활성화
+                                                </button>
+                                            </form>
+                                        <?php } ?>
+
+                                        <span class="ui mini basic <?php
+                                                                    echo intval($activity['activity_visible']) === 1
+                                                                        ? 'blue'
+                                                                        : 'grey';
+                                                                    ?> label">
+                                            <?php
+                                            echo intval($activity['activity_visible']) === 1
+                                                ? '활동 공개'
+                                                : '활동 비공개';
+                                            ?>
+                                        </span>
+
+                                        <?php if ($activity['activity_type'] === 'contest') { ?>
+                                            <span class="ui mini basic <?php
+                                                                        echo intval($activity['contest_visible']) === 1
+                                                                            ? 'teal'
+                                                                            : 'grey';
+                                                                        ?> label">
+                                                <?php
+                                                echo intval($activity['contest_visible']) === 1
+                                                    ? '대회 공개'
+                                                    : '대회 비공개';
+                                                ?>
+                                            </span>
+                                        <?php } ?>
+
+                                        <span class="ui mini basic <?php
+                                                                    echo intval($activity['visible']) === 1
+                                                                        ? 'green'
+                                                                        : 'orange';
+                                                                    ?> label">
+                                            <?php
+                                            echo intval($activity['visible']) === 1
+                                                ? '학생 표시 가능'
+                                                : '학생 표시 제한';
+                                            ?>
+                                        </span>
+
+
+
+                                    </div><!-- 관리 기능 -->
+                                    </div>
+                                </div>
+
+                            <?php } ?>
+
+                        </div>
+
+                    <?php } ?>
 
                 </div><!-- /.course-lesson-card -->
 
@@ -943,7 +835,7 @@ include("template/$OJ_TEMPLATE/header.php");
 
                                 <span class="ui tiny label">
                                     <?php
-$activity_type_labels = array(
+                                    $activity_type_labels = array(
                                         'material' => '학습 자료',
                                         'assignment' => '학습 과제',
                                         'contest' => '코딩 실습'
@@ -966,8 +858,8 @@ $activity_type_labels = array(
                                 <?php
                                 $activity_title =
                                     isset($activity['display_title'])
-                                        ? (string)$activity['display_title']
-                                        : (string)$activity['activity_title'];
+                                    ? (string)$activity['display_title']
+                                    : (string)$activity['activity_title'];
 
                                 if (
                                     $activity['activity_type'] === 'contest' &&
@@ -975,8 +867,8 @@ $activity_type_labels = array(
                                 ) {
                                 ?>
                                     <a href="contest.php?cid=<?php
-                                        echo intval($activity['contest_id']);
-                                    ?>">
+                                                                echo intval($activity['contest_id']);
+                                                                ?>">
                                         <?php
                                         echo htmlspecialchars(
                                             $activity_title,
@@ -1021,6 +913,24 @@ $activity_type_labels = array(
                                     ?>
                                 </span>
 
+                                <?php if (
+                                    intval($view_course['status']) === 1 &&
+                                    $activity['activity_type'] === 'contest' &&
+                                    intval($activity['contest_id']) > 0
+                                ): ?>
+                                    <form class="ui small form" method="post"
+                                          action="course_contest_restore.php"
+                                          style="margin-top:1rem;"
+                                          onsubmit="return confirm('활동을 비공개로 복구합니다. 선택한 설정에 따라 원래 차시를 복원하거나 다른 차시에 배정하시겠습니까?');">
+                                        <?php
+                                        $restore_contest_id = intval($activity['contest_id']);
+                                        $restore_repair_active = true;
+                                        require(__DIR__ . '/course_contest_restore_fields.php');
+                                        ?>
+                                        <button class="ui tiny blue button" type="submit">차시 연결 복구</button>
+                                    </form>
+                                <?php endif; ?>
+
                             </div>
                         </div>
 
@@ -1046,9 +956,8 @@ $activity_type_labels = array(
 
         <h3
             class="ui dividing header"
-            style="margin-top:2rem;"
-        >
-            제거된 차시
+            style="margin-top:2rem;">
+            제거된 Contest 활동
         </h3>
 
         <table class="ui celled table">
@@ -1065,125 +974,101 @@ $activity_type_labels = array(
 
             <tbody>
 
-            <?php
-            foreach ($view_removed_contests as $contest) {
+                <?php
+                foreach ($view_removed_contests as $contest) {
 
-                $link_type =
-                    isset($contest['link_type'])
+                    $link_type =
+                        isset($contest['link_type'])
                         ? $contest['link_type']
                         : 'created';
-            ?>
+                ?>
 
-                <tr>
+                    <tr>
 
-                    <td>
-                        <?php
-                        echo intval($contest['lesson_no']);
-                        ?>차시
-                    </td>
+                        <td>
+                            <?php
+                            echo intval($contest['lesson_no']);
+                            ?>차시
+                        </td>
 
-                    <td>
-                        <?php
-                        echo intval($contest['contest_id']);
-                        ?>
-                    </td>
+                        <td>
+                            <?php
+                            echo intval($contest['contest_id']);
+                            ?>
+                        </td>
 
-                    <td>
-                    <?php
-                    echo htmlspecialchars(
-                        isset($contest['title'])
-                            ? $contest['title']
-                            : '',
-                        ENT_QUOTES,
-                        'UTF-8'
-                    );
-                    ?>
+                        <td>
+                            <?php
+                            echo htmlspecialchars(
+                                isset($contest['title'])
+                                    ? $contest['title']
+                                    : '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
 
-                    <div style="margin-top:0.4rem;">
+                            <div style="margin-top:0.4rem;">
 
-                        <?php
-                        if ($link_type === 'linked') {
-                        ?>
+                                <?php
+                                if ($link_type === 'linked') {
+                                ?>
 
-                            <span class="ui tiny blue basic label">
-                                기존 대회 연결
+                                    <span class="ui tiny blue basic label">
+                                        기존 대회 연결
+                                    </span>
+
+                                <?php
+                                } else {
+                                ?>
+
+                                    <span class="ui tiny teal basic label">
+                                        Course 생성
+                                    </span>
+
+                                <?php
+                                }
+                                ?>
+
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="ui tiny grey label">
+                                제거됨
                             </span>
+                        </td>
 
-                        <?php
-                        }
-                        else {
-                        ?>
+                        <td class="center aligned">
 
-                            <span class="ui tiny teal basic label">
-                                Course 생성
-                            </span>
+                            <?php
+                            if (
+                                intval($view_course['status']) === 1
+                            ) {
+                            ?>
 
-                        <?php
-                        }
-                        ?>
+                                <form class="ui small form" method="post" action="course_contest_restore.php"
+                                      onsubmit="return confirm('Contest 활동을 비공개로 복원합니다. 선택한 설정에 따라 원래 차시를 복원하거나 다른 차시에 배정하시겠습니까?');">
+                                    <?php
+                                    $restore_contest_id = intval($contest['contest_id']);
+                                    $restore_repair_active = false;
+                                    require(__DIR__ . '/course_contest_restore_fields.php');
+                                    ?>
+                                    <button class="ui tiny blue basic button" type="submit">비공개로 복원</button>
+                                </form>
+                            <?php
+                            } else {
+                                echo '-';
+                            }
+                            ?>
 
-                    </div>
-                </td>
+                        </td>
 
-                    <td>
-                        <span class="ui tiny grey label">
-                            제거됨
-                        </span>
-                    </td>
+                    </tr>
 
-                    <td class="center aligned">
-
-                        <?php
-                        if (
-    intval($view_course['status']) === 1 &&
-    isset($contest['lesson_id']) &&
-    intval($contest['lesson_id']) > 0
-) {
-                        ?>
-
-                            <form
-                                method="post"
-                                action="course_contest_restore.php"
-                                style="display:inline;"
-                                onsubmit="return confirm('이 차시를 다시 복원하시겠습니까?');"
-                            >
-
-                            <?php echo $view_csrf_input; ?>
-
-                            <input
-                                type="hidden"
-                                name="course_id"
-                                value="<?php echo intval($course_id); ?>"
-                            >
-
-                            <input
-                                type="hidden"
-                                name="contest_id"
-                                value="<?php echo intval($contest['contest_id']); ?>"
-                            >
-
-                            <button
-                                type="submit"
-                                class="ui tiny blue basic button"
-                            >
-                                복원
-                            </button>
-
-                        </form>
-                        <?php
-                        }
-                        else {
-                            echo '-';
-                        }
-                        ?>
-
-                    </td>
-
-                </tr>
-
-            <?php
-            }
-            ?>
+                <?php
+                }
+                ?>
 
             </tbody>
 
@@ -1224,125 +1109,122 @@ $activity_type_labels = array(
 
             <tbody>
 
-            <?php
-            foreach ($view_inactive_general_activities as $activity) {
+                <?php
+                foreach ($view_inactive_general_activities as $activity) {
 
-                $type_labels = array(
-                    'material' => '학습 자료',
-                    'assignment' => '학습 과제'
-                );
+                    $type_labels = array(
+                        'material' => '학습 자료',
+                        'assignment' => '학습 과제',
+                        'simulation' => '시뮬레이션'
+                    );
 
-                $type = (string)$activity['activity_type'];
+                    $type = (string)$activity['activity_type'];
 
-                $type_label =
-                    $type_labels[$type] ?? $type;
+                    $type_label =
+                        $type_labels[$type] ?? $type;
 
-                $can_restore =
-                    intval($view_course['status']) === 1 &&
-                    intval($activity['lesson_status']) === 1;
-            ?>
+                    $can_restore =
+                        intval($view_course['status']) === 1 &&
+                        intval($activity['lesson_status']) === 1;
+                ?>
 
-                <tr>
+                    <tr>
 
-                    <td>
-                        <?php
-                        if (
-                            isset($activity['lesson_no']) &&
-                            $activity['lesson_no'] !== null
-                        ) {
-                            echo intval($activity['lesson_no']) . '차시';
+                        <td>
+                            <?php
+                            if (
+                                isset($activity['lesson_no']) &&
+                                $activity['lesson_no'] !== null
+                            ) {
+                                echo intval($activity['lesson_no']) . '차시';
 
-                            $lesson_title =
-                                trim((string)($activity['lesson_title'] ?? ''));
+                                $lesson_title =
+                                    trim((string)($activity['lesson_title'] ?? ''));
 
-                            if ($lesson_title !== '') {
-                                echo ' — ';
-                                echo htmlspecialchars(
-                                    $lesson_title,
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                );
+                                if ($lesson_title !== '') {
+                                    echo ' — ';
+                                    echo htmlspecialchars(
+                                        $lesson_title,
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    );
+                                }
+                            } else {
+                                echo '미배정';
                             }
-                        } else {
-                            echo '미배정';
-                        }
-                        ?>
-                    </td>
+                            ?>
+                        </td>
 
-                    <td>
-                        <?php
-                        echo htmlspecialchars(
-                            $type_label,
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
-                        ?>
-                    </td>
+                        <td>
+                            <?php
+                            echo htmlspecialchars(
+                                $type_label,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+                        </td>
 
-                    <td>
-                        <?php
-                        echo htmlspecialchars(
-                            (string)$activity['title'],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
-                        ?>
-                    </td>
+                        <td>
+                            <?php
+                            echo htmlspecialchars(
+                                (string)$activity['title'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+                        </td>
 
-                    <td>
-                        <span class="ui tiny grey label">
-                            비활성
-                        </span>
-                    </td>
-
-                    <td class="center aligned">
-
-                        <?php if ($can_restore) { ?>
-
-                            <form
-                                method="post"
-                                action="course_activity_restore.php"
-                            >
-
-                                <?php echo $view_csrf_input; ?>
-
-                                <input
-                                    type="hidden"
-                                    name="course_id"
-                                    value="<?php echo intval($course_id); ?>"
-                                >
-
-                                <input
-                                    type="hidden"
-                                    name="activity_id"
-                                    value="<?php
-                                        echo intval($activity['activity_id']);
-                                    ?>"
-                                >
-
-                                <button
-                                    type="submit"
-                                    class="ui mini blue basic button"
-                                >
-                                    <i class="undo icon"></i>
-                                    활동 복구
-                                </button>
-
-                            </form>
-
-                        <?php } else { ?>
-
-                            <span class="ui mini basic label">
-                                차시 활성화 필요
+                        <td>
+                            <span class="ui tiny grey label">
+                                비활성
                             </span>
+                        </td>
 
-                        <?php } ?>
+                        <td class="center aligned">
 
-                    </td>
+                            <?php if ($can_restore) { ?>
 
-                </tr>
+                                <form
+                                    method="post"
+                                    action="course_activity_restore.php">
 
-            <?php } ?>
+                                    <?php echo $view_csrf_input; ?>
+
+                                    <input
+                                        type="hidden"
+                                        name="course_id"
+                                        value="<?php echo intval($course_id); ?>">
+
+                                    <input
+                                        type="hidden"
+                                        name="activity_id"
+                                        value="<?php
+                                                echo intval($activity['activity_id']);
+                                                ?>">
+
+                                    <button
+                                        type="submit"
+                                        class="ui mini blue basic button">
+                                        <i class="undo icon"></i>
+                                        활동 복구
+                                    </button>
+
+                                </form>
+
+                            <?php } else { ?>
+
+                                <span class="ui mini basic label">
+                                    차시 활성화 필요
+                                </span>
+
+                            <?php } ?>
+
+                        </td>
+
+                    </tr>
+
+                <?php } ?>
 
             </tbody>
 

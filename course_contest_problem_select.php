@@ -5,6 +5,7 @@ require_once('./include/const.inc.php');
 require_once('./include/memcache.php');
 require_once('./include/setlang.php');
 require_once('./include/course_functions.inc.php');
+require_once(__DIR__ . '/include/course_contest_activity.inc.php');
 
 $view_title = "차시 문제 선택";
 
@@ -22,6 +23,10 @@ if (!isset($_SESSION[$OJ_NAME.'_user_id'])) {
 }
 
 $user_id = $_SESSION[$OJ_NAME.'_user_id'];
+
+// lesson_id를 전달한 경우에만 기존 차시 활동 경로로 처리한다.
+$course_existing_lesson = course_contest_activity_request($_GET);
+
 
 
 // ============================================================

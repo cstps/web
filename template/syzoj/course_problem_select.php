@@ -77,12 +77,12 @@ $default_end_time =
 
         <a
             class="ui small basic button"
-            href="course_contest_add.php?course_id=<?php
+            href="course_contest_add.php?<?php if ($course_existing_lesson !== null) echo 'lesson_id=' . (int)$course_existing_lesson['lesson_id'] . '&amp;'; ?>course_id=<?php
                 echo intval($course_id);
             ?>"
         >
             <i class="left arrow icon"></i>
-            차시 추가로 돌아가기
+            Contest 구성 방식 선택으로 돌아가기
         </a>
 
         <h1 class="ui header">
@@ -111,6 +111,9 @@ $default_end_time =
             method="get"
             action="course_problem_select.php"
         >
+        <?php if ($course_existing_lesson !== null): ?>
+            <input type="hidden" name="lesson_id" value="<?= (int)$course_existing_lesson['lesson_id'] ?>">
+        <?php endif; ?>
 
             <input
                 type="hidden"
@@ -356,7 +359,7 @@ $default_end_time =
         <div class="ui segment">
 
         <h3 class="ui header">
-            선택한 문제와 차시 설정
+            선택한 문제와 Contest 설정
         </h3>
 
         <div class="ui blue message">
@@ -383,6 +386,9 @@ $default_end_time =
             method="post"
             action="course_contest_direct_create.php"
         >
+        <?php if ($course_existing_lesson !== null): ?>
+            <input type="hidden" name="lesson_id" value="<?= (int)$course_existing_lesson['lesson_id'] ?>">
+        <?php endif; ?>
 
             <?php include("./csrf.php"); ?>
 
@@ -404,7 +410,7 @@ $default_end_time =
             <div class="field">
 
                 <label>
-                    차시 제목
+                    Contest 제목
                 </label>
 
                 <input
@@ -605,7 +611,7 @@ $default_end_time =
 
             <div class="ui warning message">
 
-                Course 차시는 처음에는 숨김 상태로 생성됩니다.
+                Contest 활동은 처음에는 숨김 상태로 저장됩니다.
                 생성 후 수업 화면에서 문제 구성과 설정을 확인한 다음
                 학생에게 공개하세요.
 
@@ -617,7 +623,7 @@ $default_end_time =
                 class="ui blue button"
             >
                 <i class="plus icon"></i>
-                선택 문제로 차시 생성
+                선택 문제로 Contest 저장
             </button>
 
         </form>
@@ -813,10 +819,10 @@ $default_end_time =
 
             if (
                 !confirm(
-                    '선택한 문제로 Course 전용 차시를 생성하시겠습니까?'
+                    '선택한 문제로 Contest를 저장하시겠습니까?'
                 )
             ) {
-                
+
                 event.preventDefault();
             }
         }
