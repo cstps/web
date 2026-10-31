@@ -7,7 +7,13 @@ function simulation_description_html($value, $from_editor = false)
     $escape = static function ($s) {
         return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     };
-    if (!$from_editor && strpos($text, $mark) !== 0) {
+    // 가져온 문제의 표시 없는 HTML도 기존 정제 과정을 거친다.
+    $html_tags = 'p|br|div|span|strong|b|em|i|u|s|strike|sub|sup|h[1-6]|ul|ol|li|blockquote|pre|code|hr|table|caption|thead|tbody|tfoot|tr|th|td|a|img';
+    $has_html = preg_match(
+        '~<(?:' . $html_tags . ')(?=[\s/>])[^>]*>~i',
+        $text
+    ) === 1;
+    if (!$from_editor && strpos($text, $mark) !== 0 && !$has_html) {
         return nl2br($escape($text));
     }
     if (strpos($text, $mark) === 0) {

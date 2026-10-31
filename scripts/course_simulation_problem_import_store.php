@@ -95,6 +95,11 @@ function course_simulation_store_problem_import(PDO $connection, array $input)
 
         $sort_order = (int)$maximum_order + 1;
 
+        require_once(dirname(__DIR__) . '/include/simulation_description.inc.php');
+        $import_activity_description = simulation_description_store(
+            simulation_description_html($content['description'])
+        );
+
         $statement = $connection->prepare(
             "INSERT INTO course_activity
                 (course_id, lesson_id, activity_type, title, description,
@@ -106,7 +111,7 @@ function course_simulation_store_problem_import(PDO $connection, array $input)
             $course_id,
             $lesson_id,
             $content['title'],
-            $content['description'],
+            $import_activity_description,
             $sort_order,
             $creator,
         ))) {
