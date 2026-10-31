@@ -9,12 +9,49 @@ require_once('./scripts/course_simulation_grade_queue.php');
 
 function simulation_regrade_error($message, $status)
 {
-    global $OJ_TEMPLATE, $view_errors, $view_title;
     http_response_code($status);
-    $view_title = '시뮬레이션 재채점';
-    $view_errors = '<h2>' .
-        htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</h2>';
-    require('template/' . $OJ_TEMPLATE . '/error.php');
+    header('Content-Type: text/html; charset=UTF-8');
+    header('Cache-Control: private, no-store');
+
+    $escape = static function ($value) {
+        return htmlspecialchars(
+            (string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'
+        );
+    };
+
+    $activity = $_POST['activity_id'] ?? null;
+    $back_url = null;
+
+    if (
+        is_string($activity) &&
+        preg_match('/^[1-9][0-9]{0,9}$/D', $activity) &&
+        (strlen($activity) < 10 || strcmp($activity, '2147483647') <= 0)
+    ) {
+        $back_url = 'course_simulation_submissions.php?activity_id='
+            . rawurlencode($activity);
+    }
+
+    echo '<!doctype html><html lang="ko"><head>';
+    echo '<meta charset="UTF-8">';
+    echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
+    echo '<title>시뮬레이션 재채점 안내</title>';
+    echo '<link rel="stylesheet" href="/template/syzoj/css/course-regrade-error.css">';
+    echo '</head><body>';
+    echo '<main class="regrade-error" aria-labelledby="error-title">';
+    echo '<p class="regrade-error-caption">시뮬레이션 재채점</p>';
+    echo '<h1 id="error-title">요청을 처리하지 못했습니다</h1>';
+    echo '<p class="regrade-error-message" role="alert">'
+        . $escape($message) . '</p>';
+    echo '<nav class="regrade-error-actions" aria-label="돌아가기">';
+
+    if ($back_url !== null) {
+        echo '<a class="regrade-error-primary" href="'
+            . $escape($back_url)
+            . '">제출 현황으로 돌아가기</a>';
+    }
+
+    echo '<a href="index.php">홈으로</a>';
+    echo '</nav></main></body></html>';
     exit;
 }
 

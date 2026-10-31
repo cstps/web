@@ -1,0 +1,39 @@
+body {
+    margin: 0; background: #f4f6f8; color: #243044;
+    font-family: sans-serif; line-height: 1.65;
+}
+.regrade-error {
+    box-sizing: border-box; width: calc(100% - 32px);
+    max-width: 680px; margin: 10vh auto; padding: 32px;
+    background: #fff; border: 1px solid #dce2e8; border-radius: 12px;
+}
+.regrade-error-caption {
+    margin: 0 0 8px; color: #687587; font-size: 14px;
+}
+.regrade-error h1 {
+    margin: 0 0 20px; font-size: 24px; line-height: 1.4;
+}
+.regrade-error-message {
+    padding: 16px; background: #fff3f2;
+    border-left: 4px solid #bd3535;
+    overflow-wrap: anywhere; white-space: pre-wrap;
+}
+.regrade-error-actions {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px;
+}
+.regrade-error-actions a {
+    padding: 10px 16px; border: 1px solid #cbd3dc;
+    border-radius: 6px; color: #243044; text-decoration: none;
+}
+.regrade-error-actions .regrade-error-primary {
+    color: #fff; background: #247767; border-color: #247767;
+}
+.regrade-error-actions a:focus-visible {
+    outline: 3px solid #287ab8; outline-offset: 3px;
+}
+@media (max-width: 480px) {
+    .regrade-error { padding: 22px; margin: 32px auto; }
+    .regrade-error-actions a {
+        box-sizing: border-box; width: 100%; text-align: center;
+    }
+}
