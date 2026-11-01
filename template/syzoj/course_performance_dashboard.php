@@ -95,6 +95,46 @@ require_once(
         padding: 0 8px;
     }
 }
+
+/* 차시 옆 활동 목록 */
+.dashboard-activity-row {
+    display: grid;
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 12px 0;
+    border-top: 1px solid #eee;
+}
+.dashboard-activity-lesson.ui.header {
+    margin: 0;
+    padding-top: 8px;
+}
+.dashboard-activity-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+.dashboard-activity-item {
+    max-width: 100%;
+}
+.dashboard-activity-links .ui.button {
+    margin: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: left;
+}
+@media (max-width: 600px) {
+    .dashboard-activity-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+    }
+    .dashboard-activity-lesson.ui.header {
+        padding-top: 0;
+    }
+}
+
 </style>
 
 
@@ -160,66 +200,81 @@ require_once(
     </div>
 
 
-    <?php if (count($view_contests) > 0) { ?>
+    <?php
+    $dashboard_activity_groups = array();
+    foreach ($view_contests as $dashboard_contest) {
+        $number = (int)$dashboard_contest['lesson_no'];
+        $dashboard_activity_groups[$number][] = array(
+            'type' => 'contest',
+            'id' => (int)$dashboard_contest['contest_id'],
+            'title' => (string)($dashboard_contest['activity_title'] ?? $dashboard_contest['title']),
+            'visible' => !empty($dashboard_contest['visible'])
+        );
+    }
+    foreach ($dashboard_simulation['activities'] as $dashboard_activity) {
+        $number = (int)$dashboard_activity['lesson_no'];
+        $dashboard_activity_groups[$number][] = array(
+            'type' => 'simulation',
+            'id' => (int)$dashboard_activity['activity_id'],
+            'title' => (string)$dashboard_activity['title'],
+            'visible' => !empty($dashboard_activity['visible']) &&
+                !empty($dashboard_activity['lesson_visible'])
+        );
+    }
+    krsort($dashboard_activity_groups, SORT_NUMERIC);
+    $dashboard_activity_escape = static function ($value) {
+        return htmlspecialchars(
+            (string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'
+        );
+    };
+    ?>
+    <section class="ui segment" aria-labelledby="dashboard-activity-title">
+        <h3 class="ui header" id="dashboard-activity-title">학습활동 선택</h3>
+        <p>차시별 활동을 선택하면 아래에 해당 활동의 현황이 표시됩니다.</p>
+        <?php if ($dashboard_simulation['error'] !== '' && $dashboard_activity_type !== 'simulation'): ?>
+            <div class="ui warning message" role="alert"><?= $dashboard_activity_escape($dashboard_simulation['error']) ?></div>
+        <?php endif; ?>
 
-        <div class="course-performance-lessons">
-
-            <?php foreach ($view_contests as $contest) {
-
-                $contest_id =
-                    intval($contest['contest_id']);
-
-                $lesson_no =
-                    intval($contest['lesson_no']);
-
-                $is_selected =
-                    $contest_id ===
-                    intval($selected_contest_id);
-            ?>
-
-                <a
-                    class="ui small <?php
-                        echo $is_selected
-                            ? 'blue'
-                            : 'basic';
-                    ?> button"
-                    href="course_performance_dashboard.php?course_id=<?php
-                        echo intval($course_id);
-                    ?>&contest_id=<?php
-                        echo $contest_id;
-                    ?>"
-                >
-                    <?php
-                    if ($lesson_no > 0) {
-                        echo $lesson_no . '차시';
-                    } else {
-                        echo '차시';
-                    }
+        <?php foreach ($dashboard_activity_groups as $dashboard_lesson_no => $dashboard_items): ?>
+            <div class="dashboard-activity-row">
+                <h4 class="ui header dashboard-activity-lesson"><?= $dashboard_lesson_no > 0 ? (int)$dashboard_lesson_no . '차시' : '차시 미배정' ?></h4>
+                <div class="dashboard-activity-links">
+                    <?php foreach ($dashboard_items as $dashboard_item):
+                        $simulation = $dashboard_item['type'] === 'simulation';
+                        $active = $dashboard_activity_type === $dashboard_item['type'] &&
+                            $dashboard_item['id'] === ($simulation
+                                ? (int)($dashboard_simulation['selected']['activity_id'] ?? 0)
+                                : (int)$selected_contest_id);
+                        $url = 'course_performance_dashboard.php?' . http_build_query(array(
+                            'course_id' => (int)$course_id,
+                            'activity_type' => $dashboard_item['type'],
+                            $simulation ? 'simulation_activity_id' : 'contest_id' => $dashboard_item['id']
+                        ));
                     ?>
+                        <div class="dashboard-activity-item">
+                            <a class="ui small <?= $simulation ? 'teal' : 'green' ?> <?= $active ? '' : 'basic' ?> button"
+                               href="<?= $dashboard_activity_escape($url) ?>"<?= $active ? ' aria-current="page"' : '' ?>>
+                                <?= $active ? '✓ ' : '' ?><?= $simulation ? '시뮬레이션' : '코딩 실습' ?> · <?= $dashboard_activity_escape($dashboard_item['title']) ?><?= $dashboard_item['visible'] ? '' : ' [비공개]' ?>
+                            </a>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
 
-                    <?php
-                    if (
-                        isset($contest['title']) &&
-                        trim($contest['title']) !== ''
-                    ) {
-                        echo ' · ' .
-                            htmlspecialchars(
-                                $contest['title'],
-                                ENT_QUOTES,
-                                'UTF-8'
-                            );
-                    }
-                    ?>
-                </a>
+        <?php if (!$dashboard_activity_groups && $dashboard_simulation['error'] === ''): ?>
+            <p>조회할 활성 코딩 실습·시뮬레이션 활동이 없습니다.</p>
+        <?php endif; ?>
+    </section>
 
-            <?php } ?>
-
-        </div>
-
-    <?php } ?>
-
+    <?php if ($dashboard_activity_type === 'simulation') {
+        require(__DIR__ . '/course_dashboard_simulation.php');
+    } ?>
 
     <?php if ($view_selected_contest !== null) { ?>
+        <h3 class="ui header">코딩 실습 · <?= $dashboard_activity_escape(
+            $view_selected_contest['activity_title'] ?? $view_selected_contest['title']
+        ) ?></h3>
 
         <?php
         $problem_count =
@@ -627,10 +682,10 @@ require_once(
         </div>
 
 
-    <?php } elseif (count($view_contests) === 0) { ?>
+    <?php } elseif ($dashboard_activity_type === 'contest' && count($view_contests) === 0) { ?>
 
         <div class="ui message">
-            이 수업에 연결된 활성 차시가 없습니다.
+            이 수업에 연결된 활성 코딩 실습이 없습니다.
         </div>
 
     <?php } ?>

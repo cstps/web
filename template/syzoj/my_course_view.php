@@ -7,10 +7,11 @@ include("template/$OJ_TEMPLATE/header.php");
     href="template/<?php echo $OJ_TEMPLATE; ?>/css/course.css"
 >
 <link rel="stylesheet" href="/template/syzoj/css/course-activity-heading.css?v=2">
+<link rel="stylesheet" href="/template/syzoj/css/course-student-compact.css?v=1">
 
 
 
-<div class="course-page">
+<div class="course-page course-student-compact">
 
     <div class="course-page-header">
 
@@ -454,8 +455,7 @@ include("template/$OJ_TEMPLATE/header.php");
                                             <?php if (!$view_is_performance_mode) { ?>
 
                                             <div
-                                                class="description"
-                                                style="margin-top:0.75rem;"
+                                                class="description course-student-activity-stats"
                                             >
                                                 <span class="ui tiny label">
                                                     문제 <?php echo $problem_count; ?>개
@@ -490,7 +490,7 @@ include("template/$OJ_TEMPLATE/header.php");
                                                 intval($view_course['status']) === 1;
                                             ?>
 
-                                            <div class="course-activity-secondary-actions">
+                                            <div class="course-activity-secondary-actions course-student-record-actions">
 
                                                 <?php
                                                 // 학생용 Contest Activity 제출 기록 버튼

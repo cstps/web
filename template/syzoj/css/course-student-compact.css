@@ -1,0 +1,80 @@
+.course-page.course-student-compact .ui.relaxed.divided.list > .item.course-student-activity {
+    padding: 12px !important;
+    margin: 8px 0 !important;
+}
+.course-page.course-student-compact .course-student-activity > .content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+}
+.course-page.course-student-compact .course-student-activity-heading {
+    display: contents;
+}
+.course-page.course-student-compact .course-activity-primary {
+    order: 1;
+    flex: 0 0 auto;
+    width: auto;
+    justify-content: flex-start;
+}
+.course-page.course-student-compact .course-activity-primary > .ui.button {
+    width: auto;
+    min-height: 36px;
+    padding: 9px 12px;
+    font-size: 0.9rem;
+}
+.course-page.course-student-compact .course-activity-name {
+    order: 2;
+    flex: 1 1 180px;
+    min-width: 0;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+.course-page.course-student-compact .course-student-activity-stats {
+    order: 3;
+    display: flex;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    margin: 0;
+    color: #555;
+}
+.course-page.course-student-compact .course-student-activity-stats > .ui.label {
+    margin: 0;
+    padding: 2px 0;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    font-size: 0.85rem;
+    font-weight: 400;
+    white-space: nowrap;
+}
+.course-page.course-student-compact .course-student-record-actions {
+    order: 4;
+    flex: 0 0 auto;
+    margin-left: auto;
+    align-items: center;
+}
+.course-page.course-student-compact .course-student-record-actions > .ui.button {
+    margin: 0;
+    min-height: 36px;
+    padding: 9px 10px;
+    font-size: 0.85rem;
+}
+@media (max-width: 760px) {
+    .course-page.course-student-compact .course-activity-name {
+        flex-basis: calc(100% - 170px);
+    }
+    .course-page.course-student-compact .course-student-activity-stats {
+        flex: 1 1 220px;
+    }
+    .course-page.course-student-compact .course-student-record-actions {
+        margin-left: 0;
+    }
+}
+@media (max-width: 420px) {
+    .course-page.course-student-compact .course-activity-name {
+        flex-basis: 100%;
+    }
+}

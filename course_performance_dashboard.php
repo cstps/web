@@ -155,6 +155,7 @@ $view_contests =
                 c.end_time
             ) AS end_time,
 
+            c.title AS activity_title,
             c.defunct
 
          FROM course_contest cc
@@ -172,7 +173,7 @@ $view_contests =
             COALESCE(
                 cl.lesson_no,
                 cc.lesson_no
-            ),
+            ) DESC,
             COALESCE(
                 cl.sort_order,
                 cc.sort_order
@@ -188,6 +189,14 @@ if (!is_array($view_contests)) {
 // ============================================================
 // 6. 현재 선택 차시
 // ============================================================
+
+// 차시별 통합 활동 선택
+$dashboard_activity_type = ($_GET['activity_type'] ?? '') === 'simulation'
+    ? 'simulation' : 'contest';
+if (!isset($_GET['activity_type']) &&
+    (isset($_GET['simulation_activity_id']) || !$view_contests)) {
+    $dashboard_activity_type = 'simulation';
+}
 
 $selected_contest_id =
     isset($_GET['contest_id'])
@@ -228,6 +237,11 @@ if (
         intval(
             $view_selected_contest['contest_id']
         );
+}
+
+if ($dashboard_activity_type === 'simulation') {
+    $selected_contest_id = 0;
+    $view_selected_contest = null;
 }
 
 // ============================================================
@@ -380,6 +394,8 @@ if ($selected_contest_id > 0) {
 // ============================================================
 // 10. Template
 // ============================================================
+
+require(__DIR__ . '/include/course_dashboard_simulation.inc.php');
 
 require(
     "template/".
