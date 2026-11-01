@@ -100,7 +100,13 @@ $student_rows =
     pdo_query(
         "SELECT
             cs.user_id,
-            u.nick
+            u.nick,
+            (SELECT MIN(cps.started_at)
+             FROM course_performance_session cps
+             INNER JOIN course_student pcs ON pcs.course_id = cps.course_id
+             WHERE pcs.user_id = cs.user_id
+               AND pcs.status = 1 AND cps.status = 1
+            ) AS performance_context
          FROM course_student cs
          LEFT JOIN users u
                 ON u.user_id = cs.user_id
@@ -111,6 +117,9 @@ $student_rows =
     );
 
 
+if (!is_array($student_rows)) {
+    course_code_monitor_json(false, '학생별 조회 기준을 확인하지 못했습니다.', 503);
+}
 if ($student_rows) {
 
     foreach ($student_rows as $row) {
@@ -130,6 +139,7 @@ if ($student_rows) {
                 'nick' => isset($row['nick'])
                     ? (string)$row['nick']
                     : '',
+                'performance_context' => (string)($row['performance_context'] ?? ''),
                 'current' => null
             );
     }
@@ -148,6 +158,7 @@ $draft_rows =
             d.problem_id,
             d.contest_id,
             d.language,
+            d.performance_context,
             d.updated_at,
 
             TIMESTAMPDIFF(
@@ -188,6 +199,9 @@ $draft_rows =
     );
 
 
+if (!is_array($draft_rows)) {
+    course_code_monitor_json(false, '코딩 실습 초안을 조회하지 못했습니다.', 503);
+}
 if ($draft_rows) {
 
     foreach ($draft_rows as $row) {
@@ -225,6 +239,7 @@ if ($draft_rows) {
 
         $students[$user_id]['current'] =
             array(
+                'performance_context' => (string)$row['performance_context'],
                 'contest_id' =>
                     intval($row['contest_id']),
 
@@ -510,6 +525,7 @@ foreach ($students as $student) {
             'nick' =>
                 $student['nick'],
 
+            'performance_context' => $student['performance_context'],
             'current' =>
                 $student['current']
         );

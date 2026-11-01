@@ -284,6 +284,14 @@ require_once(
     </div>
 
 
+    <div class="ui info message">
+        <strong>학생별 초안 조회 기준</strong>
+        <p>일반 초안과 수행 초안을 학생별로 구분합니다.
+        수행모드가 적용된 학생은 해당 수행 기간의 초안만 표시합니다.
+        여러 수업에서 수행모드가 켜져 있으면 가장 이른 시작 시각을 기준으로 합니다.</p>
+        <p id="course-code-scope-status" role="status">조회 기준 확인 중…</p>
+    </div>
+
     <div class="course-code-monitor-summary">
 
         <div class="course-code-monitor-summary-item">
@@ -1039,6 +1047,30 @@ require_once(
     }
 
 
+    function createDraftScopeLabel(student) {
+        const current = student.current;
+        const context = String(current
+            ? current.performance_context || ""
+            : student.performance_context || "");
+        const label = document.createElement("div");
+        label.className = "course-code-draft-scope ui tiny " +
+            (context ? "orange" : "blue basic") + " label";
+        label.style.marginTop = "6px";
+        label.textContent = context
+            ? "수행 초안" + (current ? "" : " 대기") + " · 시작 " + context
+            : "일반 초안" + (current ? "" : " 대기");
+        return label;
+    }
+
+    function updateDraftScopeStatus(data) {
+        const node = document.getElementById("course-code-scope-status");
+        if (!node) return;
+        const count = data.students.filter(student =>
+            String(student.performance_context || "") !== "").length;
+        node.textContent = "일반 " + (data.students.length - count) +
+            "명 · 수행 " + count + "명 · 마지막 조회 " + data.server_time;
+    }
+
     function getTileKey(student) {
         if (!student.current) return "";
         const current = student.current;
@@ -1314,6 +1346,7 @@ require_once(
                 head.appendChild(
                     userLine
                 );
+                head.appendChild(createDraftScopeLabel(student));
 
 
                 if (current) {
@@ -1383,7 +1416,9 @@ require_once(
                 if (!current) {
 
                     source.textContent =
-                        "저장된 코드가 없습니다.";
+                        student.performance_context
+                            ? "현재 수행 기간에 저장된 코드가 없습니다."
+                            : "저장된 일반 초안이 없습니다.";
 
                     source.classList.add(
                         "course-code-tile-empty"
@@ -1482,9 +1517,10 @@ require_once(
                 data.ok !== true ||
                 !Array.isArray(data.students)
             ) {
-                return;
+                throw new Error(data.message || "학생별 조회 기준을 갱신하지 못했습니다.");
             }
 
+            updateDraftScopeStatus(data);
             renderCodeTiles(
                 data.students
             );
@@ -1652,6 +1688,9 @@ require_once(
                     if (cells.length < 7) {
                         return;
                     }
+                    cells[0].querySelectorAll(".course-code-draft-scope")
+                        .forEach(node => node.remove());
+                    cells[0].appendChild(createDraftScopeLabel(student));
 
                     if (!student.current) {
 
@@ -1811,6 +1850,11 @@ require_once(
         }
         catch (error) {
 
+            const scopeStatus = document.getElementById("course-code-scope-status");
+            if (scopeStatus) {
+                scopeStatus.textContent = "갱신 실패: " + error.message +
+                    " 기존 화면은 마지막으로 성공한 조회 결과입니다.";
+            }
             console.warn(
                 "Course 코드 모니터링 갱신 실패",
                 error

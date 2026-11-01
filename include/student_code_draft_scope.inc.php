@@ -49,7 +49,8 @@ function coding_draft_monitor_source_sql($with_source = false)
     $performance_source = $with_source ? 'p.source,' : '';
     return "(
         SELECT n.id, n.user_id, n.problem_id, n.contest_id,
-               n.language, {$normal_source} n.created_at, n.updated_at
+               n.language, {$normal_source} n.created_at, n.updated_at,
+               '' AS performance_context
         FROM student_code_draft n
         WHERE NOT EXISTS (
             SELECT 1 FROM course_performance_session cps
@@ -58,7 +59,8 @@ function coding_draft_monitor_source_sql($with_source = false)
         )
         UNION ALL
         SELECT p.id, p.user_id, p.problem_id, p.contest_id,
-               p.language, {$performance_source} p.created_at, p.updated_at
+               p.language, {$performance_source} p.created_at, p.updated_at,
+               p.performance_started_at AS performance_context
         FROM student_code_draft_performance p
         WHERE p.performance_started_at = (
             SELECT MIN(cps.started_at) FROM course_performance_session cps
