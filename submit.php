@@ -23,16 +23,12 @@ if (!isset($_SESSION[$OJ_NAME . '_' . 'user_id'])) {
 $now = strftime("%Y-%m-%d %H:%M", time());
 $user_id = $_SESSION[$OJ_NAME . '_' . 'user_id'];
 
-// 수행모드 전환 후 이전 화면의 정식 제출 차단
-// 시험 실행은 기존 처리 경로를 유지한다.
+// 수행모드 전환 후 이전 화면의 제출 및 시험 실행 차단
+// 시험 실행 오류는 편집 화면에서 표시할 일반 텍스트로 응답한다.
 (function () use ($user_id) {
     $custom_test = isset($_POST['id'])
         ? intval($_POST['id']) <= 0
         : (isset($_POST['cid']) && intval($_POST['cid']) < 0);
-
-    if ($custom_test) {
-        return;
-    }
 
     $failure = null;
     $status = 409;
@@ -61,11 +57,19 @@ $user_id = $_SESSION[$OJ_NAME . '_' . 'user_id'];
     }
 
     http_response_code($status);
-    header('Content-Type: text/html; charset=utf-8');
     header('Cache-Control: private, no-store');
     header('Pragma: no-cache');
     header('X-Content-Type-Options: nosniff');
 
+    if ($custom_test) {
+        header('Content-Type: text/plain; charset=utf-8');
+        echo $status === 409
+            ? '수행모드 적용 상태가 변경되었거나 이전 문제 화면입니다. 현재 코드를 복사해 보관한 뒤 문제 화면을 새로 열어 실행해 주세요.'
+            : '현재 수행모드 상태를 확인하지 못해 실행하지 않았습니다. 현재 코드를 보관한 뒤 잠시 후 다시 시도해 주세요.';
+        exit;
+    }
+
+    header('Content-Type: text/html; charset=utf-8');
     $escape = static function ($value) {
         return htmlspecialchars(
             (string)$value,
