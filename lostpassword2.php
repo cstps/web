@@ -15,10 +15,6 @@ $lost_key=$_POST['lost_key'];
                 echo "</script>";
                 exit(0);
     }
-  if(get_magic_quotes_gpc()){
-        $lost_user_id=stripslashes($lost_user_id);
-        $lost_key=stripslashes($lost_key);
-  }
   $sql=" update `users` set password=? WHERE `user_id`=?";
   if(
 

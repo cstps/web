@@ -77,11 +77,6 @@ if(isset($_POST['to_user'])){
 	$title = $_POST ['title'];
 	$content = $_POST ['content'];
 	$from_user=$_SESSION[$OJ_NAME.'_'.'user_id'];
-	if (get_magic_quotes_gpc ()) {
-		$to_user = stripslashes ( $to_user);
-		$title = stripslashes ( $title);
-		$content = stripslashes ( $content );
-	}
 	$title = RemoveXSS( $title);
 	
 	$sql="select 1 from privilege where (rightstr='source_browser' or rightstr='administrator') and (user_id=? or user_id=? )";

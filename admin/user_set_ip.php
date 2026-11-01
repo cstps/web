@@ -20,10 +20,6 @@ if(isset($_POST['do'])){
 	$user_id = $_POST['user_id'];
   $ip = $_POST['ip'];
 
-  if(get_magic_quotes_gpc()){
-		$user_id = stripslashes($user_id);
-		$ip = stripslashes($ip);
-	}
 
 	$sql = "insert into loginlog (user_id,password,ip,time) value(?,?,?,now())";
 	$result = pdo_query($sql,$user_id,"set ip by ".$_SESSION[$OJ_NAME."_user_id"],$ip);

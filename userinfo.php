@@ -29,7 +29,7 @@ if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
 }
 
 //检查用户当前是否在参加NOIP模式比赛，如果是则不显示用户信息以防看到提交结果 2020.7.25
-$now = strftime("%Y-%m-%d %H:%M",time());
+$now = date('Y-m-d H:i', time());
 $sql = "select 1 from `solution` where  `user_id`=? and  problem_id>0 and `contest_id` IN (select `contest_id` from `contest` where `start_time` < ? and `end_time` > ? and `title` like ?)";
 $rrs = pdo_query($sql, $user ,$now , $now , "%$OJ_NOIP_KEYWORD%");
 $flag = count($rrs) > 0 ;

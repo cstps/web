@@ -95,10 +95,6 @@ if (!$use_cookie) {
     $user_id  = isset($_POST['user_id'])  ? $_POST['user_id']  : "";
     $password = isset($_POST['password']) ? $_POST['password'] : "";
 
-    if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
-        $user_id  = stripslashes($user_id);
-        $password = stripslashes($password);
-    }
 
     $login = check_login($user_id, $password); // 성공 시 user_id, 실패 시 false
 }

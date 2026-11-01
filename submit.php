@@ -20,7 +20,7 @@ if (!isset($_SESSION[$OJ_NAME . '_' . 'user_id'])) {
     exit(0);
 }
 
-$now = strftime("%Y-%m-%d %H:%M", time());
+$now = date('Y-m-d H:i', time());
 $user_id = $_SESSION[$OJ_NAME . '_' . 'user_id'];
 
 // 수행모드 전환 후 이전 화면의 제출 및 시험 실행 차단
@@ -628,10 +628,7 @@ if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
 // - 최종 제출 연속 요청: 5초 제한
 if (!$OJ_BENCHMARK_MODE) {
     $submit_interval_cutoff =
-        strftime(
-            "%Y-%m-%d %X",
-            time() - 5
-        );
+        date('Y-m-d H:i:s', time() - 5);
 
     if ($test_run) {
         $res =

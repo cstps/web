@@ -175,9 +175,6 @@ if (isset($_GET['cid'])) {
 	if (isset($_POST['password']))
 		$password = $_POST['password'];
 
-	if (get_magic_quotes_gpc()) {
-		$password = stripslashes($password);
-	}
 
 
 	if ($rows_cnt==0) {

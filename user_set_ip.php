@@ -103,9 +103,6 @@ if (isset($_GET['cid'])) {
 	if (isset($_POST['password']))
 		$password = $_POST['password'];
 
-	if (get_magic_quotes_gpc()) {
-		$password = stripslashes($password);
-	}
 
 	if ($rows_cnt==0) {
 		$view_title = "比赛已经关闭!";
@@ -186,10 +183,6 @@ if ((isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.
 	$user_id = $_POST['user_id'];
   $ip = $_POST['ip'];
 
-  if(get_magic_quotes_gpc()){
-		$user_id = stripslashes($user_id);
-		$ip = stripslashes($ip);
-	}
 
 	$sql = "insert into loginlog (user_id,password,ip,time) value(?,?,?,now())";
 	$result = pdo_query($sql,$user_id,"set ip by ".$_SESSION[$OJ_NAME."_user_id"],$ip);

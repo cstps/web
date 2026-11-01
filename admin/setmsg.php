@@ -17,9 +17,6 @@ if(isset($_POST['do'])){
   $msg = str_replace("</p>", "<br />", $msg);
   $msg = str_replace(",", "&#44;", $msg);
 
-  if(get_magic_quotes_gpc()){
-    $title = stripslashes($title);
-  }
 
   $msg = RemoveXSS($msg);
   fputs($fp,$msg);

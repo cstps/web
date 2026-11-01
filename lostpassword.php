@@ -15,10 +15,6 @@ $lost_email=$_POST['email'];
                 echo "</script>";
                 exit(0);
     }
-  if(get_magic_quotes_gpc()){
-        $lost_user_id=stripslashes($lost_user_id);
-        $lost_email=stripslashes($lost_email);
-  }
   $sql="SELECT `email` FROM `users` WHERE `user_id`=?";
                 $result=pdo_query($sql,$lost_user_id);
                 $row = $result[0];

@@ -17,9 +17,6 @@ if(isset($_POST['manual'])){
              $sql="DELETE FROM runtimeinfo WHERE solution_id=? ";
              pdo_query($sql,$sid);
              $reinfo=$_POST['explain'];
-             if (get_magic_quotes_gpc ()) {
-                 $reinfo= stripslashes ( $reinfo);
-             }
              $sql="INSERT INTO runtimeinfo VALUES(?,?)";
              pdo_query($sql,$sid,$reinfo);
         }

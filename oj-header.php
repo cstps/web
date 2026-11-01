@@ -1,6 +1,6 @@
 <?php function checkcontest($MSG_CONTEST){
 	global $MSG_CONTEST;
-      $now=strftime("%Y-%m-%d %H:%M",time());
+      $now=date('Y-m-d H:i', time());
 		$sql="SELECT count(*) FROM `contest` WHERE `end_time`>? AND `defunct`='N'";
 		$result=pdo_query($sql,$now);
 		$row=$result[0];
