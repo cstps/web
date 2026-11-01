@@ -2,7 +2,6 @@
 $cache_time = 10;
 $OJ_CACHE_SHARE = false;
 
-require_once('./include/cache_start.php');
 require_once('./include/db_info.inc.php');
 require_once('./include/setlang.php');
 
@@ -15,6 +14,11 @@ if(!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
 
 require_once("./include/const.inc.php");
 require_once("./include/course_functions.inc.php");
+// 개인 학습 기록은 매 요청마다 권한을 검사하고 캐시하지 않는다.
+header('Cache-Control: private, no-store, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+
 
 if(!isset($_GET['sid'])){
   echo "No such code!\n";
@@ -197,15 +201,6 @@ if (
         "/reinfo.php"
     );
 
-    if (
-        file_exists(
-            './include/cache_end.php'
-        )
-    ) {
-        require_once(
-            './include/cache_end.php'
-        );
-    }
 
     exit(0);
 }
@@ -281,7 +276,4 @@ else{
   require("template/".$OJ_TEMPLATE."/reinfo.php");
 }
 /////////////////////////Common foot
-if(file_exists('./include/cache_end.php')){
-  require_once('./include/cache_end.php');
-}
 ?>

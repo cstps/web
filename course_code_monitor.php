@@ -4,6 +4,7 @@ require_once('./include/db_info.inc.php');
 require_once('./include/const.inc.php');
 require_once('./include/setlang.php');
 require_once('./include/course_functions.inc.php');
+require_once(__DIR__ . '/include/student_code_draft_scope.inc.php');
 
 $view_title = '수업 코드 모니터링';
 
@@ -205,7 +206,7 @@ $draft_rows =
             cp.num AS problem_num,
             p.title AS problem_title
 
-         FROM student_code_draft d
+         FROM " . coding_draft_monitor_source_sql() . " d
 
          INNER JOIN course_contest cc
                  ON cc.contest_id = d.contest_id

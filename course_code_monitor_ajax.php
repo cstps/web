@@ -3,6 +3,7 @@
 require_once('./include/db_info.inc.php');
 require_once('./include/const.inc.php');
 require_once('./include/course_functions.inc.php');
+require_once(__DIR__ . '/include/student_code_draft_scope.inc.php');
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
@@ -162,7 +163,7 @@ $draft_rows =
             cp.num AS problem_num,
             p.title AS problem_title
 
-         FROM student_code_draft d
+         FROM " . coding_draft_monitor_source_sql() . " d
 
          INNER JOIN course_contest cc
                  ON cc.contest_id = d.contest_id

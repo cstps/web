@@ -1,3 +1,7 @@
+<?php
+require_once(dirname(__DIR__, 2) . '/include/student_code_draft_scope.inc.php');
+$student_draft_context = coding_draft_context((string)$_SESSION[$OJ_NAME.'_user_id']);
+?>
 <?php $show_title = "제출 - $OJ_NAME"; ?>
 <?php include("template/$OJ_TEMPLATE/header.php"); ?>
 
@@ -14,6 +18,9 @@
 		id="frmSolution"
 		action="submit.php"
 		method="post">
+        <input type="hidden" name="draft_performance_context"
+               value="<?php echo htmlspecialchars($student_draft_context, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>">
+
                 <?php
                 require(__DIR__ . "/../../include/set_post_key.php");
                 ?>
@@ -1138,12 +1145,24 @@
 
                 let lastServerSavedCode = null;
                 let serverDraftSaving = false;
+                let serverDraftLocked = false;
+                function showServerDraftMessage(message) {
+                    let node = document.getElementById("student-code-draft-status");
+                    if (!node) {
+                        node = document.createElement("p");
+                        node.id = "student-code-draft-status";
+                        node.className = "ui warning message";
+                        node.setAttribute("role", "alert");
+                        document.getElementById("frmSolution").prepend(node);
+                    }
+                    node.textContent = message;
+                }
 
                 async function saveServerDraft() {
 
                         if (
                                 isReadOnly ||
-                                serverDraftSaving ||
+                                serverDraftLocked || serverDraftSaving ||
                                 typeof editor === "undefined"
                         ) {
                                 return;
@@ -1233,6 +1252,17 @@
 
                                 const data =
                                         await response.json();
+                                if (response.status === 409 && data &&
+                                    data.code === "performance_context_changed") {
+                                    serverDraftLocked = true;
+                                    showServerDraftMessage(data.message);
+                                    return;
+                                }
+                                if (!response.ok || !data || data.ok !== true) {
+                                    showServerDraftMessage((data && data.message) || "자동저장하지 못했습니다. 현재 코드를 보관해 주세요.");
+                                    return;
+                                }
+
 
                                 if (
                                         response.ok &&

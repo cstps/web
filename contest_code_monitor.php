@@ -5,6 +5,7 @@ require_once('./include/const.inc.php');
 require_once('./include/setlang.php');
 require_once('./include/permission_functions.inc.php');
 require_once('./include/course_functions.inc.php');
+require_once(__DIR__ . '/include/student_code_draft_scope.inc.php');
 
 $view_title = '학생 코드 모니터링';
 
@@ -347,7 +348,7 @@ $rows =
         "SELECT DISTINCT
             d.user_id,
             u.nick
-         FROM student_code_draft d
+         FROM " . coding_draft_monitor_source_sql() . " d
          LEFT JOIN users u
                 ON u.user_id = d.user_id
          WHERE d.contest_id = ?
@@ -405,7 +406,7 @@ $draft_rows =
             problem_id,
             language,
             updated_at
-         FROM student_code_draft
+         FROM " . coding_draft_monitor_source_sql() . " effective_draft
          WHERE contest_id = ?
          ORDER BY user_id ASC,
                   problem_id ASC",

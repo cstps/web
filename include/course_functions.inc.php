@@ -330,8 +330,8 @@ function course_get_user_active_performance_sessions(
     );
 
 
-    if (!$rows) {
-        return array();
+    if (!is_array($rows)) {
+        throw new RuntimeException('수행모드 적용 상태 조회에 실패했습니다.');
     }
 
 

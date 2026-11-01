@@ -4,6 +4,7 @@ require_once('./include/db_info.inc.php');
 require_once('./include/const.inc.php');
 require_once('./include/permission_functions.inc.php');
 require_once('./include/course_functions.inc.php');
+require_once(__DIR__ . '/include/student_code_draft_scope.inc.php');
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
@@ -140,7 +141,7 @@ $draft_rows =
             language,
             source,
             updated_at
-         FROM student_code_draft
+         FROM " . coding_draft_monitor_source_sql(true) . " effective_draft
          WHERE user_id = ?
            AND problem_id = ?
            AND contest_id = ?

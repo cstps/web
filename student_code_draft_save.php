@@ -5,6 +5,7 @@ require_once('./include/const.inc.php');
 require_once('./include/course_functions.inc.php');
 
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: private, no-store');
 
 
 // ============================================================
@@ -275,36 +276,20 @@ if ($contest_id > 0) {
 // 한 행만 유지하며 최신 코드로 갱신한다.
 // ============================================================
 
-$result =
-    pdo_query(
-        "INSERT INTO student_code_draft (
-            user_id,
-            problem_id,
-            contest_id,
-            language,
-            source,
-            created_at,
-            updated_at
-         )
-         VALUES (
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            NOW(),
-            NOW()
-         )
-         ON DUPLICATE KEY UPDATE
-            language = VALUES(language),
-            source = VALUES(source),
-            updated_at = NOW()",
-        $user_id,
-        $problem_id,
-        $contest_id,
-        $language,
-        $source
+require_once(__DIR__ . '/include/student_code_draft_scope.inc.php');
+try {
+    coding_draft_save_scoped(
+        $user_id, $problem_id, $contest_id, $language, $source,
+        $_POST['draft_performance_context'] ?? null
     );
+} catch (CodingDraftContextException $e) {
+    draft_json_response(false, $e->getMessage(), 409, array(
+        'code' => 'performance_context_changed'
+    ));
+} catch (Throwable $e) {
+    error_log('[student_code_draft_save] ' . $e->getMessage());
+    draft_json_response(false, '자동저장에 실패했습니다. 현재 코드를 보관한 뒤 다시 시도해 주세요.', 503);
+}
 
 
 // ============================================================

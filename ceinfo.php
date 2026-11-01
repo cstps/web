@@ -3,7 +3,6 @@
 
 	$cache_time=10;
 	$OJ_CACHE_SHARE=false;
-	require_once('./include/cache_start.php');
         require_once('./include/db_info.inc.php');
 	require_once('./include/setlang.php');
 	$view_title= "Welcome To Online Judge";
@@ -13,6 +12,11 @@
 	 }
 require_once("./include/const.inc.php");
 require_once("./include/course_functions.inc.php");
+// 개인 학습 기록은 매 요청마다 권한을 검사하고 캐시하지 않는다.
+header('Cache-Control: private, no-store, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+
 if (!isset($_GET['sid'])){
 	$view_errors= "No such code!\n";
 	require("template/".$OJ_TEMPLATE."/error.php");
@@ -107,7 +111,5 @@ if ($ok==true){
 /////////////////////////Template
 require("template/".$OJ_TEMPLATE."/ceinfo.php");
 /////////////////////////Common foot
-if(file_exists('./include/cache_end.php'))
-	require_once('./include/cache_end.php');
 ?>
 
