@@ -61,6 +61,29 @@ if (
 
 $solution_id = (int)$value;
 
+// 수행모드에서는 시작 이후 시험 실행 결과만 조회한다.
+$test_run_query_args = array($solution_id, $user_id);
+$test_run_performance_filter = '';
+
+try {
+    require_once(__DIR__ . '/include/course_functions.inc.php');
+    require_once(__DIR__ . '/include/student_code_draft_scope.inc.php');
+
+    $test_run_cutoff = coding_draft_context($user_id);
+
+    if ($test_run_cutoff !== '') {
+        $test_run_performance_filter = ' AND s.in_date >= ?';
+        $test_run_query_args[] = $test_run_cutoff;
+    }
+} catch (Throwable $e) {
+    error_log('[test_run_status_performance] ' . $e->getMessage());
+    $respond(array(
+        'ok' => false,
+        'message' => '수행모드 상태를 확인하지 못해 결과를 조회하지 않았습니다. 잠시 후 다시 시도해 주세요.'
+    ), 503);
+}
+
+
 // 본인의 시험 실행만 조회하고 출력 크기를 제한
 $rows = pdo_query(
     "SELECT
@@ -96,12 +119,12 @@ $rows = pdo_query(
      WHERE s.solution_id = ?
        AND s.user_id = ?
        AND s.problem_id = 0
+       {$test_run_performance_filter}
      LIMIT 1",
-    $solution_id,
-    $user_id
+    ...$test_run_query_args
 );
 
-if ($rows === false) {
+if (!is_array($rows)) {
     $respond(array(
         'ok' => false,
         'message' => '시험 실행 결과 조회에 실패했습니다.'
