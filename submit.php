@@ -23,6 +23,87 @@ if (!isset($_SESSION[$OJ_NAME . '_' . 'user_id'])) {
 $now = strftime("%Y-%m-%d %H:%M", time());
 $user_id = $_SESSION[$OJ_NAME . '_' . 'user_id'];
 
+// 수행모드 전환 후 이전 화면의 정식 제출 차단
+// 시험 실행은 기존 처리 경로를 유지한다.
+(function () use ($user_id) {
+    $custom_test = isset($_POST['id'])
+        ? intval($_POST['id']) <= 0
+        : (isset($_POST['cid']) && intval($_POST['cid']) < 0);
+
+    if ($custom_test) {
+        return;
+    }
+
+    $failure = null;
+    $status = 409;
+
+    try {
+        require_once(__DIR__ . '/include/student_code_draft_scope.inc.php');
+
+        $current = coding_draft_context((string)$user_id);
+        $opened = $_POST['draft_performance_context'] ?? null;
+
+        if (!is_string($opened) || $opened !== $current) {
+            $failure =
+                '수행모드 적용 상태가 변경되었거나 이전 문제 화면입니다. ' .
+                '아래 코드를 복사해 보관한 뒤 문제 화면을 새로 열어 제출해 주세요.';
+        }
+    } catch (Throwable $e) {
+        error_log('[submit_performance_context] ' . $e->getMessage());
+        $status = 503;
+        $failure =
+            '현재 수행모드 상태를 확인하지 못해 제출하지 않았습니다. ' .
+            '아래 코드를 복사해 보관한 뒤 잠시 후 다시 시도해 주세요.';
+    }
+
+    if ($failure === null) {
+        return;
+    }
+
+    http_response_code($status);
+    header('Content-Type: text/html; charset=utf-8');
+    header('Cache-Control: private, no-store');
+    header('Pragma: no-cache');
+    header('X-Content-Type-Options: nosniff');
+
+    $escape = static function ($value) {
+        return htmlspecialchars(
+            (string)$value,
+            ENT_QUOTES | ENT_SUBSTITUTE,
+            'UTF-8'
+        );
+    };
+
+    $posted_source = $_POST['source'] ?? '';
+    if (!is_string($posted_source)) {
+        $posted_source = '';
+    }
+
+    if (isset($_POST['encoded_submit'])) {
+        $decoded = base64_decode($posted_source, true);
+        if ($decoded !== false) {
+            $posted_source = $decoded;
+        }
+    }
+
+    echo '<!doctype html><html lang="ko"><head>';
+    echo '<meta charset="utf-8">';
+    echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
+    echo '<title>제출 상태 확인</title></head><body><main>';
+    echo '<h1>제출되지 않았습니다</h1>';
+    echo '<p>' . $escape($failure) . '</p>';
+    echo '<p>이 요청의 코드와 제출 기록은 저장하지 않았습니다.</p>';
+    echo '<h2><label for="rejected-source">입력한 코드</label></h2>';
+    echo '<textarea id="rejected-source" rows="20" cols="80" readonly>';
+    echo $escape($posted_source);
+    echo '</textarea>';
+    echo '<p>코드를 복사한 뒤 브라우저의 뒤로 가기로 돌아가 ';
+    echo '문제 화면을 새로 열어 주세요.</p>';
+    echo '</main></body></html>';
+    exit;
+})();
+
+
 // 언어 파라미터
 $language = isset($_POST['language']) ? intval($_POST['language']) : 0;
 
