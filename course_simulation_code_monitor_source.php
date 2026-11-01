@@ -94,6 +94,7 @@ try {
             d.revision,
             d.performance_started_at,
             d.updated_at,
+            s.source_language AS monitor_source_language,
             a.title AS activity_title,
             l.lesson_no
          FROM (
@@ -169,7 +170,10 @@ try {
         'activity_id' => (string)$activity_id,
         'activity_title' => (string)$draft['activity_title'],
         'lesson_no' => intval($draft['lesson_no']),
-        'language_name' => 'JavaScript · p5.js',
+        'language_name' => (array(
+                'python' => 'Python',
+                'javascript' => 'JavaScript · p5.js'
+            )[(string)($draft['monitor_source_language'] ?? '')] ?? '언어 확인 필요'),
         'source' => (string)$draft['source_code'],
         'source_sha256' => hash('sha256', (string)$draft['source_code']),
         'updated_at' => (string)$draft['updated_at'],

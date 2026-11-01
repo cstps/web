@@ -303,6 +303,7 @@ if (($_GET['include_simulation'] ?? '') === '1') {
             ) AS age_seconds,
             l.lesson_no,
             l.title AS lesson_title,
+            s.source_language AS monitor_source_language,
             a.title AS activity_title
          FROM (
              SELECT d.activity_id, d.user_id, d.updated_at, CAST(d.revision AS CHAR) AS revision,
@@ -421,7 +422,10 @@ if (($_GET['include_simulation'] ?? '') === '1') {
                 '활동 ' . intval($simulation_row['activity_id']),
             'problem_title' => (string)$simulation_row['activity_title'],
             'language' => -1,
-            'language_name' => 'JavaScript · p5.js',
+            'language_name' => (array(
+                'python' => 'Python',
+                'javascript' => 'JavaScript · p5.js'
+            )[(string)($simulation_row['monitor_source_language'] ?? '')] ?? '언어 확인 필요'),
             'updated_at' => $simulation_updated_at,
             'active' =>
                 intval($simulation_row['age_seconds']) >= 0 &&

@@ -1360,6 +1360,9 @@ require_once(
                         "course-code-tile-meta";
 
                     meta.textContent =
+                        (current.source_kind === "simulation"
+                            ? "시뮬레이션"
+                            : "코딩 실습") + " · " +
                         current.lesson_no +
                         "차시 · " +
                         current.language_name +
