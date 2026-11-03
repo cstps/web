@@ -489,34 +489,37 @@ if ($lesson_id > 0) {
 // ============================================================
 // 10. lesson_no 중복 확인
 //
-// 같은 Course 안에서는 동일한 차시 번호를 사용할 수 없다.
+// Lesson 미연결 Contest는 같은 Course 안에서 차시 번호가 중복될 수 없다.
 // 현재 수정 중인 Contest 자신은 중복 검사에서 제외한다.
 // ============================================================
 
-$duplicate_lesson_rows = pdo_query(
-    "SELECT
-        contest_id
-     FROM course_contest
-     WHERE course_id = ?
-       AND lesson_no = ?
-       AND contest_id <> ?
-     LIMIT 1",
-    $course_id,
-    $lesson_no,
-    $contest_id
-);
+// Lesson 연결 활동은 같은 차시에 여러 Contest가 존재할 수 있다.
+if ($lesson_id <= 0) {
+    $duplicate_lesson_rows = pdo_query(
+        "SELECT
+            contest_id
+         FROM course_contest
+         WHERE course_id = ?
+           AND lesson_no = ?
+           AND contest_id <> ?
+         LIMIT 1",
+        $course_id,
+        $lesson_no,
+        $contest_id
+    );
 
 
-if (
-    $duplicate_lesson_rows &&
-    isset($duplicate_lesson_rows[0]['contest_id'])
-) {
+    if (
+        $duplicate_lesson_rows &&
+        isset($duplicate_lesson_rows[0]['contest_id'])
+    ) {
 
-    $view_errors =
-        "<h2>".$lesson_no."차시는 이미 등록되어 있습니다.</h2>";
+        $view_errors =
+            "<h2>".$lesson_no."차시는 이미 등록되어 있습니다.</h2>";
 
-    require("template/".$OJ_TEMPLATE."/error.php");
-    exit(0);
+        require("template/".$OJ_TEMPLATE."/error.php");
+        exit(0);
+    }
 }
 
 // ============================================================
@@ -575,17 +578,20 @@ if ($link_type === 'created') {
 // 12. Course 차시 정보 수정
 // ============================================================
 
-pdo_query(
-    "UPDATE course_contest
-     SET
-        lesson_no = ?
-     WHERE course_id = ?
-       AND contest_id = ?
-       AND status = 1",
-    $lesson_no,
-    $course_id,
-    $contest_id
-);
+// Lesson 연결 활동의 차시 번호는 course_lesson에서 관리한다.
+if ($lesson_id <= 0) {
+    pdo_query(
+        "UPDATE course_contest
+         SET
+            lesson_no = ?
+         WHERE course_id = ?
+           AND contest_id = ?
+           AND status = 1",
+        $lesson_no,
+        $course_id,
+        $contest_id
+    );
+}
 
 
 // ============================================================

@@ -13,6 +13,27 @@ $default_end_time =
         'Y-m-d\TH:i',
         strtotime('+7 days')
     );
+// 검색 요청으로 전달된 Contest 설정을 복원한다.
+// 생성 시 입력값·권한 검증은 기존 저장 처리에서 다시 수행한다.
+foreach (array(
+    'draft_contest_title' => 'default_title',
+    'draft_start_time' => 'default_start_time',
+    'draft_end_time' => 'default_end_time'
+) as $draft_key => $draft_target) {
+    if (isset($_GET[$draft_key]) && is_string($_GET[$draft_key])) {
+        $$draft_target = $_GET[$draft_key];
+    }
+}
+
+$draft_language_ids = array();
+if (isset($_GET['draft_lang']) && is_array($_GET['draft_lang'])) {
+    foreach ($_GET['draft_lang'] as $draft_language_id) {
+        if (is_string($draft_language_id) &&
+            preg_match('/^(0|[1-9][0-9]{0,2})$/D', $draft_language_id)) {
+            $draft_language_ids[(int)$draft_language_id] = true;
+        }
+    }
+}
 ?>
 
 <link
@@ -139,6 +160,8 @@ $default_end_time =
                     );
                 ?>"
             >
+
+            <div id="search-contest-setting-inputs"></div>
 
             <div class="fields">
 
@@ -442,7 +465,7 @@ $default_end_time =
                         type="datetime-local"
                         name="start_time"
                         value="<?php
-                            echo $default_start_time;
+                            echo htmlspecialchars($default_start_time, ENT_QUOTES, 'UTF-8');
                         ?>"
                         required
                     >
@@ -459,7 +482,7 @@ $default_end_time =
                         type="datetime-local"
                         name="end_time"
                         value="<?php
-                            echo $default_end_time;
+                            echo htmlspecialchars($default_end_time, ENT_QUOTES, 'UTF-8');
                         ?>"
                         required
                     >
@@ -578,6 +601,8 @@ $default_end_time =
                                 value="<?php
                                     echo intval($language_id);
                                 ?>"
+                                <?php echo isset($draft_language_ids[(int)$language_id])
+                                    ? 'checked' : ''; ?>
                             >
 
                             <span>
@@ -683,6 +708,31 @@ $default_end_time =
         );
 
 
+    // 검색 폼에는 설정 항목만 복사한다.
+    function synchronizeContestSettings() {
+        var target = document.getElementById('search-contest-setting-inputs');
+        target.textContent = '';
+
+        function appendSetting(name, value) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = value;
+            target.appendChild(input);
+        }
+
+        ['contest_title', 'start_time', 'end_time'].forEach(function (name) {
+            appendSetting('draft_' + name, createForm.elements[name].value);
+        });
+
+        createForm.querySelectorAll('input[name="lang[]"]:checked').forEach(
+            function (input) {
+                appendSetting('draft_lang[]', input.value);
+            }
+        );
+    }
+
+
     function synchronizeSelectedProblems() {
 
         var selectedArray =
@@ -743,6 +793,7 @@ $default_end_time =
         function () {
 
             synchronizeSelectedProblems();
+            synchronizeContestSettings();
         }
     );
 
@@ -758,6 +809,7 @@ $default_end_time =
             ).value = '';
 
             synchronizeSelectedProblems();
+            synchronizeContestSettings();
             searchForm.submit();
         }
     );
