@@ -10,7 +10,7 @@ $login = false;
 // ------------------------------
 // 1) 쿠키 로그인 검증
 // ------------------------------
-if ($OJ_COOKIE_LOGIN === true
+if (($OJ_COOKIE_LOGIN ?? false) === true
     && isset($_COOKIE[$OJ_NAME . "_user"])
     && isset($_COOKIE[$OJ_NAME . "_check"])) {
 

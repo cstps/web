@@ -1,5 +1,5 @@
 <?php
-if(strpos($_SERVER['HTTP_REFERER'],$_SERVER['HTTP_HOST'])<9){
+if(strpos((string)($_SERVER['HTTP_REFERER'] ?? ''),$_SERVER['HTTP_HOST'])<9){
   require_once("include/db_info.inc.php");
   require_once("include/my_func.inc.php");
   $token = getToken();

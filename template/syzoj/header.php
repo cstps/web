@@ -81,7 +81,7 @@ $header_is_course_manage_page =
     <meta property="og:image" content="./image/logo.png">
     <meta property="og:url" content="https://1024.kr">
 
-    <title><?php echo $show_title ?></title>
+    <title><?php echo $show_title ?? $view_title ?? $OJ_NAME ?? '1024 Online Judge'; ?></title>
     <?php include("template/$OJ_TEMPLATE/css.php"); ?>
     <script src="<?php echo $OJ_CDN_URL ?>/include/jquery-latest.js"></script>
 
