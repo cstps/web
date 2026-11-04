@@ -1130,7 +1130,7 @@ $applications_url =
             <?php } ?>
         <?php } ?>
     </main>
-<script src="/class-share/assets/application-phone.js?v=20261008-1" defer></script>
+<script src="/class-share/assets/application-phone.js?v=20261104-1" defer></script>
 <script src="/class-share/assets/application-form.js?v=20261008-1" defer></script>
 </body>
 </html>
