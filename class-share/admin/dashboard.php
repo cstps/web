@@ -70,6 +70,13 @@ require_once(
 );
 
 ?>
+
+<section class="admin-panel">
+    <a class="admin-submit-button" href="/class-share/admin/my_profile.php">
+        내 정보 수정
+    </a>
+</section>
+
 <section class="admin-panel">
     <h2>
         관리자 로그인 정보

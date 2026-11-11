@@ -1,0 +1,117 @@
+.cs-profile {
+    max-width: 66rem;
+    margin: 0 auto;
+    padding: 1.25rem 0.75rem 2rem;
+    color: #17243a;
+}
+
+.cs-profile__header { margin-bottom: 1.25rem; }
+.cs-profile__header h2 {
+    margin: 0.45rem 0 0;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    line-height: 1.25;
+}
+
+.cs-profile__back { color: #315783; font-weight: 650; }
+.cs-profile__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.cs-profile__card {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(1rem, 3vw, 1.5rem);
+    border: 1px solid #dce4ee;
+    border-radius: 1rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(23 36 58 / 5%);
+}
+
+.cs-profile__card h3 { margin: 0 0 1rem; font-size: 1.15rem; }
+.cs-profile__card form {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.cs-profile__identity {
+    margin: 0;
+    padding: 0.7rem 0.85rem;
+    border-radius: 0.65rem;
+    background: #f2f5f9;
+}
+
+.cs-profile__identity dt { color: #495c74; font-size: 0.83rem; }
+.cs-profile__identity dd {
+    margin: 0.2rem 0 0;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+
+.cs-profile__field { display: grid; gap: 0.35rem; }
+.cs-profile__field label { font-size: 0.92rem; font-weight: 650; }
+.cs-profile__field label span, .cs-profile small {
+    color: #495c74;
+    font-size: 0.82rem;
+    font-weight: 400;
+}
+
+.cs-profile .cs-profile__field input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #aab8cb;
+    border-radius: 0.55rem;
+    background: #fff;
+    color: inherit;
+    font: inherit;
+}
+
+.cs-profile__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.65rem;
+    margin-top: auto;
+    padding-top: 0.6rem;
+}
+
+.cs-profile .cs-profile__button {
+    min-height: 2.75rem;
+    padding: 0.55rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 0.55rem;
+    background: #174a86;
+    color: #fff;
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.cs-profile .cs-profile__button:hover { background: #123a6a; }
+.cs-profile :focus-visible { outline: 3px solid #2872bb; outline-offset: 3px; }
+
+.cs-profile__notice {
+    margin: 0 0 1rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid;
+    border-radius: 0.65rem;
+}
+
+.cs-profile__notice p { margin: 0.2rem 0; }
+.cs-profile__notice--success { background: #ecf8f1; color: #17613a; }
+.cs-profile__notice--error { background: #fff0ef; color: #912a24; }
+
+@media (max-width: 48rem) {
+    .cs-profile__grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 30rem) {
+    .cs-profile__actions { justify-content: flex-start; }
+    .cs-profile .cs-profile__button { width: 100%; }
+}

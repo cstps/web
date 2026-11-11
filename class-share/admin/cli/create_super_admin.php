@@ -158,12 +158,12 @@ $password_confirmation =
 
 if (
     $password === null ||
-    strlen($password) < 12 ||
+    strlen($password) < 8 ||
     strlen($password) > 128
 ) {
     fwrite(
         STDERR,
-        "비밀번호는 12~128자로 입력해야 합니다.\n"
+        "비밀번호는 8~128자로 입력해야 합니다.\n"
     );
 
     exit(1);

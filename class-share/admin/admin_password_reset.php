@@ -51,7 +51,7 @@ if ($target_admin_id <= 0) {
 }
 
 if (
-    strlen($new_password) < 12 ||
+    strlen($new_password) < 8 ||
     strlen($new_password) > 128
 ) {
     http_response_code(400);
