@@ -26,6 +26,25 @@ require_once(
     __DIR__ . "/../include/my_func.inc.php"
 );
 
+// POST 입력값은 문자열만 허용한다.
+foreach (
+    array(
+        "user_id",
+        "password",
+        "password_confirm",
+        "return_page",
+        "return_keyword"
+    ) as $field
+) {
+    if (
+        isset($_POST[$field]) &&
+        !is_string($_POST[$field])
+    ) {
+        http_response_code(400);
+        exit("요청 값의 형식이 올바르지 않습니다.");
+    }
+}
+
 $user_id =
     isset($_POST["user_id"])
     ? trim((string)$_POST["user_id"])
@@ -65,6 +84,15 @@ if (
 ) {
     http_response_code(400);
     exit("새 비밀번호를 200바이트 이하로 입력해 주세요.");
+}
+
+// 기존 HUSTOJ 인증 방식과 호환되지 않는 비밀번호 차단
+if (isOldPW($password)) {
+    http_response_code(400);
+    exit(
+        "32자리 16진수 형태의 비밀번호는 " .
+        "현재 로그인 인증 방식에서 사용할 수 없습니다."
+    );
 }
 
 if ($password !== $password_confirm) {
@@ -137,13 +165,13 @@ if (!$is_admin) {
     }
 }
 
-$password_hash =
-    pwGen($password);
-
 $current_password_hash =
     (string)$user_rows[0]["password"];
 
-if ($current_password_hash !== $password_hash) {
+if (!pwCheck($password, $current_password_hash)) {
+    $password_hash =
+        pwGen($password);
+
     if ($is_admin) {
         $update_result =
             pdo_query(
@@ -184,9 +212,12 @@ if ($current_password_hash !== $password_hash) {
         exit("사용자 비밀번호를 변경할 수 없습니다.");
     }
 
-    if (!$is_admin && (int)$update_result !== 1) {
-        http_response_code(403);
-        exit("이 사용자의 비밀번호를 변경할 수 없습니다.");
+    if ((int)$update_result !== 1) {
+        http_response_code(409);
+        exit(
+            "비밀번호 변경이 반영되지 않았습니다. " .
+            "사용자 상태와 권한을 다시 확인해 주세요."
+        );
     }
 }
 
