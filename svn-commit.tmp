@@ -1,6 +1,0 @@
-modify user nick in list
-
---此行及以下内容将会被忽略--
-
-M    admin/ajax.php
-M    admin/user_list.php
