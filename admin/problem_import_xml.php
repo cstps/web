@@ -1033,8 +1033,43 @@ function import_fps($tempfile)
           }
 
           $testno++;
+
+          // 허용된 도메인만 이미지 저장 경로에 사용한다.
+          // HTTPS 기본 포트 표기는 제거하고 경로를 정규화한다.
+          $image_domain =
+            strtolower((string)$domain);
+
+          if (
+            substr($image_domain, -4) === ':443'
+          ) {
+            $image_domain =
+              substr($image_domain, 0, -4);
+          }
+
+          if (
+            !in_array(
+              $image_domain,
+              array(
+                '1024.kr',
+                'www.1024.kr'
+              ),
+              true
+            )
+          ) {
+            error_log(
+              '[problem_import] 허용되지 않은 이미지 저장 도메인'
+            );
+
+            http_response_code(400);
+
+            exit(
+              '허용되지 않은 접속 도메인입니다.'
+            );
+          }
+
+          // 두 서비스 도메인의 이미지 저장 위치를 통일한다.
           $ymd =
-            $domain . "/" . date("Ymd");
+            '1024.kr/' . date("Ymd");
 
           $save_path =
             $ymd . "/";

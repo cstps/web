@@ -30,6 +30,28 @@ if (!isset($_SESSION[$OJ_NAME.'_'.'user_id'])){
 		exit(0);
 	}
 }
+// Excel 내보내기에서 사용자 입력을 텍스트 셀로 출력한다.
+function contest_export_text_cell($value)
+{
+    $value = (string)$value;
+
+    // 제어문자를 제거하여 셀 내용이 분리되지 않도록 한다.
+    $value = preg_replace('/[\x00-\x1F\x7F]/', ' ', $value);
+
+    // 수식 시작 문자가 있는 경우 Excel 텍스트 접두어를 추가한다.
+    if (preg_match('/^\s*[=+\-@]/', $value) === 1) {
+        $value = "'" . $value;
+    }
+
+    return '<td style="mso-number-format:\'\@\';" x:str>'
+        . htmlspecialchars(
+            $value,
+            ENT_QUOTES | ENT_SUBSTITUTE,
+            'UTF-8'
+        )
+        . '</td>';
+}
+
 class TM{
 	var $solved=0;
 	var $time=0;
@@ -207,10 +229,16 @@ if ($rows_cnt > 0) {
 
     $ftitle = rawurlencode(preg_replace('/\.|\\\|\\/|\:|\*|\?|\"|\<|\>|\|/', '', $title));
 
-    ob_clean();   // ✅ 출력 버퍼 정리
-    flush();      // ✅ 즉시 출력
-    header("Content-type: application/vnd.ms-excel"); // ✅ 명시적 content-type
-    header("Content-disposition: attachment; filename=contest" . $cid . "_" . $ftitle . ".xls");
+    // 다운로드 헤더는 출력 전에 설정한다.
+    if (ob_get_level() > 0) {
+        ob_clean();
+    }
+
+    header("Content-Type: application/vnd.ms-excel; charset=UTF-8");
+    header(
+        'Content-Disposition: attachment; filename="contest'
+        . $cid . '_' . $ftitle . '.xls"'
+    );
 }
 
 
@@ -282,7 +310,13 @@ usort($U,"s_cmp");
 $rank=1;
 //echo "<style> td{font-size:14} </style>";
 //echo "<title>Contest RankList -- $title</title>";
-echo "<center><h3>Contest RankList -- $title</h3></center>";
+echo "<center><h3>Contest RankList -- "
+    . htmlspecialchars(
+        (string)$title,
+        ENT_QUOTES | ENT_SUBSTITUTE,
+        'UTF-8'
+    )
+    . "</h3></center>";
 echo "<table border=1><tr><td>Rank<td>User<td>Nick<td>Solved<td>Mark<td>Score<td>Penalty";
 
 for ($i=0;$i<$pid_cnt;$i++)
@@ -303,13 +337,12 @@ for ($i=0;$i<$user_cnt;$i++){
 
 	$uuid=$U[$i]->user_id;
 
-	$usolved=$U[$i]->solved;
-	echo "<td>$uuid";
-	if(strpos($_SERVER['HTTP_USER_AGENT'],'MSIE')){
-		$U[$i]->nick=iconv("utf8","gbk",$U[$i]->nick);
-	}
-	echo "<td>".$U[$i]->nick."</td>";
-	echo "<td>$usolved</td>";
+        $usolved=$U[$i]->solved;
+
+        echo contest_export_text_cell($uuid);
+        echo contest_export_text_cell($U[$i]->nick);
+
+        echo "<td>$usolved</td>";
 	echo "<td>";
         if($usolved==0) $U[$i]->mark=0;
 
