@@ -55,7 +55,7 @@ if (
     strlen($new_password) > 128
 ) {
     http_response_code(400);
-    exit('새 비밀번호는 12~128자로 입력해 주세요.');
+    exit('새 비밀번호는 8~128바이트로 입력해 주세요.');
 }
 
 if (

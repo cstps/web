@@ -328,12 +328,12 @@ require_once(
                     id="new_password"
                     name="new_password"
                     required
-                    minlength="12"
+                    minlength="8"
                     maxlength="128"
                     autocomplete="new-password">
 
                 <small>
-                    12~128자로 입력합니다.
+                    8~128자로 입력합니다.
                 </small>
             </div>
 
@@ -347,7 +347,7 @@ require_once(
                     id="new_password_confirmation"
                     name="new_password_confirmation"
                     required
-                    minlength="12"
+                    minlength="8"
                     maxlength="128"
                     autocomplete="new-password">
             </div>
