@@ -84,11 +84,14 @@ if ($len > 0) {
     }
 }
 
-// $len=strlen($_POST['email']);
-// if ($len>100){
-// 	$err_str=$err_str."메일주소가 너무 김!\\n";
-// 	$err_cnt++;
-// }
+// 이메일 길이 및 형식 검증
+if (
+    strlen($email) > 100 ||
+    !filter_var($email, FILTER_VALIDATE_EMAIL)
+) {
+    $err_str .= "올바른 이메일 주소를 입력해 주세요.\n";
+    $err_cnt++;
+}
 if ($err_cnt>0){
 	print "<script language='javascript'>\n";
 	print "alert('";

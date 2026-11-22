@@ -50,14 +50,22 @@ if ($row_cnt==0){
 	exit(0);
 }
 
- $row=$result[0];
-$school=$row['school'];
-$email=$row['email'];
+$row=$result[0];
 $is_admin = isset($_SESSION[$OJ_NAME.'_'.'administrator']) || isset($_SESSION[$OJ_NAME.'_'.'source_browser']);
-if ($is_admin || $user == $_SESSION[$OJ_NAME.'_'.'user_id'])
-	$nick=$row['nick'];
-else
-	$nick="비공개";
+
+$is_profile_owner =
+    isset($_SESSION[$OJ_NAME.'_'.'user_id']) &&
+    $user === $_SESSION[$OJ_NAME.'_'.'user_id'];
+
+if ($is_admin || $is_profile_owner) {
+    $nick = $row['nick'];
+    $email = $row['email'];
+    $school = $row['school'];
+} else {
+    $nick = "비공개";
+    $email = "비공개";
+    $school = "비공개";
+}
 
 // count solved
 $sql="SELECT count(DISTINCT problem_id) as `ac` FROM `solution` WHERE `user_id`=? AND `result`=4";

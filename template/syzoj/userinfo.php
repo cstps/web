@@ -13,15 +13,12 @@
     <div class="row">
         <div class="five wide column">
             <div class="ui card" style="width: 100%; " id="user_card">
-                <div class="blurring dimmable image" id="avatar_container" style="height:325px" title="www.gravatar.com 같은메일로 회원가입">
-                    <?php $default = ""; $grav_url = "https://www.gravatar.com/avatar/" . md5( strtolower( trim( $email ) ) ) . "?d=" . urlencode( $default ) . "&s=500"; ?>       
-                     
-                    <!--
-                        https://www.gravatar.com/ 사이트에 가입한 후 동일한 이메일주소를 등록할 경우 해당 아바타가 등록되어 보여진다.
-                        변경후 바로 적용되지 않고 5분 정도
-                    -->
- 
-                    <img style="margin-top: -100%; "  src="<?php echo $grav_url; ?>">
+                <div class="image" id="avatar_container"
+                     style="height:325px; display:flex; align-items:center; justify-content:center; background:#f3f4f6;"
+                     title="기본 사용자 프로필">
+                    <i class="user circle outline icon"
+                       aria-hidden="true"
+                       style="font-size:120px; color:#9ca3af; margin:0;"></i>
                 </div>
                 <div class="ui top attached block content">
                     <i class="check icon"></i>통과 : <?php echo $AC ?> 문제
@@ -41,7 +38,7 @@
                                     <div class ="row">
                                         <div class="column">
                                             <h4 class="ui top attached block header">별명</h4>
-                                            <div class="ui bottom attached header"><?php echo $nick?>
+                                            <div class="ui bottom attached header"><?php echo htmlspecialchars((string)$nick, ENT_QUOTES, 'UTF-8'); ?>
                                                 
                                             </div>
                                         </div>
@@ -49,20 +46,20 @@
                                     <div class="row">
                                         <div class="column">
                                            <h4 class="ui top attached block header">사용자ID</h4>
-                                           <div class="ui bottom attached header"><?php echo $user?></div>
+                                           <div class="ui bottom attached header"><?php echo htmlspecialchars((string)$user, ENT_QUOTES, 'UTF-8'); ?></div>
                                         </div>
                                     </div>
                                       <div class="row">
                                           <div class="column">
                                               <h4 class="ui top attached block header">Email</h4>
-                                              <div class="ui bottom attached header" class="font-content"><?php echo $email?></div>
+                                              <div class="ui bottom attached header" class="font-content"><?php echo htmlspecialchars((string)$email, ENT_QUOTES, 'UTF-8'); ?></div>
                                           </div>
                                       </div>
                                     <div class="row">
                                         <div class="column">
                                             <h4 class="ui top attached block header">소속 또는 학교</h4>
                                             
-                                            <div class="ui bottom attached segment" class="font-content"><?php echo $school?></div>
+                                            <div class="ui bottom attached segment" class="font-content"><?php echo htmlspecialchars((string)$school, ENT_QUOTES, 'UTF-8'); ?></div>
                                         </div>
                                     </div>
 
