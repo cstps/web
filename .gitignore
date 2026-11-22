@@ -4,6 +4,7 @@
 !/include/contest_access.inc.php
 !/include/course_content_sanitizer.inc.php
 !/include/course_file_upload.inc.php
+!/include/check_post_key.php
 kindeditor/
 upload/
 blockly/
